@@ -164,7 +164,7 @@ async def api_add_installment(installment: AddInstallment):
         )
         
         if not link_check:
-            # إنشاء الرب تلقائياً إذا لم يكن موجوداً
+            # إنشاء الربط تلقائياً إذا لم يكن موجوداً
             db.execute_query(
                 "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
                 (installment.student_id, installment.teacher_id)

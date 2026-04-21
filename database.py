@@ -1,67 +1,59 @@
 # ============================================
-# database.py - إدارة قاعدة البيانات SQLite
+# database.py - إدارة قاعدة البيانات PostgreSQL (Neon)
 # ============================================
 
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import os
-from datetime import datetime
-from config import DATABASE_NAME, BASE_DIR, get_current_date
+from config import DATABASE_URL
 
 class Database:
-    """إدارة اتصال وقاعدة البيانات"""
+    """إدارة اتصال وقاعدة البيانات PostgreSQL"""
     
     _instance = None
     
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.connection = None
         return cls._instance
     
     def get_connection(self):
-        """الحصول على اتصال بقاعدة البيانات"""
-        if self.connection is None:
-            db_path = os.path.join(BASE_DIR, DATABASE_NAME)
-            self.connection = sqlite3.connect(db_path)
-            self.connection.row_factory = sqlite3.Row  # إرجاع النتائج كـ dictionary
-        return self.connection
-    
-    def close(self):
-        """إغلاق الاتصال"""
-        if self.connection:
-            self.connection.close()
-            self.connection = None
+        """الحصول على اتصال بقاعدة البيانات PostgreSQL"""
+        connection = psycopg2.connect(DATABASE_URL)
+        connection.autocommit = False
+        return connection
     
     def execute_query(self, query: str, params: tuple = ()) -> list:
         """تنفيذ استعلام وإرجاع النتائج"""
         conn = self.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         try:
             cursor.execute(query, params)
-            conn.commit()
             
             # إذا كان الاستعلام SELECT، أرجع النتائج
             if query.strip().upper().startswith('SELECT'):
-                return cursor.fetchall()
+                results = cursor.fetchall()
+                return results
             else:
+                conn.commit()
                 return []
                 
         except Exception as e:
             conn.rollback()
             raise e
+        finally:
+            cursor.close()
+            conn.close()
 
 
 def init_db():
+    """تهيئة قاعدة البيانات - إنشاء الجداول إذا لم تكن موجودة"""
     db = Database()
     conn = db.get_connection()
     cursor = conn.cursor()
     
     try:
-        # AUTOINCREMENT → SERIAL
-        # INTEGER → INTEGER أو BIGINT
-        # CHECK IN (...) → نفس الشيء يعمل في PostgreSQL
-        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS students (
                 id SERIAL PRIMARY KEY,
@@ -127,6 +119,7 @@ def init_db():
         conn.rollback()
         raise e
     finally:
+        cursor.close()
         conn.close()
 
 def get_db():
@@ -135,4 +128,4 @@ def get_db():
     try:
         yield db.get_connection()
     finally:
-        pass  # لا نغلق الاتصال هنا لأنه singleton
+        pass

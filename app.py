@@ -2,6 +2,7 @@
 # app.py - نقطة الدخول الرئيسية للتطبيق
 # ============================================
 
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -10,7 +11,8 @@ from contextlib import asynccontextmanager
 from config import (
     APP_TITLE, APP_VERSION, APP_DESCRIPTION,
     HOST, PORT, DEBUG,
-    ensure_directories_exists
+    ensure_directories_exists,
+    BASE_DIR
 )
 from database import init_db
 
@@ -29,22 +31,26 @@ async def lifespan(app: FastAPI):
     """
     # ===== عند البدء =====
     print("\n" + "="*60)
-    print(f"🚀 جاري تشغيل {APP_TITLE} v{APP_VERSION}")
+    print(f"جاري تشغيل {APP_TITLE} v{APP_VERSION}")
     print("="*60 + "\n")
     
     # إنشاء المجلدات المطلوبة
     ensure_directories_exists()
     
     # تهيئة قاعدة البيانات
-    init_db()
+    try:
+        init_db()
+        print("تم تهيئة قاعدة البيانات بنجاح")
+    except Exception as e:
+        print(f"تحذير: لم يتم تهيئة قاعدة البيانات: {e}")
     
-    print("\n✅ التطبيق جاهز للاستخدام!")
-    print(f"📍 افتح المتصفح على: http://{HOST}:{PORT}\n")
+    print("\nالتطبيق جاهز للاستخدام!")
+    print(f"افتح المتصفح على: http://{HOST}:{PORT}\n")
     
     yield  # التطبيق يعمل هنا
     
     # ===== عند الإيقاف =====
-    print("\n👋 تم إيقاف التطبيق")
+    print("\nتم إيقاف التطبيق")
 
 
 # ===== إنشاء تطبيق FastAPI =====
@@ -61,7 +67,9 @@ app.include_router(api_router)
 app.include_router(pdf_router)
 
 # ===== خدمة الملفات الثابتة =====
-app.mount("/static", StaticFiles(directory="static"), name="static")
+static_dir = os.path.join(BASE_DIR, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 # ===== الصفحة الرئيسية للـ API =====
@@ -80,8 +88,8 @@ if __name__ == "__main__":
     import uvicorn
     
     print(f"\n{'='*60}")
-    print(f"🏫 {APP_TITLE}")
-    print(f"📌 الإصدار: {APP_VERSION}")
+    print(f"{APP_TITLE}")
+    print(f"الإصدار: {APP_VERSION}")
     print(f"{'='*60}\n")
     
     uvicorn.run(

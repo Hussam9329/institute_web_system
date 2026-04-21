@@ -19,7 +19,8 @@ from bidi.algorithm import get_display
 
 from config import (
     STUDENT_PDFS_DIR, TEACHER_PDFS_DIR, RECEIPTS_DIR,
-    format_currency, format_date, APP_TITLE, APP_VERSION
+    format_currency, format_date, APP_TITLE, APP_VERSION,
+    INSTITUTE_DEDUCTION_PER_STUDENT
 )
 from services.finance_service import finance_service
 from database import Database
@@ -54,11 +55,11 @@ class PDFService:
             return ""
         
         try:
-            reshaped_text = reshape(text)
+            reshaped_text = reshape(str(text))
             bidi_text = get_display(reshaped_text)
             return bidi_text
         except:
-            return text
+            return str(text)
     
     def _create_styles(self):
         """إنشاء أنماط النصوص العربية"""
@@ -149,13 +150,16 @@ class PDFService:
             str: مسار ملف PDF
         """
         # الحصول على بيانات الطالب
-        student_query = "SELECT * FROM students WHERE id = ?"
+        student_query = "SELECT * FROM students WHERE id = %s"
         student_result = self.db.execute_query(student_query, (student_id,))
         
         if not student_result:
             raise Exception("الطالب غير موجود")
         
         student = dict(student_result[0])
+        
+        # إنشاء المجلدات إذا لم تكن موجودة
+        os.makedirs(STUDENT_PDFS_DIR, exist_ok=True)
         
         # إنشاء اسم الملف
         filename = f"student_report_{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -286,7 +290,7 @@ class PDFService:
             str: مسار ملف PDF
         """
         # الحصول على بيانات المدرس
-        teacher_query = "SELECT * FROM teachers WHERE id = ?"
+        teacher_query = "SELECT * FROM teachers WHERE id = %s"
         teacher_result = self.db.execute_query(teacher_query, (teacher_id,))
         
         if not teacher_result:
@@ -299,6 +303,9 @@ class PDFService:
         balance_info = finance_service.calculate_teacher_balance(teacher_id)
         students_list = finance_service.get_teacher_students_list(teacher_id)
         recent_withdrawals = finance_service.get_teacher_recent_withdrawals(teacher_id)
+        
+        # إنشاء المجلدات إذا لم تكن موجودة
+        os.makedirs(TEACHER_PDFS_DIR, exist_ok=True)
         
         # إنشاء اسم الملف
         filename = f"teacher_report_{teacher_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -356,9 +363,9 @@ class PDFService:
             [self._arabic_text(str(due_info['paying_students_count'])), self._arabic_text("عدد الطلاب الدافعين")],
             [self._arabic_text(format_currency(INSTITUTE_DEDUCTION_PER_STUDENT)), self._arabic_text("خصم المعهد / طالب")],
             [self._arabic_text(format_currency(due_info['institute_deduction'])), self._arabic_text("إجمالي خصم المعهد")],
-            [self._arabic_text(format_currency(balance_info['teacher_due']), self._arabic_text("مستحق المدرس"))],
+            [self._arabic_text(format_currency(balance_info['teacher_due'])), self._arabic_text("مستحق المدرس")],
             [self._arabic_text(format_currency(balance_info['withdrawn_total'])), self._arabic_text("إجمالي المسحوب")],
-            [self._arabic_text(format_currency(balance_info['remaining_balance']), self._arabic_text("الرصيد المتبقي"))],
+            [self._arabic_text(format_currency(balance_info['remaining_balance'])), self._arabic_text("الرصيد المتبقي")],
         ]
         
         financial_table = Table(financial_data, colWidths=[8*cm, 7*cm])
@@ -392,7 +399,7 @@ class PDFService:
             table_data = [headers]
             
             for student in students_list:
-                status_text = "✓ دافع" if student['is_paying'] else "✗ غير دافع"
+                status_text = "دافع" if student['is_paying'] else "غير دافع"
                 row = [
                     self._arabic_text(status_text),
                     self._arabic_text(format_currency(student['paid_total'])),
@@ -474,7 +481,7 @@ class PDFService:
             FROM installments i
             JOIN students s ON i.student_id = s.id
             JOIN teachers t ON i.teacher_id = t.id
-            WHERE i.id = ?
+            WHERE i.id = %s
         '''
         installment_result = self.db.execute_query(installment_query, (installment_id,))
         
@@ -482,6 +489,9 @@ class PDFService:
             raise Exception("القسط غير موجود")
         
         installment = dict(installment_result[0])
+        
+        # إنشاء المجلدات إذا لم تكن موجودة
+        os.makedirs(RECEIPTS_DIR, exist_ok=True)
         
         # إنشاء اسم الملف
         filename = f"receipt_{installment_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"

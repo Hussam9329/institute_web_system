@@ -2,7 +2,7 @@
 # services/finance_service.py
 # المحاسبة المركزية - الدوال المالية الموحدة
 # 
-# ⚠️ مهم جداً: كل الحسابات المالية يجب أن تتم هنا فقط!
+# مهم جداً: كل الحسابات المالية يجب أن تتم هنا فقط!
 # لا تكتب أي معادلة مالية في أي مكان آخر من النظام!
 # ============================================
 
@@ -15,7 +15,12 @@ class FinanceService:
     """خدمة المحاسبة المركزية - المصدر الوحيد للحسابات المالية"""
     
     def __init__(self):
-        self.db = Database()
+        pass  # لا نحفظ اتصال في الـ constructor لأنه serverless
+    
+    @property
+    def db(self):
+        """الحصول على نسخة Database جديدة عند كل طلب"""
+        return Database()
     
     # =====================================================
     # دوال حسابات الطلاب
@@ -159,14 +164,11 @@ class FinanceService:
             int: إجمالي عدد الطلاب
         """
         query = '''
-            COUNT(*) as count
+            SELECT COUNT(*) as count
             FROM student_teacher
             WHERE teacher_id = %s
         '''
-        result = self.db.execute_query(
-            f'SELECT {query}', 
-            (teacher_id,)
-        )
+        result = self.db.execute_query(query, (teacher_id,))
         
         if result and len(result) > 0:
             return result[0]['count'] if result[0]['count'] else 0
@@ -264,12 +266,12 @@ class FinanceService:
         current_balance = balance_info['remaining_balance']
         
         if amount <= 0:
-            return False, "❌ المبلغ يجب أن يكون أكبر من صفر", current_balance
+            return False, "المبلغ يجب أن يكون أكبر من صفر", current_balance
         
         if amount > current_balance:
-            return False, f"❌ المبلغ أكبر من الرصيد المتبقي ({format_currency(current_balance)})", current_balance
+            return False, f"المبلغ أكبر من الرصيد المتبقي ({format_currency(current_balance)})", current_balance
         
-        return True, "✅ يمكن إجراء السحب", current_balance
+        return True, "يمكن إجراء السحب", current_balance
     
     def get_teacher_recent_withdrawals(self, teacher_id: int, limit: int = 5) -> List[Dict]:
         """
@@ -333,37 +335,50 @@ class FinanceService:
         """
         stats = {}
         
-        # عدد الطلاب
-        result = self.db.execute_query("SELECT COUNT(*) as count FROM students")
-        stats['total_students'] = result[0]['count'] if result else 0
-        
-        # الطلاب المستمرين
-        result = self.db.execute_query("SELECT COUNT(*) as count FROM students WHERE status = 'مستمر'")
-        stats['active_students'] = result[0]['count'] if result else 0
-        
-        # الطلاب المنسحبين
-        result = self.db.execute_query("SELECT COUNT(*) as count FROM students WHERE status = 'منسحب'")
-        stats['withdrawn_students'] = result[0]['count'] if result else 0
-        
-        # عدد المدرسين
-        result = self.db.execute_query("SELECT COUNT(*) as count FROM teachers")
-        stats['total_teachers'] = result[0]['count'] if result else 0
-        
-        # عدد المواد (الفريدة)
-        result = self.db.execute_query("SELECT COUNT(DISTINCT subject) as count FROM teachers")
-        stats['total_subjects'] = result[0]['count'] if result else 0
-        
-        # عدد الأقساط
-        result = self.db.execute_query("SELECT COUNT(*) as count FROM installments")
-        stats['total_installments'] = result[0]['count'] if result else 0
-        
-        # إجمالي المبالغ المدفوعة
-        result = self.db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM installments")
-        stats['total_amount_paid'] = result[0]['total'] if result else 0
-        
-        # إجمالي السحوبات
-        result = self.db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals")
-        stats['total_withdrawals'] = result[0]['total'] if result else 0
+        try:
+            # عدد الطلاب
+            result = self.db.execute_query("SELECT COUNT(*) as count FROM students")
+            stats['total_students'] = result[0]['count'] if result else 0
+            
+            # الطلاب المستمرين
+            result = self.db.execute_query("SELECT COUNT(*) as count FROM students WHERE status = 'مستمر'")
+            stats['active_students'] = result[0]['count'] if result else 0
+            
+            # الطلاب المنسحبين
+            result = self.db.execute_query("SELECT COUNT(*) as count FROM students WHERE status = 'منسحب'")
+            stats['withdrawn_students'] = result[0]['count'] if result else 0
+            
+            # عدد المدرسين
+            result = self.db.execute_query("SELECT COUNT(*) as count FROM teachers")
+            stats['total_teachers'] = result[0]['count'] if result else 0
+            
+            # عدد المواد (الفريدة)
+            result = self.db.execute_query("SELECT COUNT(DISTINCT subject) as count FROM teachers")
+            stats['total_subjects'] = result[0]['count'] if result else 0
+            
+            # عدد الأقساط
+            result = self.db.execute_query("SELECT COUNT(*) as count FROM installments")
+            stats['total_installments'] = result[0]['count'] if result else 0
+            
+            # إجمالي المبالغ المدفوعة
+            result = self.db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM installments")
+            stats['total_amount_paid'] = result[0]['total'] if result else 0
+            
+            # إجمالي السحوبات
+            result = self.db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals")
+            stats['total_withdrawals'] = result[0]['total'] if result else 0
+        except Exception as e:
+            print(f"Error getting statistics: {e}")
+            stats = {
+                'total_students': 0,
+                'active_students': 0,
+                'withdrawn_students': 0,
+                'total_teachers': 0,
+                'total_subjects': 0,
+                'total_installments': 0,
+                'total_amount_paid': 0,
+                'total_withdrawals': 0
+            }
         
         return stats
 

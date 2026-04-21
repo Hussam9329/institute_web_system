@@ -3,15 +3,16 @@
 # المسارات الرئيسية للصفحات HTML
 # ============================================
 
+import os
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import Database
 from services.finance_service import finance_service
-from config import get_current_date, format_currency
+from config import get_current_date, format_currency, BASE_DIR
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -94,7 +95,7 @@ async def student_add(
         get_current_date()
     ))
     
-    return RedirectResponse(url="/students%smsg=added", status_code=303)
+    return RedirectResponse(url="/students?msg=added", status_code=303)
 
 
 @router.get("/students/{student_id}/edit", response_class=HTMLResponse)
@@ -106,7 +107,7 @@ async def student_edit_form(request: Request, student_id: int):
     result = db.execute_query(query, (student_id,))
     
     if not result:
-        return RedirectResponse(url="/students%serror=not_found", status_code=303)
+        return RedirectResponse(url="/students?error=not_found", status_code=303)
     
     return templates.TemplateResponse("students/form.html", {
         "request": request,
@@ -142,7 +143,7 @@ async def student_update(
         status, notes, student_id
     ))
     
-    return RedirectResponse(url="/students%smsg=updated", status_code=303)
+    return RedirectResponse(url="/students?msg=updated", status_code=303)
 
 
 @router.get("/students/{student_id}", response_class=HTMLResponse)
@@ -155,7 +156,7 @@ async def student_profile(request: Request, student_id: int):
     student_result = db.execute_query(student_query, (student_id,))
     
     if not student_result:
-        return RedirectResponse(url="/students%serror=not_found", status_code=303)
+        return RedirectResponse(url="/students?error=not_found", status_code=303)
     
     student = dict(student_result[0])
     
@@ -184,7 +185,7 @@ async def student_delete(request: Request, student_id: int):
     # حذف الطالب
     db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
     
-    return RedirectResponse(url="/students%smsg=deleted", status_code=303)
+    return RedirectResponse(url="/students?msg=deleted", status_code=303)
 
 
 @router.get("/teachers", response_class=HTMLResponse)
@@ -240,7 +241,7 @@ async def teacher_add(
     
     db.execute_query(insert_query, (name, subject, total_fee, notes, get_current_date()))
     
-    return RedirectResponse(url="/teachers%smsg=added", status_code=303)
+    return RedirectResponse(url="/teachers?msg=added", status_code=303)
 
 
 @router.get("/teachers/{teacher_id}/edit", response_class=HTMLResponse)
@@ -252,7 +253,7 @@ async def teacher_edit_form(request: Request, teacher_id: int):
     result = db.execute_query(query, (teacher_id,))
     
     if not result:
-        return RedirectResponse(url="/teachers%serror=not_found", status_code=303)
+        return RedirectResponse(url="/teachers?error=not_found", status_code=303)
     
     return templates.TemplateResponse("teachers/form.html", {
         "request": request,
@@ -281,7 +282,7 @@ async def teacher_update(
     
     db.execute_query(update_query, (name, subject, total_fee, notes, teacher_id))
     
-    return RedirectResponse(url="/teachers%smsg=updated", status_code=303)
+    return RedirectResponse(url="/teachers?msg=updated", status_code=303)
 
 
 @router.get("/teachers/{teacher_id}", response_class=HTMLResponse)
@@ -294,7 +295,7 @@ async def teacher_detail(request: Request, teacher_id: int):
     teacher_result = db.execute_query(teacher_query, (teacher_id,))
     
     if not teacher_result:
-        return RedirectResponse(url="/teachers%serror=not_found", status_code=303)
+        return RedirectResponse(url="/teachers?error=not_found", status_code=303)
     
     teacher = dict(teacher_result[0])
     
@@ -330,7 +331,7 @@ async def teacher_delete(request: Request, teacher_id: int):
     # حذف المدرس
     db.execute_query("DELETE FROM teachers WHERE id = %s", (teacher_id,))
     
-    return RedirectResponse(url="/teachers%smsg=deleted", status_code=303)
+    return RedirectResponse(url="/teachers?msg=deleted", status_code=303)
 
 
 @router.get("/accounting", response_class=HTMLResponse)
