@@ -8,7 +8,7 @@
     <!-- ===== عنوان الصفحة ===== -->
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="fw-bold text-primary">
+            <h2 class="fw-bold text-gradient-blue">
                 <i class="fas fa-tachometer-alt me-2"></i>لوحة التحكم
             </h2>
             <p class="text-muted">مرحباً بك في نظام إدارة المعهد المتكامل</p>
@@ -20,23 +20,21 @@
         
         <!-- بطاقة الطلاب -->
         <div class="col-xl-3 col-md-6">
-            <div class="card stat-card bg-primary text-white h-100 shadow-sm">
+            <div class="card stat-card bg-gradient-blue text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title opacity-75">إجمالي الطلاب</h6>
                             <h2 class="fw-bold mb-0">{{ stats.total_students }}</h2>
                         </div>
-                        <div class="stat-icon bg-white bg-opacity-25 rounded-circle p-3">
-                            <i class="fas fa-user-graduate fa-2x"></i>
+                        <div class="stat-icon bg-white bg-opacity-20 rounded-3 p-3">
+                            <i class="fas fa-user-graduate fa-xl"></i>
                         </div>
                     </div>
                     <div class="mt-3 small opacity-75">
-                        <i class="fas fa-check-circle me-1"></i>
-                        {{ stats.active_students }} مستمر
-                        <span class="mx-2">|</span>
-                        <i class="fas fa-times-circle me-1"></i>
-                        {{ stats.withdrawn_students }} منسحب
+                        <i class="fas fa-check-circle me-1"></i>{{ stats.active_students }} مستمر
+                        <span class="mx-1">|</span>
+                        <i class="fas fa-times-circle me-1"></i>{{ stats.withdrawn_students }} منسحب
                     </div>
                 </div>
             </div>
@@ -44,20 +42,19 @@
 
         <!-- بطاقة المدرسين -->
         <div class="col-xl-3 col-md-6">
-            <div class="card stat-card bg-success text-white h-100 shadow-sm">
+            <div class="card stat-card bg-gradient-emerald text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title opacity-75">إجمالي المدرسين</h6>
                             <h2 class="fw-bold mb-0">{{ stats.total_teachers }}</h2>
                         </div>
-                        <div class="stat-icon bg-white bg-opacity-25 rounded-circle p-3">
-                            <i class="fas fa-chalkboard-teacher fa-2x"></i>
+                        <div class="stat-icon bg-white bg-opacity-20 rounded-3 p-3">
+                            <i class="fas fa-chalkboard-teacher fa-xl"></i>
                         </div>
                     </div>
                     <div class="mt-3 small opacity-75">
-                        <i class="fas fa-book me-1"></i>
-                        {{ stats.total_subjects }} مواد دراسية
+                        <i class="fas fa-book me-1"></i>{{ stats.total_subjects }} مواد دراسية
                     </div>
                 </div>
             </div>
@@ -65,20 +62,19 @@
 
         <!-- بطاقة الأقساط -->
         <div class="col-xl-3 col-md-6">
-            <div class="card stat-card bg-info text-white h-100 shadow-sm">
+            <div class="card stat-card bg-gradient-purple text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title opacity-75">عدد الأقساط</h6>
                             <h2 class="fw-bold mb-0">{{ stats.total_installments }}</h2>
                         </div>
-                        <div class="stat-icon bg-white bg-opacity-25 rounded-circle p-3">
-                            <i class="fas fa-money-bill-wave fa-2x"></i>
+                        <div class="stat-icon bg-white bg-opacity-20 rounded-3 p-3">
+                            <i class="fas fa-money-bill-wave fa-xl"></i>
                         </div>
                     </div>
                     <div class="mt-3 small opacity-75">
-                        <i class="fas fa-coins me-1"></i>
-                        {{ format_currency(stats.total_amount_paid) }} إجمالي المدفوع
+                        <i class="fas fa-coins me-1"></i>{{ format_currency(stats.total_amount_paid) }} إجمالي المدفوع
                     </div>
                 </div>
             </div>
@@ -86,20 +82,19 @@
 
         <!-- بطاقة السحوبات -->
         <div class="col-xl-3 col-md-6">
-            <div class="card stat-card bg-warning text-dark h-100 shadow-sm">
+            <div class="card stat-card bg-gradient-orange text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title opacity-75">إجمالي السحوبات</h6>
                             <h2 class="fw-bold mb-0">{{ format_currency(stats.total_withdrawals) }}</h2>
                         </div>
-                        <div class="stat-icon bg-dark bg-opacity-25 rounded-circle p-3">
-                            <i class="fas fa-hand-holding-usd fa-2x"></i>
+                        <div class="stat-icon bg-white bg-opacity-20 rounded-3 p-3">
+                            <i class="fas fa-hand-holding-usd fa-xl"></i>
                         </div>
                     </div>
                     <div class="mt-3 small opacity-75">
-                        <i class="fas fa-wallet me-1"></i>
-                        صرفت للمدرسين
+                        <i class="fas fa-wallet me-1"></i>صرفت للمدرسين
                     </div>
                 </div>
             </div>
@@ -108,38 +103,50 @@
     </div>
 
     <!-- ===== أزرار الوصول السريع ===== -->
-    <div class="row g-4">
+    <div class="row g-4 mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0 fw-bold">
                         <i class="fas fa-bolt text-warning me-2"></i>وصول سريع
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-3 col-sm-6">
-                            <a href="/students/add" class="btn btn-primary btn-lg w-100 py-3">
-                                <i class="fas fa-user-plus d-block fs-2 mb-2"></i>
-                                إضافة طالب جديد
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="/students/add" class="btn btn-gradient-blue btn-lg w-100 py-3">
+                                <i class="fas fa-user-plus d-block fs-3 mb-2"></i>
+                                <small>إضافة طالب</small>
                             </a>
                         </div>
-                        <div class="col-md-3 col-sm-6">
-                            <a href="/teachers/add" class="btn btn-success btn-lg w-100 py-3">
-                                <i class="fas fa-chalkboard-teacher d-block fs-2 mb-2"></i>
-                                إضافة مدرس جديد
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="/teachers/add" class="btn btn-gradient-emerald btn-lg w-100 py-3">
+                                <i class="fas fa-chalkboard-teacher d-block fs-3 mb-2"></i>
+                                <small>إضافة مدرس</small>
                             </a>
                         </div>
-                        <div class="col-md-3 col-sm-6">
-                            <a href="/accounting" class="btn btn-info btn-lg w-100 py-3 text-white">
-                                <i class="fas fa-calculator d-block fs-2 mb-2"></i>
-                                محاسبة المدرسين
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="/subjects" class="btn btn-gradient-purple btn-lg w-100 py-3">
+                                <i class="fas fa-book-open d-block fs-3 mb-2"></i>
+                                <small>المواد</small>
                             </a>
                         </div>
-                        <div class="col-md-3 col-sm-6">
-                            <a href="/stats" class="btn btn-secondary btn-lg w-100 py-3">
-                                <i class="fas fa-chart-pie d-block fs-2 mb-2"></i>
-                                الإحصائيات التفصيلية
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="/payments" class="btn btn-gradient-orange btn-lg w-100 py-3">
+                                <i class="fas fa-money-check-alt d-block fs-3 mb-2"></i>
+                                <small>الأقساط</small>
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="/accounting" class="btn btn-outline-primary btn-lg w-100 py-3">
+                                <i class="fas fa-calculator d-block fs-3 mb-2"></i>
+                                <small>المحاسبة</small>
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-sm-4 col-6">
+                            <a href="/reports" class="btn btn-outline-success btn-lg w-100 py-3">
+                                <i class="fas fa-chart-line d-block fs-3 mb-2"></i>
+                                <small>التقارير</small>
                             </a>
                         </div>
                     </div>
@@ -147,6 +154,50 @@
             </div>
         </div>
     </div>
+
+    <!-- ===== آخر الأقساط ===== -->
+    {% if recent_installments %}
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-history text-purple me-2"></i>آخر المدفوعات
+                    </h5>
+                    <a href="/payments" class="btn btn-sm btn-gradient-purple">عرض الكل</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>الطالب</th>
+                                    <th>المدرس</th>
+                                    <th>المادة</th>
+                                    <th class="text-center">المبلغ</th>
+                                    <th class="text-center">النوع</th>
+                                    <th>التاريخ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inst in recent_installments %}
+                                <tr>
+                                    <td class="fw-semibold">{{ inst.student_name }}</td>
+                                    <td>{{ inst.teacher_name }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ inst.subject }}</span></td>
+                                    <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
+                                    <td class="text-center"><span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span></td>
+                                    <td class="text-muted">{{ inst.payment_date }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 {% endblock %}

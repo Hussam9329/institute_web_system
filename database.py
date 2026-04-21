@@ -54,6 +54,15 @@ def init_db():
     cursor = conn.cursor()
     
     try:
+        # جدول المواد الدراسية
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS subjects (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL UNIQUE,
+                created_at TEXT NOT NULL
+            )
+        ''')
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS students (
                 id SERIAL PRIMARY KEY,

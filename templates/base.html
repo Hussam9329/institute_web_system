@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts - Cairo -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
@@ -23,11 +23,11 @@
 <body>
 
     <!-- ===== شريط التنقل العلوي ===== -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
             <!-- الشعار والعنوان -->
             <a class="navbar-brand fw-bold" href="/">
-                <i class="fas fa-school me-2"></i>نظام إدارة المعهد
+                <i class="fas fa-graduation-cap me-2"></i>نظام إدارة المعهد
             </a>
             
             <!-- زر القائمة للجوال -->
@@ -54,19 +54,41 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if '/subjects' in request.url.path %}active{% endif %}" href="/subjects">
+                            <i class="fas fa-book-open me-1"></i>المواد
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/payments' in request.url.path %}active{% endif %}" href="/payments">
+                            <i class="fas fa-money-check-alt me-1"></i>الأقساط
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if '/accounting' in request.url.path %}active{% endif %}" href="/accounting">
                             <i class="fas fa-calculator me-1"></i>المحاسبة
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if '/stats' in request.url.path %}active{% endif %}" href="/stats">
-                            <i class="fas fa-chart-bar me-1"></i>الإحصائيات
+                        <a class="nav-link {% if '/reports' in request.url.path %}active{% endif %}" href="/reports">
+                            <i class="fas fa-chart-line me-1"></i>التقارير
                         </a>
                     </li>
                 </ul>
                 
+                <!-- البحث الشامل -->
+                <div class="global-search-container me-3 d-none d-lg-block" style="width: 280px;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 bg-white" id="globalSearchInput"
+                               placeholder="بحث سريع..." autocomplete="off">
+                    </div>
+                    <div class="global-search-results" id="globalSearchResults"></div>
+                </div>
+                
                 <!-- الوقت والتاريخ -->
-                <div class="text-white d-none d-lg-block">
+                <div class="text-white d-none d-lg-block small">
                     <i class="fas fa-clock me-1"></i>
                     <span id="current-datetime"></span>
                 </div>
@@ -80,13 +102,13 @@
     </main>
 
     <!-- ===== التذييل ===== -->
-    <footer class="bg-dark text-white py-3 mt-5">
+    <footer class="text-white py-3 mt-5">
         <div class="container text-center">
-            <p class="mb-0">
-                <i class="fas fa-code me-1"></i>
+            <p class="mb-0 small">
+                <i class="fas fa-graduation-cap me-1"></i>
                 نظام إدارة المعهد المتكامل v2.0
-                <span class="mx-2">|</span>
-                © 2024 جميع الحقوق محفوظة
+                <span class="mx-2 opacity-50">|</span>
+                جميع الحقوق محفوظة &copy; 2024
             </p>
         </div>
     </footer>
@@ -101,6 +123,89 @@
     <!-- Custom JS -->
     <script src="/static/js/utils.js"></script>
     <script src="/static/js/app.js"></script>
+    
+    <!-- البحث الشامل -->
+    <script>
+    let searchTimeout;
+    const searchInput = document.getElementById('globalSearchInput');
+    const searchResults = document.getElementById('globalSearchResults');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.classList.remove('show');
+                return;
+            }
+            
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const result = await apiRequest(`/api/search?q=${encodeURIComponent(query)}`);
+                    let html = '';
+                    
+                    if (result.data.students && result.data.students.length > 0) {
+                        html += '<div class="search-result-label"><i class="fas fa-user-graduate me-1"></i>الطلاب</div>';
+                        result.data.students.forEach(s => {
+                            html += `<a href="/students/${s.id}" class="search-result-item">
+                                <div class="fw-semibold">${s.name}</div>
+                                <small class="text-muted">${s.barcode} | ${s.study_type} | ${s.status}</small>
+                            </a>`;
+                        });
+                    }
+                    
+                    if (result.data.teachers && result.data.teachers.length > 0) {
+                        html += '<div class="search-result-label"><i class="fas fa-chalkboard-teacher me-1"></i>المدرسين</div>';
+                        result.data.teachers.forEach(t => {
+                            html += `<a href="/teachers/${t.id}" class="search-result-item">
+                                <div class="fw-semibold">${t.name}</div>
+                                <small class="text-muted">${t.subject} | ${formatCurrency(t.total_fee)}</small>
+                            </a>`;
+                        });
+                    }
+                    
+                    if (result.data.subjects && result.data.subjects.length > 0) {
+                        html += '<div class="search-result-label"><i class="fas fa-book-open me-1"></i>المواد</div>';
+                        result.data.subjects.forEach(s => {
+                            html += `<a href="/subjects" class="search-result-item">
+                                <div class="fw-semibold">${s.name}</div>
+                            </a>`;
+                        });
+                    }
+                    
+                    if (!html) {
+                        html = '<div class="text-center py-3 text-muted">لا توجد نتائج</div>';
+                    }
+                    
+                    searchResults.innerHTML = html;
+                    searchResults.classList.add('show');
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+        
+        // إخفاء نتائج البحث عند النقر خارجها
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.remove('show');
+            }
+        });
+        
+        // اختصار Ctrl+K للبحث
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+            if (e.key === 'Escape') {
+                searchResults.classList.remove('show');
+                searchInput.blur();
+            }
+        });
+    }
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

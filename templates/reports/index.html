@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}التقارير - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ===== عنوان الصفحة ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-gradient-blue mb-1">
+                <i class="fas fa-chart-line me-2"></i>التقارير الشاملة
+            </h2>
+            <p class="text-muted mb-0">ملخص شامل لجميع البيانات المالية والإدارية</p>
+        </div>
+    </div>
+
+    <!-- ===== تبويبات التقارير ===== -->
+    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="reportTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
+                <i class="fas fa-tachometer-alt me-1"></i>نظرة عامة
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#studentsReport" type="button">
+                <i class="fas fa-user-graduate me-1"></i>تقارير الطلاب
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachersReport" type="button">
+                <i class="fas fa-chalkboard-teacher me-1"></i>تقارير المدرسين
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="reportTabsContent">
+
+        <!-- ===== نظرة عامة ===== -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm stat-mini bg-gradient-blue text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="opacity-75">إجمالي الطلاب</small>
+                                    <h3 class="fw-bold mb-0">{{ stats.total_students }}</h3>
+                                    <small class="opacity-75">{{ stats.active_students }} مستمر</small>
+                                </div>
+                                <i class="fas fa-user-graduate fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm stat-mini bg-gradient-emerald text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="opacity-75">إجمالي المدرسين</small>
+                                    <h3 class="fw-bold mb-0">{{ stats.total_teachers }}</h3>
+                                    <small class="opacity-75">{{ stats.total_subjects }} مادة</small>
+                                </div>
+                                <i class="fas fa-chalkboard-teacher fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm stat-mini bg-gradient-purple text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="opacity-75">إجمالي المدفوعات</small>
+                                    <h3 class="fw-bold mb-0">{{ format_currency(stats.total_amount_paid) }}</h3>
+                                    <small class="opacity-75">{{ stats.total_installments }} عملية</small>
+                                </div>
+                                <i class="fas fa-coins fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-0 shadow-sm stat-mini bg-gradient-orange text-white h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="opacity-75">إجمالي السحوبات</small>
+                                    <h3 class="fw-bold mb-0">{{ format_currency(stats.total_withdrawals) }}</h3>
+                                    <small class="opacity-75">صرفت للمدرسين</small>
+                                </div>
+                                <i class="fas fa-hand-holding-usd fa-2x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== تقارير الطلاب ===== -->
+        <div class="tab-pane fade" id="studentsReport" role="tabpanel">
+            <!-- بحث -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0" id="studentSearchInput"
+                               placeholder="بحث عن طالب..." oninput="filterStudentReports()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle" id="studentsReportTable">
+                            <thead class="table-gradient-blue">
+                                <tr>
+                                    <th>#</th>
+                                    <th>الطالب</th>
+                                    <th class="text-center">نوع الدراسة</th>
+                                    <th class="text-center">الحالة</th>
+                                    <th class="text-center">عدد المدرسين</th>
+                                    <th class="text-center">الإجمالي المطلوب</th>
+                                    <th class="text-center">المدفوع</th>
+                                    <th class="text-center">المتبقي</th>
+                                    <th class="text-center">نسبة الدفع</th>
+                                    <th class="text-center">تفاصيل</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students_report %}
+                                <tr class="student-row" data-name="{{ student.name|lower }}">
+                                    <td class="fw-bold text-muted">{{ loop.index }}</td>
+                                    <td class="fw-semibold">{{ student.name }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
+                                            {{ student.study_type }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
+                                            {{ student.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">{{ student.teachers_count }}</td>
+                                    <td class="text-center fw-bold">{{ format_currency(student.total_fee) }}</td>
+                                    <td class="text-center text-success fw-bold">{{ format_currency(student.total_paid) }}</td>
+                                    <td class="text-center">
+                                        <span class="fw-bold {% if student.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ format_currency(student.total_remaining) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% set pct = ((student.total_paid / student.total_fee) * 100) if student.total_fee > 0 else 0 %}
+                                        <div class="progress" style="height: 20px; min-width: 80px;">
+                                            <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-info{% else %}bg-warning{% endif %}" 
+                                                 style="width: {{ min(pct, 100) }}%">
+                                                {{ "%.0f"|format(pct) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="/students/{{ student.id }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="10" class="text-center py-5">
+                                        <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
+                                        <p class="text-muted">لا يوجد طلاب مسجلين</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== تقارير المدرسين ===== -->
+        <div class="tab-pane fade" id="teachersReport" role="tabpanel">
+            <!-- بحث -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0" id="teacherSearchInput"
+                               placeholder="بحث عن مدرس..." oninput="filterTeacherReports()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle" id="teachersReportTable">
+                            <thead class="table-gradient-emerald">
+                                <tr>
+                                    <th>#</th>
+                                    <th>المدرس</th>
+                                    <th>المادة</th>
+                                    <th class="text-center">عدد الطلاب</th>
+                                    <th class="text-center">إجمالي الاستلامات</th>
+                                    <th class="text-center">خصم المعهد</th>
+                                    <th class="text-center">مستحق المدرس</th>
+                                    <th class="text-center">المسحوب</th>
+                                    <th class="text-center">المتبقي</th>
+                                    <th class="text-center">تفاصيل</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in teachers_report %}
+                                <tr class="teacher-row" data-name="{{ teacher.name|lower }}">
+                                    <td class="fw-bold text-muted">{{ loop.index }}</td>
+                                    <td class="fw-semibold">{{ teacher.name }}</td>
+                                    <td><span class="badge bg-light text-dark">{{ teacher.subject }}</span></td>
+                                    <td class="text-center">{{ teacher.students_count }}</td>
+                                    <td class="text-center fw-bold text-primary">
+                                        {{ format_currency(teacher.financial.get('total_received', 0)) }}
+                                    </td>
+                                    <td class="text-center text-danger">
+                                        {{ format_currency(teacher.financial.get('institute_deduction', 0)) }}
+                                    </td>
+                                    <td class="text-center fw-bold text-success">
+                                        {{ format_currency(teacher.financial.get('teacher_due', 0)) }}
+                                    </td>
+                                    <td class="text-center text-warning">
+                                        {{ format_currency(teacher.financial.get('withdrawn_total', 0)) }}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge fs-6 {% if teacher.financial.get('remaining_balance', 0) > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ format_currency(teacher.financial.get('remaining_balance', 0)) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="/teachers/{{ teacher.id }}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="10" class="text-center py-5">
+                                        <i class="fas fa-chalkboard-teacher fa-3x text-muted d-block mb-3"></i>
+                                        <p class="text-muted">لا يوجد مدرسين مسجلين</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function filterStudentReports() {
+    const query = document.getElementById('studentSearchInput').value.toLowerCase();
+    document.querySelectorAll('.student-row').forEach(row => {
+        row.style.display = row.dataset.name.includes(query) ? '' : 'none';
+    });
+}
+
+function filterTeacherReports() {
+    const query = document.getElementById('teacherSearchInput').value.toLowerCase();
+    document.querySelectorAll('.teacher-row').forEach(row => {
+        row.style.display = row.dataset.name.includes(query) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

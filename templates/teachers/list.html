@@ -10,115 +10,117 @@
         <div class="col-12">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
-                    <h2 class="fw-bold text-success mb-1">
+                    <h2 class="fw-bold text-gradient-emerald mb-1">
                         <i class="fas fa-chalkboard-teacher me-2"></i>إدارة المدرسين
                     </h2>
                     <p class="text-muted mb-0">{{ teachers|length }} مدرس مسجل</p>
                 </div>
-                <a href="/teachers/add" class="btn btn-success">
+                <a href="/teachers/add" class="btn btn-gradient-emerald">
                     <i class="fas fa-plus me-1"></i>إضافة مدرس
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- ===== فلتر المواد ===== -->
-    {% if subjects %}
+    <!-- ===== فلتر المواد + بحث ===== -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body py-3">
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <span class="fw-bold me-2">
-                            <i class="fas fa-filter me-1"></i>فلتر حسب المادة:
-                        </span>
-                        <a href="/teachers" class="btn btn-outline-primary btn-sm {% if not selected_subject %}active{% endif %}">
-                            الكل
-                        </a>
-                        {% for subject in subjects %}
-                        <a href="/teachers?subject={{ subject.subject }}" 
-                           class="btn btn-outline-primary btn-sm {% if selected_subject == subject.subject %}active{% endif %}">
-                            {{ subject.subject }}
-                        </a>
-                        {% endfor %}
-                    </div>
+                    <form method="GET" action="/teachers" class="row g-2 align-items-center">
+                        <div class="col-md-7">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                                       placeholder="بحث بالاسم أو المادة..." id="teacherLiveSearch">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="subject" class="form-select" onchange="this.form.submit()">
+                                <option value="">كل المواد</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject }}" {% if selected_subject == subject %}selected{% endif %}>{{ subject }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-gradient-emerald w-100">
+                                <i class="fas fa-search me-1"></i>بحث
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
 
-    <!-- ===== جدول المدرسين حسب المادة ===== -->
-    {% set current_subject = "" %}
-    {% for teacher in teachers %}
-    
-    {% if current_subject != teacher.subject %}
-        {% if current_subject != "" %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-        {% endif %}
-    
-    {% set current_subject = teacher.subject %}
-    <div class="row mb-4">
+    <!-- ===== جدول المدرسين ===== -->
+    <div class="row">
         <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-book me-2"></i>{{ teacher.subject }}
-                    </h5>
-                </div>
+            <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 align-middle">
-                            <thead class="table-dark">
+                        <table class="table table-hover mb-0 align-middle" id="teachersTable">
+                            <thead class="table-gradient-emerald">
                                 <tr>
-                                    <th>#</th>
+                                    <th class="text-center" style="width:50px">#</th>
                                     <th>اسم المدرس</th>
+                                    <th class="text-center">المادة</th>
                                     <th class="text-center">الأجر الكلي</th>
-                                    <th class="text-center">الإجراءات</th>
+                                    <th class="text-center">عدد الطلاب</th>
+                                    <th class="text-center" style="width:160px">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
-    {% endif %}
-
-                                <tr>
-                                    <td class="fw-bold">{{ loop.index }}</td>
+                                {% for teacher in teachers %}
+                                <tr class="teacher-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
+                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
-                                        <a href="/teachers/{{ teacher.id }}" class="text-decoration-none fw-bold text-success">
+                                        <a href="/teachers/{{ teacher.id }}" class="text-decoration-none fw-semibold text-success">
                                             {{ teacher.name }}
                                         </a>
                                         {% if teacher.notes %}
                                         <br><small class="text-muted">{{ teacher.notes[:40] }}</small>
                                         {% endif %}
                                     </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
+                                    </td>
                                     <td class="text-center fw-bold text-primary">
                                         {{ format_currency(teacher.total_fee) }}
                                     </td>
                                     <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
+                                    </td>
+                                    <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="/teachers/{{ teacher.id }}" class="btn btn-info" title="التفاصيل">
+                                            <a href="/teachers/{{ teacher.id }}" class="btn btn-outline-success" title="التفاصيل">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-warning" title="تعديل">
+                                            <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning" title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-danger" target="_blank" title="تقرير PDF">
+                                            <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-danger" target="_blank" title="PDF">
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
-                                            <button type="button" class="btn btn-danger" title="حذف"
+                                            <button type="button" class="btn btn-outline-danger" title="حذف"
                                                     onclick="confirmDelete({{ teacher.id }}, '{{ teacher.name }}')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-
-    {% endfor %}
-
-    {% if teachers %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="fas fa-chalkboard-teacher fa-3x text-muted d-block mb-3"></i>
+                                        <p class="text-muted mb-0">لا يوجد مدرسين مسجلين</p>
+                                        <a href="/teachers/add" class="btn btn-gradient-emerald mt-3">
+                                            <i class="fas fa-plus me-1"></i>أضف مدرس جديد
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -126,23 +128,6 @@
             </div>
         </div>
     </div>
-    {% endif %}
-
-    {% if not teachers %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-body text-center py-5">
-                    <i class="fas fa-chalkboard-teacher fa-3x text-muted d-block mb-3"></i>
-                    <p class="text-muted mb-0">لا يوجد مدرسين مسجلين</p>
-                    <a href="/teachers/add" class="btn btn-success mt-3">
-                        <i class="fas fa-plus me-1"></i>أضف مدرس جديد
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
 </div>
 
@@ -150,10 +135,20 @@
 
 <script>
 function confirmDelete(id, name) {
-    if (confirm(`هل أنت متأكد من حذف المدرس "${name}"؟\n\n⚠️ سيتم حذف جميع بياناته!`)) {
+    if (confirm(`هل أنت متأكد من حذف المدرس "${name}"؟\n\nسيتم حذف جميع بياناته!`)) {
         document.getElementById('deleteForm').action = `/teachers/${id}/delete`;
         document.getElementById('deleteForm').submit();
     }
 }
+
+// بحث مباشر
+document.getElementById('teacherLiveSearch')?.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.teacher-row').forEach(row => {
+        const name = row.dataset.name || '';
+        const subject = row.dataset.subject || '';
+        row.style.display = (name.includes(query) || subject.includes(query)) ? '' : 'none';
+    });
+});
 </script>
 {% endblock %}

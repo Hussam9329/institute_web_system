@@ -9,8 +9,8 @@
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
 
-            <div class="card shadow">
-                <div class="card-header bg-success text-white py-3">
+            <div class="card border-0 shadow-lg overflow-hidden">
+                <div class="card-header bg-gradient-emerald text-white py-3 border-0">
                     <h4 class="mb-0 fw-bold">
                         {% if mode == 'add' %}
                         <i class="fas fa-user-plus me-2"></i>إضافة مدرس جديد
@@ -30,8 +30,8 @@
 
                         <!-- اسم المدرس -->
                         <div class="mb-3">
-                            <label for="name" class="form-label fw-bold required">
-                                <i class="fas fa-user me-1"></i>اسم المدرس الكامل
+                            <label for="name" class="form-label fw-bold">
+                                <i class="fas fa-user me-1 text-emerald"></i>اسم المدرس الكامل <span class="text-danger">*</span>
                             </label>
                             <input type="text" class="form-control form-control-lg" id="name" name="name"
                                    value="{{ teacher.name if teacher else '' }}" required
@@ -39,30 +39,36 @@
                                    minlength="2" maxlength="100">
                         </div>
 
-                        <!-- المادة -->
+                        <!-- المادة - Combo من المواد المدخلة -->
                         <div class="mb-3">
-                            <label for="subject" class="form-label fw-bold required">
-                                <i class="fas fa-book me-1"></i>المادة التي يدرسها
+                            <label for="subject" class="form-label fw-bold">
+                                <i class="fas fa-book me-1 text-emerald"></i>المادة التي يدرسها <span class="text-danger">*</span>
                             </label>
-                            <input type="text" class="form-control form-control-lg" id="subject" name="subject"
-                                   value="{{ teacher.subject if teacher else '' }}" required
-                                   placeholder="مثال: رياضيات، فيزياء، لغة عربية..."
-                                   list="subjects-list">
-                            <datalist id="subjects-list">
-                                <option value="رياضيات">
-                                <option value="فيزياء">
-                                <option value="كيمياء">
-                                <option value="أحياء">
-                                <option value="لغة عربية">
-                                <option value="لغة إنجليزية">
-                                <option value="حاسوب">
-                            </datalist>
+                            <div class="input-group">
+                                <select class="form-select form-select-lg" id="subject_select" onchange="handleSubjectChange()">
+                                    <option value="">-- اختر مادة أو أدخل جديدة --</option>
+                                    {% for subject in subjects %}
+                                    <option value="{{ subject.name }}" {% if teacher and teacher.subject == subject.name %}selected{% endif %}>
+                                        {{ subject.name }}
+                                    </option>
+                                    {% endfor %}
+                                    <option value="__new__">+ إضافة مادة جديدة...</option>
+                                </select>
+                            </div>
+                            <input type="text" class="form-control form-control-lg mt-2 d-none" id="subject_new"
+                                   placeholder="أدخل اسم المادة الجديدة" maxlength="100">
+                            <input type="hidden" name="subject" id="subject_hidden" value="{{ teacher.subject if teacher else '' }}">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                اختر من المواد المسجلة أو أضف مادة جديدة. 
+                                <a href="/subjects" class="text-emerald">إدارة المواد</a>
+                            </div>
                         </div>
 
                         <!-- الأجر الكلي -->
                         <div class="mb-3">
-                            <label for="total_fee" class="form-label fw-bold required">
-                                <i class="fas fa-money-bill-wave me-1"></i>الأجر الكلي (بالدينار)
+                            <label for="total_fee" class="form-label fw-bold">
+                                <i class="fas fa-money-bill-wave me-1 text-emerald"></i>الأجر الكلي (بالدينار)
                             </label>
                             <input type="number" class="form-control form-control-lg" id="total_fee" name="total_fee"
                                    value="{{ teacher.total_fee if teacher else 0 }}" required min="0"
@@ -76,22 +82,22 @@
                         <!-- ملاحظات -->
                         <div class="mb-4">
                             <label for="notes" class="form-label fw-bold">
-                                <i class="fas fa-sticky-note me-1"></i>ملاحظات (اختياري)
+                                <i class="fas fa-sticky-note me-1 text-emerald"></i>ملاحظات (اختياري)
                             </label>
                             <textarea class="form-control" id="notes" name="notes" rows="3"
                                       placeholder="أي ملاحظات إضافية...">{{ teacher.notes if teacher else '' }}</textarea>
                         </div>
 
                         <!-- أزرار الإجراءات -->
-                        <div class="d-flex justify-content-between gap-3">
-                            <a href="/teachers" class="btn btn-outline-secondary btn-lg px-4">
+                        <div class="d-flex justify-content-between gap-3 pt-3 border-top">
+                            <a href="/teachers" class="btn btn-light btn-lg px-4">
                                 <i class="fas fa-arrow-right me-1"></i>رجوع
                             </a>
                             <div class="gap-2 d-flex">
-                                <button type="reset" class="btn btn-outline-warning btn-lg px-4">
+                                <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
                                     <i class="fas fa-undo me-1"></i>تفريغ
                                 </button>
-                                <button type="submit" class="btn btn-success btn-lg px-5">
+                                <button type="submit" class="btn btn-gradient-emerald btn-lg px-5">
                                     <i class="fas fa-save me-1"></i>
                                     {% if mode == 'add' %}حفظ المدرس{% else %}تحديث البيانات{% endif %}
                                 </button>
@@ -105,4 +111,42 @@
         </div>
     </div>
 </div>
+
+<script>
+function handleSubjectChange() {
+    const select = document.getElementById('subject_select');
+    const newInput = document.getElementById('subject_new');
+    const hidden = document.getElementById('subject_hidden');
+    
+    if (select.value === '__new__') {
+        newInput.classList.remove('d-none');
+        newInput.focus();
+        hidden.value = '';
+        newInput.oninput = function() {
+            hidden.value = this.value;
+        };
+    } else {
+        newInput.classList.add('d-none');
+        hidden.value = select.value;
+    }
+}
+
+// تهيئة القيمة
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('subject_select');
+    const hidden = document.getElementById('subject_hidden');
+    if (select.value && select.value !== '__new__') {
+        hidden.value = select.value;
+    }
+    
+    // قبل الإرسال، تأكد من قيمة المادة
+    document.getElementById('teacherForm').addEventListener('submit', function(e) {
+        const hidden = document.getElementById('subject_hidden');
+        if (!hidden.value || hidden.value.trim() === '') {
+            e.preventDefault();
+            showAlert('يرجى اختيار أو إدخال اسم المادة', 'warning');
+        }
+    });
+});
+</script>
 {% endblock %}

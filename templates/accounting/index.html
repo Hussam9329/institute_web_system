@@ -8,7 +8,7 @@
     <!-- ===== عنوان الصفحة ===== -->
     <div class="row mb-4">
         <div class="col-12">
-            <h2 class="fw-bold text-warning mb-1">
+            <h2 class="fw-bold text-gradient-emerald mb-1">
                 <i class="fas fa-calculator me-2"></i>محاسبة المدرسين
             </h2>
             <p class="text-muted mb-0">إدارة السحوبات والأرصدة المالية للمدرسين</p>
@@ -18,15 +18,18 @@
     <!-- ===== بحث ===== -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form method="GET" action="/accounting" class="row g-3">
-                        <div class="col-md-9">
-                            <input type="text" name="search" class="form-control form-control-lg" 
-                                   placeholder="بحث عن مدرس..." value="{{ search }}">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <form method="GET" action="/accounting" class="row g-2 align-items-center">
+                        <div class="col-md-10">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                                       placeholder="بحث عن مدرس..." value="{{ search }}" id="accountingLiveSearch">
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-warning btn-lg w-100">
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-gradient-orange w-100">
                                 <i class="fas fa-search me-1"></i>بحث
                             </button>
                         </div>
@@ -39,30 +42,30 @@
     <!-- ===== جدول المحاسبة ===== -->
     <div class="row">
         <div class="col-12">
-            <div class="card shadow">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-bordered mb-0 align-middle" id="accountingTable">
-                            <thead class="table-warning">
+                        <table class="table table-hover mb-0 align-middle" id="accountingTable">
+                            <thead class="table-gradient-orange">
                                 <tr>
-                                    <th class="text-center">#</th>
+                                    <th class="text-center" style="width:50px">#</th>
                                     <th>المدرس / المادة</th>
-                                    <th class="text-center">عدد الطلاب</th>
+                                    <th class="text-center">الطلاب</th>
                                     <th class="text-center">الدافعون</th>
                                     <th class="text-center">إجمالي المدفوع</th>
                                     <th class="text-center">خصم المعهد</th>
                                     <th class="text-center">مستحق المدرس</th>
                                     <th class="text-center">المسحوب</th>
-                                    <th class="text-center fw-bold">المتبقي</th>
-                                    <th class="text-center">إجراءات</th>
+                                    <th class="text-center">المتبقي</th>
+                                    <th class="text-center" style="width:100px">إجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for teacher in teachers %}
-                                <tr>
-                                    <td class="text-center fw-bold">{{ loop.index }}</td>
+                                <tr class="accounting-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
+                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
-                                        <div class="fw-bold">{{ teacher.name }}</div>
+                                        <div class="fw-semibold">{{ teacher.name }}</div>
                                         <small class="text-muted">{{ teacher.subject }}</small>
                                     </td>
                                     <td class="text-center">{{ teacher.students_count or 0 }}</td>
@@ -79,16 +82,16 @@
                                     <td class="text-center text-warning">
                                         {{ format_currency(teacher.financial.withdrawn_total) }}
                                     </td>
-                                    <td class="text-center fw-bold {% if teacher.financial.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
-                                        <span class="badge bg-{% if teacher.financial.remaining_balance > 0 %}success{% else %}secondary{% endif %} fs-6">
+                                    <td class="text-center">
+                                        <span class="badge fs-6 {% if teacher.financial.remaining_balance > 0 %}bg-success{% else %}bg-secondary{% endif %}">
                                             {{ format_currency(teacher.financial.remaining_balance) }}
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <button class="btn btn-success btn-sm" 
+                                        <button class="btn btn-gradient-emerald btn-sm" 
                                                 onclick="openWithdrawalModal({{ teacher.id }}, '{{ teacher.name }}', {{ teacher.financial.remaining_balance }})"
                                                 {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}>
-                                            <i class="fas fa-hand-holding-usd"></i> سحب
+                                            <i class="fas fa-hand-holding-usd me-1"></i>سحب
                                         </button>
                                     </td>
                                 </tr>
@@ -103,10 +106,10 @@
                             </tbody>
                             
                             {% if teachers %}
-                            <!-- صف الإجمالي -->
-                            <tfoot class="table-dark fw-bold">
+                            <tfoot class="table-active fw-bold">
                                 <tr>
-                                    <td colspan="3" class="text-center">الإجمالي</td>
+                                    <td colspan="2" class="text-center">الإجمالي</td>
+                                    <td class="text-center">{{ teachers | map(attribute='students_count') | sum }}</td>
                                     <td class="text-center">{{ teachers | map(attribute='financial') | map(attribute='paying_students_count') | sum }}</td>
                                     <td class="text-center text-primary">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</td>
                                     <td class="text-center text-danger">{{ format_currency(teachers | map(attribute='financial') | map(attribute='institute_deduction') | sum) }}</td>
@@ -129,46 +132,41 @@
 
 <!-- ===== Modal تسجيل سحب ===== -->
 <div class="modal fade" id="withdrawalModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-emerald text-white border-0">
                 <h5 class="modal-title"><i class="fas fa-hand-holding-usd me-2"></i>تسجيل سحب جديد</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="withdrawalForm" onsubmit="addWithdrawal(event)">
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <input type="hidden" id="w_teacher_id">
                     
-                    <div class="alert alert-info">
+                    <div class="alert alert-info border-0">
                         <div class="d-flex justify-content-between">
                             <span><strong>المدرس:</strong> <span id="w_teacher_name"></span></span>
-                            <span><strong>الرصيد المتاح:</strong> <span id="w_available_balance" class="fw-bold"></span></span>
+                            <span><strong>الرصيد المتاح:</strong> <span id="w_available_balance" class="fw-bold text-success"></span></span>
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">مبلغ السحب (بالدينار):</label>
-                        <input type="number" class="form-control form-control-lg" id="w_amount" 
-                               min="1" required placeholder="أدخل المبلغ">
-                        <div class="form-text">
-                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
-                            لا يمكن تجاوز الرصيد المتاح
+                    <div class="row g-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">مبلغ السحب (د.ع):</label>
+                            <input type="number" class="form-control form-control-lg" id="w_amount" min="1" required placeholder="أدخل المبلغ">
                         </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">التاريخ:</label>
-                        <input type="date" class="form-control" id="w_date" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">ملاحظات:</label>
-                        <input type="text" class="form-control" id="w_notes" placeholder="اختياري...">
+                        <div class="col-5">
+                            <label class="form-label fw-bold">التاريخ:</label>
+                            <input type="date" class="form-control form-control-lg" id="w_date" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">ملاحظات:</label>
+                            <input type="text" class="form-control" id="w_notes" placeholder="اختياري...">
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-success">
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-gradient-emerald">
                         <i class="fas fa-save me-1"></i>تسجيل السحب
                     </button>
                 </div>
@@ -178,4 +176,16 @@
 </div>
 
 <script src="/static/js/accounting.js"></script>
+
+<script>
+// بحث مباشر
+document.getElementById('accountingLiveSearch')?.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.accounting-row').forEach(row => {
+        const name = row.dataset.name || '';
+        const subject = row.dataset.subject || '';
+        row.style.display = (name.includes(query) || subject.includes(query)) ? '' : 'none';
+    });
+});
+</script>
 {% endblock %}

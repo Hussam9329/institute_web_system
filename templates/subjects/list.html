@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة المواد الدراسية - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ===== عنوان الصفحة ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h2 class="fw-bold text-purple mb-1">
+                        <i class="fas fa-book-open me-2"></i>إدارة المواد الدراسية
+                    </h2>
+                    <p class="text-muted mb-0">{{ subjects|length }} مادة مسجلة</p>
+                </div>
+                <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <i class="fas fa-plus me-1"></i>إضافة مادة جديدة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== جدول المواد ===== -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-gradient-purple">
+                                <tr>
+                                    <th class="text-center" style="width: 60px">#</th>
+                                    <th>اسم المادة</th>
+                                    <th class="text-center">عدد المدرسين</th>
+                                    <th class="text-center" style="width: 150px">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in subjects %}
+                                <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
+                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="subject-icon me-3">
+                                                <i class="fas fa-book text-purple"></i>
+                                            </div>
+                                            <span class="fw-bold">{{ subject.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-purple-gradient">{{ subject.teachers_count }} مدرس</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="POST" action="/subjects/{{ subject.id }}/delete" style="display:inline"
+                                                  onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة؟')">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <i class="fas fa-book-open fa-3x text-muted d-block mb-3"></i>
+                                        <p class="text-muted mb-3">لا توجد مواد دراسية مسجلة</p>
+                                        <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                                            <i class="fas fa-plus me-1"></i>أضف مادة جديدة
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== Modal إضافة مادة ===== -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-purple text-white border-0">
+                <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>إضافة مادة جديدة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/subjects/add">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="subject_name" class="form-label fw-bold">
+                            <i class="fas fa-book me-1 text-purple"></i>اسم المادة
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="subject_name" name="name" 
+                               required placeholder="مثال: رياضيات، فيزياء، لغة عربية..." minlength="2" maxlength="100">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-gradient-purple">
+                        <i class="fas fa-save me-1"></i>حفظ المادة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal تعديل مادة ===== -->
+<div class="modal fade" id="editSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-warning text-white border-0">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>تعديل المادة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editSubjectForm">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="edit_subject_id">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-book me-1 text-warning"></i>اسم المادة
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="edit_subject_name" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-gradient-warning">
+                        <i class="fas fa-save me-1"></i>تحديث المادة
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editSubject(id, name) {
+    document.getElementById('edit_subject_id').value = id;
+    document.getElementById('edit_subject_name').value = name;
+    new bootstrap.Modal(document.getElementById('editSubjectModal')).show();
+}
+
+document.getElementById('editSubjectForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit_subject_id').value;
+    const name = document.getElementById('edit_subject_name').value;
+    
+    try {
+        const result = await apiRequest(`/api/subjects/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name: name })
+        });
+        
+        if (result.success) {
+            showAlert(result.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في التحديث', 'error');
+    }
+});
+</script>
+{% endblock %}

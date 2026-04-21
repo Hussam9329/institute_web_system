@@ -26,8 +26,6 @@ from routes.pdf_routes import router as pdf_router
 async def lifespan(app: FastAPI):
     """
     دورة حياة التطبيق
-    - يتم تشغيله عند بدء التشغيل
-    - يتم تنظيفه عند الإيقاف
     """
     # ===== عند البدء =====
     print("\n" + "="*60)

@@ -10,12 +10,12 @@
         <div class="col-12">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div>
-                    <h2 class="fw-bold text-primary mb-1">
+                    <h2 class="fw-bold text-gradient-blue mb-1">
                         <i class="fas fa-user-graduate me-2"></i>إدارة الطلاب
                     </h2>
                     <p class="text-muted mb-0">{{ students|length }} طالب مسجل</p>
                 </div>
-                <a href="/students/add" class="btn btn-primary">
+                <a href="/students/add" class="btn btn-gradient-blue">
                     <i class="fas fa-user-plus me-1"></i>إضافة طالب
                 </a>
             </div>
@@ -25,15 +25,18 @@
     <!-- ===== بحث ===== -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form method="GET" action="/students" class="row g-3">
-                        <div class="col-md-9">
-                            <input type="text" name="search" class="form-control form-control-lg" 
-                                   placeholder="بحث عن طالب بالاسم أو الرمز..." value="{{ search }}">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <form method="GET" action="/students" class="row g-2 align-items-center">
+                        <div class="col-md-10">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                                       placeholder="بحث عن طالب بالاسم أو الرمز..." value="{{ search }}" id="studentLiveSearch">
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-gradient-blue w-100">
                                 <i class="fas fa-search me-1"></i>بحث
                             </button>
                         </div>
@@ -46,28 +49,28 @@
     <!-- ===== جدول الطلاب ===== -->
     <div class="row">
         <div class="col-12">
-            <div class="card shadow">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 align-middle" id="studentsTable">
-                            <thead class="table-primary">
+                        <table class="table table-hover mb-0 align-middle" id="studentsTable">
+                            <thead class="table-gradient-blue">
                                 <tr>
-                                    <th class="text-center">#</th>
+                                    <th class="text-center" style="width:50px">#</th>
                                     <th>اسم الطالب</th>
                                     <th class="text-center">نوع الدراسة</th>
                                     <th class="text-center">الحالة</th>
+                                    <th class="text-center">المدرسين</th>
                                     <th class="text-center">بطاقة</th>
                                     <th class="text-center">شارة</th>
-                                    <th>الرمز</th>
-                                    <th class="text-center">الإجراءات</th>
+                                    <th class="text-center" style="width:160px">الإجراءات</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="studentsTableBody">
                                 {% for student in students %}
-                                <tr>
-                                    <td class="text-center fw-bold">{{ loop.index }}</td>
+                                <tr class="student-row" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
+                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
-                                        <a href="/students/{{ student.id }}" class="text-decoration-none fw-bold text-primary">
+                                        <a href="/students/{{ student.id }}" class="text-decoration-none fw-semibold text-primary">
                                             {{ student.name }}
                                         </a>
                                         {% if student.notes %}
@@ -85,32 +88,34 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ student.teachers_count or 0 }}</span>
+                                    </td>
+                                    <td class="text-center">
                                         {% if student.has_card %}
                                         <i class="fas fa-check-circle text-success"></i>
                                         {% else %}
-                                        <i class="fas fa-times-circle text-muted"></i>
+                                        <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
                                         {% if student.has_badge %}
                                         <i class="fas fa-check-circle text-success"></i>
                                         {% else %}
-                                        <i class="fas fa-times-circle text-muted"></i>
+                                        <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
-                                    <td><code>{{ student.barcode }}</code></td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
-                                            <a href="/students/{{ student.id }}" class="btn btn-info" title="البروفايل">
+                                            <a href="/students/{{ student.id }}" class="btn btn-outline-primary" title="البروفايل">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="/students/{{ student.id }}/edit" class="btn btn-warning" title="تعديل">
+                                            <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning" title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-danger" target="_blank" title="تقرير PDF">
+                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-danger" target="_blank" title="PDF">
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
-                                            <button type="button" class="btn btn-danger" title="حذف"
+                                            <button type="button" class="btn btn-outline-danger" title="حذف"
                                                     onclick="confirmDelete({{ student.id }}, '{{ student.name }}')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -129,7 +134,7 @@
                                             {% endif %}
                                         </p>
                                         {% if not search %}
-                                        <a href="/students/add" class="btn btn-primary mt-3">
+                                        <a href="/students/add" class="btn btn-gradient-blue mt-3">
                                             <i class="fas fa-user-plus me-1"></i>أضف طالب جديد
                                         </a>
                                         {% endif %}
@@ -155,5 +160,16 @@ function confirmDelete(id, name) {
         document.getElementById('deleteForm').submit();
     }
 }
+
+// بحث مباشر
+document.getElementById('studentLiveSearch')?.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    const rows = document.querySelectorAll('.student-row');
+    rows.forEach(row => {
+        const name = row.dataset.name || '';
+        const barcode = row.dataset.barcode || '';
+        row.style.display = (name.includes(query) || barcode.includes(query)) ? '' : 'none';
+    });
+});
 </script>
 {% endblock %}
