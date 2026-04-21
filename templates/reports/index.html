@@ -6,30 +6,35 @@
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-4">
+    <div class="row mb-3 mb-md-4 fade-in">
         <div class="col-12">
-            <h2 class="fw-bold text-gradient-blue mb-1">
+            <h1 class="h3 h2-md fw-bold text-gradient-blue mb-1">
                 <i class="fas fa-chart-line me-2"></i>التقارير الشاملة
-            </h2>
+            </h1>
             <p class="text-muted mb-0">ملخص شامل لجميع البيانات المالية والإدارية</p>
         </div>
     </div>
 
     <!-- ===== تبويبات التقارير ===== -->
-    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="reportTabs" role="tablist">
+    <ul class="nav nav-tabs nav-tabs-custom mb-3 mb-md-4 fade-in" style="animation-delay: 0.1s;" id="reportTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
-                <i class="fas fa-tachometer-alt me-1"></i>نظرة عامة
+                <i class="fas fa-tachometer-alt me-1"></i>
+                <span>نظرة عامة</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#studentsReport" type="button">
-                <i class="fas fa-user-graduate me-1"></i>تقارير الطلاب
+                <i class="fas fa-user-graduate me-1"></i>
+                <span class="d-none d-sm-inline">تقارير الطلاب</span>
+                <span class="d-sm-none">الطلاب</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachersReport" type="button">
-                <i class="fas fa-chalkboard-teacher me-1"></i>تقارير المدرسين
+                <i class="fas fa-chalkboard-teacher me-1"></i>
+                <span class="d-none d-sm-inline">تقارير المدرسين</span>
+                <span class="d-sm-none">المدرسين</span>
             </button>
         </li>
     </ul>
@@ -38,57 +43,57 @@
 
         <!-- ===== نظرة عامة ===== -->
         <div class="tab-pane fade show active" id="overview" role="tabpanel">
-            <div class="row g-4 mb-4">
-                <div class="col-xl-3 col-md-6">
+            <div class="row g-3 g-md-4 mb-4">
+                <div class="col-6 col-xl-3">
                     <div class="card border-0 shadow-sm stat-mini bg-gradient-blue text-white h-100">
-                        <div class="card-body">
+                        <div class="card-body py-2 py-md-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <small class="opacity-75">إجمالي الطلاب</small>
-                                    <h3 class="fw-bold mb-0">{{ stats.total_students }}</h3>
-                                    <small class="opacity-75">{{ stats.active_students }} مستمر</small>
+                                    <small class="opacity-75 d-block">إجمالي الطلاب</small>
+                                    <h4 class="fw-bold mb-0 fs-5 fs-md-4">{{ stats.total_students }}</h4>
+                                    <small class="opacity-75 d-none d-sm-block">{{ stats.active_students }} مستمر</small>
                                 </div>
                                 <i class="fas fa-user-graduate fa-2x opacity-50"></i>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-xl-3">
                     <div class="card border-0 shadow-sm stat-mini bg-gradient-emerald text-white h-100">
-                        <div class="card-body">
+                        <div class="card-body py-2 py-md-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <small class="opacity-75">إجمالي المدرسين</small>
-                                    <h3 class="fw-bold mb-0">{{ stats.total_teachers }}</h3>
-                                    <small class="opacity-75">{{ stats.total_subjects }} مادة</small>
+                                    <small class="opacity-75 d-block">إجمالي المدرسين</small>
+                                    <h4 class="fw-bold mb-0 fs-5 fs-md-4">{{ stats.total_teachers }}</h4>
+                                    <small class="opacity-75 d-none d-sm-block">{{ stats.total_subjects }} مادة</small>
                                 </div>
                                 <i class="fas fa-chalkboard-teacher fa-2x opacity-50"></i>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-xl-3">
                     <div class="card border-0 shadow-sm stat-mini bg-gradient-purple text-white h-100">
-                        <div class="card-body">
+                        <div class="card-body py-2 py-md-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <small class="opacity-75">إجمالي المدفوعات</small>
-                                    <h3 class="fw-bold mb-0">{{ format_currency(stats.total_amount_paid) }}</h3>
-                                    <small class="opacity-75">{{ stats.total_installments }} عملية</small>
+                                    <small class="opacity-75 d-block">إجمالي المدفوعات</small>
+                                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(stats.total_amount_paid) }}</h5>
+                                    <small class="opacity-75 d-none d-sm-block">{{ stats.total_installments }} عملية</small>
                                 </div>
                                 <i class="fas fa-coins fa-2x opacity-50"></i>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-3 col-md-6">
+                <div class="col-6 col-xl-3">
                     <div class="card border-0 shadow-sm stat-mini bg-gradient-orange text-white h-100">
-                        <div class="card-body">
+                        <div class="card-body py-2 py-md-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <small class="opacity-75">إجمالي السحوبات</small>
-                                    <h3 class="fw-bold mb-0">{{ format_currency(stats.total_withdrawals) }}</h3>
-                                    <small class="opacity-75">صرفت للمدرسين</small>
+                                    <small class="opacity-75 d-block">إجمالي السحوبات</small>
+                                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(stats.total_withdrawals) }}</h5>
+                                    <small class="opacity-75 d-none d-sm-block">صرفت للمدرسين</small>
                                 </div>
                                 <i class="fas fa-hand-holding-usd fa-2x opacity-50"></i>
                             </div>
@@ -102,9 +107,11 @@
         <div class="tab-pane fade" id="studentsReport" role="tabpanel">
             <!-- بحث -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                     <div class="input-group">
-                        <span class="input-group-text bg-transparent"><i class="fas fa-search text-muted"></i></span>
+                        <span class="input-group-text bg-transparent">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
                         <input type="text" class="form-control border-start-0" id="studentSearchInput"
                                placeholder="بحث عن طالب..." oninput="filterStudentReports()">
                     </div>
@@ -119,13 +126,13 @@
                                 <tr>
                                     <th>#</th>
                                     <th>الطالب</th>
-                                    <th class="text-center">نوع الدراسة</th>
-                                    <th class="text-center">الحالة</th>
-                                    <th class="text-center">عدد المدرسين</th>
-                                    <th class="text-center">الإجمالي المطلوب</th>
+                                    <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
+                                    <th class="text-center d-none d-md-table-cell">الحالة</th>
+                                    <th class="text-center d-none d-lg-table-cell">المدرسين</th>
+                                    <th class="text-center d-none d-xl-table-cell">الإجمالي المطلوب</th>
                                     <th class="text-center">المدفوع</th>
-                                    <th class="text-center">المتبقي</th>
-                                    <th class="text-center">نسبة الدفع</th>
+                                    <th class="text-center d-none d-md-table-cell">المتبقي</th>
+                                    <th class="text-center d-none d-sm-table-cell">نسبة الدفع</th>
                                     <th class="text-center">تفاصيل</th>
                                 </tr>
                             </thead>
@@ -133,28 +140,34 @@
                                 {% for student in students_report %}
                                 <tr class="student-row" data-name="{{ student.name|lower }}">
                                     <td class="fw-bold text-muted">{{ loop.index }}</td>
-                                    <td class="fw-semibold">{{ student.name }}</td>
-                                    <td class="text-center">
+                                    <td>
+                                        <div class="fw-semibold">{{ student.name }}</div>
+                                        <div class="d-sm-none mt-1">
+                                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %} me-1">{{ student.study_type }}</span>
+                                            <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">{{ student.status }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center d-none d-sm-table-cell">
                                         <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
                                             {{ student.study_type }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-md-table-cell">
                                         <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
                                             {{ student.status }}
                                         </span>
                                     </td>
-                                    <td class="text-center">{{ student.teachers_count }}</td>
-                                    <td class="text-center fw-bold">{{ format_currency(student.total_fee) }}</td>
+                                    <td class="text-center d-none d-lg-table-cell">{{ student.teachers_count }}</td>
+                                    <td class="text-center fw-bold d-none d-xl-table-cell">{{ format_currency(student.total_fee) }}</td>
                                     <td class="text-center text-success fw-bold">{{ format_currency(student.total_paid) }}</td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-md-table-cell">
                                         <span class="fw-bold {% if student.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
                                             {{ format_currency(student.total_remaining) }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-sm-table-cell">
                                         {% set pct = ((student.total_paid / student.total_fee) * 100) if student.total_fee > 0 else 0 %}
-                                        <div class="progress" style="height: 20px; min-width: 80px;">
+                                        <div class="progress" style="height: 18px; min-width: 60px;">
                                             <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-info{% else %}bg-warning{% endif %}" 
                                                  style="width: {{ min(pct, 100) }}%">
                                                 {{ "%.0f"|format(pct) }}%
@@ -186,9 +199,11 @@
         <div class="tab-pane fade" id="teachersReport" role="tabpanel">
             <!-- بحث -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-12 col-md-6">
                     <div class="input-group">
-                        <span class="input-group-text bg-transparent"><i class="fas fa-search text-muted"></i></span>
+                        <span class="input-group-text bg-transparent">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
                         <input type="text" class="form-control border-start-0" id="teacherSearchInput"
                                placeholder="بحث عن مدرس..." oninput="filterTeacherReports()">
                     </div>
@@ -203,12 +218,12 @@
                                 <tr>
                                     <th>#</th>
                                     <th>المدرس</th>
-                                    <th>المادة</th>
-                                    <th class="text-center">عدد الطلاب</th>
-                                    <th class="text-center">إجمالي الاستلامات</th>
-                                    <th class="text-center">خصم المعهد</th>
-                                    <th class="text-center">مستحق المدرس</th>
-                                    <th class="text-center">المسحوب</th>
+                                    <th class="d-none d-sm-table-cell">المادة</th>
+                                    <th class="text-center d-none d-md-table-cell">الطلاب</th>
+                                    <th class="text-center d-none d-lg-table-cell">الاستلامات</th>
+                                    <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
+                                    <th class="text-center d-none d-md-table-cell">مستحق المدرس</th>
+                                    <th class="text-center d-none d-xl-table-cell">المسحوب</th>
                                     <th class="text-center">المتبقي</th>
                                     <th class="text-center">تفاصيل</th>
                                 </tr>
@@ -217,19 +232,24 @@
                                 {% for teacher in teachers_report %}
                                 <tr class="teacher-row" data-name="{{ teacher.name|lower }}">
                                     <td class="fw-bold text-muted">{{ loop.index }}</td>
-                                    <td class="fw-semibold">{{ teacher.name }}</td>
-                                    <td><span class="badge bg-light text-dark">{{ teacher.subject }}</span></td>
-                                    <td class="text-center">{{ teacher.students_count }}</td>
-                                    <td class="text-center fw-bold text-primary">
+                                    <td>
+                                        <div class="fw-semibold">{{ teacher.name }}</div>
+                                        <small class="text-muted d-sm-none">{{ teacher.subject }}</small>
+                                    </td>
+                                    <td class="d-none d-sm-table-cell">
+                                        <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
+                                    </td>
+                                    <td class="text-center d-none d-md-table-cell">{{ teacher.students_count }}</td>
+                                    <td class="text-center fw-bold text-primary d-none d-lg-table-cell">
                                         {{ format_currency(teacher.financial.get('total_received', 0)) }}
                                     </td>
-                                    <td class="text-center text-danger">
+                                    <td class="text-center text-danger d-none d-xl-table-cell">
                                         {{ format_currency(teacher.financial.get('institute_deduction', 0)) }}
                                     </td>
-                                    <td class="text-center fw-bold text-success">
+                                    <td class="text-center fw-bold text-success d-none d-md-table-cell">
                                         {{ format_currency(teacher.financial.get('teacher_due', 0)) }}
                                     </td>
-                                    <td class="text-center text-warning">
+                                    <td class="text-center text-warning d-none d-xl-table-cell">
                                         {{ format_currency(teacher.financial.get('withdrawn_total', 0)) }}
                                     </td>
                                     <td class="text-center">

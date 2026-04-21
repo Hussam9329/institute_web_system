@@ -2,7 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#1e1b4b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}نظام إدارة المعهد{% endblock %}</title>
     
     <!-- Bootstrap 5 RTL -->
@@ -12,7 +15,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts - Cairo -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
@@ -24,15 +29,18 @@
 
     <!-- ===== شريط التنقل العلوي ===== -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container-fluid">
+        <div class="container-fluid px-2 px-md-4">
             <!-- الشعار والعنوان -->
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="fas fa-graduation-cap me-2"></i>نظام إدارة المعهد
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap"></i>
+                <span class="d-none d-sm-inline">نظام إدارة المعهد</span>
+                <span class="d-sm-none">المعهد</span>
             </a>
             
             <!-- زر القائمة للجوال -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="قائمة التنقل">
+                <i class="fas fa-bars fs-5"></i>
             </button>
             
             <!-- قائمة التنقل -->
@@ -40,55 +48,62 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
-                            <i class="fas fa-home me-1"></i>الرئيسية
+                            <i class="fas fa-home me-1"></i>
+                            <span>الرئيسية</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/students' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/students">
-                            <i class="fas fa-user-graduate me-1"></i>الطلاب
+                            <i class="fas fa-user-graduate me-1"></i>
+                            <span>الطلاب</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/teachers' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/teachers">
-                            <i class="fas fa-chalkboard-teacher me-1"></i>المدرسين
+                            <i class="fas fa-chalkboard-teacher me-1"></i>
+                            <span>المدرسين</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/subjects' in request.url.path %}active{% endif %}" href="/subjects">
-                            <i class="fas fa-book-open me-1"></i>المواد
+                            <i class="fas fa-book-open me-1"></i>
+                            <span>المواد</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/payments' in request.url.path %}active{% endif %}" href="/payments">
-                            <i class="fas fa-money-check-alt me-1"></i>الأقساط
+                            <i class="fas fa-money-check-alt me-1"></i>
+                            <span>الأقساط</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/accounting' in request.url.path %}active{% endif %}" href="/accounting">
-                            <i class="fas fa-calculator me-1"></i>المحاسبة
+                            <i class="fas fa-calculator me-1"></i>
+                            <span>المحاسبة</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/reports' in request.url.path %}active{% endif %}" href="/reports">
-                            <i class="fas fa-chart-line me-1"></i>التقارير
+                            <i class="fas fa-chart-line me-1"></i>
+                            <span>التقارير</span>
                         </a>
                     </li>
                 </ul>
                 
                 <!-- البحث الشامل -->
-                <div class="global-search-container me-3 d-none d-lg-block" style="width: 280px;">
+                <div class="global-search-container me-0 me-lg-3 mb-2 mb-lg-0 d-lg-block">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0 text-muted">
                             <i class="fas fa-search"></i>
                         </span>
                         <input type="text" class="form-control border-start-0 bg-white" id="globalSearchInput"
-                               placeholder="بحث سريع..." autocomplete="off">
+                               placeholder="بحث سريع... (Ctrl+K)" autocomplete="off">
                     </div>
                     <div class="global-search-results" id="globalSearchResults"></div>
                 </div>
                 
                 <!-- الوقت والتاريخ -->
-                <div class="text-white d-none d-lg-block small">
+                <div class="text-white d-none d-xl-block small">
                     <i class="fas fa-clock me-1"></i>
                     <span id="current-datetime"></span>
                 </div>
@@ -97,13 +112,13 @@
     </nav>
 
     <!-- ===== المحتوى الرئيسي ===== -->
-    <main class="main-content mt-5 pt-4">
+    <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
     <!-- ===== التذييل ===== -->
-    <footer class="text-white py-3 mt-5">
-        <div class="container text-center">
+    <footer class="text-white py-3 mt-auto">
+        <div class="container-fluid px-3 px-md-4 text-center">
             <p class="mb-0 small">
                 <i class="fas fa-graduation-cap me-1"></i>
                 نظام إدارة المعهد المتكامل v2.0
@@ -123,6 +138,27 @@
     <!-- Custom JS -->
     <script src="/static/js/utils.js"></script>
     <script src="/static/js/app.js"></script>
+    
+    <!-- تحديث الوقت والتاريخ -->
+    <script>
+    function updateDateTime() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        const datetimeEl = document.getElementById('current-datetime');
+        if (datetimeEl) {
+            datetimeEl.textContent = now.toLocaleDateString('ar-IQ', options);
+        }
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 60000);
+    </script>
     
     <!-- البحث الشامل -->
     <script>
@@ -205,6 +241,21 @@
             }
         });
     }
+    
+    // إغلاق قائمة الجوال عند النقر على رابط
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+    const navbarCollapse = document.querySelector('.navbar-collapse');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
+                const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
+                if (bsCollapse) {
+                    bsCollapse.hide();
+                }
+            }
+        });
+    });
     </script>
     
     {% block extra_js %}{% endblock %}

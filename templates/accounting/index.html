@@ -6,29 +6,31 @@
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-4">
+    <div class="row mb-3 mb-md-4 fade-in">
         <div class="col-12">
-            <h2 class="fw-bold text-gradient-emerald mb-1">
+            <h1 class="h3 h2-md fw-bold text-gradient-emerald mb-1">
                 <i class="fas fa-calculator me-2"></i>محاسبة المدرسين
-            </h2>
+            </h1>
             <p class="text-muted mb-0">إدارة السحوبات والأرصدة المالية للمدرسين</p>
         </div>
     </div>
 
     <!-- ===== بحث ===== -->
-    <div class="row mb-4">
+    <div class="row mb-3 mb-md-4 fade-in" style="animation-delay: 0.1s;">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-body py-3">
-                    <form method="GET" action="/accounting" class="row g-2 align-items-center">
-                        <div class="col-md-10">
+                <div class="card-body py-2 py-md-3">
+                    <form method="GET" action="/accounting" class="row g-2 g-md-3 align-items-center">
+                        <div class="col-12 col-md-9 col-lg-10">
                             <div class="input-group">
-                                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <span class="input-group-text bg-transparent border-end-0">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
                                 <input type="text" name="search" class="form-control border-start-0 ps-0" 
                                        placeholder="بحث عن مدرس..." value="{{ search }}" id="accountingLiveSearch">
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-12 col-md-3 col-lg-2">
                             <button type="submit" class="btn btn-gradient-orange w-100">
                                 <i class="fas fa-search me-1"></i>بحث
                             </button>
@@ -40,7 +42,7 @@
     </div>
 
     <!-- ===== جدول المحاسبة ===== -->
-    <div class="row">
+    <div class="row fade-in" style="animation-delay: 0.2s;">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
@@ -48,16 +50,16 @@
                         <table class="table table-hover mb-0 align-middle" id="accountingTable">
                             <thead class="table-gradient-orange">
                                 <tr>
-                                    <th class="text-center" style="width:50px">#</th>
+                                    <th class="text-center" style="width:40px">#</th>
                                     <th>المدرس / المادة</th>
-                                    <th class="text-center">الطلاب</th>
-                                    <th class="text-center">الدافعون</th>
-                                    <th class="text-center">إجمالي المدفوع</th>
-                                    <th class="text-center">خصم المعهد</th>
-                                    <th class="text-center">مستحق المدرس</th>
-                                    <th class="text-center">المسحوب</th>
+                                    <th class="text-center d-none d-md-table-cell">الطلاب</th>
+                                    <th class="text-center d-none d-lg-table-cell">الدافعون</th>
+                                    <th class="text-center d-none d-sm-table-cell">إجمالي المدفوع</th>
+                                    <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
+                                    <th class="text-center d-none d-md-table-cell">مستحق المدرس</th>
+                                    <th class="text-center d-none d-xl-table-cell">المسحوب</th>
                                     <th class="text-center">المتبقي</th>
-                                    <th class="text-center" style="width:100px">إجراءات</th>
+                                    <th class="text-center" style="min-width:80px;">إجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -68,30 +70,31 @@
                                         <div class="fw-semibold">{{ teacher.name }}</div>
                                         <small class="text-muted">{{ teacher.subject }}</small>
                                     </td>
-                                    <td class="text-center">{{ teacher.students_count or 0 }}</td>
-                                    <td class="text-center">{{ teacher.financial.paying_students_count }}</td>
-                                    <td class="text-center fw-bold text-primary">
+                                    <td class="text-center d-none d-md-table-cell">{{ teacher.students_count or 0 }}</td>
+                                    <td class="text-center d-none d-lg-table-cell">{{ teacher.financial.paying_students_count }}</td>
+                                    <td class="text-center fw-bold text-primary d-none d-sm-table-cell">
                                         {{ format_currency(teacher.financial.total_received) }}
                                     </td>
-                                    <td class="text-center text-danger">
+                                    <td class="text-center text-danger d-none d-xl-table-cell">
                                         {{ format_currency(teacher.financial.institute_deduction) }}
                                     </td>
-                                    <td class="text-center fw-bold text-success">
+                                    <td class="text-center fw-bold text-success d-none d-md-table-cell">
                                         {{ format_currency(teacher.financial.teacher_due) }}
                                     </td>
-                                    <td class="text-center text-warning">
+                                    <td class="text-center text-warning d-none d-xl-table-cell">
                                         {{ format_currency(teacher.financial.withdrawn_total) }}
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge fs-6 {% if teacher.financial.remaining_balance > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                        <span class="badge fs-6 fs-md-5 {% if teacher.financial.remaining_balance > 0 %}bg-success{% else %}bg-secondary{% endif %}">
                                             {{ format_currency(teacher.financial.remaining_balance) }}
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <button class="btn btn-gradient-emerald btn-sm" 
+                                        <button class="btn btn-gradient-emerald btn-sm w-100" 
                                                 onclick="openWithdrawalModal({{ teacher.id }}, '{{ teacher.name }}', {{ teacher.financial.remaining_balance }})"
                                                 {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}>
-                                            <i class="fas fa-hand-holding-usd me-1"></i>سحب
+                                            <i class="fas fa-hand-holding-usd me-1"></i>
+                                            <span class="d-none d-sm-inline">سحب</span>
                                         </button>
                                     </td>
                                 </tr>
@@ -106,15 +109,15 @@
                             </tbody>
                             
                             {% if teachers %}
-                            <tfoot class="table-active fw-bold">
+                            <tfoot class="table-active fw-bold d-none d-md-table-footer-group">
                                 <tr>
                                     <td colspan="2" class="text-center">الإجمالي</td>
                                     <td class="text-center">{{ teachers | map(attribute='students_count') | sum }}</td>
-                                    <td class="text-center">{{ teachers | map(attribute='financial') | map(attribute='paying_students_count') | sum }}</td>
-                                    <td class="text-center text-primary">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</td>
-                                    <td class="text-center text-danger">{{ format_currency(teachers | map(attribute='financial') | map(attribute='institute_deduction') | sum) }}</td>
+                                    <td class="text-center d-none d-lg-table-cell">{{ teachers | map(attribute='financial') | map(attribute='paying_students_count') | sum }}</td>
+                                    <td class="text-center text-primary d-none d-sm-table-cell">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</td>
+                                    <td class="text-center text-danger d-none d-xl-table-cell">{{ format_currency(teachers | map(attribute='financial') | map(attribute='institute_deduction') | sum) }}</td>
                                     <td class="text-center text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='teacher_due') | sum) }}</td>
-                                    <td class="text-center text-warning">{{ format_currency(teachers | map(attribute='financial') | map(attribute='withdrawn_total') | sum) }}</td>
+                                    <td class="text-center text-warning d-none d-xl-table-cell">{{ format_currency(teachers | map(attribute='financial') | map(attribute='withdrawn_total') | sum) }}</td>
                                     <td class="text-center text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='remaining_balance') | sum) }}</td>
                                     <td></td>
                                 </tr>
@@ -124,6 +127,30 @@
                         </table>
                     </div>
                 </div>
+                
+                <!-- ملخص الجوال -->
+                {% if teachers %}
+                <div class="card-footer d-md-none">
+                    <div class="row g-2 text-center">
+                        <div class="col-6">
+                            <small class="text-muted d-block">إجمالي المدفوع</small>
+                            <strong class="text-primary">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">مستحق المدرسين</small>
+                            <strong class="text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='teacher_due') | sum) }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">المسحوب</small>
+                            <strong class="text-warning">{{ format_currency(teachers | map(attribute='financial') | map(attribute='withdrawn_total') | sum) }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">المتبقي</small>
+                            <strong class="text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='remaining_balance') | sum) }}</strong>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -135,15 +162,17 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-gradient-emerald text-white border-0">
-                <h5 class="modal-title"><i class="fas fa-hand-holding-usd me-2"></i>تسجيل سحب جديد</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-hand-holding-usd me-2"></i>تسجيل سحب جديد
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="withdrawalForm" onsubmit="addWithdrawal(event)">
-                <div class="modal-body p-4">
+                <div class="modal-body p-3 p-md-4">
                     <input type="hidden" id="w_teacher_id">
                     
-                    <div class="alert alert-info border-0">
-                        <div class="d-flex justify-content-between">
+                    <div class="alert alert-info border-0 mb-3">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between gap-2">
                             <span><strong>المدرس:</strong> <span id="w_teacher_name"></span></span>
                             <span><strong>الرصيد المتاح:</strong> <span id="w_available_balance" class="fw-bold text-success"></span></span>
                         </div>

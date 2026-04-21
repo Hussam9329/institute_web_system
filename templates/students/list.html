@@ -6,36 +6,39 @@
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-4">
+    <div class="row mb-3 mb-md-4 fade-in">
         <div class="col-12">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
                 <div>
-                    <h2 class="fw-bold text-gradient-blue mb-1">
+                    <h1 class="h3 h2-md fw-bold text-gradient-blue mb-1">
                         <i class="fas fa-user-graduate me-2"></i>إدارة الطلاب
-                    </h2>
+                    </h1>
                     <p class="text-muted mb-0">{{ students|length }} طالب مسجل</p>
                 </div>
                 <a href="/students/add" class="btn btn-gradient-blue">
-                    <i class="fas fa-user-plus me-1"></i>إضافة طالب
+                    <i class="fas fa-user-plus me-1"></i>
+                    <span>إضافة طالب</span>
                 </a>
             </div>
         </div>
     </div>
 
     <!-- ===== بحث ===== -->
-    <div class="row mb-4">
+    <div class="row mb-3 mb-md-4 fade-in" style="animation-delay: 0.1s;">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-body py-3">
-                    <form method="GET" action="/students" class="row g-2 align-items-center">
-                        <div class="col-md-10">
+                <div class="card-body py-2 py-md-3">
+                    <form method="GET" action="/students" class="row g-2 g-md-3 align-items-center">
+                        <div class="col-12 col-md-9 col-lg-10">
                             <div class="input-group">
-                                <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <span class="input-group-text bg-transparent border-end-0">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
                                 <input type="text" name="search" class="form-control border-start-0 ps-0" 
                                        placeholder="بحث عن طالب بالاسم أو الرمز..." value="{{ search }}" id="studentLiveSearch">
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-12 col-md-3 col-lg-2">
                             <button type="submit" class="btn btn-gradient-blue w-100">
                                 <i class="fas fa-search me-1"></i>بحث
                             </button>
@@ -47,7 +50,7 @@
     </div>
 
     <!-- ===== جدول الطلاب ===== -->
-    <div class="row">
+    <div class="row fade-in" style="animation-delay: 0.2s;">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
@@ -55,14 +58,14 @@
                         <table class="table table-hover mb-0 align-middle" id="studentsTable">
                             <thead class="table-gradient-blue">
                                 <tr>
-                                    <th class="text-center" style="width:50px">#</th>
+                                    <th class="text-center" style="width:40px">#</th>
                                     <th>اسم الطالب</th>
-                                    <th class="text-center">نوع الدراسة</th>
-                                    <th class="text-center">الحالة</th>
-                                    <th class="text-center">المدرسين</th>
-                                    <th class="text-center">بطاقة</th>
-                                    <th class="text-center">شارة</th>
-                                    <th class="text-center" style="width:160px">الإجراءات</th>
+                                    <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
+                                    <th class="text-center d-none d-md-table-cell">الحالة</th>
+                                    <th class="text-center d-none d-lg-table-cell">المدرسين</th>
+                                    <th class="text-center d-none d-xl-table-cell">بطاقة</th>
+                                    <th class="text-center d-none d-xl-table-cell">شارة</th>
+                                    <th class="text-center" style="min-width:100px; width:140px;">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody id="studentsTableBody">
@@ -74,30 +77,39 @@
                                             {{ student.name }}
                                         </a>
                                         {% if student.notes %}
-                                        <br><small class="text-muted">{{ student.notes[:40] }}</small>
+                                        <br><small class="text-muted d-none d-md-block">{{ student.notes[:40] }}</small>
                                         {% endif %}
+                                        <!-- عرض المعلومات على الجوال -->
+                                        <div class="d-sm-none mt-1">
+                                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %} me-1">
+                                                {{ student.study_type }}
+                                            </span>
+                                            <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
+                                                {{ student.status }}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-sm-table-cell">
                                         <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
                                             {{ student.study_type }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-md-table-cell">
                                         <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
                                             {{ student.status }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-lg-table-cell">
                                         <span class="badge bg-light text-dark">{{ student.teachers_count or 0 }}</span>
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-xl-table-cell">
                                         {% if student.has_card %}
                                         <i class="fas fa-check-circle text-success"></i>
                                         {% else %}
                                         <i class="fas fa-minus text-muted"></i>
                                         {% endif %}
                                     </td>
-                                    <td class="text-center">
+                                    <td class="text-center d-none d-xl-table-cell">
                                         {% if student.has_badge %}
                                         <i class="fas fa-check-circle text-success"></i>
                                         {% else %}
@@ -105,20 +117,38 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
+                                        <div class="btn-group btn-group-sm d-flex justify-content-center">
                                             <a href="/students/{{ student.id }}" class="btn btn-outline-primary" title="البروفايل">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning" title="تعديل">
+                                            <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning d-none d-sm-inline-block" title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-danger" target="_blank" title="PDF">
+                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-danger d-none d-md-inline-block" target="_blank" title="PDF">
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-danger" title="حذف"
+                                            <button type="button" class="btn btn-outline-danger d-none d-sm-inline-block" title="حذف"
                                                     onclick="confirmDelete({{ student.id }}, '{{ student.name }}')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+                                            <!-- قائمة إجراءات للجوال -->
+                                            <div class="dropdown d-sm-none">
+                                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li><a class="dropdown-item" href="/students/{{ student.id }}/edit">
+                                                        <i class="fas fa-edit me-2"></i>تعديل
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="/pdf/student/{{ student.id }}" target="_blank">
+                                                        <i class="fas fa-file-pdf me-2 text-danger"></i>PDF
+                                                    </a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ student.id }}, '{{ student.name }}'); return false;">
+                                                        <i class="fas fa-trash me-2"></i>حذف
+                                                    </a></li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

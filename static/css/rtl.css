@@ -1,5 +1,6 @@
 /* ============================================
    rtl.css - تنسيقات دعم اللغة العربية RTL
+   تصميم متجاوب واحترافي
    ============================================ */
 
 /* ===== اتجاه النصوص ===== */
@@ -19,18 +20,22 @@ html[dir="rtl"] .text-end {
 html[dir="rtl"] .me-1 { margin-left: 0.25rem !important; margin-right: 0 !important; }
 html[dir="rtl"] .me-2 { margin-left: 0.5rem !important; margin-right: 0 !important; }
 html[dir="rtl"] .me-3 { margin-left: 1rem !important; margin-right: 0 !important; }
+html[dir="rtl"] .me-4 { margin-left: 1.5rem !important; margin-right: 0 !important; }
 
 html[dir="rtl"] .ms-1 { margin-right: 0.25rem !important; margin-left: 0 !important; }
 html[dir="rtl"] .ms-2 { margin-right: 0.5rem !important; margin-left: 0 !important; }
 html[dir="rtl"] .ms-3 { margin-right: 1rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .ms-4 { margin-right: 1.5rem !important; margin-left: 0 !important; }
 
 html[dir="rtl"] .ps-1 { padding-right: 0.25rem !important; padding-left: 0 !important; }
 html[dir="rtl"] .ps-2 { padding-right: 0.5rem !important; padding-left: 0 !important; }
 html[dir="rtl"] .ps-3 { padding-right: 1rem !important; padding-left: 0 !important; }
+html[dir="rtl"] .ps-4 { padding-right: 1.5rem !important; padding-left: 0 !important; }
 
 html[dir="rtl"] .pe-1 { padding-left: 0.25rem !important; padding-right: 0 !important; }
 html[dir="rtl"] .pe-2 { padding-left: 0.5rem !important; padding-right: 0 !important; }
 html[dir="rtl"] .pe-3 { padding-left: 1rem !important; padding-right: 0 !important; }
+html[dir="rtl"] .pe-4 { padding-left: 1.5rem !important; padding-right: 0 !important; }
 
 /* ===== الأيقونات مع النصوص ===== */
 html[dir="rtl"] i.fa-arrow-right::before {
@@ -39,6 +44,14 @@ html[dir="rtl"] i.fa-arrow-right::before {
 
 html[dir="rtl"] i.fa-arrow-left::before {
     content: "\f061"; /* السهم لليمين */
+}
+
+html[dir="rtl"] i.fa-chevron-right::before {
+    content: "\f053"; /* السهم لليسار */
+}
+
+html[dir="rtl"] i.fa-chevron-left::before {
+    content: "\f054"; /* السهم لليمين */
 }
 
 /* ===== الجداول RTL ===== */
@@ -50,14 +63,22 @@ html[dir="rtl"] thead th {
     text-align: right;
 }
 
+html[dir="rtl"] thead th.text-center,
+html[dir="rtl"] td.text-center {
+    text-align: center !important;
+}
+
 /* ===== النماذج RTL ===== */
 html[dir="rtl"] input[type="text"],
 html[dir="rtl"] input[type="number"],
 html[dir="rtl"] input[type="email"],
 html[dir="rtl"] input[type="date"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] input[type="search"],
 html[dir="rtl"] select,
 html[dir="rtl"] textarea {
     text-align: right;
+    direction: rtl;
 }
 
 /* ===== البطاقات RTL ===== */
@@ -82,6 +103,10 @@ html[dir="rtl"] .dropdown-menu-end {
     --bs-position: start;
 }
 
+html[dir="rtl"] .dropdown-menu-start {
+    --bs-position: end;
+}
+
 /* ===== Modal RTL ===== */
 html[dir="rtl"] .modal-header .btn-close {
     margin-left: -1rem;
@@ -91,6 +116,25 @@ html[dir="rtl"] .modal-header .btn-close {
 /* ===== Pagination RTL ===== */
 html[dir="rtl"] .pagination {
     direction: rtl;
+}
+
+/* ===== List Groups RTL ===== */
+html[dir="rtl"] .list-group {
+    text-align: right;
+}
+
+/* ===== Form Section Title RTL ===== */
+html[dir="rtl"] .form-section-title {
+    border-right: 4px solid var(--primary);
+    border-left: none;
+    background: linear-gradient(90deg, var(--primary-glow) 0%, transparent 100%);
+}
+
+/* ===== Profile Info RTL ===== */
+html[dir="rtl"] .profile-info-item:hover {
+    margin: 0 -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
 }
 
 /* ===== الأرقام العربية (اختياري) ===== */
@@ -128,4 +172,93 @@ html[dir="rtl"] .fw-bold {
 
 html[dir="rtl"] .slide-in {
     animation: slideFromRight 0.4s ease forwards;
+}
+
+/* ===== Input Group RTL ===== */
+html[dir="rtl"] .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+html[dir="rtl"] .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-right: -2px;
+    margin-left: 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+/* ===== Navbar RTL ===== */
+html[dir="rtl"] .navbar-nav {
+    padding-right: 0;
+}
+
+html[dir="rtl"] .navbar-collapse {
+    text-align: right;
+}
+
+/* ===== Button Group RTL ===== */
+html[dir="rtl"] .btn-group > .btn:not(:last-child):not(.dropdown-toggle),
+html[dir="rtl"] .btn-group > .btn.dropdown-toggle-split:first-child,
+html[dir="rtl"] .btn-group > .btn-group:not(:last-child) > .btn {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+html[dir="rtl"] .btn-group > .btn:nth-child(n + 3),
+html[dir="rtl"] .btn-group > :not(.btn-check) + .btn,
+html[dir="rtl"] .btn-group > .btn-group:not(:first-child) > .btn {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+/* ===== Alert RTL ===== */
+html[dir="rtl"] .alert {
+    text-align: right;
+}
+
+/* ===== Card RTL Specific ===== */
+html[dir="rtl"] .card::before {
+    left: 0;
+    right: auto;
+}
+
+/* ===== Stat Card RTL ===== */
+html[dir="rtl"] .stat-card .d-flex {
+    text-align: right;
+}
+
+/* ===== Global Search RTL ===== */
+html[dir="rtl"] .global-search-results {
+    right: 0;
+    left: auto;
+}
+
+/* ===== Table Responsive RTL ===== */
+html[dir="rtl"] .table-responsive {
+    direction: rtl;
+}
+
+html[dir="rtl"] .table-responsive table {
+    direction: rtl;
+}
+
+/* ===== تحسينات الشاشات الصغيرة RTL ===== */
+@media (max-width: 575px) {
+    html[dir="rtl"] .profile-info-item:hover {
+        margin: 0 -0.875rem;
+        padding-left: 0.875rem;
+        padding-right: 0.875rem;
+    }
+    
+    html[dir="rtl"] .form-section-title {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* ===== Print RTL ===== */
+@media print {
+    html[dir="rtl"] body {
+        text-align: right;
+    }
+    
+    html[dir="rtl"] .table th,
+    html[dir="rtl"] .table td {
+        text-align: right;
+    }
 }

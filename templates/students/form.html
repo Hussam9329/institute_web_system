@@ -7,11 +7,11 @@
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-lg-10 col-md-12">
+        <div class="col-12 col-lg-10 col-xl-8">
 
             <!-- ===== عنوان النموذج ===== -->
-            <div class="card border-0 shadow-lg overflow-hidden">
-                <div class="card-header bg-gradient-blue text-white py-3 border-0">
+            <div class="card border-0 shadow-lg overflow-hidden fade-in">
+                <div class="card-header bg-gradient-blue text-white py-3 py-md-4 border-0">
                     <h4 class="mb-0 fw-bold">
                         {% if mode == 'add' %}
                         <i class="fas fa-user-plus me-2"></i>إضافة طالب جديد
@@ -21,7 +21,7 @@
                     </h4>
                 </div>
                 
-                <div class="card-body p-4">
+                <div class="card-body p-3 p-md-4">
                     
                     {% if mode == 'add' %}
                     <form method="POST" action="/students/add" id="studentForm">
@@ -31,7 +31,8 @@
 
                         <!-- القسم الأول: البيانات الأساسية -->
                         <div class="form-section-title">
-                            <i class="fas fa-user me-2"></i>البيانات الأساسية
+                            <i class="fas fa-user"></i>
+                            <span>البيانات الأساسية</span>
                         </div>
 
                         <!-- اسم الطالب -->
@@ -45,9 +46,9 @@
                                    minlength="2" maxlength="100">
                         </div>
 
-                        <div class="row">
+                        <div class="row g-3">
                             <!-- نوع الدراسة -->
-                            <div class="col-md-4 mb-3">
+                            <div class="col-12 col-sm-6 col-md-4 mb-3">
                                 <label for="study_type" class="form-label fw-bold">
                                     <i class="fas fa-book-reader me-1 text-primary"></i>نوع الدراسة
                                 </label>
@@ -58,7 +59,7 @@
                             </div>
 
                             <!-- الحالة -->
-                            <div class="col-md-4 mb-3">
+                            <div class="col-12 col-sm-6 col-md-4 mb-3">
                                 <label for="status" class="form-label fw-bold">
                                     <i class="fas fa-info-circle me-1 text-primary"></i>الحالة
                                 </label>
@@ -69,22 +70,23 @@
                                 </select>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
-                                <div class="d-flex flex-column gap-3 mt-md-4">
-                                    <div class="form-check form-switch">
+                            <!-- البطاقة والشارة -->
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="d-flex flex-column gap-2 mt-0 mt-md-4">
+                                    <div class="form-check form-switch bg-light rounded-2 p-2">
                                         <input class="form-check-input" type="checkbox" 
                                                id="has_card" name="has_card" value="true"
                                                {% if student and student.has_card %}checked{% endif %}>
-                                        <label class="form-check-label fw-bold" for="has_card">
-                                            <i class="fas fa-id-card me-1"></i>يملك بطاقة
+                                        <label class="form-check-label fw-semibold" for="has_card">
+                                            <i class="fas fa-id-card me-1 text-primary"></i>يملك بطاقة
                                         </label>
                                     </div>
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch bg-light rounded-2 p-2">
                                         <input class="form-check-input" type="checkbox" 
                                                id="has_badge" name="has_badge" value="true"
                                                {% if student and student.has_badge %}checked{% endif %}>
-                                        <label class="form-check-label fw-bold" for="has_badge">
-                                            <i class="fas fa-certificate me-1"></i>يملك شارة
+                                        <label class="form-check-label fw-semibold" for="has_badge">
+                                            <i class="fas fa-certificate me-1 text-warning"></i>يملك شارة
                                         </label>
                                     </div>
                                 </div>
@@ -102,19 +104,20 @@
 
                         <!-- القسم الثاني: ربط بالمدرسين -->
                         <div class="form-section-title mt-4">
-                            <i class="fas fa-chalkboard-teacher me-2"></i>ربط الطالب بالمدرسين
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>ربط الطالب بالمدرسين</span>
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-link me-1 text-emerald"></i>اختر المدرسين
                             </label>
-                            <div class="card border p-3 bg-light-subtle">
+                            <div class="card border p-2 p-md-3 bg-light-subtle">
                                 {% if teachers %}
                                 <div class="row g-2">
                                     {% for teacher in teachers %}
-                                    <div class="col-md-6 col-lg-4">
-                                        <div class="form-check teacher-check p-2 rounded-3">
+                                    <div class="col-12 col-sm-6 col-lg-4">
+                                        <div class="form-check teacher-check p-2 p-md-3 rounded-3 h-100">
                                             <input class="form-check-input" type="checkbox" 
                                                    name="teacher_ids" value="{{ teacher.id }}" id="teacher_{{ teacher.id }}"
                                                    {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}checked{% endif %}>
@@ -124,7 +127,7 @@
                                                         <span class="fw-semibold">{{ teacher.name }}</span>
                                                         <br><small class="text-muted">{{ teacher.subject }}</small>
                                                     </div>
-                                                    <span class="badge bg-light text-dark">
+                                                    <span class="badge bg-light text-dark d-none d-md-inline">
                                                         <i class="fas fa-book me-1"></i>{{ teacher.subject }}
                                                     </span>
                                                 </div>
@@ -134,28 +137,28 @@
                                     {% endfor %}
                                 </div>
                                 {% else %}
-                                <div class="text-center py-3 text-muted">
+                                <div class="text-center py-3 py-md-4 text-muted">
                                     <i class="fas fa-exclamation-circle me-1"></i>
                                     لا يوجد مدرسين مسجلين. <a href="/teachers/add">أضف مدرس أولاً</a>
                                 </div>
                                 {% endif %}
                             </div>
-                            <div class="form-text">
+                            <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
                                 يمكنك اختيار أكثر من مدرس واحد. سيتم ربط الطالب بالمدرسين المحددين تلقائياً.
                             </div>
                         </div>
 
                         <!-- أزرار الإجراءات -->
-                        <div class="d-flex justify-content-between gap-3 mt-4 pt-3 border-top">
-                            <a href="/students" class="btn btn-light btn-lg px-4">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between gap-3 mt-4 pt-3 border-top">
+                            <a href="/students" class="btn btn-light btn-lg px-4 order-2 order-sm-1">
                                 <i class="fas fa-arrow-right me-1"></i>رجوع
                             </a>
-                            <div class="gap-2 d-flex">
+                            <div class="d-flex gap-2 flex-column flex-sm-row order-1 order-sm-2">
                                 <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
                                     <i class="fas fa-undo me-1"></i>تفريغ
                                 </button>
-                                <button type="submit" class="btn btn-gradient-blue btn-lg px-5">
+                                <button type="submit" class="btn btn-gradient-blue btn-lg px-4 px-md-5">
                                     <i class="fas fa-save me-1"></i>
                                     {% if mode == 'add' %}حفظ الطالب{% else %}تحديث البيانات{% endif %}
                                 </button>
@@ -171,13 +174,26 @@
 </div>
 
 <style>
-.teacher-check:hover {
-    background-color: rgba(16, 185, 129, 0.08);
+.teacher-check {
+    transition: var(--transition);
+    border: 2px solid transparent;
     cursor: pointer;
 }
+.teacher-check:hover {
+    background-color: var(--success-glow) !important;
+    border-color: rgba(16, 185, 129, 0.3);
+}
 .teacher-check:has(input:checked) {
-    background-color: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background-color: var(--success-glow) !important;
+    border: 2px solid var(--success);
+}
+.teacher-check .form-check-input {
+    margin-top: 0.15rem;
+}
+@media (max-width: 575px) {
+    .teacher-check {
+        padding: 0.75rem !important;
+    }
 }
 </style>
 {% endblock %}
