@@ -35,7 +35,7 @@ class FinanceService:
         query = '''
             SELECT COALESCE(SUM(amount), 0) as total
             FROM installments
-            WHERE student_id = ? AND teacher_id = ?
+            WHERE student_id = %s AND teacher_id = %s
         '''
         result = self.db.execute_query(query, (student_id, teacher_id))
         
@@ -57,7 +57,7 @@ class FinanceService:
         """
         # الحصول على total_fee للمدرس
         query = '''
-            SELECT total_fee FROM teachers WHERE id = ?
+            SELECT total_fee FROM teachers WHERE id = %s
         '''
         result = self.db.execute_query(query, (teacher_id,))
         
@@ -90,7 +90,7 @@ class FinanceService:
             SELECT t.id, t.name, t.subject, t.total_fee
             FROM teachers t
             INNER JOIN student_teacher st ON t.id = st.teacher_id
-            WHERE st.student_id = ?
+            WHERE st.student_id = %s
             ORDER BY t.name
         '''
         teachers = self.db.execute_query(query, (student_id,))
@@ -123,7 +123,7 @@ class FinanceService:
         query = '''
             SELECT COALESCE(SUM(amount), 0) as total
             FROM installments
-            WHERE teacher_id = ?
+            WHERE teacher_id = %s
         '''
         result = self.db.execute_query(query, (teacher_id,))
         
@@ -143,7 +143,7 @@ class FinanceService:
         query = '''
             SELECT COUNT(DISTINCT student_id) as count
             FROM installments
-            WHERE teacher_id = ? AND amount > 0
+            WHERE teacher_id = %s AND amount > 0
         '''
         result = self.db.execute_query(query, (teacher_id,))
         
@@ -161,7 +161,7 @@ class FinanceService:
         query = '''
             COUNT(*) as count
             FROM student_teacher
-            WHERE teacher_id = ?
+            WHERE teacher_id = %s
         '''
         result = self.db.execute_query(
             f'SELECT {query}', 
@@ -216,7 +216,7 @@ class FinanceService:
         query = '''
             SELECT COALESCE(SUM(amount), 0) as total
             FROM teacher_withdrawals
-            WHERE teacher_id = ?
+            WHERE teacher_id = %s
         '''
         result = self.db.execute_query(query, (teacher_id,))
         
@@ -285,9 +285,9 @@ class FinanceService:
         query = '''
             SELECT id, amount, withdrawal_date, notes
             FROM teacher_withdrawals
-            WHERE teacher_id = ?
+            WHERE teacher_id = %s
             ORDER BY withdrawal_date DESC
-            LIMIT ?
+            LIMIT %s
         '''
         results = self.db.execute_query(query, (teacher_id, limit))
         
@@ -304,7 +304,7 @@ class FinanceService:
             SELECT s.id, s.name, s.study_type, s.status, s.barcode
             FROM students s
             INNER JOIN student_teacher st ON s.id = st.student_id
-            WHERE st.teacher_id = ?
+            WHERE st.teacher_id = %s
             ORDER BY s.name
         '''
         students = self.db.execute_query(query, (teacher_id,))
