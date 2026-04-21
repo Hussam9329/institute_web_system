@@ -13,6 +13,7 @@ python-multipart==0.0.6
 # قاعدة البيانات
 sqlalchemy==2.0.23
 
+psycopg2-binary==2.9.9
 # توليد PDF
 reportlab==4.0.7
 Pillow==10.1.0
