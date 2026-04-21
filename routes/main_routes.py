@@ -35,7 +35,7 @@ async def students_list(request: Request, search: str = ""):
     if search:
         query = '''
             SELECT * FROM students 
-            WHERE name LIKE ? OR barcode LIKE ?
+            WHERE name LIKE %s OR barcode LIKE %s
             ORDER BY name
         '''
         students = db.execute_query(query, (f'%{search}%', f'%{search}%'))
@@ -83,7 +83,7 @@ async def student_add(
     # إدخال الطالب
     insert_query = '''
         INSERT INTO students (name, study_type, has_card, has_badge, status, barcode, notes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     '''
     
     db.execute_query(insert_query, (
@@ -94,7 +94,7 @@ async def student_add(
         get_current_date()
     ))
     
-    return RedirectResponse(url="/students?msg=added", status_code=303)
+    return RedirectResponse(url="/students%smsg=added", status_code=303)
 
 
 @router.get("/students/{student_id}/edit", response_class=HTMLResponse)
@@ -102,11 +102,11 @@ async def student_edit_form(request: Request, student_id: int):
     """نموذج تعديل طالب"""
     db = Database()
     
-    query = "SELECT * FROM students WHERE id = ?"
+    query = "SELECT * FROM students WHERE id = %s"
     result = db.execute_query(query, (student_id,))
     
     if not result:
-        return RedirectResponse(url="/students?error=not_found", status_code=303)
+        return RedirectResponse(url="/students%serror=not_found", status_code=303)
     
     return templates.TemplateResponse("students/form.html", {
         "request": request,
@@ -131,8 +131,8 @@ async def student_update(
     
     update_query = '''
         UPDATE students 
-        SET name=?, study_type=?, has_card=?, has_badge=?, status=?, notes=?
-        WHERE id = ?
+        SET name=%s, study_type=%s, has_card=%s, has_badge=%s, status=%s, notes=%s
+        WHERE id = %s
     '''
     
     db.execute_query(update_query, (
@@ -142,7 +142,7 @@ async def student_update(
         status, notes, student_id
     ))
     
-    return RedirectResponse(url="/students?msg=updated", status_code=303)
+    return RedirectResponse(url="/students%smsg=updated", status_code=303)
 
 
 @router.get("/students/{student_id}", response_class=HTMLResponse)
@@ -151,11 +151,11 @@ async def student_profile(request: Request, student_id: int):
     db = Database()
     
     # بيانات الطالب
-    student_query = "SELECT * FROM students WHERE id = ?"
+    student_query = "SELECT * FROM students WHERE id = %s"
     student_result = db.execute_query(student_query, (student_id,))
     
     if not student_result:
-        return RedirectResponse(url="/students?error=not_found", status_code=303)
+        return RedirectResponse(url="/students%serror=not_found", status_code=303)
     
     student = dict(student_result[0])
     
@@ -176,15 +176,15 @@ async def student_delete(request: Request, student_id: int):
     db = Database()
     
     # حذف الأقساط المرتبطة
-    db.execute_query("DELETE FROM installments WHERE student_id = ?", (student_id,))
+    db.execute_query("DELETE FROM installments WHERE student_id = %s", (student_id,))
     
     # حذف الروابط مع المدرسين
-    db.execute_query("DELETE FROM student_teacher WHERE student_id = ?", (student_id,))
+    db.execute_query("DELETE FROM student_teacher WHERE student_id = %s", (student_id,))
     
     # حذف الطالب
-    db.execute_query("DELETE FROM students WHERE id = ?", (student_id,))
+    db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
     
-    return RedirectResponse(url="/students?msg=deleted", status_code=303)
+    return RedirectResponse(url="/students%smsg=deleted", status_code=303)
 
 
 @router.get("/teachers", response_class=HTMLResponse)
@@ -193,7 +193,7 @@ async def teachers_list(request: Request, subject: str = ""):
     db = Database()
     
     if subject:
-        query = "SELECT * FROM teachers WHERE subject = ? ORDER BY name"
+        query = "SELECT * FROM teachers WHERE subject = %s ORDER BY name"
         teachers = db.execute_query(query, (subject,))
     else:
         query = "SELECT * FROM teachers ORDER BY subject, name"
@@ -235,12 +235,12 @@ async def teacher_add(
     
     insert_query = '''
         INSERT INTO teachers (name, subject, total_fee, notes, created_at)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
     '''
     
     db.execute_query(insert_query, (name, subject, total_fee, notes, get_current_date()))
     
-    return RedirectResponse(url="/teachers?msg=added", status_code=303)
+    return RedirectResponse(url="/teachers%smsg=added", status_code=303)
 
 
 @router.get("/teachers/{teacher_id}/edit", response_class=HTMLResponse)
@@ -248,11 +248,11 @@ async def teacher_edit_form(request: Request, teacher_id: int):
     """نموذج تعديل مدرس"""
     db = Database()
     
-    query = "SELECT * FROM teachers WHERE id = ?"
+    query = "SELECT * FROM teachers WHERE id = %s"
     result = db.execute_query(query, (teacher_id,))
     
     if not result:
-        return RedirectResponse(url="/teachers?error=not_found", status_code=303)
+        return RedirectResponse(url="/teachers%serror=not_found", status_code=303)
     
     return templates.TemplateResponse("teachers/form.html", {
         "request": request,
@@ -275,13 +275,13 @@ async def teacher_update(
     
     update_query = '''
         UPDATE teachers 
-        SET name=?, subject=?, total_fee=?, notes=?
-        WHERE id = ?
+        SET name=%s, subject=%s, total_fee=%s, notes=%s
+        WHERE id = %s
     '''
     
     db.execute_query(update_query, (name, subject, total_fee, notes, teacher_id))
     
-    return RedirectResponse(url="/teachers?msg=updated", status_code=303)
+    return RedirectResponse(url="/teachers%smsg=updated", status_code=303)
 
 
 @router.get("/teachers/{teacher_id}", response_class=HTMLResponse)
@@ -290,11 +290,11 @@ async def teacher_detail(request: Request, teacher_id: int):
     db = Database()
     
     # بيانات المدرس
-    teacher_query = "SELECT * FROM teachers WHERE id = ?"
+    teacher_query = "SELECT * FROM teachers WHERE id = %s"
     teacher_result = db.execute_query(teacher_query, (teacher_id,))
     
     if not teacher_result:
-        return RedirectResponse(url="/teachers?error=not_found", status_code=303)
+        return RedirectResponse(url="/teachers%serror=not_found", status_code=303)
     
     teacher = dict(teacher_result[0])
     
@@ -319,18 +319,18 @@ async def teacher_delete(request: Request, teacher_id: int):
     db = Database()
     
     # حذف السحوبات
-    db.execute_query("DELETE FROM teacher_withdrawals WHERE teacher_id = ?", (teacher_id,))
+    db.execute_query("DELETE FROM teacher_withdrawals WHERE teacher_id = %s", (teacher_id,))
     
     # حذف الأقساط
-    db.execute_query("DELETE FROM installments WHERE teacher_id = ?", (teacher_id,))
+    db.execute_query("DELETE FROM installments WHERE teacher_id = %s", (teacher_id,))
     
     # حذف الروابط
-    db.execute_query("DELETE FROM student_teacher WHERE teacher_id = ?", (teacher_id,))
+    db.execute_query("DELETE FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
     
     # حذف المدرس
-    db.execute_query("DELETE FROM teachers WHERE id = ?", (teacher_id,))
+    db.execute_query("DELETE FROM teachers WHERE id = %s", (teacher_id,))
     
-    return RedirectResponse(url="/teachers?msg=deleted", status_code=303)
+    return RedirectResponse(url="/teachers%smsg=deleted", status_code=303)
 
 
 @router.get("/accounting", response_class=HTMLResponse)
@@ -343,7 +343,7 @@ async def accounting_page(request: Request, search: str = ""):
             SELECT t.*,
                    (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
             FROM teachers t
-            WHERE t.name LIKE ? OR t.subject LIKE ?
+            WHERE t.name LIKE %s OR t.subject LIKE %s
             ORDER BY t.name
         '''
         teachers = db.execute_query(query, (f'%{search}%', f'%{search}%'))
