@@ -15,8 +15,7 @@ PORT = 8000
 DEBUG = True
 
 # ===== إعدادات قاعدة البيانات =====
-DATABASE_URL = "sqlite:///./institute.db"
-DATABASE_NAME = "institute.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require")
 
 # ===== الثوابت المالية (مهم: لا تغيّرها) =====
 # الوحدة: دينار عراقي (Integer)
