@@ -42,7 +42,7 @@ class AddWithdrawal(BaseModel):
 async def api_get_student(student_id: int):
     """الحصول على بيانات طالب"""
     db = Database()
-    query = "SELECT * FROM students WHERE id = ?"
+    query = "SELECT * FROM students WHERE id = %s"
     result = db.execute_query(query, (student_id,))
     
     if not result:
@@ -64,7 +64,7 @@ async def api_get_student_teachers(student_id: int):
 async def api_get_teacher(teacher_id: int):
     """الحصول على بيانات مدرس"""
     db = Database()
-    query = "SELECT * FROM teachers WHERE id = ?"
+    query = "SELECT * FROM teachers WHERE id = %s"
     result = db.execute_query(query, (teacher_id,))
     
     if not result:
@@ -96,15 +96,15 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
     
     try:
         # التحقق من وجود الطالب والمدرس
-        student_check = db.execute_query("SELECT id FROM students WHERE id = ?", (link.student_id,))
-        teacher_check = db.execute_query("SELECT id FROM teachers WHERE id = ?", (link.teacher_id,))
+        student_check = db.execute_query("SELECT id FROM students WHERE id = %s", (link.student_id,))
+        teacher_check = db.execute_query("SELECT id FROM teachers WHERE id = %s", (link.teacher_id,))
         
         if not student_check or not teacher_check:
             raise HTTPException(status_code=404, detail="الطالب أو المدرس غير موجود")
         
         # التحقق من عدم وجود الربط مسبقاً
         existing = db.execute_query(
-            "SELECT * FROM student_teacher WHERE student_id = ? AND teacher_id = ?",
+            "SELECT * FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
             (link.student_id, link.teacher_id)
         )
         
@@ -113,7 +113,7 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
         
         # إنشاء الربط
         db.execute_query(
-            "INSERT INTO student_teacher (student_id, teacher_id) VALUES (?, ?)",
+            "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
             (link.student_id, link.teacher_id)
         )
         
@@ -133,13 +133,13 @@ async def api_unlink_student_teacher(student_id: int, teacher_id: int):
     try:
         # حذف الأقساط أولاً
         db.execute_query(
-            "DELETE FROM installments WHERE student_id = ? AND teacher_id = ?",
+            "DELETE FROM installments WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
         )
         
         # حذف الربط
         db.execute_query(
-            "DELETE FROM student_teacher WHERE student_id = ? AND teacher_id = ?",
+            "DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
         )
         
@@ -159,21 +159,21 @@ async def api_add_installment(installment: AddInstallment):
     try:
         # التحقق من وجود الربط
         link_check = db.execute_query(
-            "SELECT * FROM student_teacher WHERE student_id = ? AND teacher_id = ?",
+            "SELECT * FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
             (installment.student_id, installment.teacher_id)
         )
         
         if not link_check:
             # إنشاء الرب تلقائياً إذا لم يكن موجوداً
             db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id) VALUES (?, ?)",
+                "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
                 (installment.student_id, installment.teacher_id)
             )
         
         # إضافة القسط
         insert_query = '''
             INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, notes)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         '''
         
         db.execute_query(insert_query, (
@@ -211,7 +211,7 @@ async def api_get_installments(student_id: int, teacher_id: int):
         FROM installments i
         JOIN students s ON i.student_id = s.id
         JOIN teachers t ON i.teacher_id = t.id
-        WHERE i.student_id = ? AND i.teacher_id = ?
+        WHERE i.student_id = %s AND i.teacher_id = %s
         ORDER BY i.payment_date DESC
     '''
     
@@ -234,13 +234,13 @@ async def api_delete_installment(installment_id: int):
     
     try:
         # الحصول على بيانات القسط قبل الحذف
-        installment = db.execute_query("SELECT * FROM installments WHERE id = ?", (installment_id,))
+        installment = db.execute_query("SELECT * FROM installments WHERE id = %s", (installment_id,))
         
         if not installment:
             return {"success": False, "message": "القسط غير موجود"}
         
         # حذف القسط
-        db.execute_query("DELETE FROM installments WHERE id = ?", (installment_id,))
+        db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))
         
         return {"success": True, "message": "تم حذف القسط"}
         
@@ -268,7 +268,7 @@ async def api_add_withdrawal(withdrawal: AddWithdrawal):
         # إضافة السحب
         insert_query = '''
             INSERT INTO teacher_withdrawals (teacher_id, amount, withdrawal_date, notes)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         '''
         
         db.execute_query(insert_query, (
@@ -311,7 +311,7 @@ async def api_delete_withdrawal(withdrawal_id: int):
     db = Database()
     
     try:
-        db.execute_query("DELETE FROM teacher_withdrawals WHERE id = ?", (withdrawal_id,))
+        db.execute_query("DELETE FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         return {"success": True, "message": "تم حذف السحب"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
