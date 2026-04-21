@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}محاسبة المدرسين - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ===== عنوان الصفحة ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-warning mb-1">
+                <i class="fas fa-calculator me-2"></i>محاسبة المدرسين
+            </h2>
+            <p class="text-muted mb-0">إدارة السحوبات والأرصدة المالية للمدرسين</p>
+        </div>
+    </div>
+
+    <!-- ===== بحث ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="GET" action="/accounting" class="row g-3">
+                        <div class="col-md-9">
+                            <input type="text" name="search" class="form-control form-control-lg" 
+                                   placeholder="بحث عن مدرس..." value="{{ search }}">
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-warning btn-lg w-100">
+                                <i class="fas fa-search me-1"></i>بحث
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== جدول المحاسبة ===== -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered mb-0 align-middle" id="accountingTable">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th class="text-center">#</th>
+                                    <th>المدرس / المادة</th>
+                                    <th class="text-center">عدد الطلاب</th>
+                                    <th class="text-center">الدافعون</th>
+                                    <th class="text-center">إجمالي المدفوع</th>
+                                    <th class="text-center">خصم المعهد</th>
+                                    <th class="text-center">مستحق المدرس</th>
+                                    <th class="text-center">المسحوب</th>
+                                    <th class="text-center fw-bold">المتبقي</th>
+                                    <th class="text-center">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for teacher in teachers %}
+                                <tr>
+                                    <td class="text-center fw-bold">{{ loop.index }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ teacher.name }}</div>
+                                        <small class="text-muted">{{ teacher.subject }}</small>
+                                    </td>
+                                    <td class="text-center">{{ teacher.students_count or 0 }}</td>
+                                    <td class="text-center">{{ teacher.financial.paying_students_count }}</td>
+                                    <td class="text-center fw-bold text-primary">
+                                        {{ format_currency(teacher.financial.total_received) }}
+                                    </td>
+                                    <td class="text-center text-danger">
+                                        {{ format_currency(teacher.financial.institute_deduction) }}
+                                    </td>
+                                    <td class="text-center fw-bold text-success">
+                                        {{ format_currency(teacher.financial.teacher_due) }}
+                                    </td>
+                                    <td class="text-center text-warning">
+                                        {{ format_currency(teacher.financial.withdrawn_total) }}
+                                    </td>
+                                    <td class="text-center fw-bold {% if teacher.financial.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
+                                        <span class="badge bg-{% if teacher.financial.remaining_balance > 0 %}success{% else %}secondary{% endif %} fs-6">
+                                            {{ format_currency(teacher.financial.remaining_balance) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-success btn-sm" 
+                                                onclick="openWithdrawalModal({{ teacher.id }}, '{{ teacher.name }}', {{ teacher.financial.remaining_balance }})"
+                                                {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}>
+                                            <i class="fas fa-hand-holding-usd"></i> سحب
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center py-5">
+                                        <i class="fas fa-calculator fa-3x text-muted d-block mb-3"></i>
+                                        <p class="text-muted mb-0">لا يوجد مدرسين</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            
+                            {% if teachers %}
+                            <!-- صف الإجمالي -->
+                            <tfoot class="table-dark fw-bold">
+                                <tr>
+                                    <td colspan="3" class="text-center">الإجمالي</td>
+                                    <td class="text-center">{{ teachers|sum(attribute='financial.paying_students_count') }}</td>
+                                    <td class="text-center text-primary">{{ format_currency(teachers|sum(attribute='financial.total_received')) }}</td>
+                                    <td class="text-center text-danger">{{ format_currency(teachers|sum(attribute='financial.institute_deduction')) }}</td>
+                                    <td class="text-center text-success">{{ format_currency(teachers|sum(attribute='financial.teacher_due')) }}</td>
+                                    <td class="text-center text-warning">{{ format_currency(teachers|sum(attribute='financial.withdrawn_total')) }}</td>
+                                    <td class="text-center text-success">{{ format_currency(teachers|sum(attribute='financial.remaining_balance')) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                            {% endif %}
+
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== Modal تسجيل سحب ===== -->
+<div class="modal fade" id="withdrawalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-hand-holding-usd me-2"></i>تسجيل سحب جديد</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="withdrawalForm" onsubmit="addWithdrawal(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="w_teacher_id">
+                    
+                    <div class="alert alert-info">
+                        <div class="d-flex justify-content-between">
+                            <span><strong>المدرس:</strong> <span id="w_teacher_name"></span></span>
+                            <span><strong>الرصيد المتاح:</strong> <span id="w_available_balance" class="fw-bold"></span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">مبلغ السحب (بالدينار):</label>
+                        <input type="number" class="form-control form-control-lg" id="w_amount" 
+                               min="1" required placeholder="أدخل المبلغ">
+                        <div class="form-text">
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                            لا يمكن تجاوز الرصيد المتاح
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">التاريخ:</label>
+                        <input type="date" class="form-control" id="w_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات:</label>
+                        <input type="text" class="form-control" id="w_notes" placeholder="اختياري...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>تسجيل السحب
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/accounting.js"></script>
+{% endblock %}

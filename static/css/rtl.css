@@ -1,0 +1,131 @@
+/* ============================================
+   rtl.css - تنسيقات دعم اللغة العربية RTL
+   ============================================ */
+
+/* ===== اتجاه النصوص ===== */
+html[dir="rtl"] body {
+    text-align: right;
+}
+
+html[dir="rtl"] .text-start {
+    text-align: right !important;
+}
+
+html[dir="rtl"] .text-end {
+    text-align: left !important;
+}
+
+/* ===== الحواف والهوامش ===== */
+html[dir="rtl"] .me-1 { margin-left: 0.25rem !important; margin-right: 0 !important; }
+html[dir="rtl"] .me-2 { margin-left: 0.5rem !important; margin-right: 0 !important; }
+html[dir="rtl"] .me-3 { margin-left: 1rem !important; margin-right: 0 !important; }
+
+html[dir="rtl"] .ms-1 { margin-right: 0.25rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .ms-2 { margin-right: 0.5rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .ms-3 { margin-right: 1rem !important; margin-left: 0 !important; }
+
+html[dir="rtl"] .ps-1 { padding-right: 0.25rem !important; padding-left: 0 !important; }
+html[dir="rtl"] .ps-2 { padding-right: 0.5rem !important; padding-left: 0 !important; }
+html[dir="rtl"] .ps-3 { padding-right: 1rem !important; padding-left: 0 !important; }
+
+html[dir="rtl"] .pe-1 { padding-left: 0.25rem !important; padding-right: 0 !important; }
+html[dir="rtl"] .pe-2 { padding-left: 0.5rem !important; padding-right: 0 !important; }
+html[dir="rtl"] .pe-3 { padding-left: 1rem !important; padding-right: 0 !important; }
+
+/* ===== الأيقونات مع النصوص ===== */
+html[dir="rtl"] i.fa-arrow-right::before {
+    content: "\f060"; /* السهم لليسار */
+}
+
+html[dir="rtl"] i.fa-arrow-left::before {
+    content: "\f061"; /* السهم لليمين */
+}
+
+/* ===== الجداول RTL ===== */
+html[dir="rtl"] table {
+    direction: rtl;
+}
+
+html[dir="rtl"] thead th {
+    text-align: right;
+}
+
+/* ===== النماذج RTL ===== */
+html[dir="rtl"] input[type="text"],
+html[dir="rtl"] input[type="number"],
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="date"],
+html[dir="rtl"] select,
+html[dir="rtl"] textarea {
+    text-align: right;
+}
+
+/* ===== البطاقات RTL ===== */
+html[dir="rtl"] .card-header {
+    text-align: right;
+}
+
+/* ===== الـ Breadcrumb RTL ===== */
+html[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before {
+    content: "\\";
+    float: right;
+    padding-left: 0.5rem;
+    padding-right: 0;
+}
+
+/* ===== Dropdown Menu RTL ===== */
+html[dir="rtl"] .dropdown-menu {
+    text-align: right;
+}
+
+html[dir="rtl"] .dropdown-menu-end {
+    --bs-position: start;
+}
+
+/* ===== Modal RTL ===== */
+html[dir="rtl"] .modal-header .btn-close {
+    margin-left: -1rem;
+    margin-right: 0;
+}
+
+/* ===== Pagination RTL ===== */
+html[dir="rtl"] .pagination {
+    direction: rtl;
+}
+
+/* ===== الأرقام العربية (اختياري) ===== */
+.arabic-numerals {
+    font-feature-settings: 'ss01';
+}
+
+/* ===== تحسين عرض النص العربي ===== */
+html[dir="rtl"] p,
+html[dir="rtl"] span,
+html[dir="rtl"] div,
+html[dir="rtl"] td,
+html[dir="rtl"] th,
+html[dir="rtl"] li,
+html[dir="rtl"] label {
+    line-height: 1.8;
+}
+
+/* ===== تحسين تباعد الحروف العربية ===== */
+html[dir="rtl"] .fw-bold {
+    letter-spacing: 0;
+}
+
+/* ===== حركة الانزلاق من اليمين ===== */
+@keyframes slideFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+html[dir="rtl"] .slide-in {
+    animation: slideFromRight 0.4s ease forwards;
+}

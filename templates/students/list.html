@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if mode == 'add' %}إضافة طالب جديد{% else %}تعديل بيانات الطالب{% endif %} - نظام إدارة المعهد
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+            <!-- ===== عنوان النموذج ===== -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0 fw-bold">
+                        {% if mode == 'add' %}
+                        <i class="fas fa-user-plus me-2"></i>إضافة طالب جديد
+                        {% else %}
+                        <i class="fas fa-edit me-2"></i>تعديل بيانات الطالب
+                        {% endif %}
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    
+                    {% if mode == 'add' %}
+                    <form method="POST" action="/students/add" id="studentForm">
+                    {% else %}
+                    <form method="POST" action="/students/{{ student.id }}/edit" id="studentForm">
+                    {% endif %}
+
+                        <!-- اسم الطالب -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold required">
+                                <i class="fas fa-user me-1"></i>اسم الطالب الكامل
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="name" name="name"
+                                   value="{{ student.name if student else '' }}" required
+                                   placeholder="أدخل اسم الطالب الكامل"
+                                   minlength="2" maxlength="100">
+                        </div>
+
+                        <div class="row">
+                            <!-- نوع الدراسة -->
+                            <div class="col-md-6 mb-3">
+                                <label for="study_type" class="form-label fw-bold">
+                                    <i class="fas fa-book-reader me-1"></i>نوع الدراسة
+                                </label>
+                                <select class="form-select form-select-lg" id="study_type" name="study_type">
+                                    <option value="حضوري" {% if student and student.study_type == 'حضوري' %}selected{% endif %}>حضوري</option>
+                                    <option value="الكتروني" {% if student and student.study_type == 'الكتروني' %}selected{% endif %}>إلكتروني</option>
+                                </select>
+                            </div>
+
+                            <!-- الحالة -->
+                            <div class="col-md-6 mb-3">
+                                <label for="status" class="form-label fw-bold">
+                                    <i class="fas fa-info-circle me-1"></i>الحالة
+                                </label>
+                                <select class="form-select form-select-lg" id="status" name="status">
+                                    <option value="مستمر" {% if not student or student.status == 'مستمر' %}selected{% endif %}>مستمر</option>
+                                    <option value="منسحب" {% if student and student.status == 'منسحب' %}selected{% endif %}>منسحب</option>
+                                    <option value="مكتمل" {% if student and student.status == 'مكتمل' %}selected{% endif %}>مكتمل</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- بطاقة -->
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input form-check-input-lg" type="checkbox" 
+                                           id="has_card" name="has_card" value="true"
+                                           {% if student and student.has_card %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="has_card">
+                                        <i class="fas fa-id-card me-1"></i>يملك بطاقة
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- شارة -->
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input form-check-input-lg" type="checkbox" 
+                                           id="has_badge" name="has_badge" value="true"
+                                           {% if student and student.has_badge %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="has_badge">
+                                        <i class="fas fa-certificate me-1"></i>يملك شارة
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ملاحظات -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label fw-bold">
+                                <i class="fas fa-sticky-note me-1"></i>ملاحظات (اختياري)
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="أي ملاحظات إضافية...">{{ student.notes if student else '' }}</textarea>
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="d-flex justify-content-between gap-3">
+                            <a href="/students" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-arrow-right me-1"></i>رجوع
+                            </a>
+                            <div class="gap-2 d-flex">
+                                <button type="reset" class="btn btn-outline-warning btn-lg px-4">
+                                    <i class="fas fa-undo me-1"></i>تفريغ
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="fas fa-save me-1"></i>
+                                    {% if mode == 'add' %}حفظ الطالب{% else %}تحديث البيانات{% endif %}
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

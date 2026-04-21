@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}بروفايل الطالب - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ===== رأس الصفحة ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h2 class="fw-bold text-primary mb-1">
+                        <i class="fas fa-user-circle me-2"></i>بروفايل الطالب
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
+                            <li class="breadcrumb-item"><a href="/students">الطلاب</a></li>
+                            <li class="breadcrumb-item active">{{ student.name }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/pdf/student/{{ student.id }}" class="btn btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>تقرير PDF
+                    </a>
+                    <a href="/students/{{ student.id }}/edit" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>تعديل
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ===== معلومات الطالب الأساسية ===== -->
+        <div class="col-lg-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>معلومات الطالب</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="fw-bold text-muted">الاسم:</td>
+                            <td class="fw-bold">{{ student.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الرمز:</td>
+                            <td><code>{{ student.barcode }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">نوع الدراسة:</td>
+                            <td>
+                                <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
+                                    {{ student.study_type }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الحالة:</td>
+                            <td>
+                                <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
+                                    {{ student.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">بطاقة:</td>
+                            <td>
+                                {% if student.has_card %}
+                                <i class="fas fa-check-circle text-success"></i> نعم
+                                {% else %}
+                                <i class="fas fa-times-circle text-muted"></i> لا
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">شارة:</td>
+                            <td>
+                                {% if student.has_badge %}
+                                <i class="fas fa-check-circle text-success"></i> نعم
+                                {% else %}
+                                <i class="fas fa-times-circle text-muted"></i> لا
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% if student.notes %}
+                        <tr>
+                            <td class="fw-bold text-muted">ملاحظات:</td>
+                            <td>{{ student.notes }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== المدرسين والملخص المالي ===== -->
+        <div class="col-lg-8">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>المدرسين والدفعات</h5>
+                    <button class="btn btn-light btn-sm" onclick="openLinkTeacherModal()">
+                        <i class="fas fa-plus me-1"></i>ربط بمدرس
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    
+                    {% if teachers_summary %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>المدرس</th>
+                                    <th>المادة</th>
+                                    <th class="text-center">الأجر الكلي</th>
+                                    <th class="text-center">المدفوع</th>
+                                    <th class="text-center">المتبقي</th>
+                                    <th class="text-center">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ts in teachers_summary %}
+                                <tr>
+                                    <td class="fw-bold">{{ loop.index }}</td>
+                                    <td class="fw-bold">{{ ts.teacher_name }}</td>
+                                    <td><span class="badge bg-info">{{ ts.subject }}</span></td>
+                                    <td class="text-center fw-bold">{{ format_currency(ts.total_fee) }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">{{ format_currency(ts.paid_total) }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{% if ts.remaining_balance > 0 %}warning{% else %}success{% endif %}">
+                                            {{ format_currency(ts.remaining_balance) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')">
+                                                <i class="fas fa-money-bill"></i>
+                                            </button>
+                                            <button class="btn btn-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})">
+                                                <i class="fas fa-list"></i>
+                                            </button>
+                                            <button class="btn btn-danger" onclick="unlinkTeacher({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')">
+                                                <i class="fas fa-unlink"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                <!-- صف الإجمالي -->
+                                <tr class="table-active fw-bold">
+                                    <td colspan="3" class="text-end">الإجمالي:</td>
+                                    <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</td>
+                                    <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
+                                    <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users-slash fa-3x text-muted d-block mb-3"></i>
+                        <p class="text-muted mb-3">لا يوجد مدرسين مرتبطين بهذا الطالب</p>
+                        <button class="btn btn-primary" onclick="openLinkTeacherModal()">
+                            <i class="fas fa-plus me-1"></i>ربط طالب بمدرس
+                        </button>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===== Modal ربط المدرس ===== -->
+<div class="modal fade" id="linkTeacherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-link me-2"></i>ربط الطالب بمدرس</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="linkTeacherForm" onsubmit="linkStudentTeacher(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="link_student_id" value="{{ student.id }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اختر المدرس:</label>
+                        <select class="form-select" id="link_teacher_id" required>
+                            <option value="">-- اختر مدرس --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">ربط</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal إضافة قسط ===== -->
+<div class="modal fade" id="installmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-money-bill-wave me-2"></i>إضافة قسط</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="installmentForm" onsubmit="addInstallment(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="inst_student_id">
+                    <input type="hidden" id="inst_teacher_id">
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>الطالب:</strong> <span id="inst_student_name"></span> | 
+                        <strong>المدرس:</strong> <span id="inst_teacher_name"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المبلغ (بالدينار):</label>
+                        <input type="number" class="form-control" id="inst_amount" min="1" required placeholder="150000">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">التاريخ:</label>
+                            <input type="date" class="form-control" id="inst_date" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">نوع القسط:</label>
+                            <select class="form-select" id="inst_type">
+                                <option value="القسط الأول">القسط الأول</option>
+                                <option value="القسط الثاني">القسط الثاني</option>
+                                <option value="القسط الثالث">القسط الثالث</option>
+                                <option value="دفع كامل">دفع كامل</option>
+                                <option value="دفعة جزئية">دفعة جزئية</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات:</label>
+                        <input type="text" class="form-control" id="inst_notes" placeholder="اختياري...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">حفظ القسط</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal عرض الأقساط ===== -->
+<div class="modal fade" id="installmentsListModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-list-alt me-2"></i>تفاصيل الأقساط</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="installmentsListContent">
+                <!-- يتم تحميله ديناميكياً -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/students.js"></script>
+{% endblock %}

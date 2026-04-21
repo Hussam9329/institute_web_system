@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if mode == 'add' %}إضافة مدرس جديد{% else %}تعديل بيانات المدرس{% endif %} - نظام إدارة المعهد
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+            <div class="card shadow">
+                <div class="card-header bg-success text-white py-3">
+                    <h4 class="mb-0 fw-bold">
+                        {% if mode == 'add' %}
+                        <i class="fas fa-user-plus me-2"></i>إضافة مدرس جديد
+                        {% else %}
+                        <i class="fas fa-edit me-2"></i>تعديل بيانات المدرس
+                        {% endif %}
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    
+                    {% if mode == 'add' %}
+                    <form method="POST" action="/teachers/add" id="teacherForm">
+                    {% else %}
+                    <form method="POST" action="/teachers/{{ teacher.id }}/edit" id="teacherForm">
+                    {% endif %}
+
+                        <!-- اسم المدرس -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold required">
+                                <i class="fas fa-user me-1"></i>اسم المدرس الكامل
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="name" name="name"
+                                   value="{{ teacher.name if teacher else '' }}" required
+                                   placeholder="أدخل اسم المدرس الكامل"
+                                   minlength="2" maxlength="100">
+                        </div>
+
+                        <!-- المادة -->
+                        <div class="mb-3">
+                            <label for="subject" class="form-label fw-bold required">
+                                <i class="fas fa-book me-1"></i>المادة التي يدرسها
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="subject" name="subject"
+                                   value="{{ teacher.subject if teacher else '' }}" required
+                                   placeholder="مثال: رياضيات، فيزياء، لغة عربية..."
+                                   list="subjects-list">
+                            <datalist id="subjects-list">
+                                <option value="رياضيات">
+                                <option value="فيزياء">
+                                <option value="كيمياء">
+                                <option value="أحياء">
+                                <option value="لغة عربية">
+                                <option value="لغة إنجليزية">
+                                <option value="حاسوب">
+                            </datalist>
+                        </div>
+
+                        <!-- الأجر الكلي -->
+                        <div class="mb-3">
+                            <label for="total_fee" class="form-label fw-bold required">
+                                <i class="fas fa-money-bill-wave me-1"></i>الأجر الكلي (بالدينار)
+                            </label>
+                            <input type="number" class="form-control form-control-lg" id="total_fee" name="total_fee"
+                                   value="{{ teacher.total_fee if teacher else 0 }}" required min="0"
+                                   placeholder="مثال: 200000">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                هذا هو الأجر الكلي الذي يدفعه كل طالب لهذا المدرس
+                            </div>
+                        </div>
+
+                        <!-- ملاحظات -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label fw-bold">
+                                <i class="fas fa-sticky-note me-1"></i>ملاحظات (اختياري)
+                            </label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="أي ملاحظات إضافية...">{{ teacher.notes if teacher else '' }}</textarea>
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="d-flex justify-content-between gap-3">
+                            <a href="/teachers" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-arrow-right me-1"></i>رجوع
+                            </a>
+                            <div class="gap-2 d-flex">
+                                <button type="reset" class="btn btn-outline-warning btn-lg px-4">
+                                    <i class="fas fa-undo me-1"></i>تفريغ
+                                </button>
+                                <button type="submit" class="btn btn-success btn-lg px-5">
+                                    <i class="fas fa-save me-1"></i>
+                                    {% if mode == 'add' %}حفظ المدرس{% else %}تحديث البيانات{% endif %}
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة المعهد{% endblock %}</title>
+    
+    <!-- Bootstrap 5 RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/rtl.css">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- ===== شريط التنقل العلوي ===== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
+        <div class="container-fluid">
+            <!-- الشعار والعنوان -->
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-school me-2"></i>نظام إدارة المعهد
+            </a>
+            
+            <!-- زر القائمة للجوال -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- قائمة التنقل -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
+                            <i class="fas fa-home me-1"></i>الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/students' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/students">
+                            <i class="fas fa-user-graduate me-1"></i>الطلاب
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/teachers' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/teachers">
+                            <i class="fas fa-chalkboard-teacher me-1"></i>المدرسين
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/accounting' in request.url.path %}active{% endif %}" href="/accounting">
+                            <i class="fas fa-calculator me-1"></i>المحاسبة
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/stats' in request.url.path %}active{% endif %}" href="/stats">
+                            <i class="fas fa-chart-bar me-1"></i>الإحصائيات
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- الوقت والتاريخ -->
+                <div class="text-white d-none d-lg-block">
+                    <i class="fas fa-clock me-1"></i>
+                    <span id="current-datetime"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== المحتوى الرئيسي ===== -->
+    <main class="main-content mt-5 pt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ===== التذييل ===== -->
+    <footer class="bg-dark text-white py-3 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">
+                <i class="fas fa-code me-1"></i>
+                نظام إدارة المعهد المتكامل v2.0
+                <span class="mx-2">|</span>
+                © 2024 جميع الحقوق محفوظة
+            </p>
+        </div>
+    </footer>
+
+    <!-- ===== رسائل التنبيه ===== -->
+    <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x pt-5" style="z-index: 9999;">
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/app.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

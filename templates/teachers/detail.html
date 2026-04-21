@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل المدرس - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- ===== رأس الصفحة ===== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h2 class="fw-bold text-success mb-1">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>تفاصيل المدرس
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
+                            <li class="breadcrumb-item"><a href="/teachers">المدرسين</a></li>
+                            <li class="breadcrumb-item active">{{ teacher.name }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf me-1"></i>تقرير PDF
+                    </a>
+                    <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i>تعديل
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ===== معلومات المدرس ===== -->
+        <div class="col-lg-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>بيانات المدرس</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="fw-bold text-muted">الاسم:</td>
+                            <td class="fw-bold">{{ teacher.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">المادة:</td>
+                            <td><span class="badge bg-info">{{ teacher.subject }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">الأجر الكلي:</td>
+                            <td class="fw-bold text-primary">{{ format_currency(teacher.total_fee) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">عدد الطلاب:</td>
+                            <td class="fw-bold">{{ students_list|length }}</td>
+                        </tr>
+                        {% if teacher.notes %}
+                        <tr>
+                            <td class="fw-bold text-muted">ملاحظات:</td>
+                            <td>{{ teacher.notes }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== الملخص المالي ===== -->
+        <div class="col-lg-8">
+            <div class="card shadow h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>الملخص المالي</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light border">
+                                <div class="card-body text-center">
+                                    <small class="text-muted d-block">إجمالي الاستلامات</small>
+                                    <h3 class="text-primary fw-bold mb-0">{{ format_currency(financial_info.total_received) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light border">
+                                <div class="card-body text-center">
+                                    <small class="text-muted d-block">خصم المعهد</small>
+                                    <h3 class="text-danger fw-bold mb-0">{{ format_currency(financial_info.institute_deduction) }}</h3>
+                                    <small class="text-muted">{{ financial_info.paying_students_count }} طالب × 50,000</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <small class="opacity-75 d-block">مستحق المدرس</small>
+                                    <h3 class="fw-bold mb-0">{{ format_currency(financial_info.teacher_due) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card bg-light border">
+                                <div class="card-body text-center">
+                                    <small class="text-muted d-block">المسحوب سابقاً</small>
+                                    <h3 class="text-warning fw-bold mb-0">{{ format_currency(financial_info.withdrawn_total) }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="card {% if financial_info.remaining_balance > 0 %}bg-success{% else %}bg-secondary{% endif %} text-white">
+                                <div class="card-body text-center">
+                                    <small class="opacity-75 d-block">الرصيد المتبقي المتاح للسحب</small>
+                                    <h2 class="fw-bold mb-0">{{ format_currency(financial_info.remaining_balance) }}</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== قائمة الطلاب ===== -->
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>قائمة الطلاب ({{ students_list|length }})</h5>
+                </div>
+                <div class="card-body p-0">
+                    
+                    {% if students_list %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>اسم الطالب</th>
+                                    <th>نوع الدراسة</th>
+                                    <th>الحالة</th>
+                                    <th class="text-center">المدفوع</th>
+                                    <th class="text-center">حالة الدفع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students_list %}
+                                <tr>
+                                    <td class="fw-bold">{{ loop.index }}</td>
+                                    <td>
+                                        <a href="/students/{{ student.id }}" class="text-decoration-none fw-bold">
+                                            {{ student.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
+                                            {{ student.study_type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
+                                            {{ student.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center fw-bold">
+                                        {{ format_currency(student.paid_total) }}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if student.is_paying %}
+                                        <span class="badge bg-success"><i class="fas fa-check"></i> دافع</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary"><i class="fas fa-times"></i> غير دافع</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users-slash fa-3x text-muted d-block mb-3"></i>
+                        <p class="text-muted mb-0">لا يوجد طلاب مرتبطين بهذا المدرس</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
