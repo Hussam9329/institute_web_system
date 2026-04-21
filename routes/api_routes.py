@@ -60,6 +60,16 @@ async def api_get_student_teachers(student_id: int):
 
 # ===== عمليات المدرسين =====
 
+@router.get("/teachers")
+async def api_get_all_teachers():
+    """الحصول على قائمة جميع المدرسين"""
+    db = Database()
+    query = "SELECT id, name, subject, total_fee, notes FROM teachers ORDER BY name"
+    results = db.execute_query(query)
+    
+    return {"success": True, "data": [dict(r) for r in results] if results else []}
+
+
 @router.get("/teachers/{teacher_id}")
 async def api_get_teacher(teacher_id: int):
     """الحصول على بيانات مدرس"""

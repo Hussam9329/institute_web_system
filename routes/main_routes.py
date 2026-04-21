@@ -29,25 +29,31 @@ async def index(request: Request):
 
 
 @router.get("/students", response_class=HTMLResponse)
-async def students_list(request: Request, search: str = ""):
+async def students_list(request: Request, search: str = "", msg: str = "", error: str = ""):
     """صفحة قائمة الطلاب"""
     db = Database()
     
-    if search:
-        query = '''
-            SELECT * FROM students 
-            WHERE name LIKE %s OR barcode LIKE %s
-            ORDER BY name
-        '''
-        students = db.execute_query(query, (f'%{search}%', f'%{search}%'))
-    else:
-        query = "SELECT * FROM students ORDER BY name"
-        students = db.execute_query(query)
+    try:
+        if search:
+            query = '''
+                SELECT * FROM students 
+                WHERE name LIKE %s OR barcode LIKE %s
+                ORDER BY name
+            '''
+            students = db.execute_query(query, (f'%{search}%', f'%{search}%'))
+        else:
+            query = "SELECT * FROM students ORDER BY name"
+            students = db.execute_query(query)
+    except Exception as e:
+        students = []
+        print(f"Error loading students: {e}")
     
     return templates.TemplateResponse("students/list.html", {
         "request": request,
         "students": students,
         "search": search,
+        "msg": msg,
+        "error": error,
         "format_currency": format_currency
     })
 
@@ -339,30 +345,46 @@ async def accounting_page(request: Request, search: str = ""):
     """صفحة محاسبة المدرسين"""
     db = Database()
     
-    if search:
-        query = '''
-            SELECT t.*,
-                   (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
-            FROM teachers t
-            WHERE t.name LIKE %s OR t.subject LIKE %s
-            ORDER BY t.name
-        '''
-        teachers = db.execute_query(query, (f'%{search}%', f'%{search}%'))
-    else:
-        query = '''
-            SELECT t.*,
-                   (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
-            FROM teachers t
-            ORDER BY t.name
-        '''
-        teachers = db.execute_query(query)
-    
-    # إضافة المعلومات المالية لكل مدرس
-    teachers_with_finance = []
-    for teacher in teachers:
-        teacher_dict = dict(teacher)
-        teacher_dict['financial'] = finance_service.calculate_teacher_balance(teacher_dict['id'])
-        teachers_with_finance.append(teacher_dict)
+    try:
+        if search:
+            query = '''
+                SELECT t.*,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
+                FROM teachers t
+                WHERE t.name LIKE %s OR t.subject LIKE %s
+                ORDER BY t.name
+            '''
+            teachers = db.execute_query(query, (f'%{search}%', f'%{search}%'))
+        else:
+            query = '''
+                SELECT t.*,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
+                FROM teachers t
+                ORDER BY t.name
+            '''
+            teachers = db.execute_query(query)
+        
+        # إضافة المعلومات المالية لكل مدرس
+        teachers_with_finance = []
+        for teacher in teachers:
+            teacher_dict = dict(teacher)
+            try:
+                teacher_dict['financial'] = finance_service.calculate_teacher_balance(teacher_dict['id'])
+            except Exception as e:
+                print(f"Error calculating balance for teacher {teacher_dict['id']}: {e}")
+                teacher_dict['financial'] = {
+                    'total_received': 0,
+                    'institute_deduction': 0,
+                    'paying_students_count': 0,
+                    'teacher_due': 0,
+                    'withdrawn_total': 0,
+                    'remaining_balance': 0,
+                    'can_withdraw': False
+                }
+            teachers_with_finance.append(teacher_dict)
+    except Exception as e:
+        print(f"Error loading accounting page: {e}")
+        teachers_with_finance = []
     
     return templates.TemplateResponse("accounting/index.html", {
         "request": request,

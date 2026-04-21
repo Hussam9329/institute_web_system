@@ -92,7 +92,7 @@
                                         </button>
                                     </td>
                                 </tr>
-                                {% empty %}
+                                {% else %}
                                 <tr>
                                     <td colspan="10" class="text-center py-5">
                                         <i class="fas fa-calculator fa-3x text-muted d-block mb-3"></i>
@@ -107,12 +107,12 @@
                             <tfoot class="table-dark fw-bold">
                                 <tr>
                                     <td colspan="3" class="text-center">الإجمالي</td>
-                                    <td class="text-center">{{ teachers|sum(attribute='financial.paying_students_count') }}</td>
-                                    <td class="text-center text-primary">{{ format_currency(teachers|sum(attribute='financial.total_received')) }}</td>
-                                    <td class="text-center text-danger">{{ format_currency(teachers|sum(attribute='financial.institute_deduction')) }}</td>
-                                    <td class="text-center text-success">{{ format_currency(teachers|sum(attribute='financial.teacher_due')) }}</td>
-                                    <td class="text-center text-warning">{{ format_currency(teachers|sum(attribute='financial.withdrawn_total')) }}</td>
-                                    <td class="text-center text-success">{{ format_currency(teachers|sum(attribute='financial.remaining_balance')) }}</td>
+                                    <td class="text-center">{{ teachers | map(attribute='financial') | map(attribute='paying_students_count') | sum }}</td>
+                                    <td class="text-center text-primary">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</td>
+                                    <td class="text-center text-danger">{{ format_currency(teachers | map(attribute='financial') | map(attribute='institute_deduction') | sum) }}</td>
+                                    <td class="text-center text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='teacher_due') | sum) }}</td>
+                                    <td class="text-center text-warning">{{ format_currency(teachers | map(attribute='financial') | map(attribute='withdrawn_total') | sum) }}</td>
+                                    <td class="text-center text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='remaining_balance') | sum) }}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>

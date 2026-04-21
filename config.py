@@ -17,7 +17,7 @@ DEBUG = True
 # ===== إعدادات قاعدة البيانات =====
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://neondb_owner:npg_3fTtMYrvCw9m@ep-muddy-boat-anvp37bx-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    "postgresql://neondb_owner:npg_3fTtMYrvCw9m@ep-muddy-boat-anvp37bx-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 )
 
 # ===== الثوابت المالية (مهم: لا تغيّرها) =====
