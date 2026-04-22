@@ -8,7 +8,7 @@
 
 from typing import List, Dict, Any, Optional
 from database import Database
-from config import INSTITUTE_DEDUCTION_PER_STUDENT, format_currency
+from config import format_currency
 
 
 class FinanceService:
@@ -174,17 +174,38 @@ class FinanceService:
             return result[0]['count'] if result[0]['count'] else 0
         return 0
     
-    def calculate_institute_deduction(self, teacher_id: int) -> int:
+    def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0) -> int:
         """
         حساب خصم المعهد لهذا المدرس
         
-        المعادلة: عدد الطلاب الدافعين × INSTITUTE_DEDUCTION_PER_STUDENT (50000)
+        يعتمد على نوع الخصم:
+        - percentage: خصم نسبة مئوية من إجمالي الاستلامات
+        - manual: مبلغ ثابت لكل طالب دافع
         
         Returns:
             int: مبلغ الخصم (بالدينار)
         """
-        paying_count = self.get_teacher_paying_students_count(teacher_id)
-        deduction = paying_count * INSTITUTE_DEDUCTION_PER_STUDENT
+        query = '''
+            SELECT institute_deduction_type, institute_deduction_value 
+            FROM teachers WHERE id = %s
+        '''
+        result = self.db.execute_query(query, (teacher_id,))
+        
+        if not result:
+            return 0
+        
+        deduction_type = result[0]['institute_deduction_type'] or 'percentage'
+        deduction_value = result[0]['institute_deduction_value'] or 0
+        
+        if not total_received:
+            total_received = self.get_teacher_students_paid_total(teacher_id)
+        
+        if deduction_type == 'percentage':
+            deduction = int((total_received * deduction_value) / 100)
+        else:  # manual
+            paying_count = self.get_teacher_paying_students_count(teacher_id)
+            deduction = paying_count * deduction_value
+        
         return deduction
     
     def calculate_teacher_due(self, teacher_id: int) -> Dict[str, Any]:
@@ -197,14 +218,13 @@ class FinanceService:
             dict يحتوي تفاصيل الحساب
         """
         total_received = self.get_teacher_students_paid_total(teacher_id)
-        institute_deduction = self.calculate_institute_deduction(teacher_id)
+        institute_deduction = self.calculate_institute_deduction(teacher_id, total_received)
         teacher_due = total_received - institute_deduction
         
         return {
             'total_received': total_received,
             'institute_deduction': institute_deduction,
             'paying_students_count': self.get_teacher_paying_students_count(teacher_id),
-            'deduction_per_student': INSTITUTE_DEDUCTION_PER_STUDENT,
             'teacher_due': teacher_due
         }
     
@@ -302,8 +322,13 @@ class FinanceService:
         Returns:
             list: قائمة الطلاب مع معلوماتهم المالية
         """
+        # الحصول على بيانات المدرس أولاً
+        teacher_query = '''SELECT total_fee FROM teachers WHERE id = %s'''
+        teacher_result = self.db.execute_query(teacher_query, (teacher_id,))
+        total_fee = teacher_result[0]['total_fee'] if teacher_result else 0
+        
         query = '''
-            SELECT s.id, s.name, s.study_type, s.status, s.barcode
+            SELECT s.id, s.name, s.study_type, s.barcode, st.status as status
             FROM students s
             INNER JOIN student_teacher st ON s.id = st.student_id
             WHERE st.teacher_id = %s
@@ -314,9 +339,12 @@ class FinanceService:
         result = []
         for student in students:
             paid = self.get_student_paid_total(student['id'], teacher_id)
+            remaining = total_fee - paid
             result.append({
                 **student,
+                'total_fee': total_fee,
                 'paid_total': paid,
+                'remaining_balance': remaining,
                 'is_paying': paid > 0
             })
         

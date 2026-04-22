@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import Database
 from services.finance_service import finance_service
-from config import get_current_date, INSTITUTE_DEDUCTION_PER_STUDENT
+from config import get_current_date
 
 router = APIRouter(prefix="/api")
 
@@ -446,7 +446,7 @@ async def api_global_search(q: str = ""):
     try:
         # بحث الطلاب
         students = db.execute_query(
-            '''SELECT id, name, barcode, study_type, status FROM students 
+            '''SELECT id, name, barcode, study_type FROM students 
                WHERE name LIKE %s OR barcode LIKE %s ORDER BY name LIMIT 10''',
             (f'%{q}%', f'%{q}%')
         )

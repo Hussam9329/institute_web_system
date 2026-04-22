@@ -92,6 +92,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS student_teacher (
                 student_id INTEGER NOT NULL,
                 teacher_id INTEGER NOT NULL,
+                status VARCHAR(20) DEFAULT 'مستمر',
+                notes TEXT DEFAULT '',
                 PRIMARY KEY (student_id, teacher_id),
                 FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                 FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE
@@ -124,6 +126,23 @@ def init_db():
         ''')
         
         conn.commit()
+        
+        # ===== ALTER TABLE - إضافة أعمدة جديدة للجداول الموجودة =====
+        alter_statements = [
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_deduction_type VARCHAR(20) DEFAULT 'percentage'",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_deduction_value INTEGER DEFAULT 0",
+            "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'مستمر'",
+            "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT ''",
+        ]
+        
+        for stmt in alter_statements:
+            try:
+                cursor.execute(stmt)
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                pass  # العمود موجود مسبقاً
+        
     except Exception as e:
         conn.rollback()
         raise e

@@ -145,8 +145,6 @@ async def student_add(
     name: str = Form(...),
     study_type: str = Form("حضوري"),
     has_card: bool = Form(False),
-    has_badge: bool = Form(False),
-    status: str = Form("مستمر"),
     notes: str = Form("")
 ):
     """حفظ طالب جديد"""
@@ -159,15 +157,14 @@ async def student_add(
     barcode = f"STU-2024-{str(next_id).zfill(6)}"
     
     insert_query = '''
-        INSERT INTO students (name, study_type, has_card, has_badge, status, barcode, notes, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO students (name, study_type, has_card, barcode, notes, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
     '''
     
     db.execute_query(insert_query, (
         name, study_type, 
         1 if has_card else 0, 
-        1 if has_badge else 0, 
-        status, barcode, notes, 
+        barcode, notes, 
         get_current_date()
     ))
     
@@ -230,8 +227,6 @@ async def student_update(
     name: str = Form(...),
     study_type: str = Form("حضوري"),
     has_card: bool = Form(False),
-    has_badge: bool = Form(False),
-    status: str = Form("مستمر"),
     notes: str = Form("")
 ):
     """تحديث بيانات طالب"""
@@ -239,15 +234,14 @@ async def student_update(
     
     update_query = '''
         UPDATE students 
-        SET name=%s, study_type=%s, has_card=%s, has_badge=%s, status=%s, notes=%s
+        SET name=%s, study_type=%s, has_card=%s, notes=%s
         WHERE id = %s
     '''
     
     db.execute_query(update_query, (
         name, study_type,
         1 if has_card else 0,
-        1 if has_badge else 0,
-        status, notes, student_id
+        notes, student_id
     ))
     
     # تحديث ربط المدرسين
@@ -393,6 +387,8 @@ async def teacher_add(
     name: str = Form(...),
     subject: str = Form(...),
     total_fee: int = Form(0),
+    institute_deduction_type: str = Form("percentage"),
+    institute_deduction_value: int = Form(0),
     notes: str = Form("")
 ):
     """حفظ مدرس جديد"""
@@ -407,11 +403,11 @@ async def teacher_add(
             pass
     
     insert_query = '''
-        INSERT INTO teachers (name, subject, total_fee, notes, created_at)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO teachers (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     '''
     
-    db.execute_query(insert_query, (name, subject, total_fee, notes, get_current_date()))
+    db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date()))
     
     return RedirectResponse(url="/teachers?msg=added", status_code=303)
 
@@ -444,6 +440,8 @@ async def teacher_update(
     name: str = Form(...),
     subject: str = Form(...),
     total_fee: int = Form(0),
+    institute_deduction_type: str = Form("percentage"),
+    institute_deduction_value: int = Form(0),
     notes: str = Form("")
 ):
     """تحديث بيانات مدرس"""
@@ -459,11 +457,11 @@ async def teacher_update(
     
     update_query = '''
         UPDATE teachers 
-        SET name=%s, subject=%s, total_fee=%s, notes=%s
+        SET name=%s, subject=%s, total_fee=%s, institute_deduction_type=%s, institute_deduction_value=%s, notes=%s
         WHERE id = %s
     '''
     
-    db.execute_query(update_query, (name, subject, total_fee, notes, teacher_id))
+    db.execute_query(update_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, teacher_id))
     
     return RedirectResponse(url="/teachers?msg=updated", status_code=303)
 
@@ -638,7 +636,7 @@ async def reports_page(request: Request):
     # ملخص الطلاب
     try:
         students = db.execute_query('''
-            SELECT s.id, s.name, s.study_type, s.status, s.barcode,
+            SELECT s.id, s.name, s.study_type, s.barcode,
                    (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count
             FROM students s ORDER BY s.name
         ''')

@@ -20,9 +20,8 @@ DATABASE_URL = os.environ.get(
     "postgresql://neondb_owner:npg_3fTtMYrvCw9m@ep-muddy-boat-anvp37bx-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 )
 
-# ===== الثوابت المالية (مهم: لا تغيّرها) =====
-# الوحدة: دينار عراقي (Integer)
-INSTITUTE_DEDUCTION_PER_STUDENT = 50000  # 50,000 دينار لكل طالب دافع
+# ===== كلمة مرور النظام =====
+SYSTEM_PIN = "1111"
 
 # ===== مسارات الملفات =====
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +39,7 @@ RECEIPTS_DIR = os.path.join(REPORTS_DIR, "receipts")
 STUDY_TYPES = ["حضوري", "الكتروني"]
 
 # ===== حالات الطالب =====
-STUDENT_STATUSES = ["مستمر", "منسحب", "مكتمل"]
+STUDENT_STATUSES = ["مستمر", "منسحب"]
 
 # ===== أنواع الأقساط =====
 INSTALLMENT_TYPES = [

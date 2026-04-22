@@ -15,20 +15,12 @@ class StudentBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="اسم الطالب")
     study_type: str = Field(default="حضوري", description="نوع الدراسة")
     has_card: bool = Field(default=False, description="هل لديه بطاقة؟")
-    has_badge: bool = Field(default=False, description="هل لديه شارة؟")
-    status: str = Field(default="مستمر", description="حالة الطالب")
     notes: Optional[str] = Field(default="", description="ملاحظات")
     
     @validator('study_type')
     def validate_study_type(cls, v):
         if v not in STUDY_TYPES:
             raise ValueError(f'نوع الدراسة يجب أن يكون من: {STUDY_TYPES}')
-        return v
-    
-    @validator('status')
-    def validate_status(cls, v):
-        if v not in STUDENT_STATUSES:
-            raise ValueError(f'الحالة يجب أن تكون من: {STUDENT_STATUSES}')
         return v
 
 
@@ -42,8 +34,6 @@ class StudentUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     study_type: Optional[str] = None
     has_card: Optional[bool] = None
-    has_badge: Optional[bool] = None
-    status: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -64,6 +54,8 @@ class TeacherBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="اسم المدرس")
     subject: str = Field(..., min_length=2, max_length=50, description="المادة التي يدرسها")
     total_fee: int = Field(default=0, ge=0, description="الأجر الكلي (بالدينار)")
+    institute_deduction_type: str = Field(default="percentage", description="نوع نسبة المعهد: percentage أو manual")
+    institute_deduction_value: int = Field(default=0, ge=0, description="قيمة نسبة المعهد")
     notes: Optional[str] = Field(default="", description="ملاحظات")
 
 
@@ -77,6 +69,8 @@ class TeacherUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     subject: Optional[str] = Field(None, min_length=2, max_length=50)
     total_fee: Optional[int] = Field(None, ge=0)
+    institute_deduction_type: Optional[str] = None
+    institute_deduction_value: Optional[int] = Field(None, ge=0)
     notes: Optional[str] = None
 
 
