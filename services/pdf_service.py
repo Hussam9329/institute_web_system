@@ -18,7 +18,7 @@ from arabic_reshaper import reshape
 from bidi.algorithm import get_display
 
 from config import (
-    STUDENT_PDFS_DIR, TEACHER_PDFS_DIR, RECEIPTS_DIR,
+    STUDENT_PDFS_DIR, TEACHER_PDFS_DIR, RECEIPTS_DIR, REPORTS_DIR,
     format_currency, format_date, APP_TITLE, APP_VERSION,
     INSTITUTE_DEDUCTION_PER_STUDENT
 )
@@ -36,26 +36,35 @@ class PDFService:
     
     def _register_arabic_font(self):
         """تسجيل خط عربي للـ PDF"""
-        font_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'fonts', 'arial.ttf')
+        # Try multiple font paths
+        font_paths = [
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'fonts', 'arial.ttf'),
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        ]
         
-        if os.path.exists(font_path):
-            try:
-                pdfmetrics.registerFont(TTFont('Arabic', font_path))
-                self.arabic_font = 'Arabic'
-            except:
-                self.arabic_font = 'Helvetica'
-        else:
-            self.arabic_font = 'Helvetica'
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                try:
+                    pdfmetrics.registerFont(TTFont('Arabic', font_path))
+                    self.arabic_font = 'Arabic'
+                    return
+                except:
+                    continue
+        
+        # Fallback
+        self.arabic_font = 'Helvetica'
     
     def _arabic_text(self, text: str) -> str:
-        """
-        تحويل النص العربي للعرض الصحيح في PDF
-        """
+        """تحويل النص العربي للعرض الصحيح في PDF"""
         if not text:
             return ""
         
         try:
-            reshaped_text = reshape(str(text))
+            # Convert Eastern Arabic numerals to Western for proper rendering
+            text = str(text)
+            
+            reshaped_text = reshape(text)
             bidi_text = get_display(reshaped_text)
             return bidi_text
         except:
@@ -129,14 +138,11 @@ class PDFService:
         story.append(Spacer(1, 20))
         story.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
         story.append(Spacer(1, 10))
-        
-        # تاريخ الطباعة
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        footer_text = f"تاريخ الطباعة: {now}"
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        footer_text = f"نظام إدارة المعهد || HussamVision"
         story.append(Paragraph(self._arabic_text(footer_text), styles['ArabicNormal']))
-        
-        version_text = f"النسخة: {APP_VERSION}"
-        story.append(Paragraph(self._arabic_text(version_text), styles['ArabicNormal']))
+        date_text = f"تاريخ الطباعة: {now}"
+        story.append(Paragraph(self._arabic_text(date_text), styles['ArabicNormal']))
     
     # =====================================================
     # تقرير الطالب PDF
@@ -561,6 +567,136 @@ class PDFService:
         # بناء PDF
         doc.build(story)
         
+        return filepath
+
+    # =====================================================
+    # تقرير المادة PDF
+    # =====================================================
+
+    def generate_subject_report(self, subject_name: str) -> str:
+        """توليد تقرير PDF لمادة معينة مع مدرسيها"""
+        teachers = self.db.execute_query(
+            "SELECT * FROM teachers WHERE subject = %s ORDER BY name", (subject_name,)
+        )
+
+        if not teachers:
+            raise Exception("لا يوجد مدرسين لهذه المادة")
+
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        filename = f"subject_{subject_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filepath = os.path.join(REPORTS_DIR, filename)
+
+        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+        story = []
+        styles = self._create_styles()
+
+        self._add_header(story, styles, f"تقرير مادة: {subject_name}")
+
+        info_data = [
+            [self._arabic_text("القيمة"), self._arabic_text("البيان")],
+            [self._arabic_text(subject_name), self._arabic_text("اسم المادة")],
+            [self._arabic_text(str(len(teachers))), self._arabic_text("عدد المدرسين")],
+        ]
+
+        info_table = Table(info_data, colWidths=[10*cm, 5*cm])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a237e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), self.arabic_font),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f5f5')),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdbdbd')),
+        ]))
+        story.append(info_table)
+        story.append(Spacer(1, 20))
+
+        # Teachers list
+        headers = [self._arabic_text("عدد الطلاب"), self._arabic_text("الأجر"), self._arabic_text("المدرس")]
+        table_data = [headers]
+
+        for t in teachers:
+            cnt = self.db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
+            sc = cnt[0]['cnt'] if cnt else 0
+            table_data.append([
+                self._arabic_text(str(sc)),
+                self._arabic_text(format_currency(t['total_fee'])),
+                self._arabic_text(t['name']),
+            ])
+
+        t_table = Table(table_data, colWidths=[4*cm, 4*cm, 6*cm])
+        t_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#303f9f')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), self.arabic_font),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#90a4ae')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#fafafa'), colors.white]),
+        ]))
+        story.append(t_table)
+
+        self._add_footer_info(story, styles)
+        doc.build(story)
+        return filepath
+
+    def generate_all_subjects_report(self) -> str:
+        """توليد تقرير PDF شامل لجميع المواد مع مدرسيها"""
+        subjects = self.db.execute_query("SELECT name FROM subjects ORDER BY name")
+
+        if not subjects:
+            raise Exception("لا توجد مواد")
+
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        filename = f"all_subjects_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        filepath = os.path.join(REPORTS_DIR, filename)
+
+        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+        story = []
+        styles = self._create_styles()
+
+        self._add_header(story, styles, "تقرير شامل لجميع المواد")
+
+        for subj in subjects:
+            teachers = self.db.execute_query(
+                "SELECT id, name, total_fee FROM teachers WHERE subject = %s ORDER BY name", (subj['name'],)
+            )
+
+            story.append(Paragraph(self._arabic_text(f"المادة: {subj['name']}"), styles['ArabicBold']))
+            story.append(Spacer(1, 8))
+
+            headers = [self._arabic_text("عدد الطلاب"), self._arabic_text("الأجر"), self._arabic_text("المدرس")]
+            table_data = [headers]
+
+            for t in teachers:
+                cnt = self.db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
+                sc = cnt[0]['cnt'] if cnt else 0
+                table_data.append([
+                    self._arabic_text(str(sc)),
+                    self._arabic_text(format_currency(t['total_fee'])),
+                    self._arabic_text(t['name']),
+                ])
+
+            if not table_data:
+                table_data.append([self._arabic_text("لا يوجد مدرسين"), '', ''])
+
+            t_table = Table(table_data, colWidths=[4*cm, 4*cm, 6*cm])
+            t_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#303f9f')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, -1), self.arabic_font),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#90a4ae')),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#fafafa'), colors.white]),
+            ]))
+            story.append(t_table)
+            story.append(Spacer(1, 15))
+
+        self._add_footer_info(story, styles)
+        doc.build(story)
         return filepath
 
 

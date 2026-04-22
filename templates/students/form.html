@@ -58,19 +58,7 @@
                                 </select>
                             </div>
 
-                            <!-- الحالة -->
-                            <div class="col-12 col-sm-6 col-md-4 mb-3">
-                                <label for="status" class="form-label fw-bold">
-                                    <i class="fas fa-info-circle me-1 text-primary"></i>الحالة
-                                </label>
-                                <select class="form-select form-select-lg" id="status" name="status">
-                                    <option value="مستمر" {% if not student or student.status == 'مستمر' %}selected{% endif %}>مستمر</option>
-                                    <option value="منسحب" {% if student and student.status == 'منسحب' %}selected{% endif %}>منسحب</option>
-                                    <option value="مكتمل" {% if student and student.status == 'مكتمل' %}selected{% endif %}>مكتمل</option>
-                                </select>
-                            </div>
-                            
-                            <!-- البطاقة والشارة -->
+                            <!-- البطاقة -->
                             <div class="col-12 col-md-4 mb-3">
                                 <div class="d-flex flex-column gap-2 mt-0 mt-md-4">
                                     <div class="form-check form-switch bg-light rounded-2 p-2">
@@ -79,14 +67,6 @@
                                                {% if student and student.has_card %}checked{% endif %}>
                                         <label class="form-check-label fw-semibold" for="has_card">
                                             <i class="fas fa-id-card me-1 text-primary"></i>يملك بطاقة
-                                        </label>
-                                    </div>
-                                    <div class="form-check form-switch bg-light rounded-2 p-2">
-                                        <input class="form-check-input" type="checkbox" 
-                                               id="has_badge" name="has_badge" value="true"
-                                               {% if student and student.has_badge %}checked{% endif %}>
-                                        <label class="form-check-label fw-semibold" for="has_badge">
-                                            <i class="fas fa-certificate me-1 text-warning"></i>يملك شارة
                                         </label>
                                     </div>
                                 </div>

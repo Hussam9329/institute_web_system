@@ -142,19 +142,4 @@ document.addEventListener('submit', function(event) {
     }
 });
 
-// تأكيد قبل مغادرة صفحة بها بيانات غير محفوظة
-let formModified = false;
-document.addEventListener('input', function(event) {
-    if (event.target.tagName === 'INPUT' || 
-        event.target.tagName === 'TEXTAREA' || 
-        event.target.tagName === 'SELECT') {
-        formModified = true;
-    }
-});
 
-window.addEventListener('beforeunload', function(event) {
-    if (formModified) {
-        event.preventDefault();
-        event.returnValue = '';
-    }
-});

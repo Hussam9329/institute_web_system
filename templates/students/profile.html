@@ -63,25 +63,9 @@
                             </span>
                         </div>
                         <div class="profile-info-item">
-                            <span class="text-muted">الحالة</span>
-                            <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
-                                {{ student.status }}
-                            </span>
-                        </div>
-                        <div class="profile-info-item">
                             <span class="text-muted">بطاقة</span>
                             <span>
                                 {% if student.has_card %}
-                                <i class="fas fa-check-circle text-success"></i> نعم
-                                {% else %}
-                                <i class="fas fa-times-circle text-muted"></i> لا
-                                {% endif %}
-                            </span>
-                        </div>
-                        <div class="profile-info-item">
-                            <span class="text-muted">شارة</span>
-                            <span>
-                                {% if student.has_badge %}
                                 <i class="fas fa-check-circle text-success"></i> نعم
                                 {% else %}
                                 <i class="fas fa-times-circle text-muted"></i> لا

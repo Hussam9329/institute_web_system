@@ -140,6 +140,7 @@
                                     <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
                                     <th class="text-center d-none d-md-table-cell">الحالة</th>
                                     <th class="text-center">المدفوع</th>
+                                    <th class="text-center d-none d-sm-table-cell">المتبقي</th>
                                     <th class="text-center d-none d-sm-table-cell">حالة الدفع</th>
                                 </tr>
                             </thead>
@@ -167,6 +168,11 @@
                                         </span>
                                     </td>
                                     <td class="text-center fw-bold text-emerald">{{ format_currency(student.paid_total) }}</td>
+                                    <td class="text-center d-none d-sm-table-cell">
+                                        <span class="fw-bold {% if student.remaining_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ format_currency(student.remaining_balance) }}
+                                        </span>
+                                    </td>
                                     <td class="text-center d-none d-sm-table-cell">
                                         {% if student.is_paying %}
                                         <span class="badge bg-success"><i class="fas fa-check"></i> دافع</span>

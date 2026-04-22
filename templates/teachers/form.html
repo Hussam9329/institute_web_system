@@ -79,6 +79,30 @@
                             </div>
                         </div>
 
+                        <!-- نسبة المعهد -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-percentage me-1 text-emerald"></i>نسبة المعهد على الطالب
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <select class="form-select" id="institute_deduction_type" name="institute_deduction_type">
+                                        <option value="percentage" {% if teacher and teacher.institute_deduction_type == 'percentage' %}selected{% endif %}>نسبة مئوية %</option>
+                                        <option value="manual" {% if teacher and teacher.institute_deduction_type == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" class="form-control" id="institute_deduction_value" name="institute_deduction_value"
+                                           value="{{ teacher.institute_deduction_value if teacher and teacher.institute_deduction_value else 0 }}" min="0"
+                                           placeholder="القيمة">
+                                </div>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                نسبة مئوية: مثلاً 10 تعني 10% من كل قسط. مبلغ يدوي: مبلغ ثابت لكل طالب.
+                            </div>
+                        </div>
+
                         <!-- ملاحظات -->
                         <div class="mb-4">
                             <label for="notes" class="form-label fw-bold">

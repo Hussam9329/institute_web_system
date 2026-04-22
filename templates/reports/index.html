@@ -127,7 +127,6 @@
                                     <th>#</th>
                                     <th>الطالب</th>
                                     <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
-                                    <th class="text-center d-none d-md-table-cell">الحالة</th>
                                     <th class="text-center d-none d-lg-table-cell">المدرسين</th>
                                     <th class="text-center d-none d-xl-table-cell">الإجمالي المطلوب</th>
                                     <th class="text-center">المدفوع</th>
@@ -144,17 +143,11 @@
                                         <div class="fw-semibold">{{ student.name }}</div>
                                         <div class="d-sm-none mt-1">
                                             <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %} me-1">{{ student.study_type }}</span>
-                                            <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">{{ student.status }}</span>
                                         </div>
                                     </td>
                                     <td class="text-center d-none d-sm-table-cell">
                                         <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
                                             {{ student.study_type }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center d-none d-md-table-cell">
-                                        <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
-                                            {{ student.status }}
                                         </span>
                                     </td>
                                     <td class="text-center d-none d-lg-table-cell">{{ student.teachers_count }}</td>
@@ -182,7 +175,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="10" class="text-center py-5">
+                                    <td colspan="9" class="text-center py-5">
                                         <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
                                         <p class="text-muted">لا يوجد طلاب مسجلين</p>
                                     </td>

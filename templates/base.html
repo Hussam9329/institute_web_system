@@ -27,6 +27,28 @@
 </head>
 <body>
 
+<!-- شاشة تسجيل الدخول -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+        <div class="login-icon">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h3 class="mb-3">نظام إدارة المعهد</h3>
+        <div class="mb-3">
+            <input type="password" id="pinInput" class="form-control form-control-lg text-center" 
+                   placeholder="أدخل رمز النظام" maxlength="4" autocomplete="off"
+                   oninput="checkPin(this.value)">
+        </div>
+        <div id="pinDots" class="pin-dots mb-3">
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+            <span class="pin-dot"></span>
+        </div>
+        <p id="pinError" class="text-danger small d-none">رمز غير صحيح</p>
+    </div>
+</div>
+
     <!-- ===== شريط التنقل العلوي ===== -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid px-2 px-md-4">
@@ -45,7 +67,7 @@
             
             <!-- قائمة التنقل -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-wrap">
                     <li class="nav-item">
                         <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
                             <i class="fas fa-home me-1"></i>
@@ -120,10 +142,7 @@
     <footer class="text-white py-3 mt-auto">
         <div class="container-fluid px-3 px-md-4 text-center">
             <p class="mb-0 small">
-                <i class="fas fa-graduation-cap me-1"></i>
-                نظام إدارة المعهد المتكامل v2.0
-                <span class="mx-2 opacity-50">|</span>
-                جميع الحقوق محفوظة &copy; 2024
+                نظام إدارة المعهد || HussamVision
             </p>
         </div>
     </footer>
@@ -259,5 +278,41 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+
+<script>
+(function(){
+    const PIN = '1111';
+    const overlay = document.getElementById('loginOverlay');
+    const input = document.getElementById('pinInput');
+    const dots = document.querySelectorAll('.pin-dot');
+    const error = document.getElementById('pinError');
+    
+    if(sessionStorage.getItem('authenticated') === 'true'){
+        overlay.style.display = 'none';
+    }
+    
+    window.checkPin = function(val){
+        error.classList.add('d-none');
+        for(let i=0;i<4;i++){
+            dots[i].classList.toggle('filled', i < val.length);
+        }
+        if(val.length === 4){
+            if(val === PIN){
+                sessionStorage.setItem('authenticated','true');
+                overlay.style.display = 'none';
+            } else {
+                error.classList.remove('d-none');
+                input.value = '';
+                dots.forEach(d => d.classList.remove('filled'));
+                input.focus();
+            }
+        }
+    };
+    
+    if(overlay.style.display !== 'none'){
+        setTimeout(()=>input.focus(),300);
+    }
+})();
+</script>
 </body>
 </html>

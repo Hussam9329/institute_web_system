@@ -76,7 +76,7 @@ async function linkStudentTeacher(event) {
 /**
  * إلغاء ربط طالب بمدرس
  */
-async function unlinkStudent(studentId, teacherId, teacherName) {
+async function unlinkTeacher(studentId, teacherId, teacherName) {
     const message = `هل أنت متأكد من إلغاء ربط المدرس "${teacherName}"؟\n\n⚠️ سيتم حذف جميع الأقساط المسجلة لهذا المدرس!`;
     
     if (!confirmAction(message)) return;
@@ -105,7 +105,7 @@ async function unlinkStudent(studentId, teacherId, teacherName) {
 function openInstallmentModal(studentId, teacherId, teacherName) {
     document.getElementById('inst_student_id').value = studentId;
     document.getElementById('inst_teacher_id').value = teacherId;
-    document.getElementById('inst_student_name').textContent = document.querySelector('.card-header.fw-bold').textContent.split(':')[1]?.trim() || '';
+    // inst_student_name element may not exist in modal - skip setting it
     document.getElementById('inst_teacher_name').textContent = teacherName;
     document.getElementById('inst_amount').value = '';
     document.getElementById('inst_date').value = getTodayDate();
