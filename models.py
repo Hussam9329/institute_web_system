@@ -144,6 +144,9 @@ class StudentTeacherLink(BaseModel):
     """نموذج ربط طالب بمدرس"""
     student_id: int
     teacher_id: int
+    study_type: str = "حضوري"
+    status: str = "مستمر"
+    notes: Optional[str] = ""
 
 
 # ===== نماذج التقارير =====

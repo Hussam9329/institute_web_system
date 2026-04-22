@@ -119,7 +119,7 @@
                                             <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning d-none d-sm-inline-block" title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-danger d-none d-md-inline-block" target="_blank" title="PDF">
+                                            <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-info d-none d-md-inline-block" target="_blank" title="PDF">
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
                                             <button type="button" class="btn btn-outline-danger d-none d-sm-inline-block" title="حذف"
@@ -136,7 +136,7 @@
                                                         <i class="fas fa-edit me-2"></i>تعديل
                                                     </a></li>
                                                     <li><a class="dropdown-item" href="/pdf/teacher/{{ teacher.id }}" target="_blank">
-                                                        <i class="fas fa-file-pdf me-2 text-danger"></i>PDF
+                                                        <i class="fas fa-file-pdf me-2 text-info"></i>PDF
                                                     </a></li>
                                                     <li><hr class="dropdown-divider"></li>
                                                     <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ teacher.id }}, '{{ teacher.name }}'); return false;">

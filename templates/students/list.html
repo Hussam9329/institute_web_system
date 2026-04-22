@@ -60,36 +60,20 @@
                                 <tr>
                                     <th class="text-center" style="width:40px">#</th>
                                     <th>اسم الطالب</th>
-                                    <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
-                                    <th class="text-center d-none d-lg-table-cell">المدرسين</th>
-                                    <th class="text-center" style="min-width:100px; width:140px;">الإجراءات</th>
+                                    <th class="text-center" style="min-width:80px; width:100px;">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody id="studentsTableBody">
                                 {% for student in students %}
                                 <tr class="student-row" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
                                     <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
-                                    <td>
+                                    <td class="text-center">
                                         <a href="/students/{{ student.id }}" class="text-decoration-none fw-semibold text-primary">
                                             {{ student.name }}
                                         </a>
                                         {% if student.notes %}
                                         <br><small class="text-muted d-none d-md-block">{{ student.notes[:40] }}</small>
                                         {% endif %}
-                                        <!-- عرض المعلومات على الجوال -->
-                                        <div class="d-sm-none mt-1">
-                                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %} me-1">
-                                                {{ student.study_type }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
-                                            {{ student.study_type }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center d-none d-lg-table-cell">
-                                        <span class="badge bg-light text-dark">{{ student.teachers_count or 0 }}</span>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm d-flex justify-content-center">
@@ -99,7 +83,7 @@
                                             <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning d-none d-sm-inline-block" title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-danger d-none d-md-inline-block" target="_blank" title="PDF">
+                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-info d-none d-md-inline-block" target="_blank" title="PDF">
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
                                             <button type="button" class="btn btn-outline-danger d-none d-sm-inline-block" title="حذف"
@@ -116,7 +100,7 @@
                                                         <i class="fas fa-edit me-2"></i>تعديل
                                                     </a></li>
                                                     <li><a class="dropdown-item" href="/pdf/student/{{ student.id }}" target="_blank">
-                                                        <i class="fas fa-file-pdf me-2 text-danger"></i>PDF
+                                                        <i class="fas fa-file-pdf me-2 text-info"></i>PDF
                                                     </a></li>
                                                     <li><hr class="dropdown-divider"></li>
                                                     <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ student.id }}, '{{ student.name }}'); return false;">
@@ -129,7 +113,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-5">
+                                    <td colspan="3" class="text-center py-5">
                                         <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
                                         <p class="text-muted mb-0">
                                             {% if search %}

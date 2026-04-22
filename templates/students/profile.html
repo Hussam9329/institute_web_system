@@ -22,7 +22,7 @@
                     </nav>
                 </div>
                 <div class="d-flex gap-2 w-100 w-sm-auto">
-                    <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-danger flex-fill flex-sm-fill-none" target="_blank">
+                    <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-info flex-fill flex-sm-fill-none" target="_blank">
                         <i class="fas fa-file-pdf me-1"></i>
                         <span class="d-none d-sm-inline">تقرير PDF</span>
                         <span class="d-sm-none">PDF</span>
@@ -55,12 +55,6 @@
                         <div class="profile-info-item">
                             <span class="text-muted">الرمز</span>
                             <span><code>{{ student.barcode }}</code></span>
-                        </div>
-                        <div class="profile-info-item">
-                            <span class="text-muted">نوع الدراسة</span>
-                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
-                                {{ student.study_type }}
-                            </span>
                         </div>
 
                         {% if student.notes %}
@@ -97,6 +91,8 @@
                                     <th>#</th>
                                     <th>المدرس</th>
                                     <th class="d-none d-md-table-cell">المادة</th>
+                                    <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
+                                    <th class="text-center d-none d-sm-table-cell">الحالة</th>
                                     <th class="text-center">الأجر</th>
                                     <th class="text-center d-none d-sm-table-cell">المدفوع</th>
                                     <th class="text-center d-none d-sm-table-cell">المتبقي</th>
@@ -113,6 +109,16 @@
                                     </td>
                                     <td class="d-none d-md-table-cell">
                                         <span class="badge bg-light text-dark">{{ ts.subject }}</span>
+                                    </td>
+                                    <td class="text-center d-none d-sm-table-cell">
+                                        <span class="badge bg-{% if ts.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
+                                            {{ ts.study_type }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center d-none d-sm-table-cell">
+                                        <span class="badge bg-{% if ts.status == 'مستمر' %}success{% elif ts.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
+                                            {{ ts.status }}
+                                        </span>
                                     </td>
                                     <td class="text-center fw-bold">{{ format_currency(ts.total_fee) }}</td>
                                     <td class="text-center d-none d-sm-table-cell">
@@ -142,7 +148,7 @@
                                 <!-- صف الإجمالي -->
                                 <tr class="table-active fw-bold">
                                     <td colspan="2" class="d-md-none">الإجمالي:</td>
-                                    <td colspan="3" class="text-end d-none d-md-table-cell">الإجمالي:</td>
+                                    <td colspan="5" class="text-end d-none d-md-table-cell">الإجمالي:</td>
                                     <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</td>
                                     <td class="text-center text-success d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
                                     <td class="text-center {% if teachers_summary|sum(attribute='remaining_balance') > 0 %}text-danger{% else %}text-success{% endif %} d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>
@@ -205,7 +211,7 @@
                                     </td>
                                     <td class="text-center text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
                                     <td class="text-center">
-                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-danger" title="وصل PDF">
+                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                     </td>
@@ -245,6 +251,22 @@
                         <select class="form-select form-select-lg" id="link_teacher_id" required>
                             <option value="">-- اختر مدرس --</option>
                         </select>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">نوع الدراسة:</label>
+                            <select class="form-select" id="link_study_type">
+                                <option value="حضوري">حضوري</option>
+                                <option value="الكتروني">إلكتروني</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">الحالة:</label>
+                            <select class="form-select" id="link_status">
+                                <option value="مستمر">مستمر</option>
+                                <option value="منسحب">منسحب</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">

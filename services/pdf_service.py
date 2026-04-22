@@ -40,8 +40,8 @@ addMapping('DejaVu', 0, 0, 'DejaVu')
 addMapping('DejaVu', 1, 0, 'DejaVu-Bold')
 
 # ===== ألوان التصميم =====
-PRIMARY = colors.HexColor('#312e81')
-SECONDARY = colors.HexColor('#4338ca')
+PRIMARY = colors.HexColor('#1e1b4b')
+SECONDARY = colors.HexColor('#312e81')
 ACCENT = colors.HexColor('#6366f1')
 SUCCESS = colors.HexColor('#059669')
 DANGER = colors.HexColor('#dc2626')
@@ -50,6 +50,7 @@ LIGHT_BG = colors.HexColor('#f8fafc')
 BORDER_COLOR = colors.HexColor('#e2e8f0')
 TEXT_MUTED = colors.HexColor('#94a3b8')
 WHITE = colors.white
+DARK = colors.HexColor('#0f172a')
 
 
 def ar(text):
@@ -76,25 +77,26 @@ class PDFService:
         """إنشاء أنماط الطباعة العربية"""
         styles = {}
         styles['title'] = ParagraphStyle(
-            'title', fontName='DejaVu-Bold', fontSize=18, alignment=2,
+            'title', fontName='DejaVu-Bold', fontSize=20, alignment=2,
             textColor=PRIMARY, spaceAfter=4
         )
         styles['subtitle'] = ParagraphStyle(
-            'subtitle', fontName='DejaVu', fontSize=12, alignment=2,
+            'subtitle', fontName='DejaVu', fontSize=11, alignment=2,
             textColor=SECONDARY, spaceAfter=6
         )
         styles['section'] = ParagraphStyle(
-            'section', fontName='DejaVu-Bold', fontSize=12, alignment=2,
-            textColor=PRIMARY, spaceBefore=12, spaceAfter=6,
-            backColor=colors.HexColor('#eef2ff'), borderPadding=5
+            'section', fontName='DejaVu-Bold', fontSize=13, alignment=2,
+            textColor=WHITE, spaceBefore=12, spaceAfter=6,
+            backColor=PRIMARY, borderPadding=8,
+            leftIndent=6, rightIndent=6
         )
         styles['normal'] = ParagraphStyle(
             'normal', fontName='DejaVu', fontSize=10, alignment=2,
-            textColor=colors.HexColor('#1e293b'), leading=16
+            textColor=DARK, leading=16
         )
         styles['normal_center'] = ParagraphStyle(
             'normal_center', fontName='DejaVu', fontSize=10, alignment=1,
-            textColor=colors.HexColor('#1e293b'), leading=16
+            textColor=DARK, leading=16
         )
         styles['small'] = ParagraphStyle(
             'small', fontName='DejaVu', fontSize=8, alignment=2,
@@ -116,15 +118,42 @@ class PDFService:
             'primary', fontName='DejaVu-Bold', fontSize=10, alignment=2,
             textColor=PRIMARY
         )
+        styles['badge_success'] = ParagraphStyle(
+            'badge_success', fontName='DejaVu-Bold', fontSize=9, alignment=1,
+            textColor=WHITE, backColor=SUCCESS, borderPadding=3
+        )
+        styles['badge_danger'] = ParagraphStyle(
+            'badge_danger', fontName='DejaVu-Bold', fontSize=9, alignment=1,
+            textColor=WHITE, backColor=DANGER, borderPadding=3
+        )
+        styles['badge_info'] = ParagraphStyle(
+            'badge_info', fontName='DejaVu-Bold', fontSize=9, alignment=1,
+            textColor=WHITE, backColor=ACCENT, borderPadding=3
+        )
         return styles
 
     def _header(self, styles, subtitle_text):
-        """إنشاء رأس التقرير"""
+        """إنشاء رأس التقرير مع شريط ملون"""
         elements = []
-        elements.append(ar_para(APP_TITLE, styles['title']))
-        elements.append(HRFlowable(width="100%", thickness=2, color=ACCENT, spaceAfter=4))
+        
+        # شريط علوي ملون
+        header_data = [[ar(APP_TITLE)]]
+        header_table = Table(header_data, colWidths=[490])
+        header_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), PRIMARY),
+            ('TEXTCOLOR', (0, 0), (-1, -1), WHITE),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), 'DejaVu-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 16),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('ROUNDEDCORNERS', [4, 4, 0, 0]),
+        ]))
+        elements.append(header_table)
+        
+        # العنوان الفرعي
         elements.append(ar_para(subtitle_text, styles['subtitle']))
-        elements.append(Spacer(1, 8))
+        elements.append(HRFlowable(width="100%", thickness=2, color=ACCENT, spaceAfter=8))
         return elements
 
     def _footer(self, styles):
@@ -138,16 +167,16 @@ class PDFService:
         return elements
 
     def _info_table(self, data, styles):
-        """إنشاء جدول معلومات"""
+        """إنشاء جدول معلومات احترافي"""
         table_data = [[ar_para("البيان", styles['normal']), ar_para("القيمة", styles['normal'])]]
         for label, value in data:
             table_data.append([
                 ar_para(str(label), styles['normal']),
                 ar_para(str(value), styles['normal'])
             ])
-        t = Table(table_data, colWidths=[120, 370])
+        t = Table(table_data, colWidths=[140, 350])
         t.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), SECONDARY),
+            ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), 'DejaVu'),
@@ -156,11 +185,12 @@ class PDFService:
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [WHITE, LIGHT_BG]),
+            ('ROUNDEDCORNERS', [4, 4, 4, 4]),
         ]))
         return t
 
     def _data_table(self, headers, rows, styles, col_widths=None):
-        """إنشاء جدول بيانات"""
+        """إنشاء جدول بيانات احترافي"""
         table_data = [[ar_para(h, styles['normal']) for h in headers]]
         for row in rows:
             table_data.append([ar_para(str(c), styles['normal_center']) for c in row])
@@ -173,16 +203,17 @@ class PDFService:
             ('FONTNAME', (0, 0), (-1, 0), 'DejaVu-Bold'),
             ('FONTNAME', (0, 1), (-1, -1), 'DejaVu'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+            ('TOPPADDING', (0, 0), (-1, -1), 7),
             ('GRID', (0, 0), (-1, -1), 0.5, BORDER_COLOR),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [WHITE, LIGHT_BG]),
+            ('ROUNDEDCORNERS', [4, 4, 4, 4]),
         ]
         t.setStyle(TableStyle(style_cmds))
         return t
 
     # =====================================================
-    # تقرير الطالب PDF
+    # تقرير الطالب PDF - احترافي
     # =====================================================
     def generate_student_report(self, student_id: int) -> str:
         student_result = self.db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))
@@ -195,53 +226,106 @@ class PDFService:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
         styles = self._get_styles()
-        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=15*mm, leftMargin=15*mm, topMargin=12*mm, bottomMargin=12*mm)
 
         teachers_summary = finance_service.get_student_all_teachers_summary(student_id)
-        elements = self._header(styles, "تقرير الطالب المالي")
+        
+        # ===== رأس التقرير =====
+        elements = self._header(styles, f"تقرير الطالب المالي")
 
+        # ===== معلومات الطالب =====
+        elements.append(Spacer(1, 8))
+        elements.append(ar_para("معلومات الطالب", styles['section']))
+        elements.append(Spacer(1, 6))
+        
         elements.append(self._info_table([
             ("اسم الطالب", student['name']),
             ("الرمز", student['barcode']),
-            ("نوع الدراسة", student['study_type']),
             ("ملاحظات", student['notes'] or '-'),
         ], styles))
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 12))
 
+        # ===== الملخص المالي حسب المدرس =====
         elements.append(ar_para("الملخص المالي حسب المدرس", styles['section']))
+        elements.append(Spacer(1, 6))
+        
         if teachers_summary:
-            headers = ["المدرس", "المادة", "الأجر الكلي", "المدفوع", "المتبقي"]
+            headers = ["#", "المدرس", "المادة", "نوع الدراسة", "الحالة", "الأجر", "المدفوع", "المتبقي"]
             rows = []
             total_fee_all = total_paid_all = total_remaining_all = 0
-            for ts in teachers_summary:
+            
+            for i, ts in enumerate(teachers_summary, 1):
                 total_fee_all += ts['total_fee']
                 total_paid_all += ts['paid_total']
                 total_remaining_all += ts['remaining_balance']
                 rows.append([
-                    ts['teacher_name'], ts['subject'],
+                    str(i),
+                    ts['teacher_name'], 
+                    ts['subject'],
+                    ts.get('study_type', 'حضوري'),
+                    ts.get('status', 'مستمر'),
                     format_currency(ts['total_fee']),
                     format_currency(ts['paid_total']),
                     format_currency(ts['remaining_balance'])
                 ])
-            rows.append(["الإجمالي", "", format_currency(total_fee_all), format_currency(total_paid_all), format_currency(total_remaining_all)])
+            
+            # صف الإجمالي
+            rows.append([
+                "", "الإجمالي", "", "", "",
+                format_currency(total_fee_all), 
+                format_currency(total_paid_all),
+                format_currency(total_remaining_all)
+            ])
 
-            t = self._data_table(headers, rows, styles, col_widths=[100, 80, 80, 80, 80])
-            t.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
-                ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
+            t = self._data_table(headers, rows, styles, col_widths=[25, 70, 65, 55, 50, 75, 75, 75])
+            
+            # تنسيق صف الإجمالي
+            total_style_cmds = [
                 ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#eef2ff')),
                 ('FONTNAME', (0, -1), (-1, -1), 'DejaVu-Bold'),
-            ]))
+                ('LINEABOVE', (0, -1), (-1, -1), 1.5, PRIMARY),
+            ]
+            t.setStyle(TableStyle(total_style_cmds))
             elements.append(t)
         else:
             elements.append(ar_para("لا يوجد مدرسين مرتبطين بهذا الطالب", styles['normal_center']))
+
+        # ===== سجل المدفوعات التفصيلي =====
+        try:
+            installments = self.db.execute_query('''
+                SELECT i.*, t.name as teacher_name, t.subject
+                FROM installments i
+                JOIN teachers t ON i.teacher_id = t.id
+                WHERE i.student_id = %s
+                ORDER BY i.payment_date DESC
+            ''', (student_id,))
+            
+            if installments:
+                elements.append(Spacer(1, 16))
+                elements.append(ar_para("سجل المدفوعات التفصيلي", styles['section']))
+                elements.append(Spacer(1, 6))
+                
+                inst_headers = ["#", "المدرس", "المبلغ", "النوع", "التاريخ", "ملاحظات"]
+                inst_rows = []
+                for i, inst in enumerate(installments, 1):
+                    inst_rows.append([
+                        str(i),
+                        inst['teacher_name'],
+                        format_currency(inst['amount']),
+                        inst['installment_type'],
+                        format_date(inst['payment_date']),
+                        inst['notes'] or '-'
+                    ])
+                elements.append(self._data_table(inst_headers, inst_rows, styles, col_widths=[25, 90, 85, 70, 80, 140]))
+        except:
+            pass
 
         elements.extend(self._footer(styles))
         doc.build(elements)
         return filepath
 
     # =====================================================
-    # تقرير المدرس PDF
+    # تقرير المدرس PDF - احترافي
     # =====================================================
     def generate_teacher_report(self, teacher_id: int) -> str:
         teacher_result = self.db.execute_query("SELECT * FROM teachers WHERE id = %s", (teacher_id,))
@@ -258,10 +342,16 @@ class PDFService:
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
         styles = self._get_styles()
-        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=15*mm, leftMargin=15*mm, topMargin=12*mm, bottomMargin=12*mm)
 
-        elements = self._header(styles, "تقرير المدرس المالي")
+        # ===== رأس التقرير =====
+        elements = self._header(styles, f"تقرير المدرس المالي")
 
+        # ===== معلومات المدرس =====
+        elements.append(Spacer(1, 8))
+        elements.append(ar_para("معلومات المدرس", styles['section']))
+        elements.append(Spacer(1, 6))
+        
         elements.append(self._info_table([
             ("اسم المدرس", teacher['name']),
             ("المادة", teacher['subject']),
@@ -269,9 +359,12 @@ class PDFService:
             ("عدد الطلاب", str(len(students_list))),
             ("ملاحظات", teacher['notes'] or '-'),
         ], styles))
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 12))
 
+        # ===== الملخص المالي =====
         elements.append(ar_para("الملخص المالي", styles['section']))
+        elements.append(Spacer(1, 6))
+        
         elements.append(self._info_table([
             ("إجمالي الاستلامات", format_currency(balance_info['total_received'])),
             ("عدد الطلاب الدافعين", str(balance_info['paying_students_count'])),
@@ -280,29 +373,35 @@ class PDFService:
             ("إجمالي المسحوب", format_currency(balance_info['withdrawn_total'])),
             ("الرصيد المتبقي", format_currency(balance_info['remaining_balance'])),
         ], styles))
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 12))
 
+        # ===== قائمة الطلاب =====
         if students_list:
             elements.append(ar_para("قائمة الطلاب ودفعاتهم", styles['section']))
-            headers = ["الطالب", "نوع الدراسة", "الحالة", "المدفوع", "المتبقي", "حالة الدفع"]
+            elements.append(Spacer(1, 6))
+            headers = ["#", "الطالب", "نوع الدراسة", "الحالة", "المدفوع", "المتبقي", "حالة الدفع"]
             rows = []
-            for s in students_list:
+            for i, s in enumerate(students_list, 1):
                 status = "دافع" if s['is_paying'] else "غير دافع"
                 rows.append([
-                    s['name'], s['study_type'],
+                    str(i),
+                    s['name'], 
+                    s.get('study_type', 'حضوري'),
                     s.get('status', 'مستمر'),
                     format_currency(s['paid_total']),
                     format_currency(s['remaining_balance']),
                     status
                 ])
-            elements.append(self._data_table(headers, rows, styles, col_widths=[80, 60, 60, 70, 70, 60]))
+            elements.append(self._data_table(headers, rows, styles, col_widths=[25, 85, 55, 50, 70, 70, 60]))
 
+        # ===== آخر السحوبات =====
         if recent_withdrawals:
-            elements.append(Spacer(1, 10))
+            elements.append(Spacer(1, 12))
             elements.append(ar_para("آخر السحوبات", styles['section']))
-            headers = ["المبلغ", "التاريخ", "ملاحظات"]
-            rows = [[format_currency(w['amount']), format_date(w['withdrawal_date']), w['notes'] or '-'] for w in recent_withdrawals]
-            elements.append(self._data_table(headers, rows, styles, col_widths=[100, 100, 240]))
+            elements.append(Spacer(1, 6))
+            headers = ["#", "المبلغ", "التاريخ", "ملاحظات"]
+            rows = [[str(i), format_currency(w['amount']), format_date(w['withdrawal_date']), w['notes'] or '-'] for i, w in enumerate(recent_withdrawals, 1)]
+            elements.append(self._data_table(headers, rows, styles, col_widths=[25, 100, 100, 265]))
 
         elements.extend(self._footer(styles))
         doc.build(elements)
@@ -313,7 +412,7 @@ class PDFService:
     # =====================================================
     def generate_receipt(self, installment_id: int) -> str:
         installment_query = '''
-            SELECT i.*, s.name as student_name, t.name as teacher_name, t.subject
+            SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
             FROM installments i
             JOIN students s ON i.student_id = s.id
             JOIN teachers t ON i.teacher_id = t.id
@@ -328,11 +427,6 @@ class PDFService:
         filepath = os.path.join(RECEIPTS_DIR, filename)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-        # A5 بالعرض
-        page_w, page_h = landscape(A4)
-        receipt_w = page_w * 0.75
-        receipt_h = page_h * 0.7
-
         styles = self._get_styles()
         styles['receipt_title'] = ParagraphStyle(
             'receipt_title', fontName='DejaVu-Bold', fontSize=16, alignment=1,
@@ -340,7 +434,7 @@ class PDFService:
         )
         styles['receipt_info'] = ParagraphStyle(
             'receipt_info', fontName='DejaVu', fontSize=10, alignment=2,
-            textColor=colors.HexColor('#1e293b'), leading=18
+            textColor=DARK, leading=18
         )
         styles['receipt_label'] = ParagraphStyle(
             'receipt_label', fontName='DejaVu', fontSize=10, alignment=2,
@@ -354,13 +448,26 @@ class PDFService:
 
         elements = []
 
-        # عنوان الوصل
-        elements.append(ar_para("وصل دفع رسمي", styles['receipt_title']))
-        elements.append(HRFlowable(width="100%", thickness=2, color=ACCENT, spaceAfter=8))
+        # شريط علوي ملون
+        header_data = [[ar("وصل دفع رسمي")]]
+        header_table = Table(header_data, colWidths=[470])
+        header_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), PRIMARY),
+            ('TEXTCOLOR', (0, 0), (-1, -1), WHITE),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), 'DejaVu-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 15),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('ROUNDEDCORNERS', [4, 4, 0, 0]),
+        ]))
+        elements.append(header_table)
+        elements.append(HRFlowable(width="100%", thickness=1, color=ACCENT, spaceAfter=6))
 
         # معلومات الوصل
         info_data = [
             ("اسم الطالب", installment['student_name']),
+            ("الرمز", installment['barcode']),
             ("اسم المدرس", installment['teacher_name']),
             ("المادة", installment['subject']),
             ("نوع القسط", installment['installment_type']),
@@ -376,23 +483,25 @@ class PDFService:
                 ar_para(value, styles['receipt_info'])
             ])
 
-        t = Table(table_data, colWidths=[120, 350])
+        t = Table(table_data, colWidths=[110, 360])
         t.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
             ('TOPPADDING', (0, 0), (-1, -1), 5),
             ('LINEBELOW', (0, 0), (-1, -2), 0.5, BORDER_COLOR),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [WHITE, LIGHT_BG]),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ROUNDEDCORNERS', [4, 4, 4, 4]),
         ]))
         elements.append(t)
 
         # التوقيع
-        elements.append(Spacer(1, 25))
+        elements.append(Spacer(1, 20))
         now = datetime.now()
         elements.append(ar_para(f"التاريخ: {now.strftime('%Y/%m/%d')} - الوقت: {now.strftime('%H:%M')}", styles['small_center']))
-        elements.append(HRFlowable(width="40%", thickness=0.5, color=colors.HexColor('#1e293b'), spaceBefore=30, spaceAfter=2))
+        elements.append(HRFlowable(width="30%", thickness=0.5, color=DARK, spaceBefore=25, spaceAfter=2))
         elements.append(ar_para("توقيع المسؤول", styles['small_center']))
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 8))
         elements.append(ar_para("نظام إدارة المعهد || HussamVision", styles['small_center']))
 
         doc.build(elements)
@@ -413,23 +522,28 @@ class PDFService:
         filepath = os.path.join(REPORTS_DIR, filename)
 
         styles = self._get_styles()
-        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=15*mm, leftMargin=15*mm, topMargin=12*mm, bottomMargin=12*mm)
 
         elements = self._header(styles, f"تقرير مادة: {subject_name}")
+        
+        elements.append(Spacer(1, 8))
+        elements.append(ar_para("معلومات المادة", styles['section']))
+        elements.append(Spacer(1, 6))
         elements.append(self._info_table([
             ("اسم المادة", subject_name),
             ("عدد المدرسين", str(len(teachers))),
         ], styles))
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 12))
 
         elements.append(ar_para("قائمة المدرسين", styles['section']))
+        elements.append(Spacer(1, 6))
         headers = ["#", "المدرس", "الأجر الكلي", "عدد الطلاب"]
         rows = []
         for i, t in enumerate(teachers, 1):
             cnt = self.db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
             sc = cnt[0]['cnt'] if cnt else 0
             rows.append([str(i), t['name'], format_currency(t['total_fee']), str(sc)])
-        elements.append(self._data_table(headers, rows, styles, col_widths=[30, 150, 100, 80]))
+        elements.append(self._data_table(headers, rows, styles, col_widths=[25, 150, 100, 80]))
 
         elements.extend(self._footer(styles))
         doc.build(elements)
@@ -445,7 +559,7 @@ class PDFService:
         filepath = os.path.join(REPORTS_DIR, filename)
 
         styles = self._get_styles()
-        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=15*mm, bottomMargin=15*mm)
+        doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=15*mm, leftMargin=15*mm, topMargin=12*mm, bottomMargin=12*mm)
 
         elements = self._header(styles, "تقرير شامل لجميع المواد")
 
@@ -462,7 +576,7 @@ class PDFService:
                     cnt = self.db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
                     sc = cnt[0]['cnt'] if cnt else 0
                     rows.append([str(i), t['name'], format_currency(t['total_fee']), str(sc)])
-                elements.append(self._data_table(headers, rows, styles, col_widths=[30, 150, 100, 80]))
+                elements.append(self._data_table(headers, rows, styles, col_widths=[25, 150, 100, 80]))
             else:
                 elements.append(ar_para("لا يوجد مدرسين", styles['normal_center']))
 

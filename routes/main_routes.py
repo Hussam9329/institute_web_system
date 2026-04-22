@@ -143,7 +143,6 @@ async def student_form(request: Request):
 async def student_add(
     request: Request,
     name: str = Form(...),
-    study_type: str = Form("حضوري"),
     has_card: bool = Form(False),
     notes: str = Form("")
 ):
@@ -157,12 +156,12 @@ async def student_add(
     barcode = generate_barcode(next_id)
     
     insert_query = '''
-        INSERT INTO students (name, study_type, has_card, barcode, notes, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO students (name, has_card, barcode, notes, created_at)
+        VALUES (%s, %s, %s, %s, %s)
     '''
     
     db.execute_query(insert_query, (
-        name, study_type, 
+        name,
         1 if has_card else 0, 
         barcode, notes, 
         get_current_date()
@@ -179,10 +178,12 @@ async def student_add(
         
         for tid in teacher_ids:
             if tid:
+                study_type = form_data.get(f"study_type_{tid}", "حضوري")
+                status = form_data.get(f"status_{tid}", "مستمر")
                 try:
                     db.execute_query(
-                        "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
-                        (student_id, int(tid))
+                        "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+                        (student_id, int(tid), study_type, status)
                     )
                 except:
                     pass
@@ -204,19 +205,21 @@ async def student_edit_form(request: Request, student_id: int):
     student = dict(result[0])
     teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
     
-    # المدرسين المرتبطين بالطالب
+    # المدرسين المرتبطين بالطالب مع بيانات الربط
     linked = db.execute_query(
-        "SELECT teacher_id FROM student_teacher WHERE student_id = %s",
+        "SELECT teacher_id, study_type, status FROM student_teacher WHERE student_id = %s",
         (student_id,)
     )
     linked_ids = [r['teacher_id'] for r in linked] if linked else []
+    linked_data = {r['teacher_id']: r for r in linked} if linked else {}
     
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": student,
         "mode": "edit",
         "teachers": teachers,
-        "linked_teacher_ids": linked_ids
+        "linked_teacher_ids": linked_ids,
+        "linked_data": linked_data
     })
 
 
@@ -225,7 +228,6 @@ async def student_update(
     request: Request,
     student_id: int,
     name: str = Form(...),
-    study_type: str = Form("حضوري"),
     has_card: bool = Form(False),
     notes: str = Form("")
 ):
@@ -234,32 +236,45 @@ async def student_update(
     
     update_query = '''
         UPDATE students 
-        SET name=%s, study_type=%s, has_card=%s, notes=%s
+        SET name=%s, has_card=%s, notes=%s
         WHERE id = %s
     '''
     
     db.execute_query(update_query, (
-        name, study_type,
+        name,
         1 if has_card else 0,
         notes, student_id
     ))
     
-    # تحديث ربط المدرسين
+    # تحديث ربط المدرسين مع نوع الدراسة والحالة
     form_data = await request.form()
     teacher_ids = form_data.getlist("teacher_ids")
 
-    # إعادة الربط بطريقة صحيحة
     # حذف كل الروابط القديمة أولاً
     old_links = db.execute_query("SELECT teacher_id FROM student_teacher WHERE student_id = %s", (student_id,))
     old_teacher_ids = set(r['teacher_id'] for r in old_links) if old_links else set()
     new_teacher_ids = set(int(t) for t in teacher_ids if t)
     
-    # إضافة روابط جديدة فقط
-    for tid in new_teacher_ids - old_teacher_ids:
+    # تحديث الروابط الموجودة
+    for tid in new_teacher_ids & old_teacher_ids:
+        study_type = form_data.get(f"study_type_{tid}", "حضوري")
+        status = form_data.get(f"status_{tid}", "مستمر")
         try:
             db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
-                (student_id, tid)
+                "UPDATE student_teacher SET study_type=%s, status=%s WHERE student_id=%s AND teacher_id=%s",
+                (study_type, status, student_id, tid)
+            )
+        except:
+            pass
+    
+    # إضافة روابط جديدة فقط
+    for tid in new_teacher_ids - old_teacher_ids:
+        study_type = form_data.get(f"study_type_{tid}", "حضوري")
+        status = form_data.get(f"status_{tid}", "مستمر")
+        try:
+            db.execute_query(
+                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+                (student_id, tid, study_type, status)
             )
         except:
             pass
@@ -608,81 +623,5 @@ async def payments_page(request: Request, search: str = ""):
         "students": students,
         "search": search,
         "total_amount": total_amount,
-        "format_currency": format_currency
-    })
-
-
-# ===== التقارير =====
-
-@router.get("/reports", response_class=HTMLResponse)
-async def reports_page(request: Request):
-    """صفحة التقارير"""
-    db = Database()
-    stats = finance_service.get_system_statistics()
-    
-    # ملخص المدرسين
-    try:
-        teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
-        teachers_report = []
-        for t in teachers:
-            td = dict(t)
-            try:
-                td['financial'] = finance_service.calculate_teacher_balance(td['id'])
-                td['students_count'] = finance_service.get_teacher_total_students_count(td['id'])
-            except:
-                td['financial'] = {'teacher_due': 0, 'withdrawn_total': 0, 'remaining_balance': 0}
-                td['students_count'] = 0
-            teachers_report.append(td)
-    except:
-        teachers_report = []
-    
-    # ملخص الطلاب
-    try:
-        students = db.execute_query('''
-            SELECT s.id, s.name, s.study_type, s.barcode,
-                   (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count
-            FROM students s ORDER BY s.name
-        ''')
-        students_report = []
-        for s in students:
-            sd = dict(s)
-            summary = finance_service.get_student_all_teachers_summary(sd['id'])
-            sd['total_fee'] = sum(t['total_fee'] for t in summary)
-            sd['total_paid'] = sum(t['paid_total'] for t in summary)
-            sd['total_remaining'] = sum(t['remaining_balance'] for t in summary)
-            students_report.append(sd)
-    except:
-        students_report = []
-    
-    # ملخص المواد
-    try:
-        subjects_data = db.execute_query("SELECT name FROM subjects ORDER BY name")
-        subjects_report = []
-        for s in subjects_data:
-            sd = dict(s)
-            teachers = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = %s", (sd['name'],))
-            sd['teachers_count'] = teachers[0]['cnt'] if teachers else 0
-            subjects_report.append(sd)
-    except:
-        subjects_report = []
-    
-    return templates.TemplateResponse("reports/index.html", {
-        "request": request,
-        "stats": stats,
-        "teachers_report": teachers_report,
-        "students_report": students_report,
-        "subjects_report": subjects_report,
-        "format_currency": format_currency
-    })
-
-
-@router.get("/stats", response_class=HTMLResponse)
-async def stats_page(request: Request):
-    """صفحة الإحصائيات"""
-    stats = finance_service.get_system_statistics()
-    
-    return templates.TemplateResponse("stats/index.html", {
-        "request": request,
-        "stats": stats,
         "format_currency": format_currency
     })

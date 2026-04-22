@@ -51,12 +51,17 @@ async function linkStudentTeacher(event) {
         return;
     }
 
+    const studyType = document.getElementById('link_study_type').value;
+    const status = document.getElementById('link_status').value;
+
     try {
         const result = await apiRequest('/api/link-student-teacher', {
             method: 'POST',
             body: JSON.stringify({
                 student_id: parseInt(studentId),
-                teacher_id: parseInt(teacherId)
+                teacher_id: parseInt(teacherId),
+                study_type: studyType,
+                status: status
             })
         });
 
@@ -105,7 +110,6 @@ async function unlinkTeacher(studentId, teacherId, teacherName) {
 function openInstallmentModal(studentId, teacherId, teacherName) {
     document.getElementById('inst_student_id').value = studentId;
     document.getElementById('inst_teacher_id').value = teacherId;
-    // inst_student_name element may not exist in modal - skip setting it
     document.getElementById('inst_teacher_name').textContent = teacherName;
     document.getElementById('inst_amount').value = '';
     document.getElementById('inst_date').value = getTodayDate();
@@ -189,10 +193,10 @@ async function viewInstallments(studentId, teacherId) {
                         <td>${inst.notes || '-'}</td>
                         <td>
                             <div class="btn-group btn-group-xs">
-                                <a href="/pdf/receipt/${inst.id}" target="_blank" class="btn btn-outline-danger btn-sm" title="طباعة الوصل">
+                                <a href="/pdf/receipt/${inst.id}" target="_blank" class="btn btn-outline-danger btn-xs" title="طباعة الوصل">
                                     <i class="fas fa-print"></i>
                                 </a>
-                                <button class="btn btn-outline-danger btn-sm" onclick="deleteInstallment(${inst.id})" title="حذف">
+                                <button class="btn btn-outline-danger btn-xs" onclick="deleteInstallment(${inst.id})" title="حذف">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>

@@ -323,28 +323,6 @@
 </head>
 <body>
 
-<!-- شاشة تسجيل الدخول -->
-<div id="loginOverlay" class="login-overlay">
-    <div class="login-card">
-        <div class="login-icon">
-            <i class="fas fa-lock"></i>
-        </div>
-        <h3 class="mb-3">نظام إدارة المعهد</h3>
-        <div class="mb-3">
-            <input type="password" id="pinInput" class="form-control form-control-lg text-center" 
-                   placeholder="أدخل رمز النظام" maxlength="4" autocomplete="off"
-                   oninput="checkPin(this.value)">
-        </div>
-        <div id="pinDots" class="pin-dots mb-3">
-            <span class="pin-dot"></span>
-            <span class="pin-dot"></span>
-            <span class="pin-dot"></span>
-            <span class="pin-dot"></span>
-        </div>
-        <p id="pinError" class="text-danger small d-none">رمز غير صحيح</p>
-    </div>
-</div>
-
 <!-- Sidebar Overlay (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
@@ -389,10 +367,7 @@
             <i class="fas fa-calculator"></i>
             <span>المحاسبة</span>
         </a>
-        <a class="nav-link {% if '/reports' in request.url.path %}active{% endif %}" href="/reports" onclick="closeSidebarMobile()">
-            <i class="fas fa-chart-line"></i>
-            <span>التقارير</span>
-        </a>
+
     </div>
 
     <!-- Search -->
@@ -595,39 +570,10 @@
     {% block extra_js %}{% endblock %}
 
 <script>
-(function(){
-    const PIN = '1111';
-    const overlay = document.getElementById('loginOverlay');
-    const input = document.getElementById('pinInput');
-    const dots = document.querySelectorAll('.pin-dot');
-    const error = document.getElementById('pinError');
-    
-    if(sessionStorage.getItem('authenticated') === 'true'){
-        overlay.style.display = 'none';
-    }
-    
-    window.checkPin = function(val){
-        error.classList.add('d-none');
-        for(let i=0;i<4;i++){
-            dots[i].classList.toggle('filled', i < val.length);
-        }
-        if(val.length === 4){
-            if(val === PIN){
-                sessionStorage.setItem('authenticated','true');
-                overlay.style.display = 'none';
-            } else {
-                error.classList.remove('d-none');
-                input.value = '';
-                dots.forEach(d => d.classList.remove('filled'));
-                input.focus();
-            }
-        }
-    };
-    
-    if(overlay.style.display !== 'none'){
-        setTimeout(()=>input.focus(),300);
-    }
-})();
+// إصلاح رسالة leave site - منع التحذير عند مغادرة الصفحة
+window.addEventListener('beforeunload', function(e) {
+    // لا تفعل شيئاً - إزالة التحذير
+});
 </script>
 </body>
 </html>

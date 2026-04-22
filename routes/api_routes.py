@@ -18,6 +18,8 @@ router = APIRouter(prefix="/api")
 class LinkStudentTeacher(BaseModel):
     student_id: int
     teacher_id: int
+    study_type: str = "حضوري"
+    status: str = "مستمر"
 
 
 class AddInstallment(BaseModel):
@@ -204,8 +206,8 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
                         return {"success": False, "message": "لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة إلا إذا تم تعطيل الحالة إلى منسحب من المدرس السابق"}
         
         db.execute_query(
-            "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
-            (link.student_id, link.teacher_id)
+            "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+            (link.student_id, link.teacher_id, link.study_type, link.status)
         )
         
         return {"success": True, "message": "تم الربط بنجاح"}
@@ -255,13 +257,34 @@ async def api_link_student_teachers(data: dict):
                             if link_status != 'منسحب':
                                 return {"success": False, "message": "لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة إلا إذا تم تعطيل الحالة إلى منسحب من المدرس السابق"}
             
+            st_study_type = data.get("study_type", "حضوري")
+            st_status = data.get("status", "مستمر")
             db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
-                (student_id, tid)
+                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+                (student_id, tid, st_study_type, st_status)
             )
             linked += 1
         
         return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.put("/update-student-teacher-link/{student_id}/{teacher_id}")
+async def api_update_student_teacher_link(student_id: int, teacher_id: int, data: dict):
+    """تحديث نوع الدراسة والحالة لربط طالب بمدرس"""
+    db = Database()
+    
+    try:
+        study_type = data.get("study_type", "حضوري")
+        status = data.get("status", "مستمر")
+        
+        db.execute_query(
+            "UPDATE student_teacher SET study_type = %s, status = %s WHERE student_id = %s AND teacher_id = %s",
+            (study_type, status, student_id, teacher_id)
+        )
+        
+        return {"success": True, "message": "تم التحديث بنجاح"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 
@@ -303,7 +326,7 @@ async def api_add_installment(installment: AddInstallment):
         
         if not link_check:
             db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
+                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, 'حضوري', 'مستمر')",
                 (installment.student_id, installment.teacher_id)
             )
         

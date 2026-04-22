@@ -92,7 +92,7 @@ class FinanceService:
         """
         # الحصول على قائمة المدرسين المرتبطين بالطالب
         query = '''
-            SELECT t.id, t.name, t.subject, t.total_fee
+            SELECT t.id, t.name, t.subject, t.total_fee, st.study_type as study_type, st.status as link_status
             FROM teachers t
             INNER JOIN student_teacher st ON t.id = st.teacher_id
             WHERE st.student_id = %s
@@ -109,7 +109,9 @@ class FinanceService:
                 'subject': teacher['subject'],
                 'total_fee': teacher['total_fee'],
                 'paid_total': balance['paid_total'],
-                'remaining_balance': balance['remaining_balance']
+                'remaining_balance': balance['remaining_balance'],
+                'study_type': teacher.get('study_type', 'حضوري'),
+                'status': teacher.get('link_status', 'مستمر')
             })
         
         return summary
@@ -337,7 +339,7 @@ class FinanceService:
         total_fee = teacher_result[0]['total_fee'] if teacher_result else 0
         
         query = '''
-            SELECT s.id, s.name, s.study_type, s.barcode, st.status as status
+            SELECT s.id, s.name, st.study_type as study_type, st.status as status, s.barcode
             FROM students s
             INNER JOIN student_teacher st ON s.id = st.student_id
             WHERE st.teacher_id = %s
