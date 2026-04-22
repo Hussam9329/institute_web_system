@@ -15,10 +15,16 @@
                     </h1>
                     <p class="text-muted mb-0">{{ subjects|length }} مادة مسجلة</p>
                 </div>
-                <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                    <i class="fas fa-plus me-1"></i>
-                    <span>إضافة مادة جديدة</span>
-                </button>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="/pdf/subjects/all" target="_blank" class="btn btn-outline-danger">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        <span>تحميل PDF شامل</span>
+                    </a>
+                    <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                        <i class="fas fa-plus me-1"></i>
+                        <span>إضافة مادة جديدة</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -35,6 +41,7 @@
                                     <th class="text-center" style="width: 50px">#</th>
                                     <th>اسم المادة</th>
                                     <th class="text-center d-none d-sm-table-cell">عدد المدرسين</th>
+                                    <th class="text-center" style="width: 60px;">PDF</th>
                                     <th class="text-center" style="width: 110px;">الإجراءات</th>
                                 </tr>
                             </thead>
@@ -57,6 +64,11 @@
                                         <span class="badge bg-purple-gradient">{{ subject.teachers_count }} مدرس</span>
                                     </td>
                                     <td class="text-center">
+                                        <a href="/pdf/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-danger btn-sm" title="تحميل PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
                                         <div class="btn-group btn-group-sm">
                                             <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
                                                 <i class="fas fa-edit"></i>
@@ -72,7 +84,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="4" class="text-center py-5">
+                                    <td colspan="5" class="text-center py-5">
                                         <i class="fas fa-book-open fa-3x text-muted d-block mb-3"></i>
                                         <p class="text-muted mb-3">لا توجد مواد دراسية مسجلة</p>
                                         <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">

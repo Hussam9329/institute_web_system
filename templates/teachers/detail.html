@@ -95,7 +95,13 @@
                             <div class="card bg-light-subtle border p-2 p-md-3 text-center h-100">
                                 <small class="text-muted d-block">خصم المعهد</small>
                                 <h5 class="text-danger fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.institute_deduction) }}</h5>
-                                <small class="text-muted d-none d-md-block">{{ financial_info.paying_students_count }} طالب × 50,000</small>
+                                {% if teacher.institute_deduction_type == 'percentage' %}
+                                <small class="text-muted d-none d-md-block">{{ teacher.institute_deduction_value }}% من القسط 1 و 2</small>
+                                {% elif teacher.institute_deduction_value %}
+                                <small class="text-muted d-none d-md-block">{{ financial_info.paying_students_count }} طالب × {{ format_currency(teacher.institute_deduction_value) }}</small>
+                                {% else %}
+                                <small class="text-muted d-none d-md-block">لا يوجد خصم</small>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
@@ -277,7 +283,7 @@
                     
                     <div class="row g-3">
                         <div class="col-7">
-                            <label class="form-label fw-bold">مبلغ السحب (د.ع):</label>
+                            <label class="form-label fw-bold">مبلغ السحب (بالألف د.ع):</label>
                             <input type="number" class="form-control form-control-lg" id="wp_amount" min="1" required placeholder="أدخل المبلغ">
                         </div>
                         <div class="col-5">
@@ -318,7 +324,7 @@ function openWithdrawalModalPage() {
 async function submitWithdrawalPage(event) {
     event.preventDefault();
     
-    const amount = parseInt(document.getElementById('wp_amount').value);
+    const amount = toFullAmount(document.getElementById('wp_amount').value);
     const available = parseInt(document.getElementById('wp_available').value);
     
     if (!amount || amount <= 0) {
@@ -333,7 +339,7 @@ async function submitWithdrawalPage(event) {
     
     const data = {
         teacher_id: parseInt(document.getElementById('wp_teacher_id').value),
-        amount: amount,
+        amount: toFullAmount(document.getElementById('wp_amount').value),
         withdrawal_date: document.getElementById('wp_date').value,
         notes: document.getElementById('wp_notes').value
     };

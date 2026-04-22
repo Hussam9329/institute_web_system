@@ -174,7 +174,7 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
     
     try:
         student_check = db.execute_query("SELECT id FROM students WHERE id = %s", (link.student_id,))
-        teacher_check = db.execute_query("SELECT id FROM teachers WHERE id = %s", (link.teacher_id,))
+        teacher_check = db.execute_query("SELECT id, subject FROM teachers WHERE id = %s", (link.teacher_id,))
         
         if not student_check or not teacher_check:
             raise HTTPException(status_code=404, detail="الطالب أو المدرس غير موجود")
@@ -186,6 +186,22 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
         
         if existing:
             return {"success": False, "message": "الربط موجود مسبقاً"}
+        
+        # Check if student is already linked to another teacher with the same subject
+        teacher_subject = teacher_check[0]['subject']
+        same_subject_links = db.execute_query('''
+            SELECT st.id, st.teacher_id, t.name as teacher_name, st.status
+            FROM student_teacher st
+            JOIN teachers t ON st.teacher_id = t.id
+            WHERE st.student_id = %s AND t.subject = %s
+        ''', (link.student_id, teacher_subject))
+        
+        if same_subject_links:
+            for link_row in same_subject_links:
+                if link_row['teacher_id'] != link.teacher_id:
+                    link_status = link_row.get('status', 'مستمر')
+                    if link_status != 'منسحب':
+                        return {"success": False, "message": "لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة إلا إذا تم تعطيل الحالة إلى منسحب من المدرس السابق"}
         
         db.execute_query(
             "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
@@ -213,16 +229,37 @@ async def api_link_student_teachers(data: dict):
     try:
         linked = 0
         for teacher_id in teacher_ids:
+            tid = int(teacher_id)
             existing = db.execute_query(
                 "SELECT * FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-                (student_id, int(teacher_id))
+                (student_id, tid)
             )
-            if not existing:
-                db.execute_query(
-                    "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
-                    (student_id, int(teacher_id))
-                )
-                linked += 1
+            if existing:
+                continue
+            
+            # Check if student is already linked to another teacher with the same subject
+            teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (tid,))
+            if teacher_check:
+                teacher_subject = teacher_check[0]['subject']
+                same_subject_links = db.execute_query('''
+                    SELECT st.id, st.teacher_id, st.status
+                    FROM student_teacher st
+                    JOIN teachers t ON st.teacher_id = t.id
+                    WHERE st.student_id = %s AND t.subject = %s
+                ''', (student_id, teacher_subject))
+                
+                if same_subject_links:
+                    for link_row in same_subject_links:
+                        if link_row['teacher_id'] != tid:
+                            link_status = link_row.get('status', 'مستمر')
+                            if link_status != 'منسحب':
+                                return {"success": False, "message": "لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة إلا إذا تم تعطيل الحالة إلى منسحب من المدرس السابق"}
+            
+            db.execute_query(
+                "INSERT INTO student_teacher (student_id, teacher_id) VALUES (%s, %s)",
+                (student_id, tid)
+            )
+            linked += 1
         
         return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
     except Exception as e:
@@ -284,6 +321,10 @@ async def api_add_installment(installment: AddInstallment):
             installment.notes
         ))
         
+        # Get the newly created installment ID
+        new_id_result = db.execute_query("SELECT MAX(id) as max_id FROM installments")
+        installment_id = new_id_result[0]['max_id'] if new_id_result else None
+        
         new_balance = finance_service.calculate_student_teacher_balance(
             installment.student_id, 
             installment.teacher_id
@@ -292,7 +333,8 @@ async def api_add_installment(installment: AddInstallment):
         return {
             "success": True, 
             "message": "تم إضافة القسط بنجاح",
-            "new_balance": new_balance
+            "new_balance": new_balance,
+            "installment_id": installment_id
         }
         
     except Exception as e:

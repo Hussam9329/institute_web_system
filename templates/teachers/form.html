@@ -86,20 +86,21 @@
                             </label>
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <select class="form-select" id="institute_deduction_type" name="institute_deduction_type">
+                                    <select class="form-select" id="institute_deduction_type" name="institute_deduction_type" onchange="updateDeductionHint()">
                                         <option value="percentage" {% if teacher and teacher.institute_deduction_type == 'percentage' %}selected{% endif %}>نسبة مئوية %</option>
-                                        <option value="manual" {% if teacher and teacher.institute_deduction_type == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
+                                        <option value="manual" {% if teacher and teacher.institute_deduction_type == 'manual' %}selected{% endif %}>مبلغ يدوي (بالألف)</option>
                                     </select>
                                 </div>
                                 <div class="col-6">
                                     <input type="number" class="form-control" id="institute_deduction_value" name="institute_deduction_value"
-                                           value="{{ teacher.institute_deduction_value if teacher and teacher.institute_deduction_value else 0 }}" min="0"
+                                           value="{{ teacher.institute_deduction_value if teacher and teacher.institute_deduction_type == 'percentage' else ((teacher.institute_deduction_value / 1000) if teacher and teacher.institute_deduction_type == 'manual' and teacher.institute_deduction_value else 0) }}" min="0"
                                            placeholder="القيمة">
+                                    <div class="form-text" id="deduction_hint"><i class="fas fa-info-circle me-1"></i>مثلاً 10 تعني 10%</div>
                                 </div>
                             </div>
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
-                                نسبة مئوية: مثلاً 10 تعني 10% من كل قسط. مبلغ يدوي: مبلغ ثابت لكل طالب.
+                                نسبة مئوية: مثلاً 10 تعني 10% من القسط الأول والثاني. مبلغ يدوي: مبلغ ثابت لكل طالب دافع (بالآلاف).
                             </div>
                         </div>
 
@@ -155,6 +156,16 @@ function handleSubjectChange() {
     }
 }
 
+function updateDeductionHint() {
+    const type = document.getElementById('institute_deduction_type').value;
+    const hint = document.getElementById('deduction_hint');
+    if (type === 'percentage') {
+        hint.innerHTML = '<i class="fas fa-info-circle me-1"></i>مثلاً 10 تعني 10%';
+    } else {
+        hint.innerHTML = '<i class="fas fa-info-circle me-1"></i>القيمة بالألف (مثلاً 50 = 50,000 د.ع)';
+    }
+}
+
 // Divide total_fee by 1000 for display (amounts stored in full, displayed in thousands)
 document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('subject_select');
@@ -168,6 +179,12 @@ document.addEventListener('DOMContentLoaded', function() {
         feeInput.value = Math.round(parseInt(feeInput.value) / 1000);
     }
 
+    // ملاحظة: قيمة نسبة المعهد لا تُقسم على 1000 في العرض
+    // لأنها تُخزن كما هي (10 = 10%) عند النسبة المئوية
+    // وعند المبلغ اليدوي يتم التعامل معها في Jinja template
+
+    updateDeductionHint();
+
     // Before submit, multiply back
     document.getElementById('teacherForm').addEventListener('submit', function(e) {
         const hidden = document.getElementById('subject_hidden');
@@ -178,6 +195,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const feeInput = document.getElementById('total_fee');
         if(feeInput.value) feeInput.value = parseInt(feeInput.value) * 1000;
+
+        // فقط المبلغ اليدوي يُضرب بـ 1000، النسبة المئوية تبقى كما هي
+        const deductionType = document.getElementById('institute_deduction_type').value;
+        const deductionInput = document.getElementById('institute_deduction_value');
+        if (deductionType === 'manual' && deductionInput.value) {
+            deductionInput.value = parseInt(deductionInput.value) * 1000;
+        }
     });
 });
 </script>

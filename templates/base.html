@@ -23,6 +23,302 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/rtl.css">
     
+    <style>
+    /* ===== Sidebar Styles ===== */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1040;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .sidebar-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        right: -260px;
+        width: 250px;
+        height: 100vh;
+        background: linear-gradient(180deg, #1e1b4b 0%, #312e81 40%, #3730a3 100%);
+        color: white;
+        z-index: 1050;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+    }
+    .sidebar.open {
+        right: 0;
+    }
+
+    @media (min-width: 992px) {
+        .sidebar {
+            right: 0 !important;
+            box-shadow: none;
+        }
+        .sidebar-overlay {
+            display: none !important;
+        }
+        .main-content-area {
+            margin-right: 250px;
+        }
+        .top-bar {
+            right: 250px;
+        }
+        .hamburger-btn {
+            display: none !important;
+        }
+    }
+
+    /* Sidebar Header / Logo */
+    .sidebar-header {
+        padding: 20px 18px 15px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        flex-shrink: 0;
+    }
+    .sidebar-header .logo-icon {
+        width: 50px; height: 50px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        font-size: 22px;
+    }
+    .sidebar-header h5 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .sidebar-header small {
+        opacity: 0.7;
+        font-size: 11px;
+    }
+
+    /* Sidebar Nav */
+    .sidebar-nav {
+        flex: 1;
+        padding: 10px 0;
+    }
+    .sidebar-nav .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: rgba(255,255,255,0.75);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-right: 3px solid transparent;
+        margin: 1px 0;
+    }
+    .sidebar-nav .nav-link:hover {
+        color: white;
+        background: rgba(255,255,255,0.08);
+    }
+    .sidebar-nav .nav-link.active {
+        color: white;
+        background: rgba(255,255,255,0.12);
+        border-right-color: #fbbf24;
+    }
+    .sidebar-nav .nav-link i {
+        width: 20px;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    /* Sidebar Search */
+    .sidebar-search {
+        padding: 10px 15px;
+        flex-shrink: 0;
+    }
+    .sidebar-search .input-group {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .sidebar-search input {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+    .sidebar-search input::placeholder {
+        color: rgba(255,255,255,0.5);
+    }
+    .sidebar-search .input-group-text {
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        padding: 8px 12px;
+    }
+
+    /* Sidebar Search Results */
+    .sidebar-search-results {
+        position: absolute;
+        top: 100%;
+        right: 15px;
+        left: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 1060;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+    }
+    .sidebar-search-results.show {
+        display: block;
+    }
+    .sidebar-search-results .search-result-label {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #1e1b4b;
+        background: #f0f0f0;
+    }
+    .sidebar-search-results .search-result-item {
+        display: block;
+        padding: 8px 12px;
+        color: #333;
+        text-decoration: none;
+        font-size: 13px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .sidebar-search-results .search-result-item:hover {
+        background: #f0f4ff;
+    }
+
+    /* Sidebar DateTime Widget */
+    .sidebar-datetime {
+        padding: 15px;
+        flex-shrink: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .datetime-card {
+        background: rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+    }
+    .datetime-card .time-display {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        line-height: 1.2;
+    }
+    .datetime-card .date-display {
+        font-size: 11px;
+        opacity: 0.8;
+        margin-top: 4px;
+        font-weight: 500;
+    }
+    .datetime-card .day-display {
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 2px;
+        color: #fbbf24;
+    }
+
+    /* Top Bar */
+    .top-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        z-index: 1030;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hamburger-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #1e1b4b;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+    .hamburger-btn:hover {
+        background: #f0f0f0;
+    }
+    .top-bar .page-title {
+        font-weight: 700;
+        color: #1e1b4b;
+        font-size: 16px;
+        margin: 0;
+    }
+
+    /* Main Content */
+    .main-content-area {
+        margin-top: 56px;
+        padding: 16px;
+        min-height: calc(100vh - 56px);
+    }
+
+    /* Footer repositioned */
+    .main-footer {
+        margin-right: 0;
+    }
+    @media (min-width: 992px) {
+        .main-footer {
+            margin-right: 250px;
+        }
+    }
+
+    /* Sidebar close button for mobile */
+    .sidebar-close-btn {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+    .sidebar-close-btn:hover {
+        background: rgba(255,255,255,0.25);
+    }
+    @media (min-width: 992px) {
+        .sidebar-close-btn {
+            display: none !important;
+        }
+    }
+
+    /* Print adjustments */
+    @media print {
+        .sidebar, .sidebar-overlay, .top-bar { display: none !important; }
+        .main-content-area { margin: 0 !important; }
+    }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -49,97 +345,96 @@
     </div>
 </div>
 
-    <!-- ===== شريط التنقل العلوي ===== -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container-fluid px-2 px-md-4">
-            <!-- الشعار والعنوان -->
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-graduation-cap"></i>
-                <span class="d-none d-sm-inline">نظام إدارة المعهد</span>
-                <span class="d-sm-none">المعهد</span>
-            </a>
-            
-            <!-- زر القائمة للجوال -->
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="قائمة التنقل">
-                <i class="fas fa-bars fs-5"></i>
-            </button>
-            
-            <!-- قائمة التنقل -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 flex-wrap">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
-                            <i class="fas fa-home me-1"></i>
-                            <span>الرئيسية</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/students' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/students">
-                            <i class="fas fa-user-graduate me-1"></i>
-                            <span>الطلاب</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/teachers' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/teachers">
-                            <i class="fas fa-chalkboard-teacher me-1"></i>
-                            <span>المدرسين</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/subjects' in request.url.path %}active{% endif %}" href="/subjects">
-                            <i class="fas fa-book-open me-1"></i>
-                            <span>المواد</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/payments' in request.url.path %}active{% endif %}" href="/payments">
-                            <i class="fas fa-money-check-alt me-1"></i>
-                            <span>الأقساط</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/accounting' in request.url.path %}active{% endif %}" href="/accounting">
-                            <i class="fas fa-calculator me-1"></i>
-                            <span>المحاسبة</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if '/reports' in request.url.path %}active{% endif %}" href="/reports">
-                            <i class="fas fa-chart-line me-1"></i>
-                            <span>التقارير</span>
-                        </a>
-                    </li>
-                </ul>
-                
-                <!-- البحث الشامل -->
-                <div class="global-search-container me-0 me-lg-3 mb-2 mb-lg-0 d-lg-block">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0 text-muted">
-                            <i class="fas fa-search"></i>
-                        </span>
-                        <input type="text" class="form-control border-start-0 bg-white" id="globalSearchInput"
-                               placeholder="بحث سريع... (Ctrl+K)" autocomplete="off">
-                    </div>
-                    <div class="global-search-results" id="globalSearchResults"></div>
-                </div>
-                
-                <!-- الوقت والتاريخ -->
-                <div class="text-white d-none d-xl-block small">
-                    <i class="fas fa-clock me-1"></i>
-                    <span id="current-datetime"></span>
-                </div>
-            </div>
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ===== الشريط الجانبي (Sidebar) ===== -->
+<nav class="sidebar" id="sidebar">
+    <button class="sidebar-close-btn" onclick="closeSidebar()">
+        <i class="fas fa-times"></i>
+    </button>
+
+    <!-- Logo -->
+    <div class="sidebar-header">
+        <div class="logo-icon">
+            <i class="fas fa-graduation-cap"></i>
         </div>
-    </nav>
+        <h5>نظام إدارة المعهد</h5>
+        <small>إدارة متكاملة ومحاسبة</small>
+    </div>
+
+    <!-- Navigation -->
+    <div class="sidebar-nav">
+        <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/" onclick="closeSidebarMobile()">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a class="nav-link {% if '/students' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/students" onclick="closeSidebarMobile()">
+            <i class="fas fa-user-graduate"></i>
+            <span>الطلاب</span>
+        </a>
+        <a class="nav-link {% if '/teachers' in request.url.path and '/accounting' not in request.url.path %}active{% endif %}" href="/teachers" onclick="closeSidebarMobile()">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>المدرسين</span>
+        </a>
+        <a class="nav-link {% if '/subjects' in request.url.path %}active{% endif %}" href="/subjects" onclick="closeSidebarMobile()">
+            <i class="fas fa-book-open"></i>
+            <span>المواد</span>
+        </a>
+        <a class="nav-link {% if '/payments' in request.url.path %}active{% endif %}" href="/payments" onclick="closeSidebarMobile()">
+            <i class="fas fa-money-check-alt"></i>
+            <span>الأقساط</span>
+        </a>
+        <a class="nav-link {% if '/accounting' in request.url.path %}active{% endif %}" href="/accounting" onclick="closeSidebarMobile()">
+            <i class="fas fa-calculator"></i>
+            <span>المحاسبة</span>
+        </a>
+        <a class="nav-link {% if '/reports' in request.url.path %}active{% endif %}" href="/reports" onclick="closeSidebarMobile()">
+            <i class="fas fa-chart-line"></i>
+            <span>التقارير</span>
+        </a>
+    </div>
+
+    <!-- Search -->
+    <div class="sidebar-search" style="position: relative;">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" id="globalSearchInput"
+                   placeholder="بحث سريع... (Ctrl+K)" autocomplete="off">
+        </div>
+        <div class="sidebar-search-results" id="globalSearchResults"></div>
+    </div>
+
+    <!-- Date/Time Widget -->
+    <div class="sidebar-datetime">
+        <div class="datetime-card">
+            <div class="time-display" id="sidebar-time">--:--</div>
+            <div class="day-display" id="sidebar-day">---</div>
+            <div class="date-display" id="sidebar-date">----</div>
+        </div>
+    </div>
+</nav>
+
+<!-- ===== الشريط العلوي (Top Bar) ===== -->
+<div class="top-bar">
+    <button class="hamburger-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <h6 class="page-title">
+        <i class="fas fa-graduation-cap me-1 d-lg-none"></i>
+        {% block page_title %}نظام إدارة المعهد{% endblock %}
+    </h6>
+</div>
 
     <!-- ===== المحتوى الرئيسي ===== -->
-    <main class="main-content">
+    <main class="main-content-area">
         {% block content %}{% endblock %}
     </main>
 
     <!-- ===== التذييل ===== -->
-    <footer class="text-white py-3 mt-auto">
+    <footer class="text-white py-3 mt-auto main-footer" style="background: linear-gradient(90deg, #1e1b4b, #312e81);">
         <div class="container-fluid px-3 px-md-4 text-center">
             <p class="mb-0 small">
                 نظام إدارة المعهد || HussamVision
@@ -158,25 +453,59 @@
     <script src="/static/js/utils.js"></script>
     <script src="/static/js/app.js"></script>
     
-    <!-- تحديث الوقت والتاريخ -->
+    <!-- Sidebar toggle functions -->
     <script>
-    function updateDateTime() {
-        const now = new Date();
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        const datetimeEl = document.getElementById('current-datetime');
-        if (datetimeEl) {
-            datetimeEl.textContent = now.toLocaleDateString('ar-IQ', options);
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('active');
+    }
+    function closeSidebarMobile() {
+        if (window.innerWidth < 992) {
+            closeSidebar();
         }
     }
-    updateDateTime();
-    setInterval(updateDateTime, 60000);
+    </script>
+
+    <!-- تحديث الوقت والتاريخ في الشريط الجانبي -->
+    <script>
+    function updateSidebarDateTime() {
+        const now = new Date();
+        
+        // Time
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeEl = document.getElementById('sidebar-time');
+        if (timeEl) {
+            timeEl.textContent = hours + ':' + minutes + ':' + seconds;
+        }
+        
+        // Day name in Arabic
+        const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        const dayEl = document.getElementById('sidebar-day');
+        if (dayEl) {
+            dayEl.textContent = days[now.getDay()];
+        }
+        
+        // Date in Arabic
+        const dateEl = document.getElementById('sidebar-date');
+        if (dateEl) {
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric'
+            };
+            dateEl.textContent = now.toLocaleDateString('ar-IQ', options);
+        }
+    }
+    updateSidebarDateTime();
+    setInterval(updateSidebarDateTime, 1000);
     </script>
     
     <!-- البحث الشامل -->
@@ -203,9 +532,9 @@
                     if (result.data.students && result.data.students.length > 0) {
                         html += '<div class="search-result-label"><i class="fas fa-user-graduate me-1"></i>الطلاب</div>';
                         result.data.students.forEach(s => {
-                            html += `<a href="/students/${s.id}" class="search-result-item">
+                            html += `<a href="/students/${s.id}" class="search-result-item" onclick="closeSidebar()">
                                 <div class="fw-semibold">${s.name}</div>
-                                <small class="text-muted">${s.barcode} | ${s.study_type} | ${s.status}</small>
+                                <small class="text-muted">${s.barcode} | ${s.study_type}</small>
                             </a>`;
                         });
                     }
@@ -213,7 +542,7 @@
                     if (result.data.teachers && result.data.teachers.length > 0) {
                         html += '<div class="search-result-label"><i class="fas fa-chalkboard-teacher me-1"></i>المدرسين</div>';
                         result.data.teachers.forEach(t => {
-                            html += `<a href="/teachers/${t.id}" class="search-result-item">
+                            html += `<a href="/teachers/${t.id}" class="search-result-item" onclick="closeSidebar()">
                                 <div class="fw-semibold">${t.name}</div>
                                 <small class="text-muted">${t.subject} | ${formatCurrency(t.total_fee)}</small>
                             </a>`;
@@ -223,7 +552,7 @@
                     if (result.data.subjects && result.data.subjects.length > 0) {
                         html += '<div class="search-result-label"><i class="fas fa-book-open me-1"></i>المواد</div>';
                         result.data.subjects.forEach(s => {
-                            html += `<a href="/subjects" class="search-result-item">
+                            html += `<a href="/subjects" class="search-result-item" onclick="closeSidebar()">
                                 <div class="fw-semibold">${s.name}</div>
                             </a>`;
                         });
@@ -257,24 +586,10 @@
             if (e.key === 'Escape') {
                 searchResults.classList.remove('show');
                 searchInput.blur();
+                closeSidebar();
             }
         });
     }
-    
-    // إغلاق قائمة الجوال عند النقر على رابط
-    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-    const navbarCollapse = document.querySelector('.navbar-collapse');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
-                const bsCollapse = bootstrap.Collapse.getInstance(navbarCollapse);
-                if (bsCollapse) {
-                    bsCollapse.hide();
-                }
-            }
-        });
-    });
     </script>
     
     {% block extra_js %}{% endblock %}

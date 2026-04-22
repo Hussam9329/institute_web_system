@@ -102,7 +102,7 @@
                             <thead class="table-gradient-emerald">
                                 <tr>
                                     <th class="text-center" style="width:40px">#</th>
-                                    <th>الطالب</th>
+                                    <th>الاسم</th>
                                     <th class="d-none d-md-table-cell">المدرس</th>
                                     <th class="d-none d-sm-table-cell">المادة</th>
                                     <th class="text-center">المبلغ</th>
@@ -296,7 +296,27 @@ async function submitPayment(event) {
         
         if (result.success) {
             showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
+            // Show receipt download link if installment_id is returned
+            if (result.installment_id) {
+                const receiptUrl = `/pdf/receipt/${result.installment_id}`;
+                const receiptAlert = document.createElement('div');
+                receiptAlert.className = 'custom-alert success shadow-lg mb-3';
+                receiptAlert.setAttribute('role', 'alert');
+                receiptAlert.innerHTML = `
+                    <div class="d-flex align-items-center gap-3 p-3">
+                        <i class="fas fa-file-pdf fa-lg"></i>
+                        <div class="flex-grow-1">
+                            <strong>تم تسجيل القسط بنجاح!</strong>
+                        </div>
+                        <a href="${receiptUrl}" target="_blank" class="btn btn-light btn-sm">
+                            <i class="fas fa-download me-1"></i>تحميل الوصل
+                        </a>
+                        <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
+                    </div>
+                `;
+                document.getElementById('alert-container').prepend(receiptAlert);
+            }
+            setTimeout(() => location.reload(), 3000);
         } else {
             showAlert(result.message, 'error');
         }

@@ -335,10 +335,17 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
             query = "SELECT * FROM teachers ORDER BY subject, name"
             teachers = db.execute_query(query)
         
-        # عدد الطلاب لكل مدرس
+        # عدد الطلاب لكل مدرس + البيانات المالية
         for t in teachers:
             cnt = db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
             t['students_count'] = cnt[0]['cnt'] if cnt else 0
+            try:
+                balance_info = finance_service.calculate_teacher_balance(t['id'])
+                t['total_received'] = balance_info.get('total_received', 0)
+                t['total_remaining'] = balance_info.get('remaining_balance', 0)
+            except:
+                t['total_received'] = 0
+                t['total_remaining'] = 0
     except:
         teachers = []
     
