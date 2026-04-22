@@ -176,12 +176,12 @@ class FinanceService:
     
     def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0) -> int:
         """
-        حساب خصم المعهد لهذا المدرس
-        
+        حساب خصم المعهد - فقط من القسط الأول والثاني
+
         يعتمد على نوع الخصم:
-        - percentage: خصم نسبة مئوية من إجمالي الاستلامات
+        - percentage: خصم نسبة مئوية من مجموع القسط الأول والثاني فقط
         - manual: مبلغ ثابت لكل طالب دافع
-        
+
         Returns:
             int: مبلغ الخصم (بالدينار)
         """
@@ -190,22 +190,31 @@ class FinanceService:
             FROM teachers WHERE id = %s
         '''
         result = self.db.execute_query(query, (teacher_id,))
-        
+
         if not result:
             return 0
-        
+
         deduction_type = result[0]['institute_deduction_type'] or 'percentage'
         deduction_value = result[0]['institute_deduction_value'] or 0
-        
-        if not total_received:
-            total_received = self.get_teacher_students_paid_total(teacher_id)
-        
+
+        if deduction_value <= 0:
+            return 0
+
+        # Get only first and second installment totals
+        query = '''
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM installments
+            WHERE teacher_id = %s AND installment_type IN ('القسط الأول', 'القسط الثاني')
+        '''
+        result = self.db.execute_query(query, (teacher_id,))
+        relevant_total = result[0]['total'] if result and result[0]['total'] else 0
+
         if deduction_type == 'percentage':
-            deduction = int((total_received * deduction_value) / 100)
+            deduction = int((relevant_total * deduction_value) / 100)
         else:  # manual
             paying_count = self.get_teacher_paying_students_count(teacher_id)
             deduction = paying_count * deduction_value
-        
+
         return deduction
     
     def calculate_teacher_due(self, teacher_id: int) -> Dict[str, Any]:

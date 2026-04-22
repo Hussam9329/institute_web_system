@@ -124,7 +124,7 @@ async function addInstallment(event) {
     const data = {
         student_id: parseInt(document.getElementById('inst_student_id').value),
         teacher_id: parseInt(document.getElementById('inst_teacher_id').value),
-        amount: parseInt(document.getElementById('inst_amount').value),
+        amount: toFullAmount(document.getElementById('inst_amount').value),
         payment_date: document.getElementById('inst_date').value,
         installment_type: document.getElementById('inst_type').value,
         notes: document.getElementById('inst_notes').value

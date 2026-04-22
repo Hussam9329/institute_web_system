@@ -274,6 +274,17 @@
     </div>
 </div>
 
+<style>
+.nav-tabs-custom {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+.nav-tabs-custom .nav-item {
+    flex-shrink: 0;
+}
+</style>
+
 <script>
 function filterStudentReports() {
     const query = document.getElementById('studentSearchInput').value.toLowerCase();

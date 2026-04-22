@@ -193,6 +193,14 @@ function printElement(elementId) {
     printWindow.print();
 }
 
+/**
+ * تحويل المبلغ المدخل (بالألف) إلى القيمة الفعلية
+ * مثال: 150 → 150000
+ */
+function toFullAmount(thousands) {
+    return (parseInt(thousands) || 0) * 1000;
+}
+
 // تصدير الدوال للاستخدام العام
 window.formatCurrency = formatCurrency;
 window.formatDate = formatDate;
@@ -204,3 +212,4 @@ window.populateSelect = populateSelect;
 window.toggleButtonLoading = toggleButtonLoading;
 window.copyToClipboard = copyToClipboard;
 window.printElement = printElement;
+window.toFullAmount = toFullAmount;

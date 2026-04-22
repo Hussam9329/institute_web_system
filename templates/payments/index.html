@@ -206,9 +206,9 @@
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-coins me-1 text-emerald"></i>المبلغ (د.ع)
+                                <i class="fas fa-coins me-1 text-emerald"></i>المبلغ (بالألف د.ع)
                             </label>
-                            <input type="number" class="form-control" id="pay_amount" min="1" required placeholder="150000">
+                            <input type="number" class="form-control" id="pay_amount" min="1" required placeholder="150">
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label fw-bold">
@@ -277,7 +277,7 @@ async function submitPayment(event) {
     const data = {
         student_id: parseInt(document.getElementById('pay_student_id').value),
         teacher_id: parseInt(document.getElementById('pay_teacher_id').value),
-        amount: parseInt(document.getElementById('pay_amount').value),
+        amount: toFullAmount(document.getElementById('pay_amount').value),
         payment_date: document.getElementById('pay_date').value,
         installment_type: document.getElementById('pay_type').value,
         notes: document.getElementById('pay_notes').value
