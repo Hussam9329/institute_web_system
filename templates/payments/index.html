@@ -3,177 +3,149 @@
 {% block title %}إدارة الأقساط والمدفوعات - نظام إدارة المعهد{% endblock %}
 
 {% block content %}
+<div class="page-transition">
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-3 mb-md-4 fade-in">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-                <div>
-                    <h1 class="h3 h2-md fw-bold text-gradient-emerald mb-1">
-                        <i class="fas fa-money-check-alt me-2"></i>إدارة الأقساط والمدفوعات
-                    </h1>
-                    <p class="text-muted mb-0">{{ installments|length }} عملية دفع مسجلة</p>
-                </div>
-                <button class="btn btn-gradient-emerald" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                    <i class="fas fa-plus me-1"></i>
-                    <span>تسجيل قسط جديد</span>
-                </button>
-            </div>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
+            <h4 class="fw-bold mb-1 text-gradient-orange"><i class="fas fa-money-check-alt me-2"></i>إدارة الأقساط</h4>
+            <p class="text-muted mb-0 small">{{ installments|length }} عملية دفع</p>
         </div>
+        <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+            <i class="fas fa-plus me-1"></i> تسجيل دفعة
+        </button>
     </div>
 
-    <!-- ===== بطاقة الإجمالي ===== -->
-    <div class="row g-3 g-md-4 mb-3 mb-md-4 fade-in" style="animation-delay: 0.1s;">
+    <!-- ===== بطاقات الإجمالي ===== -->
+    <div class="row g-2 g-md-3 mb-4">
         <div class="col-4">
-            <div class="card border-0 shadow-sm stat-mini bg-gradient-emerald text-white h-100">
-                <div class="card-body py-2 py-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="opacity-75 d-block">إجمالي المدفوعات</small>
-                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(total_amount) }}</h5>
-                        </div>
-                        <i class="fas fa-coins fa-lg fa-2x opacity-50 d-none d-sm-block"></i>
-                    </div>
+            <div class="card border-0 shadow-sm bg-gradient-emerald text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">إجمالي المدفوعات</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(total_amount) }}</h5>
                 </div>
             </div>
         </div>
         <div class="col-4">
-            <div class="card border-0 shadow-sm stat-mini bg-gradient-blue text-white h-100">
-                <div class="card-body py-2 py-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="opacity-75 d-block">عدد العمليات</small>
-                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ installments|length }}</h5>
-                        </div>
-                        <i class="fas fa-receipt fa-lg fa-2x opacity-50 d-none d-sm-block"></i>
-                    </div>
+            <div class="card border-0 shadow-sm bg-gradient-blue text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">عدد العمليات</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ installments|length }}</h5>
                 </div>
             </div>
         </div>
         <div class="col-4">
-            <div class="card border-0 shadow-sm stat-mini bg-gradient-purple text-white h-100">
-                <div class="card-body py-2 py-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="opacity-75 d-block">الدافعون</small>
-                            <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ installments|map(attribute='student_id')|list|unique|list|length }}</h5>
-                        </div>
-                        <i class="fas fa-user-check fa-lg fa-2x opacity-50 d-none d-sm-block"></i>
-                    </div>
+            <div class="card border-0 shadow-sm bg-gradient-purple text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">الدافعون</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ installments|map(attribute='student_id')|list|unique|list|length }}</h5>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- ===== بحث ===== -->
-    <div class="row mb-3 mb-md-4 fade-in" style="animation-delay: 0.2s;">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body py-2 py-md-3">
-                    <form method="GET" action="/payments" class="row g-2 g-md-3 align-items-center">
-                        <div class="col-12 col-md-9 col-lg-10">
-                            <div class="input-group">
-                                <span class="input-group-text bg-transparent border-end-0">
-                                    <i class="fas fa-search text-muted"></i>
-                                </span>
-                                <input type="text" name="search" class="form-control border-start-0 ps-0" 
-                                       placeholder="بحث بالاسم أو المادة..." value="{{ search }}" id="paymentSearch">
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-3 col-lg-2">
-                            <button type="submit" class="btn btn-gradient-emerald w-100">
-                                <i class="fas fa-search me-1"></i>بحث
-                            </button>
-                        </div>
-                    </form>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2 py-md-3">
+            <form method="GET" action="/payments" class="row g-2 g-md-3 align-items-center">
+                <div class="col-12 col-md-9 col-lg-10">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control border-start-0 ps-0" 
+                               placeholder="بحث بالاسم أو المادة..." value="{{ search }}" id="paymentSearch">
+                    </div>
                 </div>
-            </div>
+                <div class="col-12 col-md-3 col-lg-2">
+                    <button type="submit" class="btn btn-outline-warning btn-sm w-100">
+                        <i class="fas fa-search me-1"></i>بحث
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- ===== جدول الأقساط ===== -->
-    <div class="row fade-in" style="animation-delay: 0.3s;">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle" id="paymentsTable">
-                            <thead class="table-gradient-emerald">
-                                <tr>
-                                    <th class="text-center" style="width:40px">#</th>
-                                    <th>الاسم</th>
-                                    <th class="d-none d-md-table-cell">المدرس</th>
-                                    <th class="d-none d-sm-table-cell">المادة</th>
-                                    <th class="text-center">المبلغ</th>
-                                    <th class="text-center d-none d-sm-table-cell">النوع</th>
-                                    <th class="text-center d-none d-lg-table-cell">التاريخ</th>
-                                    <th class="text-center" style="width:70px;">إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for inst in installments %}
-                                <tr class="fade-in" style="animation-delay: {{ loop.index0 * 0.03 }}s">
-                                    <td class="text-center text-muted fw-bold">{{ loop.index }}</td>
-                                    <td>
-                                        <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
-                                            {{ inst.student_name }}
-                                        </a>
-                                        <br class="d-md-none"><small class="text-muted d-md-none">{{ inst.teacher_name }}</small>
-                                    </td>
-                                    <td class="d-none d-md-table-cell">
-                                        <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none">
-                                            {{ inst.teacher_name }}
-                                        </a>
-                                    </td>
-                                    <td class="d-none d-sm-table-cell">
-                                        <span class="badge bg-light text-dark">{{ inst.subject }}</span>
-                                    </td>
-                                    <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
-                                    </td>
-                                    <td class="text-center text-muted d-none d-lg-table-cell">{{ inst.payment_date }}</td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
-                                                <i class="fas fa-file-pdf"></i>
-                                            </a>
-                                            <button class="btn btn-outline-danger d-none d-sm-inline-block" onclick="deletePayment({{ inst.id }})" title="حذف">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="8" class="text-center py-5">
-                                        <i class="fas fa-money-check-alt fa-3x text-muted d-block mb-3"></i>
-                                        <p class="text-muted mb-3">
-                                            {% if search %}
-                                            لا توجد نتائج بحث عن "{{ search }}"
-                                            {% else %}
-                                            لا توجد أقساط مسجلة بعد
-                                            {% endif %}
-                                        </p>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle table-sm" id="paymentsTable">
+                    <thead class="table-gradient-orange">
+                        <tr>
+                            <th class="text-center" style="width:40px">#</th>
+                            <th>الاسم</th>
+                            <th class="d-none d-md-table-cell">المدرس</th>
+                            <th class="d-none d-sm-table-cell">المادة</th>
+                            <th class="text-center">المبلغ</th>
+                            <th class="text-center d-none d-sm-table-cell">النوع</th>
+                            <th class="text-center d-none d-lg-table-cell">التاريخ</th>
+                            <th class="text-center" style="width:70px;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for inst in installments %}
+                        <tr>
+                            <td class="text-center text-muted fw-bold">{{ loop.index }}</td>
+                            <td>
+                                <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
+                                    {{ inst.student_name }}
+                                </a>
+                                <br class="d-md-none"><small class="text-muted d-md-none">{{ inst.teacher_name }}</small>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none">
+                                    {{ inst.teacher_name }}
+                                </a>
+                            </td>
+                            <td class="d-none d-sm-table-cell">
+                                <span class="badge bg-light text-dark">{{ inst.subject }}</span>
+                            </td>
+                            <td class="text-center fw-bold text-success">{{ format_currency(inst.amount) }}</td>
+                            <td class="text-center d-none d-sm-table-cell">
+                                <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
+                            </td>
+                            <td class="text-center text-muted d-none d-lg-table-cell">{{ inst.payment_date }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger d-none d-sm-inline-block" onclick="deletePayment({{ inst.id }})" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-money-check-alt fa-3x text-muted d-block mb-3"></i>
+                                <p class="text-muted mb-3">
+                                    {% if search %}
+                                    لا توجد نتائج بحث عن "{{ search }}"
+                                    {% else %}
+                                    لا توجد أقساط مسجلة بعد
+                                    {% endif %}
+                                </p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
+</div>
 </div>
 
 <!-- ===== Modal إضافة قسط ===== -->
 <div class="modal fade" id="addPaymentModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-gradient-emerald text-white border-0">
+            <div class="modal-header bg-gradient-orange text-white border-0">
                 <h5 class="modal-title">
                     <i class="fas fa-money-bill-wave me-2"></i>تسجيل قسط جديد
                 </h5>
@@ -184,7 +156,7 @@
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-user-graduate me-1 text-emerald"></i>الطالب
+                                <i class="fas fa-user-graduate me-1 text-orange"></i>الطالب
                             </label>
                             <select class="form-select" id="pay_student_id" required onchange="loadStudentTeachers(this.value)">
                                 <option value="">-- اختر الطالب --</option>
@@ -195,7 +167,7 @@
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-chalkboard-teacher me-1 text-emerald"></i>المدرس
+                                <i class="fas fa-chalkboard-teacher me-1 text-orange"></i>المدرس
                             </label>
                             <select class="form-select" id="pay_teacher_id" required>
                                 <option value="">-- اختر المدرس أولاً --</option>
@@ -206,19 +178,19 @@
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-coins me-1 text-emerald"></i>المبلغ (بالألف د.ع)
+                                <i class="fas fa-coins me-1 text-orange"></i>المبلغ (بالألف د.ع)
                             </label>
                             <input type="number" class="form-control" id="pay_amount" min="1" required placeholder="150">
                         </div>
                         <div class="col-6 col-md-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-calendar me-1 text-emerald"></i>التاريخ
+                                <i class="fas fa-calendar me-1 text-orange"></i>التاريخ
                             </label>
                             <input type="date" class="form-control" id="pay_date" required>
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-tag me-1 text-emerald"></i>نوع القسط
+                                <i class="fas fa-tag me-1 text-orange"></i>نوع القسط
                             </label>
                             <select class="form-select" id="pay_type">
                                 <option value="القسط الأول">القسط الأول</option>
@@ -230,7 +202,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-sticky-note me-1 text-emerald"></i>ملاحظات
+                                <i class="fas fa-sticky-note me-1 text-orange"></i>ملاحظات
                             </label>
                             <input type="text" class="form-control" id="pay_notes" placeholder="اختياري...">
                         </div>
@@ -238,7 +210,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gradient-emerald">
+                    <button type="submit" class="btn btn-warning">
                         <i class="fas fa-save me-1"></i>تسجيل القسط
                     </button>
                 </div>

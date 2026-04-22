@@ -1,6 +1,7 @@
 /* ============================================
    rtl.css - تنسيقات دعم اللغة العربية RTL
    تصميم متجاوب واحترافي
+   Modernized for the new UI system
    ============================================ */
 
 /* ===== اتجاه النصوص ===== */
@@ -68,6 +69,14 @@ html[dir="rtl"] td.text-center {
     text-align: center !important;
 }
 
+html[dir="rtl"] .table-responsive {
+    direction: rtl;
+}
+
+html[dir="rtl"] .table-responsive table {
+    direction: rtl;
+}
+
 /* ===== النماذج RTL ===== */
 html[dir="rtl"] input[type="text"],
 html[dir="rtl"] input[type="number"],
@@ -81,14 +90,37 @@ html[dir="rtl"] textarea {
     direction: rtl;
 }
 
+/* ===== Input Group RTL ===== */
+html[dir="rtl"] .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+html[dir="rtl"] .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    margin-right: -2px;
+    margin-left: 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+/* ===== Form Section Title RTL ===== */
+html[dir="rtl"] .form-section-title {
+    border-right: 4px solid var(--primary);
+    border-left: none;
+    background: linear-gradient(90deg, var(--primary-glow) 0%, transparent 100%);
+}
+
 /* ===== البطاقات RTL ===== */
 html[dir="rtl"] .card-header {
     text-align: right;
 }
 
+html[dir="rtl"] .card::before {
+    left: 0;
+    right: auto;
+}
+
 /* ===== الـ Breadcrumb RTL ===== */
 html[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before {
-    content: "\\";
+    content: "/";
     float: right;
     padding-left: 0.5rem;
     padding-right: 0;
@@ -123,11 +155,47 @@ html[dir="rtl"] .list-group {
     text-align: right;
 }
 
-/* ===== Form Section Title RTL ===== */
-html[dir="rtl"] .form-section-title {
-    border-right: 4px solid var(--primary);
-    border-left: none;
-    background: linear-gradient(90deg, var(--primary-glow) 0%, transparent 100%);
+/* ===== RTL support for new utility classes ===== */
+
+/* RTL support for page transitions */
+.page-transition {
+    direction: rtl;
+}
+
+/* RTL for gradient text classes */
+.text-gradient-blue,
+.text-gradient-emerald,
+.text-gradient-purple,
+.text-gradient-orange {
+    direction: rtl;
+}
+
+/* RTL for empty states */
+.empty-state {
+    direction: rtl;
+}
+
+/* RTL for data-tooltip */
+[data-tooltip]:hover::after {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* RTL for list-group-clean */
+.list-group-clean .list-group-item {
+    text-align: right;
+}
+
+/* ===== Sidebar Navigation RTL Fixes ===== */
+.sidebar-nav .nav-link {
+    padding-right: 18px;
+    padding-left: 18px;
+    text-align: right;
+}
+
+.sidebar-nav .nav-link i {
+    margin-left: 0;
 }
 
 /* ===== Profile Info RTL ===== */
@@ -135,6 +203,35 @@ html[dir="rtl"] .profile-info-item:hover {
     margin: 0 -1.5rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+}
+
+/* ===== Stat Card RTL ===== */
+html[dir="rtl"] .stat-card .d-flex {
+    text-align: right;
+}
+
+/* ===== Global Search RTL ===== */
+html[dir="rtl"] .global-search-results {
+    right: 0;
+    left: auto;
+}
+
+/* ===== Button Group RTL ===== */
+html[dir="rtl"] .btn-group > .btn:not(:last-child):not(.dropdown-toggle),
+html[dir="rtl"] .btn-group > .btn.dropdown-toggle-split:first-child,
+html[dir="rtl"] .btn-group > .btn-group:not(:last-child) > .btn {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+html[dir="rtl"] .btn-group > .btn:nth-child(n + 3),
+html[dir="rtl"] .btn-group > :not(.btn-check) + .btn,
+html[dir="rtl"] .btn-group > .btn-group:not(:first-child) > .btn {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+/* ===== Alert RTL ===== */
+html[dir="rtl"] .alert {
+    text-align: right;
 }
 
 /* ===== الأرقام العربية (اختياري) ===== */
@@ -174,70 +271,6 @@ html[dir="rtl"] .slide-in {
     animation: slideFromRight 0.4s ease forwards;
 }
 
-/* ===== Input Group RTL ===== */
-html[dir="rtl"] .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
-}
-
-html[dir="rtl"] .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
-    margin-right: -2px;
-    margin-left: 0;
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
-}
-
-/* ===== Navbar RTL ===== */
-html[dir="rtl"] .navbar-nav {
-    padding-right: 0;
-}
-
-html[dir="rtl"] .navbar-collapse {
-    text-align: right;
-}
-
-/* ===== Button Group RTL ===== */
-html[dir="rtl"] .btn-group > .btn:not(:last-child):not(.dropdown-toggle),
-html[dir="rtl"] .btn-group > .btn.dropdown-toggle-split:first-child,
-html[dir="rtl"] .btn-group > .btn-group:not(:last-child) > .btn {
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-}
-
-html[dir="rtl"] .btn-group > .btn:nth-child(n + 3),
-html[dir="rtl"] .btn-group > :not(.btn-check) + .btn,
-html[dir="rtl"] .btn-group > .btn-group:not(:first-child) > .btn {
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-}
-
-/* ===== Alert RTL ===== */
-html[dir="rtl"] .alert {
-    text-align: right;
-}
-
-/* ===== Card RTL Specific ===== */
-html[dir="rtl"] .card::before {
-    left: 0;
-    right: auto;
-}
-
-/* ===== Stat Card RTL ===== */
-html[dir="rtl"] .stat-card .d-flex {
-    text-align: right;
-}
-
-/* ===== Global Search RTL ===== */
-html[dir="rtl"] .global-search-results {
-    right: 0;
-    left: auto;
-}
-
-/* ===== Table Responsive RTL ===== */
-html[dir="rtl"] .table-responsive {
-    direction: rtl;
-}
-
-html[dir="rtl"] .table-responsive table {
-    direction: rtl;
-}
-
 /* ===== تحسينات الشاشات الصغيرة RTL ===== */
 @media (max-width: 575px) {
     html[dir="rtl"] .profile-info-item:hover {
@@ -245,9 +278,23 @@ html[dir="rtl"] .table-responsive table {
         padding-left: 0.875rem;
         padding-right: 0.875rem;
     }
-    
+
     html[dir="rtl"] .form-section-title {
         padding: 0.75rem 1rem;
+    }
+
+    .page-transition {
+        padding: 0;
+    }
+
+    .d-flex.align-items-center.justify-content-between.flex-wrap {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+
+    .d-flex.gap-2 {
+        width: 100%;
     }
 }
 
@@ -256,7 +303,7 @@ html[dir="rtl"] .table-responsive table {
     html[dir="rtl"] body {
         text-align: right;
     }
-    
+
     html[dir="rtl"] .table th,
     html[dir="rtl"] .table td {
         text-align: right;

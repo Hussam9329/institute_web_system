@@ -18,6 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
@@ -45,7 +46,7 @@
         right: -260px;
         width: 250px;
         height: 100vh;
-        background: linear-gradient(180deg, #1e1b4b 0%, #312e81 40%, #3730a3 100%);
+        background: linear-gradient(180deg, #1e1b4b 0%, #2d2a6e 50%, #3730a3 100%);
         color: white;
         z-index: 1050;
         transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -86,14 +87,15 @@
         flex-shrink: 0;
     }
     .sidebar-header .logo-icon {
-        width: 50px; height: 50px;
-        background: rgba(255,255,255,0.15);
+        width: 48px; height: 48px;
+        background: rgba(255,255,255,0.12);
         border-radius: 14px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 10px;
-        font-size: 22px;
+        margin-bottom: 8px;
+        font-size: 20px;
+        backdrop-filter: blur(10px);
     }
     .sidebar-header h5 {
         margin: 0;
@@ -114,11 +116,11 @@
     .sidebar-nav .nav-link {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px 20px;
+        gap: 10px;
+        padding: 11px 18px;
         color: rgba(255,255,255,0.75);
         text-decoration: none;
-        font-size: 14px;
+        font-size: 13.5px;
         font-weight: 500;
         transition: all 0.2s ease;
         border-right: 3px solid transparent;
@@ -130,8 +132,8 @@
     }
     .sidebar-nav .nav-link.active {
         color: white;
-        background: rgba(255,255,255,0.12);
-        border-right-color: #fbbf24;
+        background: rgba(255,255,255,0.1);
+        border-right-color: transparent;
     }
     .sidebar-nav .nav-link i {
         width: 20px;
@@ -174,7 +176,7 @@
         left: 15px;
         background: white;
         border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
         z-index: 1060;
         max-height: 300px;
         overflow-y: auto;
@@ -215,9 +217,9 @@
         text-align: center;
     }
     .datetime-card .time-display {
-        font-size: 24px;
-        font-weight: 800;
-        letter-spacing: 1px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
         line-height: 1.2;
     }
     .datetime-card .date-display {
@@ -262,9 +264,9 @@
         background: #f0f0f0;
     }
     .top-bar .page-title {
-        font-weight: 700;
-        color: #1e1b4b;
-        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 15px;
         margin: 0;
     }
 
@@ -409,16 +411,17 @@
     </main>
 
     <!-- ===== التذييل ===== -->
-    <footer class="text-white py-3 mt-auto main-footer" style="background: linear-gradient(90deg, #1e1b4b, #312e81);">
+    <footer class="text-white py-3 mt-auto main-footer" style="background: linear-gradient(90deg, #1e1b4b, #2d2a6e);">
         <div class="container-fluid px-3 px-md-4 text-center">
-            <p class="mb-0 small">
+            <p class="mb-0 small" style="opacity: 0.8;">
+                <i class="fas fa-graduation-cap me-1"></i>
                 نظام إدارة المعهد || HussamVision
             </p>
         </div>
     </footer>
 
     <!-- ===== رسائل التنبيه ===== -->
-    <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x pt-5" style="z-index: 9999;">
+    <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x pt-5" style="z-index: 9999; pointer-events: none;">
     </div>
 
     <!-- Bootstrap JS -->
@@ -572,8 +575,9 @@
 <script>
 // إصلاح رسالة leave site - منع التحذير عند مغادرة الصفحة
 window.addEventListener('beforeunload', function(e) {
-    // لا تفعل شيئاً - إزالة التحذير
-});
+    // لا تعيين returnValue - هذا يمنع التحذير تماماً
+    delete e['returnValue'];
+}, {capture: true});
 </script>
 </body>
 </html>

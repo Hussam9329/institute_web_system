@@ -3,234 +3,239 @@
 {% block title %}بروفايل الطالب - نظام إدارة المعهد{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="page-transition">
+    <div class="container-fluid">
 
-    <!-- ===== رأس الصفحة ===== -->
-    <div class="row mb-3 mb-md-4 fade-in">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-                <div>
-                    <h1 class="h3 h2-md fw-bold text-gradient-blue mb-1">
-                        <i class="fas fa-user-circle me-2"></i>بروفايل الطالب
-                    </h1>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
-                            <li class="breadcrumb-item"><a href="/students">الطلاب</a></li>
-                            <li class="breadcrumb-item active">{{ student.name }}</li>
-                        </ol>
-                    </nav>
-                </div>
-                <div class="d-flex gap-2 w-100 w-sm-auto">
-                    <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-info flex-fill flex-sm-fill-none" target="_blank">
-                        <i class="fas fa-file-pdf me-1"></i>
-                        <span class="d-none d-sm-inline">تقرير PDF</span>
-                        <span class="d-sm-none">PDF</span>
-                    </a>
-                    <a href="/students/{{ student.id }}/edit" class="btn btn-gradient-blue flex-fill flex-sm-fill-none">
-                        <i class="fas fa-edit me-1"></i>
-                        <span>تعديل</span>
-                    </a>
-                </div>
+        <!-- ===== رأس الصفحة ===== -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+            <div>
+                <h4 class="fw-bold mb-1 text-gradient-blue">
+                    <i class="fas fa-user me-2"></i>{{ student.name }}
+                </h4>
+                <p class="text-muted mb-0 small">
+                    <i class="fas fa-barcode me-1"></i>{{ student.barcode }}
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/students" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-right me-1"></i> رجوع
+                </a>
+                <a href="/students/{{ student.id }}/edit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit me-1"></i> تعديل
+                </a>
+                <a href="/pdf/student/{{ student.id }}" class="btn btn-info btn-sm" target="_blank">
+                    <i class="fas fa-file-pdf me-1"></i> PDF
+                </a>
+                <form method="POST" action="/students/{{ student.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطالب؟')">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash me-1"></i> حذف
+                    </button>
+                </form>
             </div>
         </div>
-    </div>
 
-    <div class="row g-3 g-md-4">
+        <div class="row g-3 g-md-4">
 
-        <!-- ===== معلومات الطالب الأساسية ===== -->
-        <div class="col-12 col-lg-4 fade-in" style="animation-delay: 0.1s;">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-gradient-blue text-white border-0">
-                    <h5 class="mb-0">
-                        <i class="fas fa-user me-2"></i>معلومات الطالب
-                    </h5>
+            <!-- ===== معلومات الطالب الأساسية ===== -->
+            <div class="col-12 col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="profile-info-list">
+                                    <div class="profile-info-item">
+                                        <small class="text-muted">الاسم</small>
+                                        <span class="fw-semibold">{{ student.name }}</span>
+                                    </div>
+                                    <div class="profile-info-item">
+                                        <small class="text-muted">الباركود</small>
+                                        <span class="fw-semibold">{{ student.barcode }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="profile-info-list">
+                                    <div class="profile-info-item">
+                                        <small class="text-muted">البطاقة</small>
+                                        <span>{% if student.has_card %}<span class="badge bg-success-subtle">يملك بطاقة</span>{% else %}<span class="badge bg-danger-subtle">بدون بطاقة</span>{% endif %}</span>
+                                    </div>
+                                    {% if student.notes %}
+                                    <div class="profile-info-item">
+                                        <small class="text-muted">ملاحظات</small>
+                                        <span>{{ student.notes }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="profile-info-list">
-                        <div class="profile-info-item">
-                            <span class="text-muted">الاسم</span>
-                            <span class="fw-bold">{{ student.name }}</span>
-                        </div>
-                        <div class="profile-info-item">
-                            <span class="text-muted">الرمز</span>
-                            <span><code>{{ student.barcode }}</code></span>
-                        </div>
+            </div>
 
-                        {% if student.notes %}
-                        <div class="profile-info-item flex-column align-items-start">
-                            <span class="text-muted mb-1">ملاحظات</span>
-                            <span class="small">{{ student.notes }}</span>
+            <!-- ===== المدرسين والملخص المالي ===== -->
+            <div class="col-12 col-lg-8">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>المدرسين والدفعات
+                        </h6>
+                        <button class="btn btn-primary btn-sm" onclick="openLinkTeacherModal()">
+                            <i class="fas fa-plus me-1"></i>
+                            <span class="d-none d-sm-inline">ربط بمدرس</span>
+                            <span class="d-sm-none">ربط</span>
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+
+                        {% if teachers_summary %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-gradient-blue">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>المدرس</th>
+                                        <th class="d-none d-md-table-cell">المادة</th>
+                                        <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
+                                        <th class="text-center d-none d-sm-table-cell">الحالة</th>
+                                        <th class="text-center">الأجر</th>
+                                        <th class="text-center d-none d-sm-table-cell">المدفوع</th>
+                                        <th class="text-center d-none d-sm-table-cell">المتبقي</th>
+                                        <th class="text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ts in teachers_summary %}
+                                    <tr>
+                                        <td class="fw-bold text-muted">{{ loop.index }}</td>
+                                        <td class="fw-semibold">
+                                            {{ ts.teacher_name }}
+                                            <br class="d-md-none"><small class="text-muted d-md-none">{{ ts.subject }}</small>
+                                        </td>
+                                        <td class="d-none d-md-table-cell">
+                                            <span class="badge bg-light text-dark">{{ ts.subject }}</span>
+                                        </td>
+                                        <td class="text-center d-none d-sm-table-cell">
+                                            <span class="badge bg-{% if ts.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
+                                                {{ ts.study_type }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center d-none d-sm-table-cell">
+                                            <span class="badge bg-{% if ts.status == 'مستمر' %}success{% elif ts.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
+                                                {{ ts.status }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center fw-bold">{{ format_currency(ts.total_fee) }}</td>
+                                        <td class="text-center d-none d-sm-table-cell">
+                                            <span class="text-success fw-bold">{{ format_currency(ts.paid_total) }}</span>
+                                        </td>
+                                        <td class="text-center d-none d-sm-table-cell">
+                                            <span class="fw-bold {% if ts.remaining_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                                                {{ format_currency(ts.remaining_balance) }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="دفع قسط">
+                                                    <i class="fas fa-money-bill"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info d-none d-md-inline-block" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
+                                                    <i class="fas fa-list"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger d-none d-sm-inline-block" onclick="unlinkTeacher({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="إلغاء الربط">
+                                                    <i class="fas fa-unlink"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+
+                                    <!-- صف الإجمالي -->
+                                    <tr class="table-active fw-bold">
+                                        <td colspan="2" class="d-md-none">الإجمالي:</td>
+                                        <td colspan="5" class="text-end d-none d-md-table-cell">الإجمالي:</td>
+                                        <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</td>
+                                        <td class="text-center text-success d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
+                                        <td class="text-center {% if teachers_summary|sum(attribute='remaining_balance') > 0 %}text-danger{% else %}text-success{% endif %} d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 py-md-5">
+                            <i class="fas fa-users-slash fa-3x text-muted d-block mb-3"></i>
+                            <p class="text-muted mb-3">لا يوجد مدرسين مرتبطين بهذا الطالب</p>
+                            <button class="btn btn-primary" onclick="openLinkTeacherModal()">
+                                <i class="fas fa-plus me-1"></i>ربط طالب بمدرس
+                            </button>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== سجل جميع الأقساط ===== -->
+            <div class="col-12">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-history me-2 text-primary"></i>سجل المدفوعات
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if all_installments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-gradient-blue">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>المدرس</th>
+                                        <th class="d-none d-md-table-cell">المادة</th>
+                                        <th class="text-center">المبلغ</th>
+                                        <th class="text-center d-none d-sm-table-cell">النوع</th>
+                                        <th class="text-center d-none d-md-table-cell">التاريخ</th>
+                                        <th class="text-center">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for inst in all_installments %}
+                                    <tr>
+                                        <td class="fw-bold text-muted">{{ loop.index }}</td>
+                                        <td class="fw-semibold">
+                                            {{ inst.teacher_name }}
+                                            <br class="d-md-none"><small class="text-muted d-md-none">{{ inst.subject }}</small>
+                                        </td>
+                                        <td class="d-none d-md-table-cell">
+                                            <span class="badge bg-light text-dark">{{ inst.subject }}</span>
+                                        </td>
+                                        <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
+                                        <td class="text-center d-none d-sm-table-cell">
+                                            <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
+                                        </td>
+                                        <td class="text-center text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
+                                        <td class="text-center">
+                                            <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">لا توجد مدفوعات مسجلة</p>
                         </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- ===== المدرسين والملخص المالي ===== -->
-        <div class="col-12 col-lg-8 fade-in" style="animation-delay: 0.2s;">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-gradient-emerald text-white d-flex justify-content-between align-items-center border-0">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chalkboard-teacher me-2"></i>المدرسين والدفعات
-                    </h5>
-                    <button class="btn btn-light btn-sm" onclick="openLinkTeacherModal()">
-                        <i class="fas fa-plus me-1"></i>
-                        <span class="d-none d-sm-inline">ربط بمدرس</span>
-                        <span class="d-sm-none">ربط</span>
-                    </button>
-                </div>
-                <div class="card-body p-0">
-                    
-                    {% if teachers_summary %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-gradient-emerald">
-                                <tr>
-                                    <th>#</th>
-                                    <th>المدرس</th>
-                                    <th class="d-none d-md-table-cell">المادة</th>
-                                    <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
-                                    <th class="text-center d-none d-sm-table-cell">الحالة</th>
-                                    <th class="text-center">الأجر</th>
-                                    <th class="text-center d-none d-sm-table-cell">المدفوع</th>
-                                    <th class="text-center d-none d-sm-table-cell">المتبقي</th>
-                                    <th class="text-center">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ts in teachers_summary %}
-                                <tr>
-                                    <td class="fw-bold text-muted">{{ loop.index }}</td>
-                                    <td class="fw-semibold">
-                                        {{ ts.teacher_name }}
-                                        <br class="d-md-none"><small class="text-muted d-md-none">{{ ts.subject }}</small>
-                                    </td>
-                                    <td class="d-none d-md-table-cell">
-                                        <span class="badge bg-light text-dark">{{ ts.subject }}</span>
-                                    </td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-{% if ts.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
-                                            {{ ts.study_type }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-{% if ts.status == 'مستمر' %}success{% elif ts.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
-                                            {{ ts.status }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center fw-bold">{{ format_currency(ts.total_fee) }}</td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="text-success fw-bold">{{ format_currency(ts.paid_total) }}</span>
-                                    </td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="fw-bold {% if ts.remaining_balance > 0 %}text-danger{% else %}text-success{% endif %}">
-                                            {{ format_currency(ts.remaining_balance) }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="دفع قسط">
-                                                <i class="fas fa-money-bill"></i>
-                                            </button>
-                                            <button class="btn btn-outline-info d-none d-md-inline-block" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
-                                                <i class="fas fa-list"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger d-none d-sm-inline-block" onclick="unlinkTeacher({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="إلغاء الربط">
-                                                <i class="fas fa-unlink"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                
-                                <!-- صف الإجمالي -->
-                                <tr class="table-active fw-bold">
-                                    <td colspan="2" class="d-md-none">الإجمالي:</td>
-                                    <td colspan="5" class="text-end d-none d-md-table-cell">الإجمالي:</td>
-                                    <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</td>
-                                    <td class="text-center text-success d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
-                                    <td class="text-center {% if teachers_summary|sum(attribute='remaining_balance') > 0 %}text-danger{% else %}text-success{% endif %} d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>
-                                    <td></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4 py-md-5">
-                        <i class="fas fa-users-slash fa-3x text-muted d-block mb-3"></i>
-                        <p class="text-muted mb-3">لا يوجد مدرسين مرتبطين بهذا الطالب</p>
-                        <button class="btn btn-gradient-emerald" onclick="openLinkTeacherModal()">
-                            <i class="fas fa-plus me-1"></i>ربط طالب بمدرس
-                        </button>
-                    </div>
-                    {% endif %}
-
-                </div>
-            </div>
-        </div>
-
-        <!-- ===== سجل جميع الأقساط ===== -->
-        <div class="col-12 fade-in" style="animation-delay: 0.3s;">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-gradient-purple text-white border-0">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history me-2"></i>سجل المدفوعات
-                    </h5>
-                </div>
-                <div class="card-body p-0">
-                    {% if all_installments %}
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>المدرس</th>
-                                    <th class="d-none d-md-table-cell">المادة</th>
-                                    <th class="text-center">المبلغ</th>
-                                    <th class="text-center d-none d-sm-table-cell">النوع</th>
-                                    <th class="text-center d-none d-md-table-cell">التاريخ</th>
-                                    <th class="text-center">إجراء</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for inst in all_installments %}
-                                <tr>
-                                    <td class="fw-bold text-muted">{{ loop.index }}</td>
-                                    <td class="fw-semibold">
-                                        {{ inst.teacher_name }}
-                                        <br class="d-md-none"><small class="text-muted d-md-none">{{ inst.subject }}</small>
-                                    </td>
-                                    <td class="d-none d-md-table-cell">
-                                        <span class="badge bg-light text-dark">{{ inst.subject }}</span>
-                                    </td>
-                                    <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
-                                    </td>
-                                    <td class="text-center text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
-                                    <td class="text-center">
-                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <p class="text-muted mb-0">لا توجد مدفوعات مسجلة</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
         </div>
 
     </div>
-
 </div>
 
 <!-- ===== Modal ربط المدرس ===== -->
@@ -255,14 +260,14 @@
                     <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label class="form-label fw-bold">نوع الدراسة:</label>
-                            <select class="form-select" id="link_study_type">
+                            <select class="form-select form-select-sm" id="link_study_type">
                                 <option value="حضوري">حضوري</option>
                                 <option value="الكتروني">إلكتروني</option>
                             </select>
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold">الحالة:</label>
-                            <select class="form-select" id="link_status">
+                            <select class="form-select form-select-sm" id="link_status">
                                 <option value="مستمر">مستمر</option>
                                 <option value="منسحب">منسحب</option>
                             </select>
@@ -271,7 +276,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gradient-blue">ربط</button>
+                    <button type="submit" class="btn btn-primary">ربط</button>
                 </div>
             </form>
         </div>
@@ -292,13 +297,13 @@
                 <div class="modal-body p-3 p-md-4">
                     <input type="hidden" id="inst_student_id">
                     <input type="hidden" id="inst_teacher_id">
-                    
+
                     <div class="alert alert-info border-0 mb-3">
                         <i class="fas fa-info-circle me-1"></i>
-                        <strong>الطالب:</strong> {{ student.name }} | 
+                        <strong>الطالب:</strong> {{ student.name }} |
                         <strong>المدرس:</strong> <span id="inst_teacher_name"></span>
                     </div>
-                    
+
                     <div class="row g-3">
                         <div class="col-7">
                             <label class="form-label fw-bold">المبلغ (بالألف د.ع):</label>
@@ -326,7 +331,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gradient-emerald">حفظ القسط</button>
+                    <button type="submit" class="btn btn-primary">حفظ القسط</button>
                 </div>
             </form>
         </div>

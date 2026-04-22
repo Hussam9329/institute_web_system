@@ -5,160 +5,174 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-10 col-xl-8">
+<div class="page-transition">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
 
-            <!-- ===== عنوان النموذج ===== -->
-            <div class="card border-0 shadow-lg overflow-hidden fade-in">
-                <div class="card-header bg-gradient-blue text-white py-3 py-md-4 border-0">
-                    <h4 class="mb-0 fw-bold">
+                <!-- ===== عنوان النموذج ===== -->
+                <div class="mb-4">
+                    <h4 class="fw-bold mb-1">
                         {% if mode == 'add' %}
-                        <i class="fas fa-user-plus me-2"></i>إضافة طالب جديد
+                            <i class="fas fa-user-plus me-2 text-primary"></i>إضافة طالب جديد
                         {% else %}
-                        <i class="fas fa-edit me-2"></i>تعديل بيانات الطالب
+                            <i class="fas fa-user-edit me-2 text-primary"></i>تعديل بيانات الطالب
                         {% endif %}
                     </h4>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/students">الطلاب</a></li>
+                            <li class="breadcrumb-item active">{% if mode == 'add' %}إضافة{% else %}تعديل{% endif %}</li>
+                        </ol>
+                    </nav>
                 </div>
-                
-                <div class="card-body p-3 p-md-4">
-                    
-                    {% if mode == 'add' %}
-                    <form method="POST" action="/students/add" id="studentForm">
-                    {% else %}
-                    <form method="POST" action="/students/{{ student.id }}/edit" id="studentForm">
-                    {% endif %}
 
-                        <!-- القسم الأول: البيانات الأساسية -->
-                        <div class="form-section-title">
-                            <i class="fas fa-user"></i>
-                            <span>البيانات الأساسية</span>
-                        </div>
+                <!-- ===== النموذج ===== -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-file-alt me-2 text-primary"></i>بيانات الطالب
+                        </h6>
+                    </div>
+                    <div class="card-body">
 
-                        <!-- اسم الطالب -->
-                        <div class="mb-3">
-                            <label for="name" class="form-label fw-bold">
-                                <i class="fas fa-user me-1 text-primary"></i>اسم الطالب الكامل <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control form-control-lg" id="name" name="name"
-                                   value="{{ student.name if student else '' }}" required
-                                   placeholder="أدخل اسم الطالب الكامل"
-                                   minlength="2" maxlength="100">
-                        </div>
+                        {% if mode == 'add' %}
+                        <form method="POST" action="/students/add" id="studentForm">
+                        {% else %}
+                        <form method="POST" action="/students/{{ student.id }}/edit" id="studentForm">
+                        {% endif %}
 
-                        <div class="row g-3">
-                            <!-- البطاقة -->
-                            <div class="col-12 col-md-4 mb-3">
-                                <div class="d-flex flex-column gap-2 mt-0 mt-md-4">
-                                    <div class="form-check form-switch bg-light rounded-2 p-2">
-                                        <input class="form-check-input" type="checkbox" 
-                                               id="has_card" name="has_card" value="true"
-                                               {% if student and student.has_card %}checked{% endif %}>
-                                        <label class="form-check-label fw-semibold" for="has_card">
-                                            <i class="fas fa-id-card me-1 text-primary"></i>يملك بطاقة
-                                        </label>
+                            <!-- القسم الأول: البيانات الأساسية -->
+                            <div class="form-section-title">
+                                <i class="fas fa-user"></i>
+                                <span>البيانات الأساسية</span>
+                            </div>
+
+                            <!-- اسم الطالب -->
+                            <div class="mb-3">
+                                <label for="name" class="form-label fw-bold">
+                                    <i class="fas fa-user me-1 text-primary"></i>اسم الطالب الكامل <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="name" name="name"
+                                       value="{{ student.name if student else '' }}" required
+                                       placeholder="أدخل اسم الطالب الكامل"
+                                       minlength="2" maxlength="100">
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- البطاقة -->
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="d-flex flex-column gap-2 mt-0 mt-md-4">
+                                        <div class="form-check form-switch bg-light rounded-2 p-2">
+                                            <input class="form-check-input" type="checkbox"
+                                                   id="has_card" name="has_card" value="true"
+                                                   {% if student and student.has_card %}checked{% endif %}>
+                                            <label class="form-check-label fw-semibold" for="has_card">
+                                                <i class="fas fa-id-card me-1 text-primary"></i>يملك بطاقة
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- ملاحظات -->
-                        <div class="mb-4">
-                            <label for="notes" class="form-label fw-bold">
-                                <i class="fas fa-sticky-note me-1 text-primary"></i>ملاحظات (اختياري)
-                            </label>
-                            <textarea class="form-control" id="notes" name="notes" rows="2"
-                                      placeholder="أي ملاحظات إضافية...">{{ student.notes if student else '' }}</textarea>
-                        </div>
+                            <!-- ملاحظات -->
+                            <div class="mb-4">
+                                <label for="notes" class="form-label fw-bold">
+                                    <i class="fas fa-sticky-note me-1 text-primary"></i>ملاحظات (اختياري)
+                                </label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2"
+                                          placeholder="أي ملاحظات إضافية...">{{ student.notes if student else '' }}</textarea>
+                            </div>
 
-                        <!-- القسم الثاني: ربط بالمدرسين -->
-                        <div class="form-section-title mt-4">
-                            <i class="fas fa-chalkboard-teacher"></i>
-                            <span>ربط الطالب بالمدرسين</span>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-link me-1 text-emerald"></i>اختر المدرسين مع نوع الدراسة والحالة
-                            </label>
-                            <div class="card border p-2 p-md-3 bg-light-subtle">
-                                {% if teachers %}
-                                <div class="row g-2">
-                                    {% for teacher in teachers %}
-                                    <div class="col-12 col-sm-6 col-lg-4">
-                                        <div class="form-check teacher-check p-2 p-md-3 rounded-3 h-100">
-                                            <input class="form-check-input" type="checkbox" 
-                                                   name="teacher_ids" value="{{ teacher.id }}" id="teacher_{{ teacher.id }}"
-                                                   onchange="toggleTeacherOptions({{ teacher.id }}, this.checked)"
-                                                   {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}checked{% endif %}>
-                                            <label class="form-check-label w-100" for="teacher_{{ teacher.id }}">
-                                                <div class="fw-semibold">{{ teacher.name }}</div>
-                                                <small class="text-muted">{{ teacher.subject }}</small>
-                                            </label>
-                                        </div>
-                                        <!-- خيارات لكل مدرس -->
-                                        <div class="teacher-options mt-1 ms-4 p-2 bg-white rounded-2 border" 
-                                             id="teacher_opts_{{ teacher.id }}" 
-                                             style="display: {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}block{% else %}none{% endif %}">
-                                            <div class="row g-2">
-                                                <div class="col-6">
-                                                    <select class="form-select form-select-sm" name="study_type_{{ teacher.id }}">
-                                                        <option value="حضوري" 
-                                                            {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'حضوري' %}selected{% elif not linked_data and teacher.id not in linked_teacher_ids %}selected{% endif %}>
-                                                            حضوري</option>
-                                                        <option value="الكتروني" 
-                                                            {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'الكتروني' %}selected{% endif %}>
-                                                            إلكتروني</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-6">
-                                                    <select class="form-select form-select-sm" name="status_{{ teacher.id }}">
-                                                        <option value="مستمر" 
-                                                            {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('status') == 'مستمر' %}selected{% elif not linked_data and teacher.id not in linked_teacher_ids %}selected{% endif %}>
-                                                            مستمر</option>
-                                                        <option value="منسحب" 
-                                                            {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('status') == 'منسحب' %}selected{% endif %}>
-                                                            منسحب</option>
-                                                    </select>
+                            <!-- القسم الثاني: ربط بالمدرسين -->
+                            <div class="form-section-title mt-4">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span>ربط الطالب بالمدرسين</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-link me-1 text-emerald"></i>اختر المدرسين مع نوع الدراسة والحالة
+                                </label>
+                                <div class="card border p-2 p-md-3 bg-light-subtle">
+                                    {% if teachers %}
+                                    <div class="row g-2">
+                                        {% for teacher in teachers %}
+                                        <div class="col-12 col-sm-6 col-lg-4">
+                                            <div class="form-check teacher-check p-2 p-md-3 rounded-3 h-100">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="teacher_ids" value="{{ teacher.id }}" id="teacher_{{ teacher.id }}"
+                                                       onchange="toggleTeacherOptions({{ teacher.id }}, this.checked)"
+                                                       {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}checked{% endif %}>
+                                                <label class="form-check-label w-100" for="teacher_{{ teacher.id }}">
+                                                    <div class="fw-semibold">{{ teacher.name }}</div>
+                                                    <small class="text-muted">{{ teacher.subject }}</small>
+                                                </label>
+                                            </div>
+                                            <!-- خيارات لكل مدرس -->
+                                            <div class="teacher-options mt-1 ms-4 p-2 bg-white rounded-2 border"
+                                                 id="teacher_opts_{{ teacher.id }}"
+                                                 style="display: {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}block{% else %}none{% endif %}">
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <select class="form-select form-select-sm" name="study_type_{{ teacher.id }}">
+                                                            <option value="حضوري"
+                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'حضوري' %}selected{% elif not linked_data and teacher.id not in linked_teacher_ids %}selected{% endif %}>
+                                                                حضوري</option>
+                                                            <option value="الكتروني"
+                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'الكتروني' %}selected{% endif %}>
+                                                                إلكتروني</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <select class="form-select form-select-sm" name="status_{{ teacher.id }}">
+                                                            <option value="مستمر"
+                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('status') == 'مستمر' %}selected{% elif not linked_data and teacher.id not in linked_teacher_ids %}selected{% endif %}>
+                                                                مستمر</option>
+                                                            <option value="منسحب"
+                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('status') == 'منسحب' %}selected{% endif %}>
+                                                                منسحب</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        {% endfor %}
                                     </div>
-                                    {% endfor %}
+                                    {% else %}
+                                    <div class="text-center py-3 py-md-4 text-muted">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        لا يوجد مدرسين مسجلين. <a href="/teachers/add">أضف مدرس أولاً</a>
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                {% else %}
-                                <div class="text-center py-3 py-md-4 text-muted">
-                                    <i class="fas fa-exclamation-circle me-1"></i>
-                                    لا يوجد مدرسين مسجلين. <a href="/teachers/add">أضف مدرس أولاً</a>
+                                <div class="form-text mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    يمكنك اختيار أكثر من مدرس واحد. سيتم ربط الطالب بالمدرسين المحددين مع تحديد نوع الدراسة (حضوري/إلكتروني) والحالة (مستمر/منسحب) لكل مدرس.
                                 </div>
-                                {% endif %}
                             </div>
-                            <div class="form-text mt-2">
-                                <i class="fas fa-info-circle me-1"></i>
-                                يمكنك اختيار أكثر من مدرس واحد. سيتم ربط الطالب بالمدرسين المحددين مع تحديد نوع الدراسة (حضوري/إلكتروني) والحالة (مستمر/منسحب) لكل مدرس.
-                            </div>
-                        </div>
 
-                        <!-- أزرار الإجراءات -->
-                        <div class="d-flex flex-column flex-sm-row justify-content-between gap-3 mt-4 pt-3 border-top">
-                            <a href="/students" class="btn btn-light btn-lg px-4 order-2 order-sm-1">
-                                <i class="fas fa-arrow-right me-1"></i>رجوع
-                            </a>
-                            <div class="d-flex gap-2 flex-column flex-sm-row order-1 order-sm-2">
-                                <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
-                                    <i class="fas fa-undo me-1"></i>تفريغ
-                                </button>
-                                <button type="submit" class="btn btn-gradient-blue btn-lg px-4 px-md-5">
-                                    <i class="fas fa-save me-1"></i>
-                                    {% if mode == 'add' %}حفظ الطالب{% else %}تحديث البيانات{% endif %}
-                                </button>
+                            <!-- أزرار الإجراءات -->
+                            <div class="d-flex flex-column flex-sm-row justify-content-between gap-3 mt-4 pt-3 border-top">
+                                <a href="/students" class="btn btn-light btn-lg px-4 order-2 order-sm-1">
+                                    <i class="fas fa-arrow-right me-1"></i>رجوع
+                                </a>
+                                <div class="d-flex gap-2 flex-column flex-sm-row order-1 order-sm-2">
+                                    <button type="reset" class="btn btn-outline-secondary btn-lg px-4">
+                                        <i class="fas fa-undo me-1"></i>تفريغ
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-lg px-4 px-md-5">
+                                        <i class="fas fa-save me-1"></i>
+                                        {% if mode == 'add' %}حفظ الطالب{% else %}تحديث البيانات{% endif %}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                    </form>
+                        </form>
+                    </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 </div>

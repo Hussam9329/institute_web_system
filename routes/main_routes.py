@@ -625,3 +625,136 @@ async def payments_page(request: Request, search: str = ""):
         "total_amount": total_amount,
         "format_currency": format_currency
     })
+
+
+# ===== التقارير =====
+
+@router.get("/reports", response_class=HTMLResponse)
+async def reports_page(request: Request):
+    """صفحة التقارير الشاملة"""
+    db = Database()
+    stats = finance_service.get_system_statistics()
+    
+    # تقرير الطلاب
+    try:
+        students_report = db.execute_query('''
+            SELECT s.*,
+                (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
+                (SELECT COALESCE(SUM(t2.total_fee), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
+                (SELECT COALESCE(SUM(i.amount), 0) FROM installments i WHERE i.student_id = s.id) as total_paid
+            FROM students s
+            ORDER BY s.name
+        ''')
+        students_data = []
+        for s in students_report:
+            sd = dict(s)
+            sd['total_remaining'] = sd['total_fees'] - sd['total_paid']
+            sd['payment_percentage'] = round((sd['total_paid'] / sd['total_fees'] * 100), 1) if sd['total_fees'] > 0 else 0
+            students_data.append(sd)
+    except:
+        students_data = []
+    
+    # تقرير المدرسين
+    try:
+        teachers_report = db.execute_query('''
+            SELECT t.*,
+                (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
+            FROM teachers t
+            ORDER BY t.name
+        ''')
+        teachers_data = []
+        for t in teachers_report:
+            td = dict(t)
+            try:
+                balance = finance_service.calculate_teacher_balance(td['id'])
+                td['financial'] = balance
+            except:
+                td['financial'] = {}
+            teachers_data.append(td)
+    except:
+        teachers_data = []
+    
+    # تقرير المواد
+    try:
+        subjects_report = db.execute_query("SELECT * FROM subjects ORDER BY name")
+        subjects_data = []
+        for sub in subjects_report:
+            sd = dict(sub)
+            cnt = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = %s", (sd['name'],))
+            sd['teachers_count'] = cnt[0]['cnt'] if cnt else 0
+            subjects_data.append(sd)
+    except:
+        subjects_data = []
+    
+    return templates.TemplateResponse("reports/index.html", {
+        "request": request,
+        "stats": stats,
+        "students_report": students_data,
+        "teachers_report": teachers_data,
+        "subjects_report": subjects_data,
+        "format_currency": format_currency
+    })
+
+
+# ===== الإحصائيات =====
+
+@router.get("/stats", response_class=HTMLResponse)
+async def stats_page(request: Request):
+    """صفحة الإحصائيات التفصيلية"""
+    db = Database()
+    stats = finance_service.get_system_statistics()
+    
+    stat_rows = []
+    try:
+        # إجمالي الطلاب
+        total_students = db.execute_query("SELECT COUNT(*) as cnt FROM students")
+        total_students_count = total_students[0]['cnt'] if total_students else 0
+        stat_rows.append({"label": "إجمالي الطلاب", "value": total_students_count, "icon": "fa-user-graduate", "color": "blue"})
+        
+        # الطلاب النشطين
+        active_students = db.execute_query("SELECT COUNT(DISTINCT student_id) as cnt FROM student_teacher WHERE status = 'مستمر'")
+        active_count = active_students[0]['cnt'] if active_students else 0
+        stat_rows.append({"label": "الطلاب النشطين (مستمر)", "value": active_count, "icon": "fa-user-check", "color": "emerald"})
+        
+        # الطلاب المنسحبين
+        withdrawn_students = db.execute_query("SELECT COUNT(DISTINCT student_id) as cnt FROM student_teacher WHERE status = 'منسحب'")
+        withdrawn_count = withdrawn_students[0]['cnt'] if withdrawn_students else 0
+        stat_rows.append({"label": "الطلاب المنسحبين", "value": withdrawn_count, "icon": "fa-user-minus", "color": "danger"})
+        
+        # إجمالي المدرسين
+        total_teachers = db.execute_query("SELECT COUNT(*) as cnt FROM teachers")
+        total_teachers_count = total_teachers[0]['cnt'] if total_teachers else 0
+        stat_rows.append({"label": "إجمالي المدرسين", "value": total_teachers_count, "icon": "fa-chalkboard-teacher", "color": "purple"})
+        
+        # المواد
+        total_subjects = db.execute_query("SELECT COUNT(*) as cnt FROM subjects")
+        total_subjects_count = total_subjects[0]['cnt'] if total_subjects else 0
+        stat_rows.append({"label": "المواد الدراسية", "value": total_subjects_count, "icon": "fa-book-open", "color": "orange"})
+        
+        # عدد العمليات
+        total_payments = db.execute_query("SELECT COUNT(*) as cnt FROM installments")
+        total_payments_count = total_payments[0]['cnt'] if total_payments else 0
+        stat_rows.append({"label": "عدد عمليات الدفع", "value": total_payments_count, "icon": "fa-money-check-alt", "color": "blue"})
+        
+        # إجمالي المدفوعات
+        total_paid = db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM installments")
+        total_paid_amount = total_paid[0]['total'] if total_paid else 0
+        stat_rows.append({"label": "إجمالي المدفوعات", "value": format_currency(total_paid_amount), "icon": "fa-coins", "color": "emerald"})
+        
+        # إجمالي المسحوبات
+        total_withdrawn = db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals")
+        total_withdrawn_amount = total_withdrawn[0]['total'] if total_withdrawn else 0
+        stat_rows.append({"label": "إجمالي المسحوبات", "value": format_currency(total_withdrawn_amount), "icon": "fa-hand-holding-usd", "color": "orange"})
+        
+        # صافي الإيرادات
+        net_revenue = total_paid_amount - total_withdrawn_amount
+        stat_rows.append({"label": "صافي الإيرادات", "value": format_currency(net_revenue), "icon": "fa-chart-line", "color": "purple"})
+    except:
+        pass
+    
+    return templates.TemplateResponse("stats/index.html", {
+        "request": request,
+        "stats": stats,
+        "stat_rows": stat_rows,
+        "format_currency": format_currency
+    })

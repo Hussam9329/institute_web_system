@@ -3,104 +3,94 @@
 {% block title %}إدارة المواد الدراسية - نظام إدارة المعهد{% endblock %}
 
 {% block content %}
+<div class="page-transition">
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-3 mb-md-4 fade-in">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-                <div>
-                    <h1 class="h3 h2-md fw-bold text-gradient-purple mb-1">
-                        <i class="fas fa-book-open me-2"></i>إدارة المواد الدراسية
-                    </h1>
-                    <p class="text-muted mb-0">{{ subjects|length }} مادة مسجلة</p>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="/pdf/subjects/all" target="_blank" class="btn btn-outline-info">
-                        <i class="fas fa-file-pdf me-1"></i>
-                        <span>تحميل PDF شامل</span>
-                    </a>
-                    <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                        <i class="fas fa-plus me-1"></i>
-                        <span>إضافة مادة جديدة</span>
-                    </button>
-                </div>
-            </div>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
+            <h4 class="fw-bold mb-1 text-gradient-purple"><i class="fas fa-book-open me-2"></i>المواد الدراسية</h4>
+            <p class="text-muted mb-0 small">{{ subjects|length }} مادة</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/pdf/subjects/all" target="_blank" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-file-pdf me-1"></i> PDF شامل
+            </a>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                <i class="fas fa-plus me-1"></i> إضافة مادة
+            </button>
         </div>
     </div>
 
     <!-- ===== جدول المواد ===== -->
-    <div class="row fade-in" style="animation-delay: 0.1s;">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-gradient-purple">
-                                <tr>
-                                    <th class="text-center" style="width: 50px">#</th>
-                                    <th>اسم المادة</th>
-                                    <th class="text-center d-none d-sm-table-cell">عدد المدرسين</th>
-                                    <th class="text-center" style="width: 60px;">PDF</th>
-                                    <th class="text-center" style="width: 110px;">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for subject in subjects %}
-                                <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
-                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="subject-icon me-2 me-md-3">
-                                                <i class="fas fa-book text-purple"></i>
-                                            </div>
-                                            <div>
-                                                <span class="fw-bold">{{ subject.name }}</span>
-                                                <br class="d-sm-none"><small class="text-muted d-sm-none">{{ subject.teachers_count }} مدرس</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-purple-gradient">{{ subject.teachers_count }} مدرس</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <a href="/pdf/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="تحميل PDF">
-                                            <i class="fas fa-file-pdf"></i>
-                                        </a>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <form method="POST" action="/subjects/{{ subject.id }}/delete" style="display:inline"
-                                                  onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة؟')">
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="حذف">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-5">
-                                        <i class="fas fa-book-open fa-3x text-muted d-block mb-3"></i>
-                                        <p class="text-muted mb-3">لا توجد مواد دراسية مسجلة</p>
-                                        <button class="btn btn-gradient-purple" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                                            <i class="fas fa-plus me-1"></i>أضف مادة جديدة
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle table-sm">
+                    <thead class="table-gradient-purple">
+                        <tr>
+                            <th class="text-center" style="width: 50px">#</th>
+                            <th>اسم المادة</th>
+                            <th class="text-center d-none d-sm-table-cell">عدد المدرسين</th>
+                            <th class="text-center" style="width: 60px;">PDF</th>
+                            <th class="text-center" style="width: 110px;">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject in subjects %}
+                        <tr>
+                            <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="subject-icon me-2 me-md-3">
+                                        <i class="fas fa-book text-purple"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold">{{ subject.name }}</span>
+                                        <br class="d-sm-none"><small class="text-muted d-sm-none">{{ subject.teachers_count }} مدرس</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center d-none d-sm-table-cell">
+                                <span class="badge bg-purple-gradient">{{ subject.teachers_count }} مدرس</span>
+                            </td>
+                            <td class="text-center">
+                                <a href="/pdf/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="تحميل PDF">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form method="POST" action="/subjects/{{ subject.id }}/delete" style="display:inline"
+                                          onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة؟')">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="حذف">
+                                            <i class="fas fa-trash"></i>
                                         </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fas fa-book-open fa-3x text-muted d-block mb-3"></i>
+                                <p class="text-muted mb-3">لا توجد مواد دراسية مسجلة</p>
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                                    <i class="fas fa-plus me-1"></i>أضف مادة جديدة
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
+</div>
 </div>
 
 <!-- ===== Modal إضافة مادة ===== -->
@@ -125,7 +115,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gradient-purple">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i>حفظ المادة
                     </button>
                 </div>
@@ -156,7 +146,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gradient-warning">
+                    <button type="submit" class="btn btn-warning">
                         <i class="fas fa-save me-1"></i>تحديث المادة
                     </button>
                 </div>

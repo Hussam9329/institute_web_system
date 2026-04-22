@@ -3,141 +3,147 @@
 {% block title %}إدارة الطلاب - نظام إدارة المعهد{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="page-transition">
+    <div class="container-fluid">
 
-    <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-3 mb-md-4 fade-in">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-                <div>
-                    <h1 class="h3 h2-md fw-bold text-gradient-blue mb-1">
-                        <i class="fas fa-user-graduate me-2"></i>إدارة الطلاب
-                    </h1>
-                    <p class="text-muted mb-0">{{ students|length }} طالب مسجل</p>
-                </div>
-                <a href="/students/add" class="btn btn-gradient-blue">
-                    <i class="fas fa-user-plus me-1"></i>
-                    <span>إضافة طالب</span>
-                </a>
+        <!-- ===== عنوان الصفحة ===== -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+            <div>
+                <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-user-graduate me-2"></i>إدارة الطلاب</h4>
+                <p class="text-muted mb-0 small">{{ students|length }} طالب مسجل</p>
             </div>
+            <a href="/students/add" class="btn btn-primary btn-sm">
+                <i class="fas fa-user-plus me-1"></i> إضافة طالب
+            </a>
         </div>
-    </div>
 
-    <!-- ===== بحث ===== -->
-    <div class="row mb-3 mb-md-4 fade-in" style="animation-delay: 0.1s;">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body py-2 py-md-3">
-                    <form method="GET" action="/students" class="row g-2 g-md-3 align-items-center">
-                        <div class="col-12 col-md-9 col-lg-10">
-                            <div class="input-group">
-                                <span class="input-group-text bg-transparent border-end-0">
-                                    <i class="fas fa-search text-muted"></i>
-                                </span>
-                                <input type="text" name="search" class="form-control border-start-0 ps-0" 
-                                       placeholder="بحث عن طالب بالاسم أو الرمز..." value="{{ search }}" id="studentLiveSearch">
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-3 col-lg-2">
-                            <button type="submit" class="btn btn-gradient-blue w-100">
-                                <i class="fas fa-search me-1"></i>بحث
-                            </button>
-                        </div>
-                    </form>
+        <!-- ===== بحث ===== -->
+        <div class="mb-3">
+            <form method="GET" action="/students">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0"
+                           placeholder="بحث عن طالب بالاسم أو الرمز..." value="{{ search }}" id="studentLiveSearch">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-search me-1"></i>بحث
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
-    </div>
 
-    <!-- ===== جدول الطلاب ===== -->
-    <div class="row fade-in" style="animation-delay: 0.2s;">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle" id="studentsTable">
-                            <thead class="table-gradient-blue">
-                                <tr>
-                                    <th class="text-center" style="width:40px">#</th>
-                                    <th>اسم الطالب</th>
-                                    <th class="text-center" style="min-width:80px; width:100px;">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="studentsTableBody">
-                                {% for student in students %}
-                                <tr class="student-row" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
-                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
-                                    <td class="text-center">
-                                        <a href="/students/{{ student.id }}" class="text-decoration-none fw-semibold text-primary">
-                                            {{ student.name }}
+        <!-- ===== جدول الطلاب ===== -->
+        {% if students %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" id="studentsTable">
+                        <thead class="table-gradient-blue">
+                            <tr>
+                                <th class="text-center" style="width:40px">#</th>
+                                <th>اسم الطالب</th>
+                                <th class="text-center" style="min-width:80px; width:100px;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            {% for student in students %}
+                            <tr class="student-row" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
+                                <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
+                                <td class="text-center">
+                                    <a href="/students/{{ student.id }}" class="text-decoration-none fw-semibold text-primary">
+                                        {{ student.name }}
+                                    </a>
+                                    {% if student.notes %}
+                                    <br><small class="text-muted d-none d-md-block">{{ student.notes[:40] }}</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm d-flex justify-content-center">
+                                        <a href="/students/{{ student.id }}" class="btn btn-outline-primary" title="البروفايل">
+                                            <i class="fas fa-eye"></i>
                                         </a>
-                                        {% if student.notes %}
-                                        <br><small class="text-muted d-none d-md-block">{{ student.notes[:40] }}</small>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm d-flex justify-content-center">
-                                            <a href="/students/{{ student.id }}" class="btn btn-outline-primary" title="البروفايل">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning d-none d-sm-inline-block" title="تعديل">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-info d-none d-md-inline-block" target="_blank" title="PDF">
-                                                <i class="fas fa-file-pdf"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-danger d-none d-sm-inline-block" title="حذف"
-                                                    onclick="confirmDelete({{ student.id }}, '{{ student.name }}')">
-                                                <i class="fas fa-trash"></i>
+                                        <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning d-none d-sm-inline-block" title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="/pdf/student/{{ student.id }}" class="btn btn-outline-info d-none d-md-inline-block" target="_blank" title="PDF">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger d-none d-sm-inline-block" title="حذف"
+                                                onclick="confirmDelete({{ student.id }}, '{{ student.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <!-- قائمة إجراءات للجوال -->
+                                        <div class="dropdown d-sm-none">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </button>
-                                            <!-- قائمة إجراءات للجوال -->
-                                            <div class="dropdown d-sm-none">
-                                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                    <i class="fas fa-ellipsis-v"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    <li><a class="dropdown-item" href="/students/{{ student.id }}/edit">
-                                                        <i class="fas fa-edit me-2"></i>تعديل
-                                                    </a></li>
-                                                    <li><a class="dropdown-item" href="/pdf/student/{{ student.id }}" target="_blank">
-                                                        <i class="fas fa-file-pdf me-2 text-info"></i>PDF
-                                                    </a></li>
-                                                    <li><hr class="dropdown-divider"></li>
-                                                    <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ student.id }}, '{{ student.name }}'); return false;">
-                                                        <i class="fas fa-trash me-2"></i>حذف
-                                                    </a></li>
-                                                </ul>
-                                            </div>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="/students/{{ student.id }}/edit">
+                                                    <i class="fas fa-edit me-2"></i>تعديل
+                                                </a></li>
+                                                <li><a class="dropdown-item" href="/pdf/student/{{ student.id }}" target="_blank">
+                                                    <i class="fas fa-file-pdf me-2 text-info"></i>PDF
+                                                </a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ student.id }}, '{{ student.name }}'); return false;">
+                                                    <i class="fas fa-trash me-2"></i>حذف
+                                                </a></li>
+                                            </ul>
                                         </div>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="3" class="text-center py-5">
-                                        <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
-                                        <p class="text-muted mb-0">
-                                            {% if search %}
-                                            لا توجد نتائج بحث عن "{{ search }}"
-                                            {% else %}
-                                            لا يوجد طلاب مسجلين
-                                            {% endif %}
-                                        </p>
-                                        {% if not search %}
-                                        <a href="/students/add" class="btn btn-gradient-blue mt-3">
-                                            <i class="fas fa-user-plus me-1"></i>أضف طالب جديد
-                                        </a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
 
+        <!-- ===== حالة فارغة - بحث بدون نتائج ===== -->
+        <div id="noSearchResults" class="text-center py-5" style="display:none;">
+            <i class="fas fa-search fa-3x text-muted d-block mb-3"></i>
+            <p class="text-muted mb-0">لا توجد نتائج مطابقة للبحث</p>
+        </div>
+        {% else %}
+        <!-- ===== حالة فارغة - لا يوجد طلاب ===== -->
+        {% if search %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" id="studentsTable">
+                        <thead class="table-gradient-blue">
+                            <tr>
+                                <th class="text-center" style="width:40px">#</th>
+                                <th>اسم الطالب</th>
+                                <th class="text-center" style="min-width:80px; width:100px;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            <tr>
+                                <td colspan="3" class="text-center py-5">
+                                    <i class="fas fa-search fa-3x text-muted d-block mb-3"></i>
+                                    <p class="text-muted mb-0">لا توجد نتائج بحث عن "{{ search }}"</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state text-center py-5">
+            <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
+            <p class="text-muted mb-2">لا يوجد طلاب مسجلين</p>
+            <a href="/students/add" class="btn btn-primary btn-sm">
+                <i class="fas fa-user-plus me-1"></i> إضافة أول طالب
+            </a>
+        </div>
+        {% endif %}
+        {% endif %}
+
+    </div>
 </div>
 
 <form id="deleteForm" method="POST" action="" style="display: none;"></form>
@@ -154,11 +160,22 @@ function confirmDelete(id, name) {
 document.getElementById('studentLiveSearch')?.addEventListener('input', function() {
     const query = this.value.toLowerCase();
     const rows = document.querySelectorAll('.student-row');
+    let visibleCount = 0;
     rows.forEach(row => {
         const name = row.dataset.name || '';
         const barcode = row.dataset.barcode || '';
-        row.style.display = (name.includes(query) || barcode.includes(query)) ? '' : 'none';
+        const isVisible = name.includes(query) || barcode.includes(query);
+        row.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
     });
+    // Show/hide no results message for client-side search
+    const noResults = document.getElementById('noSearchResults');
+    if (noResults) {
+        const table = document.getElementById('studentsTable');
+        if (table) {
+            noResults.style.display = (rows.length > 0 && visibleCount === 0 && query.length > 0) ? 'block' : 'none';
+        }
+    }
 });
 </script>
 {% endblock %}
