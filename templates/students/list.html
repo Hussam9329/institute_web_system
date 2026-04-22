@@ -62,7 +62,6 @@
                                     <th>اسم الطالب</th>
                                     <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
                                     <th class="text-center d-none d-lg-table-cell">المدرسين</th>
-                                    <th class="text-center d-none d-xl-table-cell">بطاقة</th>
                                     <th class="text-center" style="min-width:100px; width:140px;">الإجراءات</th>
                                 </tr>
                             </thead>
@@ -91,13 +90,6 @@
                                     </td>
                                     <td class="text-center d-none d-lg-table-cell">
                                         <span class="badge bg-light text-dark">{{ student.teachers_count or 0 }}</span>
-                                    </td>
-                                    <td class="text-center d-none d-xl-table-cell">
-                                        {% if student.has_card %}
-                                        <i class="fas fa-check-circle text-success"></i>
-                                        {% else %}
-                                        <i class="fas fa-minus text-muted"></i>
-                                        {% endif %}
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm d-flex justify-content-center">
@@ -137,7 +129,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="6" class="text-center py-5">
+                                    <td colspan="5" class="text-center py-5">
                                         <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
                                         <p class="text-muted mb-0">
                                             {% if search %}

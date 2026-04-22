@@ -62,16 +62,7 @@
                                 {{ student.study_type }}
                             </span>
                         </div>
-                        <div class="profile-info-item">
-                            <span class="text-muted">بطاقة</span>
-                            <span>
-                                {% if student.has_card %}
-                                <i class="fas fa-check-circle text-success"></i> نعم
-                                {% else %}
-                                <i class="fas fa-times-circle text-muted"></i> لا
-                                {% endif %}
-                            </span>
-                        </div>
+
                         {% if student.notes %}
                         <div class="profile-info-item flex-column align-items-start">
                             <span class="text-muted mb-1">ملاحظات</span>

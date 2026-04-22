@@ -37,6 +37,13 @@
                 <span class="d-sm-none">المدرسين</span>
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="subjects-tab" data-bs-toggle="tab" data-bs-target="#subjectsReport" type="button">
+                <i class="fas fa-book-open me-1"></i>
+                <span class="d-none d-sm-inline">تقارير المواد</span>
+                <span class="d-sm-none">المواد</span>
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content" id="reportTabsContent">
@@ -261,6 +268,54 @@
                                     <td colspan="10" class="text-center py-5">
                                         <i class="fas fa-chalkboard-teacher fa-3x text-muted d-block mb-3"></i>
                                         <p class="text-muted">لا يوجد مدرسين مسجلين</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== تقارير المواد ===== -->
+        <div class="tab-pane fade" id="subjectsReport" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-12 text-end">
+                    <a href="/pdf/subjects/all" target="_blank" class="btn btn-gradient-purple btn-sm">
+                        <i class="fas fa-file-pdf me-1"></i>تحميل PDF شامل
+                    </a>
+                </div>
+            </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-gradient-purple">
+                                <tr>
+                                    <th>#</th>
+                                    <th>المادة</th>
+                                    <th class="text-center">عدد المدرسين</th>
+                                    <th class="text-center">PDF</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in subjects_report %}
+                                <tr>
+                                    <td class="fw-bold text-muted">{{ loop.index }}</td>
+                                    <td class="fw-bold">{{ subject.name }}</td>
+                                    <td class="text-center"><span class="badge bg-light text-dark">{{ subject.teachers_count }}</span></td>
+                                    <td class="text-center">
+                                        <a href="/pdf/subject/{{ subject.name }}" target="_blank" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <i class="fas fa-book-open fa-3x text-muted d-block mb-3"></i>
+                                        <p class="text-muted">لا توجد مواد</p>
                                     </td>
                                 </tr>
                                 {% endfor %}

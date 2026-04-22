@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import Database
 from services.finance_service import finance_service
-from config import get_current_date, format_currency, BASE_DIR
+from config import get_current_date, format_currency, BASE_DIR, generate_barcode
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -154,7 +154,7 @@ async def student_add(
     barcode_query = "SELECT MAX(id) as max_id FROM students"
     result = db.execute_query(barcode_query)
     next_id = (result[0]['max_id'] or 0) + 1
-    barcode = f"STU-2024-{str(next_id).zfill(6)}"
+    barcode = generate_barcode(next_id)
     
     insert_query = '''
         INSERT INTO students (name, study_type, has_card, barcode, notes, created_at)
@@ -247,11 +247,7 @@ async def student_update(
     # تحديث ربط المدرسين
     form_data = await request.form()
     teacher_ids = form_data.getlist("teacher_ids")
-    
-    # حذف الروابط القديمة (بدون حذف الأقساط)
-    db.execute_query("DELETE FROM student_teacher WHERE student_id = %s AND teacher_id NOT IN %s" % ('%s', ), 
-                     () if not teacher_ids else (student_id, tuple(int(t) for t in teacher_ids if t)))
-    
+
     # إعادة الربط بطريقة صحيحة
     # حذف كل الروابط القديمة أولاً
     old_links = db.execute_query("SELECT teacher_id FROM student_teacher WHERE student_id = %s", (student_id,))
@@ -651,11 +647,24 @@ async def reports_page(request: Request):
     except:
         students_report = []
     
+    # ملخص المواد
+    try:
+        subjects_data = db.execute_query("SELECT name FROM subjects ORDER BY name")
+        subjects_report = []
+        for s in subjects_data:
+            sd = dict(s)
+            teachers = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = %s", (sd['name'],))
+            sd['teachers_count'] = teachers[0]['cnt'] if teachers else 0
+            subjects_report.append(sd)
+    except:
+        subjects_report = []
+    
     return templates.TemplateResponse("reports/index.html", {
         "request": request,
         "stats": stats,
         "teachers_report": teachers_report,
         "students_report": students_report,
+        "subjects_report": subjects_report,
         "format_currency": format_currency
     })
 

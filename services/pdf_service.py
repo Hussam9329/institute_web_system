@@ -19,8 +19,7 @@ from bidi.algorithm import get_display
 
 from config import (
     STUDENT_PDFS_DIR, TEACHER_PDFS_DIR, RECEIPTS_DIR, REPORTS_DIR,
-    format_currency, format_date, APP_TITLE, APP_VERSION,
-    INSTITUTE_DEDUCTION_PER_STUDENT
+    format_currency, format_date, APP_TITLE, APP_VERSION
 )
 from services.finance_service import finance_service
 from database import Database
@@ -193,7 +192,6 @@ class PDFService:
             [self._arabic_text(student['name']), self._arabic_text("اسم الطالب")],
             [self._arabic_text(student['barcode']), self._arabic_text("الرمز")],
             [self._arabic_text(student['study_type']), self._arabic_text("نوع الدراسة")],
-            [self._arabic_text(student['status']), self._arabic_text("الحالة")],
             [self._arabic_text(student['notes'] if student['notes'] else '-'), self._arabic_text("ملاحظات")],
         ]
         
@@ -367,7 +365,6 @@ class PDFService:
             [self._arabic_text("القيمة"), self._arabic_text("البند")],
             [self._arabic_text(format_currency(due_info['total_received'])), self._arabic_text("إجمالي الاستلامات")],
             [self._arabic_text(str(due_info['paying_students_count'])), self._arabic_text("عدد الطلاب الدافعين")],
-            [self._arabic_text(format_currency(INSTITUTE_DEDUCTION_PER_STUDENT)), self._arabic_text("خصم المعهد / طالب")],
             [self._arabic_text(format_currency(due_info['institute_deduction'])), self._arabic_text("إجمالي خصم المعهد")],
             [self._arabic_text(format_currency(balance_info['teacher_due'])), self._arabic_text("مستحق المدرس")],
             [self._arabic_text(format_currency(balance_info['withdrawn_total'])), self._arabic_text("إجمالي المسحوب")],
