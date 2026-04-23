@@ -50,7 +50,19 @@
                         </div>
                         <div class="profile-info-item">
                             <span class="text-muted">عدد الطلاب</span>
-                            <span class="fw-bold">{{ students_list|length }}</span>
+                            <span class="fw-bold">{{ study_counts.total }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="text-muted">حضوري</span>
+                            <span class="badge bg-primary">{{ study_counts.in_person }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="text-muted">الكتروني</span>
+                            <span class="badge bg-info">{{ study_counts.electronic }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="text-muted">مدمج</span>
+                            <span class="badge bg-warning text-dark">{{ study_counts.blended }}</span>
                         </div>
                         {% if teacher.notes %}
                         <div class="profile-info-item flex-column align-items-start">

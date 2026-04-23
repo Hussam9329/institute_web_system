@@ -519,12 +519,25 @@ async def teacher_detail(request: Request, teacher_id: int):
     financial_info = finance_service.calculate_teacher_balance(teacher_id)
     recent_withdrawals = finance_service.get_teacher_recent_withdrawals(teacher_id, limit=20)
     
+    # عدد الطلاب حسب نوع الدراسة
+    counts_query = '''
+        SELECT 
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE study_type = 'حضوري') as in_person,
+            COUNT(*) FILTER (WHERE study_type = 'الكتروني') as electronic,
+            COUNT(*) FILTER (WHERE study_type = 'مدمج') as blended
+        FROM student_teacher WHERE teacher_id = %s
+    '''
+    counts_result = db.execute_query(counts_query, (teacher_id,))
+    study_counts = dict(counts_result[0]) if counts_result else {'total': 0, 'in_person': 0, 'electronic': 0, 'blended': 0}
+    
     return templates.TemplateResponse("teachers/detail.html", {
         "request": request,
         "teacher": teacher,
         "students_list": students_list,
         "financial_info": financial_info,
         "recent_withdrawals": recent_withdrawals,
+        "study_counts": study_counts,
         "format_currency": format_currency
     })
 
@@ -551,7 +564,10 @@ async def accounting_page(request: Request, search: str = ""):
         if search:
             query = '''
                 SELECT t.*,
-                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id AND st.study_type = 'حضوري') as students_in_person,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id AND st.study_type = 'الكتروني') as students_electronic,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id AND st.study_type = 'مدمج') as students_blended
                 FROM teachers t
                 WHERE t.name LIKE %s OR t.subject LIKE %s
                 ORDER BY t.name
@@ -560,7 +576,10 @@ async def accounting_page(request: Request, search: str = ""):
         else:
             query = '''
                 SELECT t.*,
-                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id) as students_count,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id AND st.study_type = 'حضوري') as students_in_person,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id AND st.study_type = 'الكتروني') as students_electronic,
+                       (SELECT COUNT(*) FROM student_teacher st WHERE st.teacher_id = t.id AND st.study_type = 'مدمج') as students_blended
                 FROM teachers t
                 ORDER BY t.name
             '''

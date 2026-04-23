@@ -44,6 +44,9 @@
                             <th class="text-center" style="width:40px">#</th>
                             <th>المدرس / المادة</th>
                             <th class="text-center">الطلاب</th>
+                            <th class="text-center d-none d-md-table-cell">حضوري</th>
+                            <th class="text-center d-none d-md-table-cell">الكتروني</th>
+                            <th class="text-center d-none d-md-table-cell">مدمج</th>
                             <th class="text-center">الدافعون</th>
                             <th class="text-center">إجمالي المدفوع</th>
                             <th class="text-center">خصم المعهد</th>
@@ -61,7 +64,10 @@
                                 <div class="fw-semibold">{{ teacher.name }}</div>
                                 <small class="text-muted">{{ teacher.subject }}</small>
                             </td>
-                            <td class="text-center">{{ teacher.students_count or 0 }}</td>
+                            <td class="text-center fw-bold">{{ teacher.students_count or 0 }}</td>
+                            <td class="text-center d-none d-md-table-cell"><span class="badge bg-primary">{{ teacher.students_in_person or 0 }}</span></td>
+                            <td class="text-center d-none d-md-table-cell"><span class="badge bg-info">{{ teacher.students_electronic or 0 }}</span></td>
+                            <td class="text-center d-none d-md-table-cell"><span class="badge bg-warning text-dark">{{ teacher.students_blended or 0 }}</span></td>
                             <td class="text-center">{{ teacher.financial.paying_students_count }}</td>
                             <td class="text-center fw-bold text-primary">
                                 {{ format_currency(teacher.financial.total_received) }}
@@ -91,7 +97,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" class="text-center py-5">
+                            <td colspan="13" class="text-center py-5">
                                 <i class="fas fa-calculator fa-3x text-muted d-block mb-3"></i>
                                 <p class="text-muted mb-0">لا يوجد مدرسين</p>
                             </td>
@@ -104,6 +110,9 @@
                         <tr>
                             <td colspan="2" class="text-center">الإجمالي</td>
                             <td class="text-center">{{ teachers | map(attribute='students_count') | sum }}</td>
+                            <td class="text-center d-none d-md-table-cell">{{ teachers | map(attribute='students_in_person') | sum }}</td>
+                            <td class="text-center d-none d-md-table-cell">{{ teachers | map(attribute='students_electronic') | sum }}</td>
+                            <td class="text-center d-none d-md-table-cell">{{ teachers | map(attribute='students_blended') | sum }}</td>
                             <td class="text-center">{{ teachers | map(attribute='financial') | map(attribute='paying_students_count') | sum }}</td>
                             <td class="text-center text-primary">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</td>
                             <td class="text-center text-danger">{{ format_currency(teachers | map(attribute='financial') | map(attribute='institute_deduction') | sum) }}</td>
