@@ -7,6 +7,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.requests import Request as StarletteRequest
+
+# ===== توافقية Flask: جعل request.args يعمل في FastAPI =====
+# في Starlette/FastAPI query parameters تُ accessed عبر request.query_params
+# بينما في Flask تُ accessed عبر request.args
+# نضيف خاصية args كـ alias لـ query_params
+if not hasattr(StarletteRequest, 'args'):
+    @property
+    def _request_args(self):
+        return self.query_params
+    StarletteRequest.args = _request_args
 
 from config import (
     APP_TITLE, APP_VERSION, APP_DESCRIPTION,
