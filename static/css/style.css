@@ -1434,6 +1434,262 @@ textarea:focus-visible {
     opacity: 0.3;
 }
 
+/* ===== Enhanced List Card Views ===== */
+.list-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+}
+
+.list-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.list-card .card-body {
+    padding: 1.25rem;
+}
+
+/* Card accent top bar */
+.list-card-accent {
+    position: relative;
+}
+
+.list-card-accent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.list-card-accent.accent-blue::before {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+}
+.list-card-accent.accent-emerald::before {
+    background: linear-gradient(90deg, var(--success-light), var(--success));
+}
+.list-card-accent.accent-purple::before {
+    background: linear-gradient(90deg, var(--secondary-light), var(--secondary));
+}
+.list-card-accent.accent-orange::before {
+    background: linear-gradient(90deg, var(--warning-light), var(--warning));
+}
+.list-card-accent.accent-danger::before {
+    background: linear-gradient(90deg, var(--danger-light), var(--danger));
+}
+
+/* Card icon circle */
+.list-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.list-card-icon.icon-blue {
+    background: var(--primary-glow);
+    color: var(--primary);
+}
+.list-card-icon.icon-emerald {
+    background: var(--success-glow);
+    color: var(--success);
+}
+.list-card-icon.icon-purple {
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--secondary);
+}
+.list-card-icon.icon-orange {
+    background: var(--warning-glow);
+    color: var(--warning-dark);
+}
+
+/* Card info grid */
+.list-card-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.list-card-info .info-item {
+    background: var(--light-bg);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+}
+
+.list-card-info .info-item .info-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+    font-weight: 500;
+}
+
+.list-card-info .info-item .info-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Card divider */
+.list-card-divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 0.75rem 0;
+}
+
+/* Card actions bar */
+.list-card-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.list-card-actions .btn {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    white-space: nowrap;
+}
+
+/* Card header section */
+.list-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.list-card-header .header-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.list-card-header .header-text h6 {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.15rem;
+    line-height: 1.4;
+}
+
+.list-card-header .header-text .header-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* Card badge row */
+.list-card-badges {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.list-card-badges .badge {
+    font-size: 0.72rem;
+    padding: 0.3em 0.6em;
+}
+
+/* Staggered card entrance animation */
+@keyframes cardFadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.list-card {
+    animation: cardFadeUp 0.35s ease both;
+}
+
+/* Staggered delays for cards */
+.list-card:nth-child(1) { animation-delay: 0.02s; }
+.list-card:nth-child(2) { animation-delay: 0.04s; }
+.list-card:nth-child(3) { animation-delay: 0.06s; }
+.list-card:nth-child(4) { animation-delay: 0.08s; }
+.list-card:nth-child(5) { animation-delay: 0.10s; }
+.list-card:nth-child(6) { animation-delay: 0.12s; }
+.list-card:nth-child(7) { animation-delay: 0.14s; }
+.list-card:nth-child(8) { animation-delay: 0.16s; }
+.list-card:nth-child(9) { animation-delay: 0.18s; }
+.list-card:nth-child(10) { animation-delay: 0.20s; }
+.list-card:nth-child(11) { animation-delay: 0.22s; }
+.list-card:nth-child(12) { animation-delay: 0.24s; }
+
+/* Card highlight value */
+.list-card-highlight {
+    background: linear-gradient(135deg, var(--success-glow), rgba(16, 185, 129, 0.05));
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.list-card-highlight .highlight-label {
+    font-size: 0.72rem;
+    color: var(--success-dark);
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.list-card-highlight .highlight-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--success-dark);
+}
+
+/* Card financial grid (for accounting) */
+.list-card-financial {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+
+.list-card-financial .fin-item {
+    background: var(--light-bg);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem;
+    text-align: center;
+}
+
+.list-card-financial .fin-item .fin-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 0.15rem;
+}
+
+.list-card-financial .fin-item .fin-value {
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+/* Responsive card adjustments */
+@media (max-width: 575px) {
+    .list-card .card-body {
+        padding: 1rem;
+    }
+    .list-card-info {
+        grid-template-columns: 1fr 1fr;
+    }
+    .list-card-info .info-item:last-child {
+        grid-column: 1 / -1;
+    }
+    .list-card-actions .btn {
+        font-size: 0.72rem;
+        padding: 0.35rem 0.4rem;
+    }
+}
+
 /* ===== Login Overlay ===== */
 .login-overlay {
     position: fixed;
