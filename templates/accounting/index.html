@@ -103,12 +103,16 @@
                         <span class="badge bg-primary" style="font-size: 0.73rem;">
                             <i class="fas fa-chalkboard me-1"></i>{{ teacher.students_in_person or 0 }} حضوري
                         </span>
+                        {% if 'الكتروني' in (teacher.teaching_types or '') %}
                         <span class="badge bg-info text-white" style="font-size: 0.73rem;">
                             <i class="fas fa-laptop me-1"></i>{{ teacher.students_electronic or 0 }} الكتروني
                         </span>
+                        {% endif %}
+                        {% if 'مدمج' in (teacher.teaching_types or '') %}
                         <span class="badge bg-warning text-dark" style="font-size: 0.73rem;">
                             <i class="fas fa-blender me-1"></i>{{ teacher.students_blended or 0 }} مدمج
                         </span>
+                        {% endif %}
                     </div>
 
                     <!-- التفاصيل المالية -->

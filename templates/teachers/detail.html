@@ -56,14 +56,18 @@
                             <span class="text-muted">حضوري</span>
                             <span class="badge bg-primary">{{ study_counts.in_person }}</span>
                         </div>
+                        {% if 'الكتروني' in (teacher.teaching_types or '') %}
                         <div class="profile-info-item">
                             <span class="text-muted">الكتروني</span>
                             <span class="badge bg-info">{{ study_counts.electronic }}</span>
                         </div>
+                        {% endif %}
+                        {% if 'مدمج' in (teacher.teaching_types or '') %}
                         <div class="profile-info-item">
                             <span class="text-muted">مدمج</span>
                             <span class="badge bg-warning text-dark">{{ study_counts.blended }}</span>
                         </div>
+                        {% endif %}
                         {% if teacher.notes %}
                         <div class="profile-info-item flex-column align-items-start">
                             <span class="text-muted mb-1">ملاحظات</span>
@@ -159,12 +163,12 @@
                                             {{ student.name }}
                                         </a>
                                         <div class="d-sm-none mt-1">
-                                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %} me-1">{{ student.study_type }}</span>
+                                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% elif student.study_type == 'الكتروني' %}info{% else %}warning text-dark{% endif %} me-1">{{ student.study_type }}</span>
                                             <span class="badge bg-{% if student.status == 'مستمر' %}success{% elif student.status == 'منسحب' %}danger{% else %}secondary{% endif %}">{{ student.status }}</span>
                                         </div>
                                     </td>
                                     <td class="text-center d-none d-sm-table-cell">
-                                        <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
+                                        <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% elif student.study_type == 'الكتروني' %}info{% else %}warning text-dark{% endif %}">
                                             {{ student.study_type }}
                                         </span>
                                     </td>
