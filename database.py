@@ -143,6 +143,14 @@ def init_db():
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_pct_in_person INTEGER DEFAULT 0",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_pct_electronic INTEGER DEFAULT 0",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_pct_blended INTEGER DEFAULT 0",
+            # نوع الخصم لكل نوع تدريس: percentage أو manual
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_type_in_person VARCHAR(10) DEFAULT 'percentage'",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_type_electronic VARCHAR(10) DEFAULT 'percentage'",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_type_blended VARCHAR(10) DEFAULT 'percentage'",
+            # المبلغ اليدوي للخصم لكل نوع تدريس
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_manual_in_person INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_manual_electronic INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_manual_blended INTEGER DEFAULT 0",
         ]
         
         for stmt in alter_statements:

@@ -188,11 +188,9 @@ class FinanceService:
     
     def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0) -> int:
         """
-        حساب خصم المعهد - المنطق الجديد:
-        - النسبة تُقسم على القسطين الأول والثاني بالتساوي
-        - إذا دفع كامل (دفع كامل) يتم استقطاع النسبة كاملة
-        - المبلغ اليدوي يُقسم على القسطين بالتساوي أيضاً
-        - دفع كامل يستقطع المبلغ اليدوي كامل
+        حساب خصم المعهد - يدعم نسبة مئوية أو مبلغ يدوي لكل نوع تدريس:
+        - نسبة مئوية: تُقسم على القسطين الأول والثاني بالتساوي، دفع كامل يستقطع النسبة كاملة
+        - مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يستقطع المبلغ كامل
         """
         db = self.db
         
@@ -200,6 +198,8 @@ class FinanceService:
             SELECT institute_deduction_type, institute_deduction_value,
                    fee_in_person, fee_electronic, fee_blended,
                    institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+                   inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+                   inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
                    teaching_types
             FROM teachers WHERE id = %s
         '''
@@ -208,17 +208,14 @@ class FinanceService:
             return 0
         
         t = result[0]
-        deduction_type = t.get('institute_deduction_type') or 'percentage'
-        deduction_value = t.get('institute_deduction_value') or 0
         
-        if deduction_value <= 0:
-            return 0
-        
-        # Get all installments for this teacher grouped by student
+        # Get all installments with study type for this teacher
         query = '''
-            SELECT student_id, installment_type, amount
-            FROM installments
-            WHERE teacher_id = %s
+            SELECT i.student_id, i.installment_type, i.amount,
+                   COALESCE(st.study_type, 'حضوري') as study_type
+            FROM installments i
+            LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE i.teacher_id = %s
         '''
         installments = db.execute_query(query, (teacher_id,))
         if not installments:
@@ -241,8 +238,10 @@ class FinanceService:
             first_amount = 0
             second_amount = 0
             full_amount = 0
+            study_type = 'حضوري'
             
             for p in payments:
+                study_type = p.get('study_type', 'حضوري') or 'حضوري'
                 itype = p['installment_type']
                 amt = p['amount'] or 0
                 if itype == 'القسط الأول':
@@ -255,17 +254,50 @@ class FinanceService:
                     has_full = True
                     full_amount = amt
             
-            if has_full:
-                # دفع كامل: استقطاع كامل النسبة من المبلغ الكامل
-                total_deduction += int((full_amount * deduction_value) / 100)
+            # Determine deduction type and value based on study type
+            ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
+            
+            if ded_value <= 0:
+                continue
+            
+            if ded_type == 'manual':
+                # مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً
+                if has_full:
+                    total_deduction += ded_value
+                else:
+                    if has_first:
+                        total_deduction += ded_value // 2
+                    if has_second:
+                        total_deduction += ded_value // 2
             else:
-                # حساب الخصم لكل قسط بشكل منفصل
-                if has_first:
-                    total_deduction += int((first_amount * deduction_value) / 200)  # نصف النسبة
-                if has_second:
-                    total_deduction += int((second_amount * deduction_value) / 200)  # نصف النسبة
+                # نسبة مئوية
+                if has_full:
+                    total_deduction += int((full_amount * ded_value) / 100)
+                else:
+                    if has_first:
+                        total_deduction += int((first_amount * ded_value) / 200)
+                    if has_second:
+                        total_deduction += int((second_amount * ded_value) / 200)
         
         return total_deduction
+    
+    def _get_deduction_for_study_type(self, teacher_data: dict, study_type: str) -> tuple:
+        """إرجاع (نوع الخصم, القيمة) حسب نوع الدراسة"""
+        type_map = {
+            'حضوري': ('in_person', 'pct_in_person', 'ded_type_in_person', 'manual_in_person'),
+            'الكتروني': ('electronic', 'pct_electronic', 'ded_type_electronic', 'manual_electronic'),
+            'مدمج': ('blended', 'pct_blended', 'ded_type_blended', 'manual_blended'),
+        }
+        
+        keys = type_map.get(study_type, type_map['حضوري'])
+        ded_type = teacher_data.get('inst_' + keys[2]) or 'percentage'
+        
+        if ded_type == 'manual':
+            manual_val = teacher_data.get('inst_' + keys[3]) or 0
+            return ('manual', manual_val)
+        else:
+            pct_val = teacher_data.get('institute_' + keys[1]) or 0
+            return ('percentage', pct_val)
     
     def calculate_teacher_due(self, teacher_id: int) -> Dict[str, Any]:
         """

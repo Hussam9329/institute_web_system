@@ -414,7 +414,13 @@ async def teacher_add(
     fee_blended: int = Form(0),
     institute_pct_in_person: int = Form(0),
     institute_pct_electronic: int = Form(0),
-    institute_pct_blended: int = Form(0)
+    institute_pct_blended: int = Form(0),
+    inst_ded_type_in_person: str = Form("percentage"),
+    inst_ded_type_electronic: str = Form("percentage"),
+    inst_ded_type_blended: str = Form("percentage"),
+    inst_ded_manual_in_person: int = Form(0),
+    inst_ded_manual_electronic: int = Form(0),
+    inst_ded_manual_blended: int = Form(0)
 ):
     """حفظ مدرس جديد"""
     db = Database()
@@ -429,12 +435,18 @@ async def teacher_add(
     
     insert_query = '''
         INSERT INTO teachers (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, created_at,
-            teaching_types, fee_in_person, fee_electronic, fee_blended, institute_pct_in_person, institute_pct_electronic, institute_pct_blended)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            teaching_types, fee_in_person, fee_electronic, fee_blended,
+            institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+            inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+            inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     '''
     
     db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(),
-        teaching_types, fee_in_person, fee_electronic, fee_blended, institute_pct_in_person, institute_pct_electronic, institute_pct_blended))
+        teaching_types, fee_in_person, fee_electronic, fee_blended,
+        institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+        inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+        inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended))
     
     return RedirectResponse(url="/teachers?msg=added", status_code=303)
 
@@ -476,7 +488,13 @@ async def teacher_update(
     fee_blended: int = Form(0),
     institute_pct_in_person: int = Form(0),
     institute_pct_electronic: int = Form(0),
-    institute_pct_blended: int = Form(0)
+    institute_pct_blended: int = Form(0),
+    inst_ded_type_in_person: str = Form("percentage"),
+    inst_ded_type_electronic: str = Form("percentage"),
+    inst_ded_type_blended: str = Form("percentage"),
+    inst_ded_manual_in_person: int = Form(0),
+    inst_ded_manual_electronic: int = Form(0),
+    inst_ded_manual_blended: int = Form(0)
 ):
     """تحديث بيانات مدرس"""
     db = Database()
@@ -493,12 +511,18 @@ async def teacher_update(
         UPDATE teachers 
         SET name=%s, subject=%s, total_fee=%s, institute_deduction_type=%s, institute_deduction_value=%s, notes=%s,
             teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
-            institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s
+            institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s,
+            inst_ded_type_in_person=%s, inst_ded_type_electronic=%s, inst_ded_type_blended=%s,
+            inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s
         WHERE id = %s
     '''
     
     db.execute_query(update_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes,
-        teaching_types, fee_in_person, fee_electronic, fee_blended, institute_pct_in_person, institute_pct_electronic, institute_pct_blended, teacher_id))
+        teaching_types, fee_in_person, fee_electronic, fee_blended,
+        institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+        inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+        inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
+        teacher_id))
     
     return RedirectResponse(url="/teachers?msg=updated", status_code=303)
 
