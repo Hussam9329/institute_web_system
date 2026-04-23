@@ -157,7 +157,7 @@
                                         {% set pct = student.payment_percentage %}
                                         <div class="progress" style="height: 18px; min-width: 60px;">
                                             <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-info{% else %}bg-warning{% endif %}"
-                                                 style="width: {{ min(pct, 100) }}%">
+                                                 style="width: {{ pct if pct <= 100 else 100 }}%">
                                                 {{ "%.0f"|format(pct) }}%
                                             </div>
                                         </div>
