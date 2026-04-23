@@ -407,7 +407,14 @@ async def teacher_add(
     total_fee: int = Form(0),
     institute_deduction_type: str = Form("percentage"),
     institute_deduction_value: int = Form(0),
-    notes: str = Form("")
+    notes: str = Form(""),
+    teaching_types: str = Form("حضوري"),
+    fee_in_person: int = Form(0),
+    fee_electronic: int = Form(0),
+    fee_blended: int = Form(0),
+    institute_pct_in_person: int = Form(0),
+    institute_pct_electronic: int = Form(0),
+    institute_pct_blended: int = Form(0)
 ):
     """حفظ مدرس جديد"""
     db = Database()
@@ -421,11 +428,13 @@ async def teacher_add(
             pass
     
     insert_query = '''
-        INSERT INTO teachers (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO teachers (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, created_at,
+            teaching_types, fee_in_person, fee_electronic, fee_blended, institute_pct_in_person, institute_pct_electronic, institute_pct_blended)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     '''
     
-    db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date()))
+    db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(),
+        teaching_types, fee_in_person, fee_electronic, fee_blended, institute_pct_in_person, institute_pct_electronic, institute_pct_blended))
     
     return RedirectResponse(url="/teachers?msg=added", status_code=303)
 
@@ -460,7 +469,14 @@ async def teacher_update(
     total_fee: int = Form(0),
     institute_deduction_type: str = Form("percentage"),
     institute_deduction_value: int = Form(0),
-    notes: str = Form("")
+    notes: str = Form(""),
+    teaching_types: str = Form("حضوري"),
+    fee_in_person: int = Form(0),
+    fee_electronic: int = Form(0),
+    fee_blended: int = Form(0),
+    institute_pct_in_person: int = Form(0),
+    institute_pct_electronic: int = Form(0),
+    institute_pct_blended: int = Form(0)
 ):
     """تحديث بيانات مدرس"""
     db = Database()
@@ -475,11 +491,14 @@ async def teacher_update(
     
     update_query = '''
         UPDATE teachers 
-        SET name=%s, subject=%s, total_fee=%s, institute_deduction_type=%s, institute_deduction_value=%s, notes=%s
+        SET name=%s, subject=%s, total_fee=%s, institute_deduction_type=%s, institute_deduction_value=%s, notes=%s,
+            teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
+            institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s
         WHERE id = %s
     '''
     
-    db.execute_query(update_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, teacher_id))
+    db.execute_query(update_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes,
+        teaching_types, fee_in_person, fee_electronic, fee_blended, institute_pct_in_person, institute_pct_electronic, institute_pct_blended, teacher_id))
     
     return RedirectResponse(url="/teachers?msg=updated", status_code=303)
 

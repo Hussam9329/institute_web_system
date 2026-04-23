@@ -74,42 +74,94 @@
                             </div>
                         </div>
 
-                        <!-- الأجر الكلي -->
-                        <div class="mb-3">
-                            <label for="total_fee" class="form-label fw-bold">
-                                <i class="fas fa-money-bill-wave me-1 text-success"></i>الأجر الكلي (بالألف د.ع)
-                            </label>
-                            <input type="number" class="form-control form-control-lg" id="total_fee" name="total_fee"
-                                   value="{{ teacher.total_fee if teacher else 0 }}" required min="0"
-                                   placeholder="200">
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                هذا هو الأجر الكلي الذي يدفعه كل طالب لهذا المدرس
-                            </div>
-                        </div>
+                        <!-- الأجر الكلي (يُحسب تلقائياً) -->
+                        <input type="hidden" name="total_fee" id="total_fee" value="{{ teacher.total_fee if teacher else 0 }}">
+                        <input type="hidden" name="institute_deduction_type" id="institute_deduction_type" value="{{ teacher.institute_deduction_type if teacher else 'percentage' }}">
+                        <input type="hidden" name="institute_deduction_value" id="institute_deduction_value" value="{{ teacher.institute_deduction_value if teacher and teacher.institute_deduction_type == 'percentage' else 0 }}">
 
-                        <!-- نسبة المعهد -->
+                        <!-- أنواع التدريس -->
                         <div class="mb-3">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-percentage me-1 text-success"></i>نسبة المعهد على الطالب
+                                <i class="fas fa-chalkboard me-1 text-success"></i>أنواع التدريس <span class="text-danger">*</span>
                             </label>
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <select class="form-select" id="institute_deduction_type" name="institute_deduction_type" onchange="updateDeductionHint()">
-                                        <option value="percentage" {% if teacher and teacher.institute_deduction_type == 'percentage' %}selected{% endif %}>نسبة مئوية %</option>
-                                        <option value="manual" {% if teacher and teacher.institute_deduction_type == 'manual' %}selected{% endif %}>مبلغ يدوي (بالألف)</option>
-                                    </select>
+                            <div class="form-text mb-2">
+                                <i class="fas fa-info-circle me-1"></i>اختر أنواع التدريس التي يمكن للمدرس تدريسها
+                            </div>
+                            
+                            <!-- حضوري -->
+                            <div class="card border mb-2 p-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="type_in_person" name="teaching_type_in_person" value="1"
+                                           onchange="toggleTypeFields('in_person', this.checked)"
+                                           {% if teacher and ('حضوري' in (teacher.teaching_types or '')) %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="type_in_person">
+                                        <i class="fas fa-school me-1 text-primary"></i>حضوري
+                                    </label>
                                 </div>
-                                <div class="col-6">
-                                    <input type="number" class="form-control" id="institute_deduction_value" name="institute_deduction_value"
-                                           value="{{ teacher.institute_deduction_value if teacher and teacher.institute_deduction_type == 'percentage' else ((teacher.institute_deduction_value / 1000) if teacher and teacher.institute_deduction_type == 'manual' and teacher.institute_deduction_value else 0) }}" min="0"
-                                           placeholder="القيمة">
-                                    <div class="form-text" id="deduction_hint"><i class="fas fa-info-circle me-1"></i>مثلاً 10 تعني 10%</div>
+                                <div id="type_fields_in_person" class="row g-2 mt-2" style="display: {% if teacher and ('حضوري' in (teacher.teaching_types or '')) %}block{% else %}none{% endif %}">
+                                    <div class="col-6">
+                                        <label class="form-label small">القسط (بالألف):</label>
+                                        <input type="number" class="form-control form-control-sm" name="fee_in_person" min="0" placeholder="850"
+                                               value="{% if teacher and teacher.fee_in_person %}{{ (teacher.fee_in_person // 1000) }}{% endif %}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">نسبة المعهد %:</label>
+                                        <input type="number" class="form-control form-control-sm" name="institute_pct_in_person" min="0" max="100" placeholder="15"
+                                               value="{{ teacher.institute_pct_in_person if teacher else 0 }}">
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                نسبة مئوية: مثلاً 10 تعني 10% من القسط الأول والثاني. مبلغ يدوي: مبلغ ثابت لكل طالب دافع (بالآلاف).
+                            
+                            <!-- الكتروني -->
+                            <div class="card border mb-2 p-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="type_electronic" name="teaching_type_electronic" value="1"
+                                           onchange="toggleTypeFields('electronic', this.checked)"
+                                           {% if teacher and ('الكتروني' in (teacher.teaching_types or '')) %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="type_electronic">
+                                        <i class="fas fa-laptop me-1 text-info"></i>الكتروني
+                                    </label>
+                                </div>
+                                <div id="type_fields_electronic" class="row g-2 mt-2" style="display: {% if teacher and ('الكتروني' in (teacher.teaching_types or '')) %}block{% else %}none{% endif %}">
+                                    <div class="col-6">
+                                        <label class="form-label small">القسط (بالألف):</label>
+                                        <input type="number" class="form-control form-control-sm" name="fee_electronic" min="0" placeholder="500"
+                                               value="{% if teacher and teacher.fee_electronic %}{{ (teacher.fee_electronic // 1000) }}{% endif %}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">نسبة المعهد %:</label>
+                                        <input type="number" class="form-control form-control-sm" name="institute_pct_electronic" min="0" max="100" placeholder="10"
+                                               value="{{ teacher.institute_pct_electronic if teacher else 0 }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- مدمج -->
+                            <div class="card border mb-2 p-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="type_blended" name="teaching_type_blended" value="1"
+                                           onchange="toggleTypeFields('blended', this.checked)"
+                                           {% if teacher and ('مدمج' in (teacher.teaching_types or '')) %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="type_blended">
+                                        <i class="fas fa-blender-phone me-1 text-warning"></i>مدمج
+                                    </label>
+                                </div>
+                                <div id="type_fields_blended" class="row g-2 mt-2" style="display: {% if teacher and ('مدمج' in (teacher.teaching_types or '')) %}block{% else %}none{% endif %}">
+                                    <div class="col-6">
+                                        <label class="form-label small">القسط (بالألف):</label>
+                                        <input type="number" class="form-control form-control-sm" name="fee_blended" min="0" placeholder="700"
+                                               value="{% if teacher and teacher.fee_blended %}{{ (teacher.fee_blended // 1000) }}{% endif %}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">نسبة المعهد %:</label>
+                                        <input type="number" class="form-control form-control-sm" name="institute_pct_blended" min="0" max="100" placeholder="12"
+                                               value="{{ teacher.institute_pct_blended if teacher else 0 }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>القيمة المدخلة للأقسط بالألف (مثلاً 850 = 850,000 د.ع). النسبة المئوية من القسط تُقسم بالتساوي على القسطين الأول والثاني.
                             </div>
                         </div>
 
@@ -166,17 +218,13 @@ function handleSubjectChange() {
     }
 }
 
-function updateDeductionHint() {
-    const type = document.getElementById('institute_deduction_type').value;
-    const hint = document.getElementById('deduction_hint');
-    if (type === 'percentage') {
-        hint.innerHTML = '<i class="fas fa-info-circle me-1"></i>مثلاً 10 تعني 10%';
-    } else {
-        hint.innerHTML = '<i class="fas fa-info-circle me-1"></i>القيمة بالألف (مثلاً 50 = 50,000 د.ع)';
+function toggleTypeFields(type, checked) {
+    const el = document.getElementById('type_fields_' + type);
+    if (el) {
+        el.style.display = checked ? 'block' : 'none';
     }
 }
 
-// Divide total_fee by 1000 for display (amounts stored in full, displayed in thousands)
 document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('subject_select');
     const hidden = document.getElementById('subject_hidden');
@@ -184,18 +232,8 @@ document.addEventListener('DOMContentLoaded', function() {
         hidden.value = select.value;
     }
 
-    const feeInput = document.getElementById('total_fee');
-    if (feeInput && feeInput.value && parseInt(feeInput.value) > 0) {
-        feeInput.value = Math.round(parseInt(feeInput.value) / 1000);
-    }
-
-    // ملاحظة: قيمة نسبة المعهد لا تُقسم على 1000 في العرض
-    // لأنها تُخزن كما هي (10 = 10%) عند النسبة المئوية
-    // وعند المبلغ اليدوي يتم التعامل معها في Jinja template
-
     updateDeductionHint();
 
-    // Before submit, multiply back
     document.getElementById('teacherForm').addEventListener('submit', function(e) {
         const hidden = document.getElementById('subject_hidden');
         if (!hidden.value || hidden.value.trim() === '') {
@@ -203,16 +241,76 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('يرجى اختيار أو إدخال اسم المادة', 'warning');
             return;
         }
+        
+        // ضرب الأقساط بـ 1000
+        ['fee_in_person', 'fee_electronic', 'fee_blended'].forEach(name => {
+            const input = document.querySelector(`input[name="${name}"]`);
+            if (input && input.value) {
+                input.value = parseInt(input.value) * 1000;
+            }
+        });
+        
+        // بناء قائمة أنواع التدريس
+        const types = [];
+        if (document.getElementById('type_in_person').checked) types.push('حضوري');
+        if (document.getElementById('type_electronic').checked) types.push('الكتروني');
+        if (document.getElementById('type_blended').checked) types.push('مدمج');
+        
+        // إضافة حقل مخفي لأنواع التدريس
+        let typesInput = document.createElement('input');
+        typesInput.type = 'hidden';
+        typesInput.name = 'teaching_types';
+        typesInput.value = types.join(',');
+        this.appendChild(typesInput);
+        
+        // حساب الأجر الكلي كأعلى قسط
+        const fees = [];
+        if (document.getElementById('type_in_person').checked) {
+            const v = document.querySelector('input[name="fee_in_person"]');
+            if (v && v.value) fees.push(parseInt(v.value));
+        }
+        if (document.getElementById('type_electronic').checked) {
+            const v = document.querySelector('input[name="fee_electronic"]');
+            if (v && v.value) fees.push(parseInt(v.value));
+        }
+        if (document.getElementById('type_blended').checked) {
+            const v = document.querySelector('input[name="fee_blended"]');
+            if (v && v.value) fees.push(parseInt(v.value));
+        }
+        
         const feeInput = document.getElementById('total_fee');
-        if(feeInput.value) feeInput.value = parseInt(feeInput.value) * 1000;
-
-        // فقط المبلغ اليدوي يُضرب بـ 1000، النسبة المئوية تبقى كما هي
-        const deductionType = document.getElementById('institute_deduction_type').value;
-        const deductionInput = document.getElementById('institute_deduction_value');
-        if (deductionType === 'manual' && deductionInput.value) {
-            deductionInput.value = parseInt(deductionInput.value) * 1000;
+        if (fees.length > 0) {
+            feeInput.value = Math.max(...fees);
+        }
+        
+        // حساب نسبة المعهد كأعلى نسبة
+        const pcts = [];
+        if (document.getElementById('type_in_person').checked) {
+            const v = document.querySelector('input[name="institute_pct_in_person"]');
+            if (v && v.value) pcts.push(parseInt(v.value));
+        }
+        if (document.getElementById('type_electronic').checked) {
+            const v = document.querySelector('input[name="institute_pct_electronic"]');
+            if (v && v.value) pcts.push(parseInt(v.value));
+        }
+        if (document.getElementById('type_blended').checked) {
+            const v = document.querySelector('input[name="institute_pct_blended"]');
+            if (v && v.value) pcts.push(parseInt(v.value));
+        }
+        
+        const dedTypeInput = document.getElementById('institute_deduction_type');
+        const dedValueInput = document.getElementById('institute_deduction_value');
+        dedTypeInput.value = 'percentage';
+        if (pcts.length > 0) {
+            dedValueInput.value = Math.max(...pcts);
+        } else {
+            dedValueInput.value = 0;
         }
     });
 });
+
+function updateDeductionHint() {
+    // No longer needed but kept for compatibility
+}
 </script>
 {% endblock %}

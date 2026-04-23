@@ -122,6 +122,9 @@
                                                             <option value="الكتروني"
                                                                 {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'الكتروني' %}selected{% endif %}>
                                                                 إلكتروني</option>
+                                                            <option value="مدمج"
+                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'مدمج' %}selected{% endif %}>
+                                                                مدمج</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-6">

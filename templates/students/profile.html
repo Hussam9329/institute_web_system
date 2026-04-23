@@ -94,12 +94,12 @@
                                     <tr>
                                         <th>#</th>
                                         <th>المدرس</th>
-                                        <th class="d-none d-md-table-cell">المادة</th>
-                                        <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
-                                        <th class="text-center d-none d-sm-table-cell">الحالة</th>
+                                        <th>المادة</th>
+                                        <th class="text-center">نوع الدراسة</th>
+                                        <th class="text-center">الحالة</th>
                                         <th class="text-center">الأجر</th>
-                                        <th class="text-center d-none d-sm-table-cell">المدفوع</th>
-                                        <th class="text-center d-none d-sm-table-cell">المتبقي</th>
+                                        <th class="text-center">المدفوع</th>
+                                        <th class="text-center">المتبقي</th>
                                         <th class="text-center">الإجراءات</th>
                                     </tr>
                                 </thead>
@@ -109,26 +109,25 @@
                                         <td class="fw-bold text-muted">{{ loop.index }}</td>
                                         <td class="fw-semibold">
                                             {{ ts.teacher_name }}
-                                            <br class="d-md-none"><small class="text-muted d-md-none">{{ ts.subject }}</small>
                                         </td>
-                                        <td class="d-none d-md-table-cell">
+                                        <td>
                                             <span class="badge bg-light text-dark">{{ ts.subject }}</span>
                                         </td>
-                                        <td class="text-center d-none d-sm-table-cell">
+                                        <td class="text-center">
                                             <span class="badge bg-{% if ts.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
                                                 {{ ts.study_type }}
                                             </span>
                                         </td>
-                                        <td class="text-center d-none d-sm-table-cell">
+                                        <td class="text-center">
                                             <span class="badge bg-{% if ts.status == 'مستمر' %}success{% elif ts.status == 'منسحب' %}danger{% else %}secondary{% endif %}">
                                                 {{ ts.status }}
                                             </span>
                                         </td>
                                         <td class="text-center fw-bold">{{ format_currency(ts.total_fee) }}</td>
-                                        <td class="text-center d-none d-sm-table-cell">
+                                        <td class="text-center">
                                             <span class="text-success fw-bold">{{ format_currency(ts.paid_total) }}</span>
                                         </td>
-                                        <td class="text-center d-none d-sm-table-cell">
+                                        <td class="text-center">
                                             <span class="fw-bold {% if ts.remaining_balance > 0 %}text-danger{% else %}text-success{% endif %}">
                                                 {{ format_currency(ts.remaining_balance) }}
                                             </span>
@@ -138,10 +137,10 @@
                                                 <button class="btn btn-outline-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="دفع قسط">
                                                     <i class="fas fa-money-bill"></i>
                                                 </button>
-                                                <button class="btn btn-outline-info d-none d-md-inline-block" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
+                                                <button class="btn btn-outline-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
                                                     <i class="fas fa-list"></i>
                                                 </button>
-                                                <button class="btn btn-outline-danger d-none d-sm-inline-block" onclick="unlinkTeacher({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="إلغاء الربط">
+                                                <button class="btn btn-outline-danger" onclick="unlinkTeacher({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="إلغاء الربط">
                                                     <i class="fas fa-unlink"></i>
                                                 </button>
                                             </div>
@@ -151,11 +150,10 @@
 
                                     <!-- صف الإجمالي -->
                                     <tr class="table-active fw-bold">
-                                        <td colspan="2" class="d-md-none">الإجمالي:</td>
-                                        <td colspan="5" class="text-end d-none d-md-table-cell">الإجمالي:</td>
+                                        <td colspan="5" class="text-end">الإجمالي:</td>
                                         <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</td>
-                                        <td class="text-center text-success d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
-                                        <td class="text-center {% if teachers_summary|sum(attribute='remaining_balance') > 0 %}text-danger{% else %}text-success{% endif %} d-none d-sm-table-cell">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>
+                                        <td class="text-center text-success">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
+                                        <td class="text-center {% if teachers_summary|sum(attribute='remaining_balance') > 0 %}text-danger{% else %}text-success{% endif %}">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>
                                         <td></td>
                                     </tr>
                                 </tbody>
@@ -191,10 +189,10 @@
                                     <tr>
                                         <th>#</th>
                                         <th>المدرس</th>
-                                        <th class="d-none d-md-table-cell">المادة</th>
+                                        <th>المادة</th>
                                         <th class="text-center">المبلغ</th>
-                                        <th class="text-center d-none d-sm-table-cell">النوع</th>
-                                        <th class="text-center d-none d-md-table-cell">التاريخ</th>
+                                        <th class="text-center">النوع</th>
+                                        <th class="text-center">التاريخ</th>
                                         <th class="text-center">إجراء</th>
                                     </tr>
                                 </thead>
@@ -204,16 +202,15 @@
                                         <td class="fw-bold text-muted">{{ loop.index }}</td>
                                         <td class="fw-semibold">
                                             {{ inst.teacher_name }}
-                                            <br class="d-md-none"><small class="text-muted d-md-none">{{ inst.subject }}</small>
                                         </td>
-                                        <td class="d-none d-md-table-cell">
+                                        <td>
                                             <span class="badge bg-light text-dark">{{ inst.subject }}</span>
                                         </td>
                                         <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
-                                        <td class="text-center d-none d-sm-table-cell">
+                                        <td class="text-center">
                                             <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                                         </td>
-                                        <td class="text-center text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
+                                        <td class="text-center text-muted">{{ inst.payment_date }}</td>
                                         <td class="text-center">
                                             <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل PDF">
                                                 <i class="fas fa-file-pdf"></i>
@@ -318,9 +315,7 @@
                             <select class="form-select form-select-lg" id="inst_type">
                                 <option value="القسط الأول">القسط الأول</option>
                                 <option value="القسط الثاني">القسط الثاني</option>
-                                <option value="القسط الثالث">القسط الثالث</option>
                                 <option value="دفع كامل">دفع كامل</option>
-                                <option value="دفعة جزئية">دفعة جزئية</option>
                             </select>
                         </div>
                         <div class="col-5">

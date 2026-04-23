@@ -26,22 +26,19 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#studentsReport" type="button">
                 <i class="fas fa-user-graduate me-1"></i>
-                <span class="d-none d-sm-inline">تقارير الطلاب</span>
-                <span class="d-sm-none">الطلاب</span>
+                <span>تقارير الطلاب</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="teachers-tab" data-bs-toggle="tab" data-bs-target="#teachersReport" type="button">
                 <i class="fas fa-chalkboard-teacher me-1"></i>
-                <span class="d-none d-sm-inline">تقارير المدرسين</span>
-                <span class="d-sm-none">المدرسين</span>
+                <span>تقارير المدرسين</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="subjects-tab" data-bs-toggle="tab" data-bs-target="#subjectsReport" type="button">
                 <i class="fas fa-book-open me-1"></i>
-                <span class="d-none d-sm-inline">تقارير المواد</span>
-                <span class="d-sm-none">المواد</span>
+                <span>تقارير المواد</span>
             </button>
         </li>
     </ul>
@@ -133,12 +130,12 @@
                                 <tr>
                                     <th>#</th>
                                     <th>الطالب</th>
-                                    <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
-                                    <th class="text-center d-none d-lg-table-cell">المدرسين</th>
-                                    <th class="text-center d-none d-xl-table-cell">الإجمالي المطلوب</th>
+                                    <th class="text-center">نوع الدراسة</th>
+                                    <th class="text-center">المدرسين</th>
+                                    <th class="text-center">الإجمالي المطلوب</th>
                                     <th class="text-center">المدفوع</th>
-                                    <th class="text-center d-none d-md-table-cell">المتبقي</th>
-                                    <th class="text-center d-none d-sm-table-cell">نسبة الدفع</th>
+                                    <th class="text-center">المتبقي</th>
+                                    <th class="text-center">نسبة الدفع</th>
                                     <th class="text-center">تفاصيل</th>
                                 </tr>
                             </thead>
@@ -148,24 +145,22 @@
                                     <td class="fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
                                         <div class="fw-semibold">{{ student.name }}</div>
-                                        <div class="d-sm-none mt-1">
-                                            <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %} me-1">{{ student.study_type }}</span>
-                                        </div>
+
                                     </td>
-                                    <td class="text-center d-none d-sm-table-cell">
+                                    <td class="text-center">
                                         <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
                                             {{ student.study_type }}
                                         </span>
                                     </td>
-                                    <td class="text-center d-none d-lg-table-cell">{{ student.teachers_count }}</td>
-                                    <td class="text-center fw-bold d-none d-xl-table-cell">{{ format_currency(student.total_fee) }}</td>
+                                    <td class="text-center">{{ student.teachers_count }}</td>
+                                    <td class="text-center fw-bold">{{ format_currency(student.total_fee) }}</td>
                                     <td class="text-center text-success fw-bold">{{ format_currency(student.total_paid) }}</td>
-                                    <td class="text-center d-none d-md-table-cell">
+                                    <td class="text-center">
                                         <span class="fw-bold {% if student.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
                                             {{ format_currency(student.total_remaining) }}
                                         </span>
                                     </td>
-                                    <td class="text-center d-none d-sm-table-cell">
+                                    <td class="text-center">
                                         {% set pct = ((student.total_paid / student.total_fee) * 100) if student.total_fee > 0 else 0 %}
                                         <div class="progress" style="height: 18px; min-width: 60px;">
                                             <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-info{% else %}bg-warning{% endif %}" 
@@ -223,12 +218,12 @@
                                 <tr>
                                     <th>#</th>
                                     <th>المدرس</th>
-                                    <th class="d-none d-sm-table-cell">المادة</th>
-                                    <th class="text-center d-none d-md-table-cell">الطلاب</th>
-                                    <th class="text-center d-none d-lg-table-cell">الاستلامات</th>
-                                    <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
-                                    <th class="text-center d-none d-md-table-cell">مستحق المدرس</th>
-                                    <th class="text-center d-none d-xl-table-cell">المسحوب</th>
+                                    <th>المادة</th>
+                                    <th class="text-center">الطلاب</th>
+                                    <th class="text-center">الاستلامات</th>
+                                    <th class="text-center">خصم المعهد</th>
+                                    <th class="text-center">مستحق المدرس</th>
+                                    <th class="text-center">المسحوب</th>
                                     <th class="text-center">المتبقي</th>
                                     <th class="text-center">تفاصيل</th>
                                 </tr>
@@ -239,22 +234,22 @@
                                     <td class="fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
                                         <div class="fw-semibold">{{ teacher.name }}</div>
-                                        <small class="text-muted d-sm-none">{{ teacher.subject }}</small>
+
                                     </td>
-                                    <td class="d-none d-sm-table-cell">
+                                    <td>
                                         <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
                                     </td>
-                                    <td class="text-center d-none d-md-table-cell">{{ teacher.students_count }}</td>
-                                    <td class="text-center fw-bold text-primary d-none d-lg-table-cell">
+                                    <td class="text-center">{{ teacher.students_count }}</td>
+                                    <td class="text-center fw-bold text-primary">
                                         {{ format_currency(teacher.financial.get('total_received', 0)) }}
                                     </td>
-                                    <td class="text-center text-danger d-none d-xl-table-cell">
+                                    <td class="text-center text-danger">
                                         {{ format_currency(teacher.financial.get('institute_deduction', 0)) }}
                                     </td>
-                                    <td class="text-center fw-bold text-success d-none d-md-table-cell">
+                                    <td class="text-center fw-bold text-success">
                                         {{ format_currency(teacher.financial.get('teacher_due', 0)) }}
                                     </td>
-                                    <td class="text-center text-warning d-none d-xl-table-cell">
+                                    <td class="text-center text-warning">
                                         {{ format_currency(teacher.financial.get('withdrawn_total', 0)) }}
                                     </td>
                                     <td class="text-center">

@@ -36,7 +36,7 @@ TEACHER_PDFS_DIR = os.path.join(REPORTS_DIR, "teacher_pdfs")
 RECEIPTS_DIR = os.path.join(REPORTS_DIR, "receipts")
 
 # ===== أنواع الدراسة =====
-STUDY_TYPES = ["حضوري", "الكتروني"]
+STUDY_TYPES = ["حضوري", "الكتروني", "مدمج"]
 
 # ===== حالات الطالب =====
 STUDENT_STATUSES = ["مستمر", "منسحب"]
@@ -45,9 +45,7 @@ STUDENT_STATUSES = ["مستمر", "منسحب"]
 INSTALLMENT_TYPES = [
     "القسط الأول",
     "القسط الثاني",
-    "القسط الثالث",
-    "دفع كامل",
-    "دفعة جزئية"
+    "دفع كامل"
 ]
 
 # ===== إعدادات PDF =====

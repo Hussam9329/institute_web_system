@@ -49,31 +49,41 @@ class FinanceService:
         return 0
     
     def calculate_student_teacher_balance(self, student_id: int, teacher_id: int) -> Dict[str, Any]:
-        """
-        حساب الرصيد المتبقي على الطالب عند مدرس معين
+        """حساب الرصيد المتبقي - يستخدم القسط حسب نوع الدراسة"""
+        db = self.db
         
-        المعادلة: المتبقي = total_fee - مجموع الأقساط المدفوعة
-        
-        Returns:
-            dict يحتوي:
-                - total_fee: الأجر الكلي
-                - paid_total: المدفوع
-                - remaining_balance: المتبقي
-        """
-        # الحصول على total_fee للمدرس
+        # الحصول على معلومات المدرس
         query = '''
-            SELECT total_fee FROM teachers WHERE id = %s
+            SELECT total_fee, fee_in_person, fee_electronic, fee_blended
+            FROM teachers WHERE id = %s
         '''
-        result = self.db.execute_query(query, (teacher_id,))
+        result = db.execute_query(query, (teacher_id,))
         
         if not result:
-            return {
-                'total_fee': 0,
-                'paid_total': 0,
-                'remaining_balance': 0
-            }
+            return {'total_fee': 0, 'paid_total': 0, 'remaining_balance': 0}
         
-        total_fee = result[0]['total_fee']
+        t = result[0]
+        
+        # الحصول على نوع الدراسة من جدول الربط
+        link_query = '''
+            SELECT study_type FROM student_teacher 
+            WHERE student_id = %s AND teacher_id = %s
+        '''
+        link_result = db.execute_query(link_query, (student_id, teacher_id))
+        study_type = 'حضوري'
+        if link_result:
+            study_type = link_result[0].get('study_type', 'حضوري')
+        
+        # تحديد القسط حسب نوع الدراسة
+        if study_type == 'الكتروني' and t.get('fee_electronic', 0) > 0:
+            total_fee = t['fee_electronic']
+        elif study_type == 'مدمج' and t.get('fee_blended', 0) > 0:
+            total_fee = t['fee_blended']
+        elif study_type == 'حضوري' and t.get('fee_in_person', 0) > 0:
+            total_fee = t['fee_in_person']
+        else:
+            total_fee = t['total_fee']
+        
         paid_total = self.get_student_paid_total(student_id, teacher_id)
         remaining_balance = total_fee - paid_total
         
@@ -178,46 +188,84 @@ class FinanceService:
     
     def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0) -> int:
         """
-        حساب خصم المعهد - فقط من القسط الأول والثاني
-
-        يعتمد على نوع الخصم:
-        - percentage: خصم نسبة مئوية من مجموع القسط الأول والثاني فقط
-        - manual: مبلغ ثابت لكل طالب دافع
-
-        Returns:
-            int: مبلغ الخصم (بالدينار)
+        حساب خصم المعهد - المنطق الجديد:
+        - النسبة تُقسم على القسطين الأول والثاني بالتساوي
+        - إذا دفع كامل (دفع كامل) يتم استقطاع النسبة كاملة
+        - المبلغ اليدوي يُقسم على القسطين بالتساوي أيضاً
+        - دفع كامل يستقطع المبلغ اليدوي كامل
         """
+        db = self.db
+        
         query = '''
-            SELECT institute_deduction_type, institute_deduction_value 
+            SELECT institute_deduction_type, institute_deduction_value,
+                   fee_in_person, fee_electronic, fee_blended,
+                   institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+                   teaching_types
             FROM teachers WHERE id = %s
         '''
-        result = self.db.execute_query(query, (teacher_id,))
-
+        result = db.execute_query(query, (teacher_id,))
         if not result:
             return 0
-
-        deduction_type = result[0]['institute_deduction_type'] or 'percentage'
-        deduction_value = result[0]['institute_deduction_value'] or 0
-
+        
+        t = result[0]
+        deduction_type = t.get('institute_deduction_type') or 'percentage'
+        deduction_value = t.get('institute_deduction_value') or 0
+        
         if deduction_value <= 0:
             return 0
-
-        # Get only first and second installment totals
+        
+        # Get all installments for this teacher grouped by student
         query = '''
-            SELECT COALESCE(SUM(amount), 0) as total
+            SELECT student_id, installment_type, amount
             FROM installments
-            WHERE teacher_id = %s AND installment_type IN ('القسط الأول', 'القسط الثاني')
+            WHERE teacher_id = %s
         '''
-        result = self.db.execute_query(query, (teacher_id,))
-        relevant_total = result[0]['total'] if result and result[0]['total'] else 0
-
-        if deduction_type == 'percentage':
-            deduction = int((relevant_total * deduction_value) / 100)
-        else:  # manual
-            paying_count = self.get_teacher_paying_students_count(teacher_id)
-            deduction = paying_count * deduction_value
-
-        return deduction
+        installments = db.execute_query(query, (teacher_id,))
+        if not installments:
+            return 0
+        
+        # Group installments by student
+        student_payments = {}
+        for inst in installments:
+            sid = inst['student_id']
+            if sid not in student_payments:
+                student_payments[sid] = []
+            student_payments[sid].append(inst)
+        
+        total_deduction = 0
+        
+        for student_id, payments in student_payments.items():
+            has_first = False
+            has_second = False
+            has_full = False
+            first_amount = 0
+            second_amount = 0
+            full_amount = 0
+            
+            for p in payments:
+                itype = p['installment_type']
+                amt = p['amount'] or 0
+                if itype == 'القسط الأول':
+                    has_first = True
+                    first_amount = amt
+                elif itype == 'القسط الثاني':
+                    has_second = True
+                    second_amount = amt
+                elif itype == 'دفع كامل':
+                    has_full = True
+                    full_amount = amt
+            
+            if has_full:
+                # دفع كامل: استقطاع كامل النسبة من المبلغ الكامل
+                total_deduction += int((full_amount * deduction_value) / 100)
+            else:
+                # حساب الخصم لكل قسط بشكل منفصل
+                if has_first:
+                    total_deduction += int((first_amount * deduction_value) / 200)  # نصف النسبة
+                if has_second:
+                    total_deduction += int((second_amount * deduction_value) / 200)  # نصف النسبة
+        
+        return total_deduction
     
     def calculate_teacher_due(self, teacher_id: int) -> Dict[str, Any]:
         """
@@ -327,16 +375,13 @@ class FinanceService:
         return [dict(row) for row in results] if results else []
     
     def get_teacher_students_list(self, teacher_id: int) -> List[Dict]:
-        """
-        الحصول على قائمة طلاب المدرس مع ملخص دفعات كل طالب
+        """قائمة طلاب المدرس مع القسط حسب نوع الدراسة"""
+        db = self.db
         
-        Returns:
-            list: قائمة الطلاب مع معلوماتهم المالية
-        """
-        # الحصول على بيانات المدرس أولاً
-        teacher_query = '''SELECT total_fee FROM teachers WHERE id = %s'''
-        teacher_result = self.db.execute_query(teacher_query, (teacher_id,))
-        total_fee = teacher_result[0]['total_fee'] if teacher_result else 0
+        # الحصول على معلومات المدرس
+        teacher_query = 'SELECT total_fee, fee_in_person, fee_electronic, fee_blended FROM teachers WHERE id = %s'
+        teacher_result = db.execute_query(teacher_query, (teacher_id,))
+        teacher_data = teacher_result[0] if teacher_result else {}
         
         query = '''
             SELECT s.id, s.name, st.study_type as study_type, st.status as status, s.barcode
@@ -345,10 +390,22 @@ class FinanceService:
             WHERE st.teacher_id = %s
             ORDER BY s.name
         '''
-        students = self.db.execute_query(query, (teacher_id,))
+        students = db.execute_query(query, (teacher_id,))
         
         result = []
         for student in students:
+            study_type = student.get('study_type', 'حضوري')
+            
+            # تحديد القسط حسب نوع الدراسة
+            if study_type == 'الكتروني' and teacher_data.get('fee_electronic', 0) > 0:
+                total_fee = teacher_data['fee_electronic']
+            elif study_type == 'مدمج' and teacher_data.get('fee_blended', 0) > 0:
+                total_fee = teacher_data['fee_blended']
+            elif study_type == 'حضوري' and teacher_data.get('fee_in_person', 0) > 0:
+                total_fee = teacher_data['fee_in_person']
+            else:
+                total_fee = teacher_data.get('total_fee', 0)
+            
             paid = self.get_student_paid_total(student['id'], teacher_id)
             remaining = total_fee - paid
             result.append({

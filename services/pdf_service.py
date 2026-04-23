@@ -7,7 +7,7 @@
 import os
 from datetime import datetime
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm, cm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
@@ -138,7 +138,7 @@ class PDFService:
         
         # شريط علوي ملون
         header_data = [[ar(APP_TITLE)]]
-        header_table = Table(header_data, colWidths=[490])
+        header_table = Table(header_data, colWidths=[520])
         header_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, -1), WHITE),
@@ -178,7 +178,9 @@ class PDFService:
         t.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('ALIGN', (0, 1), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, -1), 'DejaVu'),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
@@ -199,7 +201,8 @@ class PDFService:
         style_cmds = [
             ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('ALIGN', (0, 1), (-1, -1), 'RIGHT'),
             ('FONTNAME', (0, 0), (-1, 0), 'DejaVu-Bold'),
             ('FONTNAME', (0, 1), (-1, -1), 'DejaVu'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
@@ -277,7 +280,7 @@ class PDFService:
                 format_currency(total_remaining_all)
             ])
 
-            t = self._data_table(headers, rows, styles, col_widths=[25, 70, 65, 55, 50, 75, 75, 75])
+            t = self._data_table(headers, rows, styles, col_widths=[20, 75, 60, 55, 45, 75, 75, 75])
             
             # تنسيق صف الإجمالي
             total_style_cmds = [
@@ -392,7 +395,7 @@ class PDFService:
                     format_currency(s['remaining_balance']),
                     status
                 ])
-            elements.append(self._data_table(headers, rows, styles, col_widths=[25, 85, 55, 50, 70, 70, 60]))
+            elements.append(self._data_table(headers, rows, styles, col_widths=[20, 90, 55, 50, 70, 70, 60]))
 
         # ===== آخر السحوبات =====
         if recent_withdrawals:
@@ -423,48 +426,120 @@ class PDFService:
             raise Exception("القسط غير موجود")
         installment = dict(installment_result[0])
 
+        # Get teacher info and student's study type
+        teacher_info_query = '''
+            SELECT t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   st.study_type
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE i.id = %s
+        '''
+        teacher_info_result = self.db.execute_query(teacher_info_query, (installment_id,))
+        teacher_info = teacher_info_result[0] if teacher_info_result else {}
+        study_type = teacher_info.get('study_type', 'حضوري')
+
+        # Determine total fee based on study type
+        if study_type == 'الكتروني' and teacher_info.get('fee_electronic', 0) > 0:
+            total_fee = teacher_info['fee_electronic']
+        elif study_type == 'مدمج' and teacher_info.get('fee_blended', 0) > 0:
+            total_fee = teacher_info['fee_blended']
+        elif study_type == 'حضوري' and teacher_info.get('fee_in_person', 0) > 0:
+            total_fee = teacher_info['fee_in_person']
+        else:
+            total_fee = teacher_info.get('total_fee', 0)
+
+        # Get total paid by this student for this teacher
+        paid_query = '''
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM installments
+            WHERE student_id = %s AND teacher_id = %s
+        '''
+        paid_result = self.db.execute_query(paid_query, (installment['student_id'], installment['teacher_id']))
+        total_paid = paid_result[0]['total'] if paid_result else 0
+        remaining_balance = total_fee - total_paid
+
         filename = f"receipt_{installment_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         filepath = os.path.join(RECEIPTS_DIR, filename)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
+        # ── Receipt-specific compact styles ──
         styles = self._get_styles()
-        styles['receipt_title'] = ParagraphStyle(
-            'receipt_title', fontName='DejaVu-Bold', fontSize=16, alignment=1,
-            textColor=PRIMARY, spaceAfter=6
+        lbl_style = ParagraphStyle(
+            'r_lbl', fontName='DejaVu', fontSize=9, alignment=2,
+            textColor=TEXT_MUTED, leading=13
         )
-        styles['receipt_info'] = ParagraphStyle(
-            'receipt_info', fontName='DejaVu', fontSize=10, alignment=2,
-            textColor=DARK, leading=18
+        val_style = ParagraphStyle(
+            'r_val', fontName='DejaVu', fontSize=9, alignment=2,
+            textColor=DARK, leading=13
         )
-        styles['receipt_label'] = ParagraphStyle(
-            'receipt_label', fontName='DejaVu', fontSize=10, alignment=2,
-            textColor=TEXT_MUTED
+        val_bold_style = ParagraphStyle(
+            'r_val_bold', fontName='DejaVu-Bold', fontSize=9, alignment=2,
+            textColor=DARK, leading=13
+        )
+        sum_label_style = ParagraphStyle(
+            'sum_lbl', fontName='DejaVu', fontSize=9, alignment=1,
+            textColor=SECONDARY, leading=13
+        )
+        sum_value_style = ParagraphStyle(
+            'sum_val', fontName='DejaVu-Bold', fontSize=10, alignment=1,
+            textColor=DARK, leading=14
         )
 
+        # Balance colour based on remaining amount
+        if remaining_balance > 0:
+            bal_color = DANGER
+            bal_bg = colors.HexColor('#fef2f2')
+            bal_border = DANGER
+        elif remaining_balance == 0:
+            bal_color = SUCCESS
+            bal_bg = colors.HexColor('#f0fdf4')
+            bal_border = SUCCESS
+        else:
+            bal_color = WARNING
+            bal_bg = colors.HexColor('#fffbeb')
+            bal_border = WARNING
+
+        bal_style = ParagraphStyle(
+            'bal_val', fontName='DejaVu-Bold', fontSize=11, alignment=1,
+            textColor=bal_color, leading=15
+        )
+        bal_label_style = ParagraphStyle(
+            'bal_lbl', fontName='DejaVu-Bold', fontSize=9, alignment=1,
+            textColor=bal_color, leading=13
+        )
+
+        # ── A5 landscape (210 mm × 148 mm) ──
         doc = SimpleDocTemplate(
-            filepath, pagesize=landscape((210*mm, 148*mm)),
-            rightMargin=15*mm, leftMargin=15*mm, topMargin=10*mm, bottomMargin=10*mm
+            filepath, pagesize=(210 * mm, 148 * mm),
+            rightMargin=10 * mm, leftMargin=10 * mm,
+            topMargin=8 * mm, bottomMargin=8 * mm,
         )
 
         elements = []
 
-        # شريط علوي ملون
+        # ═══════════════════════════════════════════
+        # 1. Header bar
+        # ═══════════════════════════════════════════
         header_data = [[ar("وصل دفع رسمي")]]
-        header_table = Table(header_data, colWidths=[470])
+        header_table = Table(header_data, colWidths=[190 * mm])
         header_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, -1), WHITE),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), 'DejaVu-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 15),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
             ('ROUNDEDCORNERS', [4, 4, 0, 0]),
         ]))
         elements.append(header_table)
-        elements.append(HRFlowable(width="100%", thickness=1, color=ACCENT, spaceAfter=6))
+        elements.append(HRFlowable(width="100%", thickness=1.5, color=ACCENT, spaceAfter=4))
 
-        # معلومات الوصل
+        # ═══════════════════════════════════════════
+        # 2. Basic info table (single-column, label : value)
+        # ═══════════════════════════════════════════
         info_data = [
             ("اسم الطالب", installment['student_name']),
             ("الرمز", installment['barcode']),
@@ -473,35 +548,99 @@ class PDFService:
             ("نوع القسط", installment['installment_type']),
             ("المبلغ المدفوع", format_currency(installment['amount'])),
             ("تاريخ الدفع", format_date(installment['payment_date'])),
-            ("ملاحظات", installment['notes'] or '-'),
+            # Financial summary – inserted before ملاحظات
+            ("القسط الكلي", format_currency(total_fee)),
+            ("إجمالي المدفوع", format_currency(total_paid)),
+            ("المبلغ المتبقي", format_currency(remaining_balance)),
         ]
 
-        table_data = []
-        for label, value in info_data:
-            table_data.append([
-                ar_para(label, styles['receipt_label']),
-                ar_para(value, styles['receipt_info'])
+        # Add notes row only when notes exist
+        has_notes = bool(installment.get('notes') and str(installment['notes']).strip())
+        if has_notes:
+            info_data.append(("ملاحظات", installment['notes']))
+
+        # Build table rows with per-row styling
+        financial_start = 7  # index of "القسط الكلي" row
+        balance_idx = 9       # index of "المبلغ المتبقي" row
+
+        table_rows = []
+        for idx, (label, value) in enumerate(info_data):
+            # Determine styles for this row
+            if idx == balance_idx:
+                # Remaining balance – bold + coloured
+                row_lbl = bal_label_style
+                row_val = bal_style
+            elif financial_start <= idx <= balance_idx:
+                # Other financial summary rows – bold values
+                row_lbl = sum_label_style
+                row_val = sum_value_style
+            elif label == "المبلغ المدفوع":
+                row_lbl = lbl_style
+                row_val = val_bold_style
+            else:
+                row_lbl = lbl_style
+                row_val = val_style
+
+            table_rows.append([
+                ar_para(label, row_lbl),
+                ar_para(str(value), row_val),
             ])
 
-        t = Table(table_data, colWidths=[110, 360])
-        t.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-            ('TOPPADDING', (0, 0), (-1, -1), 5),
-            ('LINEBELOW', (0, 0), (-1, -2), 0.5, BORDER_COLOR),
-            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [WHITE, LIGHT_BG]),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('ROUNDEDCORNERS', [4, 4, 4, 4]),
-        ]))
-        elements.append(t)
+        info_t = Table(table_rows, colWidths=[55 * mm, 135 * mm])
 
-        # التوقيع
-        elements.append(Spacer(1, 20))
+        # ── Table styling ──
+        style_cmds = [
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('GRID', (0, 0), (-1, -1), 0.3, BORDER_COLOR),
+            ('ROUNDEDCORNERS', [4, 4, 4, 4]),
+        ]
+
+        # Alternating backgrounds for basic-info rows (0–6)
+        for i in range(financial_start):
+            style_cmds.append(
+                ('BACKGROUND', (0, i), (-1, i), WHITE if i % 2 == 0 else LIGHT_BG)
+            )
+
+        # Financial summary rows (7–9): light blue tint
+        style_cmds.append(('BACKGROUND', (0, financial_start), (-1, balance_idx - 1),
+                           colors.HexColor('#eef2ff')))
+
+        # Balance row (9): coloured background
+        style_cmds.append(('BACKGROUND', (0, balance_idx), (-1, balance_idx), bal_bg))
+
+        # Thick separator line above financial summary
+        style_cmds.append(('LINEABOVE', (0, financial_start), (-1, financial_start),
+                           1.5, ACCENT))
+
+        # Thick coloured border around balance value cell for emphasis
+        style_cmds.append(('BOX', (1, balance_idx), (1, balance_idx), 2, bal_border))
+
+        # Notes row background
+        if has_notes:
+            style_cmds.append(
+                ('BACKGROUND', (0, balance_idx + 1), (-1, balance_idx + 1), LIGHT_BG)
+            )
+
+        info_t.setStyle(TableStyle(style_cmds))
+        elements.append(info_t)
+
+        # ═══════════════════════════════════════════
+        # 3. Footer – date, signature, system name
+        # ═══════════════════════════════════════════
+        elements.append(Spacer(1, 10))
         now = datetime.now()
-        elements.append(ar_para(f"التاريخ: {now.strftime('%Y/%m/%d')} - الوقت: {now.strftime('%H:%M')}", styles['small_center']))
-        elements.append(HRFlowable(width="30%", thickness=0.5, color=DARK, spaceBefore=25, spaceAfter=2))
+        elements.append(ar_para(
+            f"التاريخ: {now.strftime('%Y/%m/%d')} - الوقت: {now.strftime('%H:%M')}",
+            styles['small_center'],
+        ))
+        elements.append(HRFlowable(
+            width="30%", thickness=0.5, color=DARK, spaceBefore=15, spaceAfter=2,
+        ))
         elements.append(ar_para("توقيع المسؤول", styles['small_center']))
-        elements.append(Spacer(1, 8))
+        elements.append(Spacer(1, 4))
         elements.append(ar_para("نظام إدارة المعهد || HussamVision", styles['small_center']))
 
         doc.build(elements)

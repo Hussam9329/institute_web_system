@@ -144,26 +144,26 @@
                     <thead>
                         <tr>
                             <th>الطالب</th>
-                            <th class="d-none d-md-table-cell">المدرس</th>
-                            <th class="d-none d-sm-table-cell">المادة</th>
+                            <th>المدرس</th>
+                            <th>المادة</th>
                             <th class="text-center">المبلغ</th>
-                            <th class="text-center d-none d-sm-table-cell">النوع</th>
-                            <th class="d-none d-md-table-cell">التاريخ</th>
+                            <th class="text-center">النوع</th>
+                            <th>التاريخ</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for inst in recent_installments %}
                         <tr>
                             <td class="fw-semibold">{{ inst.student_name }}</td>
-                            <td class="d-none d-md-table-cell">{{ inst.teacher_name }}</td>
-                            <td class="d-none d-sm-table-cell">
+                            <td>{{ inst.teacher_name }}</td>
+                            <td>
                                 <span class="badge bg-light text-dark">{{ inst.subject }}</span>
                             </td>
                             <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
-                            <td class="text-center d-none d-sm-table-cell">
+                            <td class="text-center">
                                 <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                             </td>
-                            <td class="text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
+                            <td class="text-muted">{{ inst.payment_date }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -135,6 +135,14 @@ def init_db():
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'مستمر'",
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT ''",
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS study_type VARCHAR(20) DEFAULT 'حضوري'",
+            # أعمدة أنواع التدريس المتعددة
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS teaching_types TEXT DEFAULT 'حضوري'",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS fee_in_person INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS fee_electronic INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS fee_blended INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_pct_in_person INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_pct_electronic INTEGER DEFAULT 0",
+            "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_pct_blended INTEGER DEFAULT 0",
         ]
         
         for stmt in alter_statements:

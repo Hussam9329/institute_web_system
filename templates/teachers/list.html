@@ -56,11 +56,11 @@
                         <tr>
                             <th class="text-center" style="width:40px">#</th>
                             <th>الاسم</th>
-                            <th class="text-center d-none d-md-table-cell">المادة</th>
-                            <th class="text-center d-none d-sm-table-cell">الأجر الكلي</th>
-                            <th class="text-center d-none d-lg-table-cell">المدفوع</th>
-                            <th class="text-center d-none d-xl-table-cell">المتبقي</th>
-                            <th class="text-center d-none d-lg-table-cell">عدد الطلاب</th>
+                            <th class="text-center">المادة</th>
+                            <th class="text-center">الأجر الكلي</th>
+                            <th class="text-center">المدفوع</th>
+                            <th class="text-center">المتبقي</th>
+                            <th class="text-center">عدد الطلاب</th>
                             <th class="text-center" style="min-width:100px; width:140px;">الإجراءات</th>
                         </tr>
                     </thead>
@@ -73,30 +73,25 @@
                                     {{ teacher.name }}
                                 </a>
                                 {% if teacher.notes %}
-                                <br><small class="text-muted d-none d-md-block">{{ teacher.notes[:40] }}</small>
+                                <br><small class="text-muted">{{ teacher.notes[:40] }}</small>
                                 {% endif %}
-                                <!-- عرض المعلومات على الجوال -->
-                                <div class="d-md-none mt-1">
-                                    <span class="badge bg-light text-dark me-1">{{ teacher.subject }}</span>
-                                    <span class="badge bg-success-subtle text-success">{{ format_currency(teacher.total_fee) }}</span>
-                                    <br class="d-xl-none"><span class="badge bg-light text-dark">{{ format_currency(teacher.total_received) }}</span>
-                                </div>
+
                             </td>
-                            <td class="text-center d-none d-md-table-cell">
+                            <td class="text-center">
                                 <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
                             </td>
-                            <td class="text-center fw-bold text-primary d-none d-sm-table-cell">
+                            <td class="text-center fw-bold text-primary">
                                 {{ format_currency(teacher.total_fee) }}
                             </td>
-                            <td class="text-center fw-bold text-success d-none d-lg-table-cell">
+                            <td class="text-center fw-bold text-success">
                                 {{ format_currency(teacher.total_received) }}
                             </td>
-                            <td class="text-center d-none d-xl-table-cell">
+                            <td class="text-center">
                                 <span class="fw-bold {% if teacher.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
                                     {{ format_currency(teacher.total_remaining) }}
                                 </span>
                             </td>
-                            <td class="text-center d-none d-lg-table-cell">
+                            <td class="text-center">
                                 <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
                             </td>
                             <td class="text-center">
@@ -104,34 +99,16 @@
                                     <a href="/teachers/{{ teacher.id }}" class="btn btn-outline-success" title="التفاصيل">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning d-none d-sm-inline-block" title="تعديل">
+                                    <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning" title="تعديل">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-info d-none d-md-inline-block" target="_blank" title="PDF">
+                                    <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-info" target="_blank" title="PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
-                                    <button type="button" class="btn btn-outline-danger d-none d-sm-inline-block" title="حذف"
+                                    <button type="button" class="btn btn-outline-danger" title="حذف"
                                             onclick="confirmDelete({{ teacher.id }}, '{{ teacher.name }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                    <!-- قائمة إجراءات للجوال -->
-                                    <div class="dropdown d-sm-none">
-                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><a class="dropdown-item" href="/teachers/{{ teacher.id }}/edit">
-                                                <i class="fas fa-edit me-2"></i>تعديل
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="/pdf/teacher/{{ teacher.id }}" target="_blank">
-                                                <i class="fas fa-file-pdf me-2 text-info"></i>PDF
-                                            </a></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ teacher.id }}, '{{ teacher.name }}'); return false;">
-                                                <i class="fas fa-trash me-2"></i>حذف
-                                            </a></li>
-                                        </ul>
-                                    </div>
                                 </div>
                             </td>
                         </tr>

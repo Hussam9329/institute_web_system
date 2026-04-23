@@ -76,11 +76,11 @@
                         <tr>
                             <th class="text-center" style="width:40px">#</th>
                             <th>الاسم</th>
-                            <th class="d-none d-md-table-cell">المدرس</th>
-                            <th class="d-none d-sm-table-cell">المادة</th>
+                            <th>المدرس</th>
+                            <th>المادة</th>
                             <th class="text-center">المبلغ</th>
-                            <th class="text-center d-none d-sm-table-cell">النوع</th>
-                            <th class="text-center d-none d-lg-table-cell">التاريخ</th>
+                            <th class="text-center">النوع</th>
+                            <th class="text-center">التاريخ</th>
                             <th class="text-center" style="width:70px;">إجراءات</th>
                         </tr>
                     </thead>
@@ -92,27 +92,26 @@
                                 <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
                                     {{ inst.student_name }}
                                 </a>
-                                <br class="d-md-none"><small class="text-muted d-md-none">{{ inst.teacher_name }}</small>
                             </td>
-                            <td class="d-none d-md-table-cell">
+                            <td>
                                 <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none">
                                     {{ inst.teacher_name }}
                                 </a>
                             </td>
-                            <td class="d-none d-sm-table-cell">
+                            <td>
                                 <span class="badge bg-light text-dark">{{ inst.subject }}</span>
                             </td>
                             <td class="text-center fw-bold text-success">{{ format_currency(inst.amount) }}</td>
-                            <td class="text-center d-none d-sm-table-cell">
+                            <td class="text-center">
                                 <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                             </td>
-                            <td class="text-center text-muted d-none d-lg-table-cell">{{ inst.payment_date }}</td>
+                            <td class="text-center text-muted">{{ inst.payment_date }}</td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm">
                                     <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger d-none d-sm-inline-block" onclick="deletePayment({{ inst.id }})" title="حذف">
+                                    <button class="btn btn-outline-danger" onclick="deletePayment({{ inst.id }})" title="حذف">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -195,9 +194,7 @@
                             <select class="form-select" id="pay_type">
                                 <option value="القسط الأول">القسط الأول</option>
                                 <option value="القسط الثاني">القسط الثاني</option>
-                                <option value="القسط الثالث">القسط الثالث</option>
                                 <option value="دفع كامل">دفع كامل</option>
-                                <option value="دفعة جزئية">دفعة جزئية</option>
                             </select>
                         </div>
                         <div class="col-12">
