@@ -357,52 +357,86 @@ body::before {
 }
 
 /* ===== Gradient Table Headers ===== */
+/* يجب استخدام !important لتجاوز Bootstrap 5 selector العالي الأولوية */
+
 .table-gradient-blue thead,
-thead.table-gradient-blue {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
+.table-gradient-blue > thead,
+thead.table-gradient-blue,
+.table.table-gradient-blue > thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+    background-color: var(--primary) !important;
+    color: white !important;
 }
 
 .table-gradient-blue thead th,
-thead.table-gradient-blue th {
-    color: rgba(255, 255, 255, 0.9);
-    border-bottom: none;
+thead.table-gradient-blue th,
+.table.table-gradient-blue > thead th {
+    color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
 .table-gradient-emerald thead,
-thead.table-gradient-emerald {
-    background: linear-gradient(135deg, var(--success-light) 0%, var(--success) 100%);
-    color: white;
+.table-gradient-emerald > thead,
+thead.table-gradient-emerald,
+.table.table-gradient-emerald > thead {
+    background: linear-gradient(135deg, var(--success-light) 0%, var(--success) 100%) !important;
+    background-color: var(--success) !important;
+    color: white !important;
 }
 
 .table-gradient-emerald thead th,
-thead.table-gradient-emerald th {
-    color: rgba(255, 255, 255, 0.9);
-    border-bottom: none;
+thead.table-gradient-emerald th,
+.table.table-gradient-emerald > thead th {
+    color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
 .table-gradient-purple thead,
-thead.table-gradient-purple {
-    background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary) 100%);
-    color: white;
+.table-gradient-purple > thead,
+thead.table-gradient-purple,
+.table.table-gradient-purple > thead {
+    background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary) 100%) !important;
+    background-color: var(--secondary) !important;
+    color: white !important;
 }
 
 .table-gradient-purple thead th,
-thead.table-gradient-purple th {
-    color: rgba(255, 255, 255, 0.9);
-    border-bottom: none;
+thead.table-gradient-purple th,
+.table.table-gradient-purple > thead th {
+    color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
 .table-gradient-orange thead,
-thead.table-gradient-orange {
-    background: linear-gradient(135deg, var(--warning-light) 0%, var(--warning) 100%);
-    color: white;
+.table-gradient-orange > thead,
+thead.table-gradient-orange,
+.table.table-gradient-orange > thead {
+    background: linear-gradient(135deg, var(--warning-light) 0%, var(--warning) 100%) !important;
+    background-color: var(--warning) !important;
+    color: white !important;
 }
 
 .table-gradient-orange thead th,
-thead.table-gradient-orange th {
-    color: rgba(255, 255, 255, 0.9);
-    border-bottom: none;
+thead.table-gradient-orange th,
+.table.table-gradient-orange > thead th {
+    color: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
 
 /* ===== Buttons ===== */
