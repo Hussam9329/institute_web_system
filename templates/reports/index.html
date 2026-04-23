@@ -130,7 +130,6 @@
                                 <tr>
                                     <th>#</th>
                                     <th>الطالب</th>
-                                    <th class="text-center">نوع الدراسة</th>
                                     <th class="text-center">المدرسين</th>
                                     <th class="text-center">الإجمالي المطلوب</th>
                                     <th class="text-center">المدفوع</th>
@@ -145,15 +144,9 @@
                                     <td class="fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
                                         <div class="fw-semibold">{{ student.name }}</div>
-
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-{% if student.study_type == 'حضوري' %}primary{% else %}info{% endif %}">
-                                            {{ student.study_type }}
-                                        </span>
                                     </td>
                                     <td class="text-center">{{ student.teachers_count }}</td>
-                                    <td class="text-center fw-bold">{{ format_currency(student.total_fee) }}</td>
+                                    <td class="text-center fw-bold">{{ format_currency(student.total_fees) }}</td>
                                     <td class="text-center text-success fw-bold">{{ format_currency(student.total_paid) }}</td>
                                     <td class="text-center">
                                         <span class="fw-bold {% if student.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
@@ -161,9 +154,9 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        {% set pct = ((student.total_paid / student.total_fee) * 100) if student.total_fee > 0 else 0 %}
+                                        {% set pct = student.payment_percentage %}
                                         <div class="progress" style="height: 18px; min-width: 60px;">
-                                            <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-info{% else %}bg-warning{% endif %}" 
+                                            <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-info{% else %}bg-warning{% endif %}"
                                                  style="width: {{ min(pct, 100) }}%">
                                                 {{ "%.0f"|format(pct) }}%
                                             </div>
@@ -182,7 +175,7 @@
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="9" class="text-center py-5">
+                                    <td colspan="8" class="text-center py-5">
                                         <i class="fas fa-user-graduate fa-3x text-muted d-block mb-3"></i>
                                         <p class="text-muted">لا يوجد طلاب مسجلين</p>
                                     </td>

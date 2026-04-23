@@ -59,9 +59,6 @@
                                        minlength="2" maxlength="100">
                             </div>
 
-                            <div class="row g-3">
-                            </div>
-
                             <!-- ملاحظات -->
                             <div class="mb-4">
                                 <label for="notes" class="form-label fw-bold">
@@ -78,52 +75,50 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-bold">
-                                    <i class="fas fa-link me-1 text-emerald"></i>اختر المدرسين مع نوع الدراسة والحالة
-                                </label>
-                                <div class="card border p-2 p-md-3 bg-light-subtle">
+                                <div class="card border bg-light-subtle overflow-hidden">
                                     {% if teachers %}
-                                    <div class="row g-2">
+                                    <!-- رأس الجدول (سطح المكتب فقط) -->
+                                    <div class="d-none d-md-flex bg-body-tertiary border-bottom px-3 py-2">
+                                        <div style="width:2.5rem;flex-shrink:0"></div>
+                                        <div class="flex-grow-1 fw-bold text-muted small">المدرس</div>
+                                        <div class="fw-bold text-muted small me-2" style="width:7.5rem;flex-shrink:0">نوع الدراسة</div>
+                                        <div class="fw-bold text-muted small" style="width:6.5rem;flex-shrink:0">الحالة</div>
+                                    </div>
+                                    <!-- قائمة المدرسين -->
+                                    <div class="p-2 p-md-0">
                                         {% for teacher in teachers %}
-                                        <div class="col-12 col-sm-6 col-lg-4">
-                                            <div class="form-check teacher-check p-2 p-md-3 rounded-3 h-100">
-                                                <input class="form-check-input" type="checkbox"
-                                                       name="teacher_ids" value="{{ teacher.id }}" id="teacher_{{ teacher.id }}"
-                                                       onchange="toggleTeacherOptions({{ teacher.id }}, this.checked)"
-                                                       {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}checked{% endif %}>
-                                                <label class="form-check-label w-100" for="teacher_{{ teacher.id }}">
+                                        {% set is_linked = linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}
+                                        {% set ld = linked_data[teacher.id] if linked_data and teacher.id in linked_data else None %}
+                                        <div class="teacher-row {% if is_linked %}active{% endif %} border-bottom {% if not loop.last %}border-light{% else %}border-0{% endif %}"
+                                             id="teacher_row_{{ teacher.id }}">
+                                            <div class="teacher-row-inner d-flex align-items-center px-2 px-md-3 py-2">
+                                                <!-- Checkbox -->
+                                                <div class="d-flex align-items-center" style="width:2.5rem;flex-shrink:0;justify-content:center">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="teacher_ids" value="{{ teacher.id }}" id="teacher_{{ teacher.id }}"
+                                                           onchange="toggleTeacherRow({{ teacher.id }})"
+                                                           {% if is_linked %}checked{% endif %}>
+                                                </div>
+                                                <!-- اسم المدرس + المادة -->
+                                                <div class="flex-grow-1 me-2">
                                                     <div class="fw-semibold">{{ teacher.name }}</div>
-                                                    <small class="text-muted">{{ teacher.subject }}</small>
-                                                </label>
-                                            </div>
-                                            <!-- خيارات لكل مدرس -->
-                                            <div class="teacher-options mt-1 ms-4 p-2 bg-white rounded-2 border"
-                                                 id="teacher_opts_{{ teacher.id }}"
-                                                 style="display: {% if linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}block{% else %}none{% endif %}">
-                                                <div class="row g-2">
-                                                    <div class="col-6">
-                                                        <select class="form-select form-select-sm" name="study_type_{{ teacher.id }}">
-                                                            <option value="حضوري"
-                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'حضوري' %}selected{% elif not linked_data and teacher.id not in linked_teacher_ids %}selected{% endif %}>
-                                                                حضوري</option>
-                                                            <option value="الكتروني"
-                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'الكتروني' %}selected{% endif %}>
-                                                                إلكتروني</option>
-                                                            <option value="مدمج"
-                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('study_type') == 'مدمج' %}selected{% endif %}>
-                                                                مدمج</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <select class="form-select form-select-sm" name="status_{{ teacher.id }}">
-                                                            <option value="مستمر"
-                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('status') == 'مستمر' %}selected{% elif not linked_data and teacher.id not in linked_teacher_ids %}selected{% endif %}>
-                                                                مستمر</option>
-                                                            <option value="منسحب"
-                                                                {% if linked_data and linked_data[teacher.id] and linked_data[teacher.id].get('status') == 'منسحب' %}selected{% endif %}>
-                                                                منسحب</option>
-                                                        </select>
-                                                    </div>
+                                                    <div class="text-muted d-md-none small">{{ teacher.subject }}</div>
+                                                    <span class="text-muted d-none d-md-inline small"> - {{ teacher.subject }}</span>
+                                                </div>
+                                                <!-- نوع الدراسة -->
+                                                <div class="teacher-field me-2" style="width:7.5rem;flex-shrink:0">
+                                                    <select class="form-select form-select-sm teacher-opt" name="study_type_{{ teacher.id }}">
+                                                        <option value="حضوري" {% if ld and ld.get('study_type') == 'حضوري' %}selected{% elif not is_linked %}selected{% endif %}>حضوري</option>
+                                                        <option value="الكتروني" {% if ld and ld.get('study_type') == 'الكتروني' %}selected{% endif %}>إلكتروني</option>
+                                                        <option value="مدمج" {% if ld and ld.get('study_type') == 'مدمج' %}selected{% endif %}>مدمج</option>
+                                                    </select>
+                                                </div>
+                                                <!-- الحالة -->
+                                                <div class="teacher-field" style="width:6.5rem;flex-shrink:0">
+                                                    <select class="form-select form-select-sm teacher-opt" name="status_{{ teacher.id }}">
+                                                        <option value="مستمر" {% if ld and ld.get('status') == 'مستمر' %}selected{% elif not is_linked %}selected{% endif %}>مستمر</option>
+                                                        <option value="منسحب" {% if ld and ld.get('status') == 'منسحب' %}selected{% endif %}>منسحب</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -138,7 +133,7 @@
                                 </div>
                                 <div class="form-text mt-2">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    يمكنك اختيار أكثر من مدرس واحد. سيتم ربط الطالب بالمدرسين المحددين مع تحديد نوع الدراسة (حضوري/إلكتروني) والحالة (مستمر/منسحب) لكل مدرس.
+                                    حدد المدرسين المطلوبين مع نوع الدراسة والحالة لكل مدرس.
                                 </div>
                             </div>
 
@@ -168,38 +163,49 @@
 </div>
 
 <style>
-.teacher-check {
-    transition: var(--transition);
-    border: 2px solid transparent;
-    cursor: pointer;
+.teacher-row {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    border-right: 3px solid transparent;
 }
-.teacher-check:hover {
-    background-color: var(--success-glow) !important;
-    border-color: rgba(16, 185, 129, 0.3);
+.teacher-row:hover {
+    background-color: rgba(16, 185, 129, 0.04);
 }
-.teacher-check:has(input:checked) {
-    background-color: var(--success-glow) !important;
-    border: 2px solid var(--success);
+.teacher-row.active {
+    background-color: rgba(16, 185, 129, 0.06);
+    border-right-color: var(--success, #10b981);
 }
-.teacher-check .form-check-input {
-    margin-top: 0.15rem;
+.teacher-row.active .teacher-opt {
+    border-color: rgba(16, 185, 129, 0.4);
 }
-.teacher-options {
-    font-size: 0.85rem;
-    animation: fadeIn 0.2s ease;
+.teacher-row:not(.active) .teacher-opt {
+    opacity: 0.5;
+    pointer-events: none;
 }
-@media (max-width: 575px) {
-    .teacher-check {
-        padding: 0.75rem !important;
+.teacher-row:not(.active):hover .teacher-opt {
+    opacity: 0.7;
+}
+/* تجاوب على الشاشات الصغيرة */
+@media (max-width: 767px) {
+    .teacher-row-inner {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+    .teacher-row-inner > div:first-child {
+        width: auto;
+    }
+    .teacher-field {
+        width: calc(50% - 1.5rem) !important;
+        min-width: 0 !important;
     }
 }
 </style>
 
 <script>
-function toggleTeacherOptions(teacherId, checked) {
-    const opts = document.getElementById('teacher_opts_' + teacherId);
-    if (opts) {
-        opts.style.display = checked ? 'block' : 'none';
+function toggleTeacherRow(teacherId) {
+    const row = document.getElementById('teacher_row_' + teacherId);
+    const cb = document.getElementById('teacher_' + teacherId);
+    if (row && cb) {
+        row.classList.toggle('active', cb.checked);
     }
 }
 </script>

@@ -50,12 +50,16 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle" id="studentsTable">
+                        <table class="table table-hover mb-0 align-middle table-sm" id="studentsTable">
                             <thead class="table-gradient-blue">
                                 <tr>
                                     <th class="text-center" style="width:40px">#</th>
                                     <th>اسم الطالب</th>
-                                    <th class="text-center" style="min-width:120px;">الإجراءات</th>
+                                    <th class="text-center d-none d-md-table-cell" style="min-width:70px">الحالة</th>
+                                    <th class="text-center d-none d-lg-table-cell" style="min-width:60px">المدرسين</th>
+                                    <th class="text-center d-none d-md-table-cell" style="min-width:80px">المدفوع</th>
+                                    <th class="text-center d-none d-md-table-cell" style="min-width:80px">المتبقي</th>
+                                    <th class="text-center" style="min-width:120px">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -66,9 +70,31 @@
                                         <a href="/students/{{ student.id }}" class="text-decoration-none fw-semibold text-primary">
                                             {{ student.name }}
                                         </a>
-                                        {% if student.notes %}
-                                        <br><small class="text-muted">{{ student.notes[:50] }}</small>
-                                        {% endif %}
+                                        <!-- حالة + مدرسين على الموبايل فقط -->
+                                        <div class="d-md-none mt-1">
+                                            <span class="badge {% if student.status == 'مستمر' %}bg-success{% elif student.status == 'منسحب' %}bg-danger{% else %}bg-warning text-dark{% endif %} me-1">
+                                                {{ student.status or 'مستمر' }}
+                                            </span>
+                                            <span class="badge bg-secondary">{{ student.teachers_count }} مدرس</span>
+                                            {% if student.total_remaining and student.total_remaining > 0 %}
+                                            <span class="badge bg-danger">{{ format_currency(student.total_remaining) }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-center d-none d-md-table-cell">
+                                        <span class="badge {% if student.status == 'مستمر' %}bg-success{% elif student.status == 'منسحب' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                            {{ student.status or 'مستمر' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center d-none d-lg-table-cell">
+                                        <span class="badge bg-light text-dark">{{ student.teachers_count or 0 }}</span>
+                                    </td>
+                                    <td class="text-center text-success fw-semibold d-none d-md-table-cell">{{ format_currency(student.total_paid or 0) }}</td>
+                                    <td class="text-center d-none d-md-table-cell">
+                                        {% set remaining = student.total_remaining or 0 %}
+                                        <span class="fw-semibold {% if remaining > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ format_currency(remaining) }}
+                                        </span>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm d-flex justify-content-center">
@@ -94,25 +120,42 @@
                 <div class="col-12 col-sm-6 col-lg-4 col-xl-3 student-card" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
                     <div class="list-card list-card-accent accent-blue h-100">
                         <div class="card-body">
-                            <!-- رأس الكارت -->
                             <div class="list-card-header">
                                 <div class="list-card-icon icon-blue">
                                     <i class="fas fa-user-graduate"></i>
                                 </div>
-                                <div class="header-text">
-                                    <h6><a href="/students/{{ student.id }}" class="text-decoration-none text-dark">{{ student.name }}</a></h6>
+                                <div class="header-text flex-grow-1">
+                                    <h6 class="mb-1"><a href="/students/{{ student.id }}" class="text-decoration-none text-dark">{{ student.name }}</a></h6>
                                     {% if student.barcode %}
                                     <div class="header-sub"><i class="fas fa-barcode me-1"></i>{{ student.barcode }}</div>
                                     {% endif %}
-                                    {% if student.notes %}
-                                    <div class="header-sub mt-1"><i class="fas fa-sticky-note me-1"></i>{{ student.notes[:50] }}</div>
-                                    {% endif %}
                                 </div>
+                                <span class="badge {% if student.status == 'مستمر' %}bg-success{% elif student.status == 'منسحب' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                    {{ student.status or 'مستمر' }}
+                                </span>
                             </div>
 
                             <div class="list-card-divider"></div>
 
-                            <!-- أزرار الإجراءات -->
+                            <!-- معلومات مالية -->
+                            <div class="d-flex justify-content-between align-items-center mb-2 small">
+                                <span class="text-muted"><i class="fas fa-chalkboard-teacher me-1"></i>{{ student.teachers_count or 0 }} مدرس</span>
+                                <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>{{ format_currency(student.total_paid or 0) }}</span>
+                            </div>
+                            {% if student.total_remaining and student.total_remaining > 0 %}
+                            <div class="d-flex justify-content-end mb-2">
+                                <span class="badge bg-danger bg-opacity-10 text-danger">
+                                    <i class="fas fa-exclamation-circle me-1"></i>متبقي: {{ format_currency(student.total_remaining) }}
+                                </span>
+                            </div>
+                            {% endif %}
+
+                            {% if student.notes %}
+                            <div class="header-sub mb-2"><i class="fas fa-sticky-note me-1"></i>{{ student.notes[:50] }}</div>
+                            {% endif %}
+
+                            <div class="list-card-divider"></div>
+
                             <div class="list-card-actions">
                                 <a href="/students/{{ student.id }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-eye me-1"></i>عرض</a>
                                 <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit me-1"></i>تعديل</a>
@@ -159,13 +202,11 @@ function confirmDelete(id, name) {
 
 document.getElementById('studentLiveSearch')?.addEventListener('input', function() {
     const query = this.value.toLowerCase();
-    // Filter table rows
     document.querySelectorAll('.student-row').forEach(row => {
         const name = row.dataset.name || '';
         const barcode = row.dataset.barcode || '';
         row.style.display = (name.includes(query) || barcode.includes(query)) ? '' : 'none';
     });
-    // Filter cards
     let cardVisible = 0;
     document.querySelectorAll('.student-card').forEach(card => {
         const name = card.dataset.name || '';
