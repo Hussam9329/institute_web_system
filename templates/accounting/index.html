@@ -7,127 +7,173 @@
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="mb-4">
-        <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-calculator me-2"></i>محاسبة المدرسين</h4>
-        <p class="text-muted mb-0 small">ملخص مالي شامل لجميع المدرسين</p>
-    </div>
-
-    <!-- ===== بحث ===== -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body py-2 py-md-3">
-            <form method="GET" action="/accounting" class="row g-2 g-md-3 align-items-center">
-                <div class="col-12 col-md-9 col-lg-10">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-transparent border-end-0">
-                            <i class="fas fa-search text-muted"></i>
-                        </span>
-                        <input type="text" name="search" class="form-control border-start-0 ps-0" 
-                               placeholder="بحث عن مدرس..." value="{{ search }}" id="accountingLiveSearch">
-                    </div>
-                </div>
-                <div class="col-12 col-md-3 col-lg-2">
-                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="fas fa-search me-1"></i>بحث
-                    </button>
-                </div>
-            </form>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-calculator me-2"></i>محاسبة المدرسين</h4>
+            <p class="text-muted mb-0 small">ملخص مالي شامل لجميع المدرسين</p>
         </div>
     </div>
 
-    <!-- ===== جدول المحاسبة ===== -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle table-sm" id="accountingTable">
-                    <thead class="table-gradient-orange">
-                        <tr>
-                            <th class="text-center" style="width:40px">#</th>
-                            <th>المدرس / المادة</th>
-                            <th class="text-center">الطلاب</th>
-                            <th class="text-center d-none d-md-table-cell">حضوري</th>
-                            <th class="text-center d-none d-md-table-cell">الكتروني</th>
-                            <th class="text-center d-none d-md-table-cell">مدمج</th>
-                            <th class="text-center">الدافعون</th>
-                            <th class="text-center">إجمالي المدفوع</th>
-                            <th class="text-center">خصم المعهد</th>
-                            <th class="text-center">مستحق المدرس</th>
-                            <th class="text-center">المسحوب</th>
-                            <th class="text-center">المتبقي</th>
-                            <th class="text-center" style="min-width:100px;">إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for teacher in teachers %}
-                        <tr class="accounting-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
-                            <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
-                            <td>
-                                <div class="fw-semibold">{{ teacher.name }}</div>
-                                <small class="text-muted">{{ teacher.subject }}</small>
-                            </td>
-                            <td class="text-center fw-bold">{{ teacher.students_count or 0 }}</td>
-                            <td class="text-center d-none d-md-table-cell"><span class="badge bg-primary">{{ teacher.students_in_person or 0 }}</span></td>
-                            <td class="text-center d-none d-md-table-cell"><span class="badge bg-info">{{ teacher.students_electronic or 0 }}</span></td>
-                            <td class="text-center d-none d-md-table-cell"><span class="badge bg-warning text-dark">{{ teacher.students_blended or 0 }}</span></td>
-                            <td class="text-center">{{ teacher.financial.paying_students_count }}</td>
-                            <td class="text-center fw-bold text-primary">
-                                {{ format_currency(teacher.financial.total_received) }}
-                            </td>
-                            <td class="text-center text-danger">
-                                {{ format_currency(teacher.financial.institute_deduction) }}
-                            </td>
-                            <td class="text-center fw-bold text-success">
-                                {{ format_currency(teacher.financial.teacher_due) }}
-                            </td>
-                            <td class="text-center text-warning">
-                                {{ format_currency(teacher.financial.withdrawn_total) }}
-                            </td>
-                            <td class="text-center">
-                                <span class="badge fs-6 fs-md-5 {% if teacher.financial.remaining_balance > 0 %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {{ format_currency(teacher.financial.remaining_balance) }}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-success btn-sm w-100" 
-                                        onclick="openWithdrawalModal({{ teacher.id }}, '{{ teacher.name }}', {{ teacher.financial.remaining_balance }})"
-                                        {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}>
-                                    <i class="fas fa-hand-holding-usd me-1"></i>
-                                    <span>سحب</span>
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="13" class="text-center py-5">
-                                <i class="fas fa-calculator fa-3x text-muted d-block mb-3"></i>
-                                <p class="text-muted mb-0">لا يوجد مدرسين</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    
-                    {% if teachers %}
-                    <tfoot class="table-active fw-bold">
-                        <tr>
-                            <td colspan="2" class="text-center">الإجمالي</td>
-                            <td class="text-center">{{ teachers | map(attribute='students_count') | sum }}</td>
-                            <td class="text-center d-none d-md-table-cell">{{ teachers | map(attribute='students_in_person') | sum }}</td>
-                            <td class="text-center d-none d-md-table-cell">{{ teachers | map(attribute='students_electronic') | sum }}</td>
-                            <td class="text-center d-none d-md-table-cell">{{ teachers | map(attribute='students_blended') | sum }}</td>
-                            <td class="text-center">{{ teachers | map(attribute='financial') | map(attribute='paying_students_count') | sum }}</td>
-                            <td class="text-center text-primary">{{ format_currency(teachers | map(attribute='financial') | map(attribute='total_received') | sum) }}</td>
-                            <td class="text-center text-danger">{{ format_currency(teachers | map(attribute='financial') | map(attribute='institute_deduction') | sum) }}</td>
-                            <td class="text-center text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='teacher_due') | sum) }}</td>
-                            <td class="text-center text-warning">{{ format_currency(teachers | map(attribute='financial') | map(attribute='withdrawn_total') | sum) }}</td>
-                            <td class="text-center text-success">{{ format_currency(teachers | map(attribute='financial') | map(attribute='remaining_balance') | sum) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                    {% endif %}
+    <!-- ===== تلميح ===== -->
+    <div class="alert alert-light border mb-3 py-2">
+        <i class="fas fa-info-circle text-primary me-2"></i>
+        <small class="text-muted">ملخص مالي شامل لكل مدرس. المبلغ المتبقي هو ما يمكن سحبه. اضغط زر السحب لتسجيل عملية سحب جديدة.</small>
+    </div>
 
-                </table>
+    <!-- ===== بطاقات الإجمالي ===== -->
+    {% if teachers %}
+    <div class="row g-2 g-md-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient-blue text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">المدرسين</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ teachers|length }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient-emerald text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">الطلاب الكلي</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ teachers | map(attribute='students_count') | sum }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient-purple text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">إجمالي المتبقي</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(teachers | map(attribute='financial') | map(attribute='remaining_balance') | sum) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm bg-gradient-orange text-white h-100">
+                <div class="card-body py-2 px-2 py-md-3 px-md-3">
+                    <small class="opacity-75 d-block">إجمالي المسحوب</small>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(teachers | map(attribute='financial') | map(attribute='withdrawn_total') | sum) }}</h5>
+                </div>
             </div>
         </div>
     </div>
+    {% endif %}
+
+    <!-- ===== بحث ===== -->
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0">
+                <i class="fas fa-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 ps-0" 
+                   placeholder="بحث مباشر عن مدرس..." value="{{ request.args.get('search', '') }}" id="accountingLiveSearch">
+        </div>
+    </div>
+
+    {% if teachers %}
+    <!-- ===== بطاقات المدرسين المالية ===== -->
+    <div class="row g-3" id="accountingCards">
+        {% for teacher in teachers %}
+        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
+            <div class="card border-0 shadow-sm h-100">
+                <!-- رأس الكارت بتدرج -->
+                <div class="card-header bg-gradient-blue text-white border-0 py-3 px-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-0">
+                                <a href="/teachers/{{ teacher.id }}" class="text-white text-decoration-none">
+                                    {{ teacher.name }}
+                                </a>
+                            </h6>
+                            <small class="opacity-75"><i class="fas fa-book-open me-1"></i>{{ teacher.subject }}</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="small opacity-75">المتبقي</div>
+                            <div class="fs-5 fw-bold {% if teacher.financial.remaining_balance > 0 %}text-warning{% else %}opacity-75{% endif %}">
+                                {{ format_currency(teacher.financial.remaining_balance) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    <!-- أعداد الطلاب -->
+                    <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-users me-1"></i>{{ teacher.students_count or 0 }}
+                        </span>
+                        <span class="badge bg-primary fs-6">
+                            <i class="fas fa-chalkboard me-1"></i>{{ teacher.students_in_person or 0 }} حضوري
+                        </span>
+                        <span class="badge bg-info text-white fs-6">
+                            <i class="fas fa-laptop me-1"></i>{{ teacher.students_electronic or 0 }} الكتروني
+                        </span>
+                        <span class="badge bg-warning text-dark fs-6">
+                            <i class="fas fa-blender me-1"></i>{{ teacher.students_blended or 0 }} مدمج
+                        </span>
+                    </div>
+
+                    <!-- التفاصيل المالية -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">إجمالي المدفوع</small>
+                                <div class="fw-bold text-primary">{{ format_currency(teacher.financial.total_received) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">خصم المعهد</small>
+                                <div class="fw-bold text-danger">{{ format_currency(teacher.financial.institute_deduction) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">مستحق المدرس</small>
+                                <div class="fw-bold text-success">{{ format_currency(teacher.financial.teacher_due) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-2 text-center">
+                                <small class="text-muted d-block">المسحوب</small>
+                                <div class="fw-bold text-warning">{{ format_currency(teacher.financial.withdrawn_total) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المبلغ المتبقي بارز -->
+                    <div class="bg-gradient-emerald text-white rounded p-3 mb-3 text-center">
+                        <small class="opacity-75 d-block">المبلغ المتبقي القابل للسحب</small>
+                        <h4 class="fw-bold mb-0">{{ format_currency(teacher.financial.remaining_balance) }}</h4>
+                    </div>
+
+                    <!-- أزرار الإجراءات -->
+                    <div class="d-flex gap-2">
+                        <a href="/teachers/{{ teacher.id }}" class="btn btn-outline-primary btn-sm flex-fill">
+                            <i class="fas fa-eye me-1"></i>التفاصيل
+                        </a>
+                        <button class="btn btn-success btn-sm flex-fill"
+                                onclick="openWithdrawalModal({{ teacher.id }}, '{{ teacher.name }}', {{ teacher.financial.remaining_balance }})"
+                                {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}>
+                            <i class="fas fa-hand-holding-usd me-1"></i>سحب
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ===== حالة لا توجد نتائج بحث ===== -->
+    <div id="noCardsResults" class="text-center py-5 d-none">
+        <i class="fas fa-search fa-3x text-muted d-block mb-3"></i>
+        <p class="text-muted">لا توجد نتائج مطابقة للبحث</p>
+    </div>
+
+    {% else %}
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-calculator fa-3x text-muted d-block mb-3"></i>
+        <p class="text-muted mb-0">لا يوجد مدرسين</p>
+    </div>
+    {% endif %}
 
 </div>
 </div>
@@ -185,11 +231,19 @@
 // بحث مباشر
 document.getElementById('accountingLiveSearch')?.addEventListener('input', function() {
     const query = this.value.toLowerCase();
-    document.querySelectorAll('.accounting-row').forEach(row => {
-        const name = row.dataset.name || '';
-        const subject = row.dataset.subject || '';
-        row.style.display = (name.includes(query) || subject.includes(query)) ? '' : 'none';
+    let cardVisible = 0;
+    document.querySelectorAll('.accounting-card').forEach(card => {
+        const name = card.dataset.name || '';
+        const subject = card.dataset.subject || '';
+        const visible = name.includes(query) || subject.includes(query);
+        card.style.display = visible ? '' : 'none';
+        if (visible) cardVisible++;
     });
+    const noCards = document.getElementById('noCardsResults');
+    if (noCards) {
+        const cards = document.querySelectorAll('.accounting-card');
+        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
+    }
 });
 </script>
 {% endblock %}

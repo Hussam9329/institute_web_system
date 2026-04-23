@@ -47,9 +47,10 @@ async def index(request: Request):
 async def subjects_list(request: Request):
     """صفحة إدارة المواد الدراسية"""
     db = Database()
+    error_msg = ""
+    error_detail = ""
     try:
         subjects = db.execute_query("SELECT * FROM subjects ORDER BY name")
-        # عد المدرسين لكل مادة
         subjects_with_count = []
         for s in subjects:
             sd = dict(s)
@@ -61,7 +62,9 @@ async def subjects_list(request: Request):
     
     return templates.TemplateResponse("subjects/list.html", {
         "request": request,
-        "subjects": subjects_with_count
+        "subjects": subjects_with_count,
+        "error_msg": error_msg,
+        "error_detail": error_detail
     })
 
 
@@ -81,8 +84,12 @@ async def subject_add(request: Request, name: str = Form(...)):
 
 @router.post("/subjects/{subject_id}/delete")
 async def subject_delete(request: Request, subject_id: int):
-    """حذف مادة"""
+    """حذف مادة - مع حماية إذا كان فيها أساتذة"""
     db = Database()
+    teachers_count = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = (SELECT name FROM subjects WHERE id = %s)", (subject_id,))
+    if teachers_count and teachers_count[0]['cnt'] > 0:
+        cnt = teachers_count[0]['cnt']
+        return RedirectResponse(url=f"/subjects?error=has_teachers&count={cnt}", status_code=303)
     db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
     return RedirectResponse(url="/subjects?msg=deleted", status_code=303)
 
@@ -578,8 +585,14 @@ async def teacher_detail(request: Request, teacher_id: int):
 
 @router.post("/teachers/{teacher_id}/delete")
 async def teacher_delete(request: Request, teacher_id: int):
-    """حذف مدرس"""
+    """حذف مدرس - مع حماية إذا كان مرتبط بطلاب"""
     db = Database()
+    students_count = db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
+    if students_count and students_count[0]['cnt'] > 0:
+        cnt = students_count[0]['cnt']
+        teacher = db.execute_query("SELECT name FROM teachers WHERE id = %s", (teacher_id,))
+        teacher_name = teacher[0]['name'] if teacher else ''
+        return RedirectResponse(url=f"/teachers?error=has_students&count={cnt}&name={teacher_name}", status_code=303)
     db.execute_query("DELETE FROM teacher_withdrawals WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM installments WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
