@@ -387,7 +387,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
 
 
 @router.get("/teachers/add", response_class=HTMLResponse)
-async def teacher_form(request: Request):
+async def teacher_form(request: Request, error: str = ""):
     """نموذج إضافة مدرس جديد"""
     db = Database()
     subjects = db.execute_query("SELECT name FROM subjects ORDER BY name")
@@ -395,7 +395,8 @@ async def teacher_form(request: Request):
         "request": request,
         "teacher": None,
         "mode": "add",
-        "subjects": subjects
+        "subjects": subjects,
+        "error": error
     })
 
 
@@ -423,6 +424,10 @@ async def teacher_add(
     inst_ded_manual_blended: int = Form(0)
 ):
     """حفظ مدرس جديد"""
+    # التحقق من اختيار نوع تدريس واحد على الأقل
+    if not teaching_types or teaching_types.strip() == '':
+        return RedirectResponse(url="/teachers/add?error=no_teaching_type", status_code=303)
+    
     db = Database()
     
     # إضافة المادة لجدول المواد إذا لم تكن موجودة
@@ -452,7 +457,7 @@ async def teacher_add(
 
 
 @router.get("/teachers/{teacher_id}/edit", response_class=HTMLResponse)
-async def teacher_edit_form(request: Request, teacher_id: int):
+async def teacher_edit_form(request: Request, teacher_id: int, error: str = ""):
     """نموذج تعديل مدرس"""
     db = Database()
     
@@ -468,7 +473,8 @@ async def teacher_edit_form(request: Request, teacher_id: int):
         "request": request,
         "teacher": dict(result[0]),
         "mode": "edit",
-        "subjects": subjects
+        "subjects": subjects,
+        "error": error
     })
 
 
@@ -497,6 +503,10 @@ async def teacher_update(
     inst_ded_manual_blended: int = Form(0)
 ):
     """تحديث بيانات مدرس"""
+    # التحقق من اختيار نوع تدريس واحد على الأقل
+    if not teaching_types or teaching_types.strip() == '':
+        return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=no_teaching_type", status_code=303)
+    
     db = Database()
     
     # إضافة المادة لجدول المواد إذا لم تكن موجودة
