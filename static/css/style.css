@@ -892,49 +892,214 @@ table .btn-group.btn-group-sm {
     color: var(--danger-dark);
 }
 
-/* ===== Custom Toast Alerts ===== */
-.custom-alert {
+/* ===== Custom Toast Alerts (Enhanced) ===== */
+
+/* Alert Stack Container */
+.alert-stack-container {
     position: fixed;
-    top: 90px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    min-width: 320px;
-    max-width: 450px;
-    animation: fadeIn 0.3s ease;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-}
-
-.custom-alert.success {
-    background: linear-gradient(135deg, var(--success), var(--success-dark));
-    color: white;
-}
-
-.custom-alert.error {
-    background: linear-gradient(135deg, var(--danger), var(--danger-dark));
-    color: white;
-}
-
-.custom-alert.warning {
-    background: linear-gradient(135deg, var(--warning), var(--warning-dark));
-    color: white;
-}
-
-.custom-alert.info {
-    background: linear-gradient(135deg, var(--info), var(--info-dark));
-    color: white;
-}
-
-#alert-container {
-    position: fixed;
-    top: 80px;
+    top: 70px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;
     width: auto;
-    max-width: 90vw;
+    max-width: 420px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+/* Enhanced Alert Toast */
+.custom-alert {
+    position: relative;
+    min-width: 320px;
+    max-width: 450px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: alertSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    pointer-events: all;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Slide-in from top animation */
+@keyframes alertSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+        filter: blur(4px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(5px) scale(1.02);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+/* Slide-out animation */
+@keyframes alertSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100px) scale(0.8);
+    }
+}
+
+.custom-alert.removing {
+    animation: alertSlideOut 0.4s cubic-bezier(0.55, 0, 1, 0.45) forwards;
+}
+
+/* Alert icon wrapper with pulse */
+.custom-alert .alert-icon-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.custom-alert .alert-icon-wrap i {
+    font-size: 18px;
+    color: white;
+    animation: alertIconPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+@keyframes alertIconPop {
+    0% {
+        transform: scale(0) rotate(-45deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* Alert text */
+.custom-alert .alert-text {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.5;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Alert close button */
+.custom-alert .alert-close-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+    backdrop-filter: blur(10px);
+}
+
+.custom-alert .alert-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* Alert progress bar (auto-dismiss timer) */
+.custom-alert .alert-progress {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 0 0 16px 16px;
+    animation: alertProgress linear forwards;
+}
+
+@keyframes alertProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+/* Success alert - emerald green with glass */
+.custom-alert.success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%);
+    border-color: rgba(52, 211, 153, 0.3);
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.25), 0 8px 20px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Error alert - coral red with glass */
+.custom-alert.error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
+    border-color: rgba(248, 113, 113, 0.3);
+    box-shadow: 0 20px 60px rgba(239, 68, 68, 0.25), 0 8px 20px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Warning alert - amber with glass */
+.custom-alert.warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%);
+    border-color: rgba(251, 191, 36, 0.3);
+    box-shadow: 0 20px 60px rgba(245, 158, 11, 0.25), 0 8px 20px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Info alert - cyan with glass */
+.custom-alert.info {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.95) 0%, rgba(8, 145, 178, 0.95) 100%);
+    border-color: rgba(34, 211, 238, 0.3);
+    box-shadow: 0 20px 60px rgba(6, 182, 212, 0.25), 0 8px 20px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Shimmer effect on alert */
+.custom-alert::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: alertShimmer 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes alertShimmer {
+    0%, 100% { left: -100%; }
+    50% { left: 150%; }
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .alert-stack-container {
+        left: 10px;
+        right: 10px;
+        transform: none;
+        min-width: unset;
+        max-width: unset;
+    }
+    .custom-alert {
+        min-width: unset;
+        max-width: unset;
+    }
 }
 
 /* ===== Navbar ===== */

@@ -36,7 +36,7 @@ function getTodayDate() {
 }
 
 /**
- * عرض رسالة تنبيه
+ * عرض رسالة تنبيه محسّنة
  * @param {string} message - نص الرسالة
  * @param {string} type - نوع الرسالة (success, error, warning, info)
  * @param {number} duration - مدة العرض بالملي ثانية
@@ -46,31 +46,54 @@ function showAlert(message, type = 'info', duration = 4000) {
     if (!container) return;
 
     const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-times-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
+        success: 'fa-check',
+        error: 'fa-xmark',
+        warning: 'fa-exclamation',
+        info: 'fa-info'
     };
 
+    const alertId = 'alert-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+
     const alertHTML = `
-        <div class="custom-alert ${type} shadow-lg mb-3" role="alert">
+        <div id="${alertId}" class="custom-alert ${type}" role="alert">
             <div class="d-flex align-items-center gap-3 p-3">
-                <i class="fas ${icons[type]} fa-lg"></i>
-                <div class="flex-grow-1">${message}</div>
-                <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
+                <div class="alert-icon-wrap">
+                    <i class="fas ${icons[type] || icons.info}"></i>
+                </div>
+                <div class="alert-text">${message}</div>
+                <button type="button" class="alert-close-btn" onclick="dismissAlert('${alertId}')">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+            <div class="alert-progress" style="animation-duration: ${duration}ms;"></div>
         </div>
     `;
 
     container.insertAdjacentHTML('beforeend', alertHTML);
 
-    // إخفاء تلقائي بعد المدة المحددة
+    // إخفاء تلقائي بعد المدة المحددة مع أنيميشن الخروج
     setTimeout(() => {
-        const alerts = container.querySelectorAll('.custom-alert');
-        if (alerts.length > 0) {
-            alerts[0].remove();
-        }
+        dismissAlert(alertId);
     }, duration);
+}
+
+/**
+ * إزالة تنبيه مع أنيميشن خروج
+ * @param {string} alertId - معرف التنبيه
+ */
+function dismissAlert(alertId) {
+    const alertEl = document.getElementById(alertId);
+    if (!alertEl) return;
+
+    // إضافة كلاس الخروج
+    alertEl.classList.add('removing');
+
+    // إزالة من DOM بعد انتهاء الأنيميشن
+    setTimeout(() => {
+        if (alertEl.parentNode) {
+            alertEl.parentNode.removeChild(alertEl);
+        }
+    }, 400);
 }
 
 /**
@@ -206,6 +229,7 @@ window.formatCurrency = formatCurrency;
 window.formatDate = formatDate;
 window.getTodayDate = getTodayDate;
 window.showAlert = showAlert;
+window.dismissAlert = dismissAlert;
 window.confirmAction = confirmAction;
 window.apiRequest = apiRequest;
 window.populateSelect = populateSelect;

@@ -48,13 +48,24 @@ function checkUrlMessages() {
     const error = params.get('error');
 
     if (msg === 'added') {
-        showAlert('✅ تمت الإضافة بنجاح!', 'success');
+        showAlert('تمت الإضافة بنجاح', 'success');
     } else if (msg === 'updated') {
-        showAlert('✅ تم التحديث بنجاح!', 'success');
+        showAlert('تم التحديث بنجاح', 'success');
     } else if (msg === 'deleted') {
-        showAlert('✅ تم الحذف بنجاح!', 'success');
+        showAlert('تم الحذف بنجاح', 'success');
     } else if (error === 'not_found') {
-        showAlert('❌ العنصر غير موجود!', 'error');
+        showAlert('العنصر المطلوب غير موجود', 'error');
+    } else if (error === 'exists') {
+        showAlert('هذا العنصر موجود مسبقاً', 'warning');
+    } else if (error === 'has_teachers') {
+        const count = params.get('count') || 0;
+        showAlert('لا يمكن الحذف - يوجد ' + count + ' مدرسين مرتبطين بهذه المادة', 'error');
+    } else if (error === 'has_students') {
+        const count = params.get('count') || 0;
+        const name = params.get('name') || '';
+        showAlert('لا يمكن حذف المدرس "' + name + '" - يوجد ' + count + ' طالب مرتبط به', 'error');
+    } else if (error === 'no_teaching_type') {
+        showAlert('يجب اختيار نوع تدريس واحد على الأقل', 'warning');
     }
 
     // تنظيف URL
