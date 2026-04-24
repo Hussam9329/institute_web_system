@@ -270,14 +270,18 @@ class FinanceService:
                     if has_second:
                         total_deduction += ded_value // 2
             else:
-                # نسبة مئوية
+                # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
+                # مثال: قسط كلي 500، نسبة 16% → خصم المعهد 80 → كل قسط 40
+                student_total_fee = self._get_fee_for_study_type(t, study_type)
+
                 if has_full:
-                    total_deduction += int((full_amount * ded_value) / 100)
+                    total_deduction += int((student_total_fee * ded_value) / 100)
                 else:
+                    deduction_per_installment = int((student_total_fee * ded_value) / 100) // 2
                     if has_first:
-                        total_deduction += int((first_amount * ded_value) / 200)
+                        total_deduction += deduction_per_installment
                     if has_second:
-                        total_deduction += int((second_amount * ded_value) / 200)
+                        total_deduction += deduction_per_installment
         
         return total_deduction
     
@@ -298,6 +302,16 @@ class FinanceService:
         else:
             pct_val = teacher_data.get('institute_' + keys[1]) or 0
             return ('percentage', pct_val)
+    
+    def _get_fee_for_study_type(self, teacher_data: dict, study_type: str) -> int:
+        """إرجاع القسط الكلي حسب نوع الدراسة"""
+        if study_type == 'الكتروني' and teacher_data.get('fee_electronic', 0) > 0:
+            return teacher_data['fee_electronic']
+        elif study_type == 'مدمج' and teacher_data.get('fee_blended', 0) > 0:
+            return teacher_data['fee_blended']
+        elif study_type == 'حضوري' and teacher_data.get('fee_in_person', 0) > 0:
+            return teacher_data['fee_in_person']
+        return teacher_data.get('total_fee', 0)
     
     def calculate_teacher_due(self, teacher_id: int) -> Dict[str, Any]:
         """
