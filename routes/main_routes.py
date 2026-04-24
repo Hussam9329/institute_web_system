@@ -149,7 +149,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
 async def student_form(request: Request):
     """نموذج إضافة طالب جديد"""
     db = Database()
-    teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
+    teachers = db.execute_query("SELECT id, name, subject, teaching_types FROM teachers ORDER BY name")
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": None,
@@ -222,7 +222,7 @@ async def student_edit_form(request: Request, student_id: int):
         return RedirectResponse(url="/students?error=not_found", status_code=303)
 
     student = dict(result[0])
-    teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
+    teachers = db.execute_query("SELECT id, name, subject, teaching_types FROM teachers ORDER BY name")
 
     # المدرسين المرتبطين بالطالب مع بيانات الربط
     linked = db.execute_query(

@@ -89,6 +89,11 @@
                                         {% for teacher in teachers %}
                                         {% set is_linked = linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}
                                         {% set ld = linked_data[teacher.id] if linked_data and teacher.id in linked_data else None %}
+                                        {% set tt_list = (teacher.teaching_types.split(',') if teacher.teaching_types else ['حضوري']) %}
+                                        {% set has_in_person = 'حضوري' in tt_list %}
+                                        {% set has_electronic = 'الكتروني' in tt_list %}
+                                        {% set has_blended = 'مدمج' in tt_list %}
+                                        {% set single_type = (not has_in_person or not has_electronic or not has_blended) and ((has_in_person and not has_electronic and not has_blended) or (not has_in_person and has_electronic and not has_blended) or (not has_in_person and not has_electronic and has_blended)) %}
                                         <div class="teacher-row {% if is_linked %}active{% endif %} border-bottom {% if not loop.last %}border-light{% else %}border-0{% endif %}"
                                              id="teacher_row_{{ teacher.id }}">
                                             <div class="teacher-row-inner d-flex align-items-center px-2 px-md-3 py-2">
@@ -107,11 +112,24 @@
                                                 </div>
                                                 <!-- نوع الدراسة -->
                                                 <div class="teacher-field me-2" style="width:7.5rem;flex-shrink:0">
+                                                    {% if single_type %}
+                                                    <input type="hidden" name="study_type_{{ teacher.id }}" value="{{ tt_list[0] }}">
+                                                    <div class="form-select form-select-sm teacher-opt" style="background:#f8fafc;cursor:default;opacity:1">
+                                                        {{ tt_list[0] }}
+                                                    </div>
+                                                    {% else %}
                                                     <select class="form-select form-select-sm teacher-opt" name="study_type_{{ teacher.id }}">
-                                                        <option value="حضوري" {% if ld and ld.get('study_type') == 'حضوري' %}selected{% elif not is_linked %}selected{% endif %}>حضوري</option>
+                                                        {% if has_in_person %}
+                                                        <option value="حضوري" {% if ld and ld.get('study_type') == 'حضوري' or (not is_linked and has_in_person) %}selected{% endif %}>حضوري</option>
+                                                        {% endif %}
+                                                        {% if has_electronic %}
                                                         <option value="الكتروني" {% if ld and ld.get('study_type') == 'الكتروني' %}selected{% endif %}>إلكتروني</option>
+                                                        {% endif %}
+                                                        {% if has_blended %}
                                                         <option value="مدمج" {% if ld and ld.get('study_type') == 'مدمج' %}selected{% endif %}>مدمج</option>
+                                                        {% endif %}
                                                     </select>
+                                                    {% endif %}
                                                 </div>
                                                 <!-- الحالة -->
                                                 <div class="teacher-field" style="width:6.5rem;flex-shrink:0">
