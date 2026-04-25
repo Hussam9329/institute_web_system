@@ -8,7 +8,7 @@
 
     <!-- ===== عنوان الصفحة ===== -->
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-        <div>
+        <div style="min-width:0;">
             <h4 class="fw-bold mb-1 text-gradient-orange"><i class="fas fa-money-check-alt me-2"></i>إدارة الأقساط</h4>
             <p class="text-muted mb-0 small">{{ installments|length }} عملية دفع</p>
         </div>
@@ -22,7 +22,7 @@
                 </button>
             </div>
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
-                <i class="fas fa-plus me-1"></i> تسجيل دفعة
+                <i class="fas fa-plus me-1"></i> <span class="d-none d-sm-inline">تسجيل دفعة</span><span class="d-sm-none">دفعة</span>
             </button>
         </div>
     </div>
@@ -120,7 +120,7 @@
                                 </td>
                                 <td class="text-center text-muted d-none d-sm-table-cell">{{ inst.payment_date }}</td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm">
+                                    <div class="btn-group btn-group-sm d-flex justify-content-center">
                                         <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>

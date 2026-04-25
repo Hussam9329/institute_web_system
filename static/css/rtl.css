@@ -296,6 +296,21 @@ html[dir="rtl"] .slide-in {
     .d-flex.gap-2 {
         width: 100%;
     }
+
+    /* Fix container-fluid on mobile */
+    .container-fluid {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* ===== Tablet RTL Improvements ===== */
+@media (max-width: 767px) {
+    html[dir="rtl"] .profile-info-item:hover {
+        margin: 0 -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }
 
 /* ===== Print RTL ===== */

@@ -483,19 +483,19 @@
 
     <!-- ===== Welcome Banner ===== -->
     <div class="dash-welcome dash-animate">
-        <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
+        <div class="d-flex align-items-center gap-2 gap-md-3 position-relative" style="z-index:1">
             <div class="welcome-icon">
                 <i class="fas fa-graduation-cap"></i>
             </div>
-            <div>
+            <div style="min-width:0;">
                 <h4>نظام إدارة المعهد</h4>
-                <p>لوحة تحكم شاملة للطلاب والمدرسين والأقساط والمحاسبة</p>
+                <p class="d-none d-sm-block">لوحة تحكم شاملة للطلاب والمدرسين والأقساط والمحاسبة</p>
             </div>
         </div>
     </div>
 
     <!-- ===== Stat Cards ===== -->
-    <div class="row g-3 mb-3 dash-stats">
+    <div class="row g-2 g-md-3 mb-3 dash-stats">
         <!-- الطلاب -->
         <div class="col-6 col-md-4 dash-animate dash-delay-1">
             <div class="card stat-card bg-gradient-blue text-white">
@@ -570,14 +570,14 @@
         <div class="dash-net-icon" style="background: var(--success-glow); color: var(--success);">
             <i class="fas fa-chart-line"></i>
         </div>
-        <div class="dash-net-info">
+        <div class="dash-net-info" style="min-width:0;">
             <div class="dash-net-label">صافي الإيرادات</div>
             <div class="dash-net-value {% if net_revenue >= 0 %}text-success{% else %}text-danger{% endif %}">
                 {{ format_currency(net_revenue|abs) }}
                 {% if net_revenue < 0 %}عجز{% endif %}
             </div>
         </div>
-        <div class="dash-net-breakdown">
+        <div class="dash-net-breakdown d-none d-lg-flex">
             <div class="dash-net-item">
                 <div class="val text-primary">{{ format_currency(stats.total_amount_paid) }}</div>
                 <div class="lbl">المدفوعات</div>
