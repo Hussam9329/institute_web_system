@@ -63,14 +63,20 @@
 
     <!-- ===== بحث ===== -->
     <div class="mb-3">
+        <form method="GET" action="/payments" id="paymentSearchForm">
         <div class="input-group">
             <span class="input-group-text bg-transparent border-end-0">
                 <i class="fas fa-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 ps-0" 
-                   placeholder="بحث مباشر بالاسم أو المادة أو المدرس..." id="paymentSearch"
-                   value="{{ request.args.get('search', '') }}">
+                   placeholder="بحث بالاسم أو المادة أو المدرس..." id="paymentSearch"
+                   name="search"
+                   value="{{ search }}">
+            <button type="submit" class="btn btn-outline-primary border-start-0" title="بحث">
+                <i class="fas fa-search"></i>
+            </button>
         </div>
+        </form>
     </div>
 
     {% if installments %}
@@ -128,6 +134,11 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <!-- رسالة لا توجد نتائج بحث للجدول -->
+                <div id="noTableResults" class="text-center py-4 d-none">
+                    <i class="fas fa-search fa-2x text-muted d-block mb-2"></i>
+                    <p class="text-muted small mb-0">لا توجد نتائج مطابقة للبحث</p>
                 </div>
             </div>
         </div>
@@ -382,31 +393,54 @@ async function deletePayment(installmentId) {
     }
 }
 
-// بحث مباشر
-document.getElementById('paymentSearch')?.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    // Filter table rows
-    document.querySelectorAll('.payment-row').forEach(row => {
-        const name = row.dataset.name || '';
-        const teacher = row.dataset.teacher || '';
-        const subject = row.dataset.subject || '';
-        row.style.display = (name.includes(query) || teacher.includes(query) || subject.includes(query)) ? '' : 'none';
+// بحث مباشر (فلترة فورية)
+const paymentSearchInput = document.getElementById('paymentSearch');
+if (paymentSearchInput) {
+    paymentSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+
+        // فلترة صفوف الجدول
+        let tableVisible = 0;
+        document.querySelectorAll('.payment-row').forEach(row => {
+            const name = row.dataset.name || '';
+            const teacher = row.dataset.teacher || '';
+            const subject = row.dataset.subject || '';
+            const visible = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
+            row.style.display = visible ? '' : 'none';
+            if (visible) tableVisible++;
+        });
+
+        // رسالة لا توجد نتائج للجدول
+        const noTableResults = document.getElementById('noTableResults');
+        if (noTableResults) {
+            const totalRows = document.querySelectorAll('.payment-row').length;
+            noTableResults.classList.toggle('d-none', !(totalRows > 0 && tableVisible === 0 && query.length > 0));
+        }
+
+        // فلترة الكارتات
+        let cardVisible = 0;
+        document.querySelectorAll('.payment-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const teacher = card.dataset.teacher || '';
+            const subject = card.dataset.subject || '';
+            const visible = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
+            card.style.display = visible ? '' : 'none';
+            if (visible) cardVisible++;
+        });
+        const noCards = document.getElementById('noCardsResults');
+        if (noCards) {
+            const totalCards = document.querySelectorAll('.payment-card').length;
+            noCards.classList.toggle('d-none', !(totalCards > 0 && cardVisible === 0 && query.length > 0));
+        }
     });
-    // Filter cards
-    let cardVisible = 0;
-    document.querySelectorAll('.payment-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const teacher = card.dataset.teacher || '';
-        const subject = card.dataset.subject || '';
-        const visible = name.includes(query) || teacher.includes(query) || subject.includes(query);
-        card.style.display = visible ? '' : 'none';
-        if (visible) cardVisible++;
+
+    // إرسال النموذج عند الضغط على Enter
+    paymentSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('paymentSearchForm').submit();
+        }
     });
-    const noCards = document.getElementById('noCardsResults');
-    if (noCards) {
-        const cards = document.querySelectorAll('.payment-card');
-        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
-    }
-});
+}
 </script>
 {% endblock %}
