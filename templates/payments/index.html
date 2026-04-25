@@ -290,8 +290,6 @@
 </div>
 
 <script>
-document.getElementById('pay_date').value = getTodayDate();
-
 function switchView(view, btn) {
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -393,10 +391,11 @@ async function deletePayment(installmentId) {
     }
 }
 
-// بحث مباشر (فلترة فورية)
-const paymentSearchInput = document.getElementById('paymentSearch');
-if (paymentSearchInput) {
-    paymentSearchInput.addEventListener('input', function() {
+// بحث مباشر (فلترة فورية) - ينتظر تحميل جميع السكريبتات
+function initPaymentSearch() {
+    const paymentSearchInput = document.getElementById('paymentSearch');
+    if (paymentSearchInput) {
+        paymentSearchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
 
         // فلترة صفوف الجدول
@@ -434,13 +433,20 @@ if (paymentSearchInput) {
         }
     });
 
-    // إرسال النموذج عند الضغط على Enter
-    paymentSearchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('paymentSearchForm').submit();
-        }
-    });
+        // إرسال النموذج عند الضغط على Enter
+        paymentSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('paymentSearchForm').submit();
+            }
+        });
+    }
+}
+// تأخير التنفيذ حتى يتم تحميل كل السكريبتات
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPaymentSearch);
+} else {
+    initPaymentSearch();
 }
 </script>
 {% endblock %}
