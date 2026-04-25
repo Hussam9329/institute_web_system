@@ -288,9 +288,9 @@ class FinanceService:
     def _get_deduction_for_study_type(self, teacher_data: dict, study_type: str) -> tuple:
         """إرجاع (نوع الخصم, القيمة) حسب نوع الدراسة"""
         type_map = {
-            'حضوري': ('in_person', 'pct_in_person', 'ded_type_in_person', 'manual_in_person'),
-            'الكتروني': ('electronic', 'pct_electronic', 'ded_type_electronic', 'manual_electronic'),
-            'مدمج': ('blended', 'pct_blended', 'ded_type_blended', 'manual_blended'),
+            'حضوري': ('in_person', 'pct_in_person', 'ded_type_in_person', 'ded_manual_in_person'),
+            'الكتروني': ('electronic', 'pct_electronic', 'ded_type_electronic', 'ded_manual_electronic'),
+            'مدمج': ('blended', 'pct_blended', 'ded_type_blended', 'ded_manual_blended'),
         }
         
         keys = type_map.get(study_type, type_map['حضوري'])

@@ -99,13 +99,7 @@
                             <div class="card bg-gradient-purple text-white border-0 p-2 p-md-3 text-center h-100">
                                 <small class="opacity-75 d-block">خصم المعهد</small>
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.institute_deduction) }}</h5>
-                                {% if teacher.institute_deduction_type == 'percentage' %}
-                                <small class="opacity-75 d-none d-md-block">{{ teacher.institute_deduction_value }}% من القسط 1 و 2</small>
-                                {% elif teacher.institute_deduction_value %}
-                                <small class="opacity-75 d-none d-md-block">{{ financial_info.paying_students_count }} طالب × {{ format_currency(teacher.institute_deduction_value) }}</small>
-                                {% else %}
-                                <small class="opacity-75 d-none d-md-block">لا يوجد خصم</small>
-                                {% endif %}
+                                <small class="opacity-75 d-none d-md-block">حسب نسبة/مبلغ كل نوع تدريس</small>
                             </div>
                         </div>
                         <div class="col-6 col-md-4">

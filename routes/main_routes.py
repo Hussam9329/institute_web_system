@@ -107,7 +107,14 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
                 SELECT s.*,
                     (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
                     (SELECT COALESCE(SUM(i.amount), 0) FROM installments i WHERE i.student_id = s.id) as total_paid,
-                    (SELECT COALESCE(SUM(t2.total_fee), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
+                    (SELECT COALESCE(SUM(
+                        CASE 
+                            WHEN st2.study_type = 'الكتروني' AND t2.fee_electronic > 0 THEN t2.fee_electronic
+                            WHEN st2.study_type = 'مدمج' AND t2.fee_blended > 0 THEN t2.fee_blended
+                            WHEN st2.study_type = 'حضوري' AND t2.fee_in_person > 0 THEN t2.fee_in_person
+                            ELSE t2.total_fee
+                        END
+                    ), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
                     (SELECT CASE WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
                 FROM students s
                 WHERE s.name LIKE %s OR s.barcode LIKE %s
@@ -119,7 +126,14 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
                 SELECT s.*,
                     (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
                     (SELECT COALESCE(SUM(i.amount), 0) FROM installments i WHERE i.student_id = s.id) as total_paid,
-                    (SELECT COALESCE(SUM(t2.total_fee), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
+                    (SELECT COALESCE(SUM(
+                        CASE 
+                            WHEN st2.study_type = 'الكتروني' AND t2.fee_electronic > 0 THEN t2.fee_electronic
+                            WHEN st2.study_type = 'مدمج' AND t2.fee_blended > 0 THEN t2.fee_blended
+                            WHEN st2.study_type = 'حضوري' AND t2.fee_in_person > 0 THEN t2.fee_in_person
+                            ELSE t2.total_fee
+                        END
+                    ), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
                     (SELECT CASE WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
                 FROM students s
                 ORDER BY s.name
