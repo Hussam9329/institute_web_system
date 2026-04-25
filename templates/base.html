@@ -141,6 +141,13 @@
         font-size: 15px;
     }
 
+    /* Sidebar Divider */
+    .sidebar-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+        margin: 8px 15px;
+    }
+
     /* Sidebar Search */
     .sidebar-search {
         padding: 10px 15px;
@@ -318,71 +325,6 @@
     @media print {
         .sidebar, .sidebar-overlay, .top-bar { display: none !important; }
         .main-content-area { margin: 0 !important; }
-    }
-
-    /* ===== تحسينات عامة للهواتف ===== */
-    @media (max-width: 767.98px) {
-        .main-content-area {
-            padding: 10px;
-        }
-        h4.fw-bold {
-            font-size: 1.1rem;
-        }
-        .card-body {
-            padding: 0.75rem;
-        }
-        .card-header {
-            padding: 0.75rem 1rem;
-        }
-        .table td, .table th {
-            padding: 0.4rem 0.5rem;
-            font-size: 0.78rem;
-        }
-        .btn-sm {
-            padding: 0.3rem 0.55rem;
-            font-size: 0.75rem;
-        }
-        .modal-dialog {
-            margin: 0.5rem;
-        }
-        .modal-dialog .modal-content {
-            border-radius: 12px;
-        }
-        .modal-body {
-            padding: 1rem;
-        }
-        .modal-header {
-            padding: 0.875rem 1rem;
-        }
-        .modal-footer {
-            padding: 0.75rem 1rem;
-        }
-        .input-group > .form-control,
-        .input-group > .form-select {
-            font-size: 0.9rem;
-            padding: 0.5rem 0.75rem;
-        }
-        .alert {
-            padding: 0.65rem 0.85rem;
-            font-size: 0.82rem;
-        }
-        .form-control-lg, .form-select-lg {
-            padding: 0.65rem 1rem;
-            font-size: 0.95rem;
-        }
-    }
-
-    @media (max-width: 400px) {
-        .main-content-area {
-            padding: 6px;
-        }
-        .top-bar {
-            height: 50px;
-            padding: 0 10px;
-        }
-        .main-content-area {
-            margin-top: 50px;
-        }
     }
     </style>
     

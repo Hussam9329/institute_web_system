@@ -2416,3 +2416,170 @@ textarea:focus-visible {
         page-break-inside: avoid;
     }
 }
+
+/* ============================================
+   Mobile Responsive Improvements
+   ============================================ */
+
+/* ===== Large Mobile (max-width: 767px) ===== */
+@media (max-width: 767px) {
+    .main-content-area { padding: 10px; }
+    .stat-card h2 { font-size: 1.5rem; }
+    .stat-card h6 { font-size: 0.75rem; }
+    .stat-icon { width: 44px; height: 44px; font-size: 1.15rem; border-radius: 12px; }
+    .stat-card .card-body { padding: 1rem; }
+    .card-body { padding: 1rem; }
+    .card-header { padding: 1rem; font-size: 0.9rem; }
+    .card-footer { padding: 0.75rem 1rem; }
+    .table { font-size: 0.78rem; }
+    .table th { font-size: 0.7rem; padding: 0.6rem 0.65rem; }
+    .table td { padding: 0.55rem 0.65rem; }
+    .table .btn-group.btn-group-sm .btn, table .btn-group.btn-group-sm .btn {
+        padding: 0.28rem 0.5rem; font-size: 0.75rem; min-width: 32px; min-height: 32px;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    table .btn-group.btn-group-sm .btn i { font-size: 0.75rem; }
+    .btn-sm {
+        padding: 0.45rem 0.75rem; font-size: 0.78rem; min-height: 36px;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn { min-height: 40px; }
+    .btn-lg { padding: 0.75rem 1.25rem; font-size: 0.95rem; }
+    .form-control, .form-select {
+        padding: 0.7rem 1rem; font-size: 16px; border-radius: 12px; min-height: 46px;
+    }
+    .form-control-lg, .form-select-lg { padding: 0.8rem 1rem; font-size: 16px; min-height: 50px; }
+    .form-label { font-size: 0.82rem; margin-bottom: 0.4rem; }
+    .modal-dialog { margin: 0.5rem; max-width: calc(100% - 1rem); }
+    .modal-dialog.modal-lg { max-width: 100%; margin: 0; }
+    .modal-content { border-radius: 16px; max-height: 95vh; overflow-y: auto; }
+    .modal-header { padding: 1rem; }
+    .modal-body { padding: 1rem; }
+    .modal-footer { padding: 0.75rem 1rem; flex-direction: column; gap: 0.5rem; }
+    .modal-footer .btn { width: 100%; justify-content: center; }
+    .modal-dialog-centered { min-height: auto; align-items: flex-start; margin-top: 1.5rem; }
+    .d-flex.align-items-center.justify-content-between.flex-wrap {
+        flex-direction: column; align-items: flex-start !important; gap: 0.75rem;
+    }
+    .d-flex.align-items-center.justify-content-between.flex-wrap .d-flex.gap-2 {
+        width: 100%; justify-content: flex-end;
+    }
+    h4.fw-bold { font-size: 1.1rem; }
+    .alert { padding: 0.75rem 1rem; font-size: 0.82rem; }
+    .badge { font-size: 0.7rem; padding: 0.28em 0.6em; }
+    .profile-info-item {
+        padding: 0.75rem 0; flex-direction: column; align-items: flex-start !important; gap: 0.25rem;
+    }
+    .profile-info-item:hover { margin: 0 -1rem; padding-left: 1rem; padding-right: 1rem; }
+    .form-section-title { font-size: 0.92rem; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+}
+
+/* ===== Small Mobile (max-width: 575px) ===== */
+@media (max-width: 575px) {
+    .stat-card h2 { font-size: 1.35rem; }
+    .stat-icon { width: 38px; height: 38px; font-size: 1rem; border-radius: 10px; }
+    .stat-card .card-body { padding: 0.85rem; }
+    .stat-card .d-flex { gap: 0.5rem !important; }
+    .card-body { padding: 0.85rem; }
+    .table { font-size: 0.74rem; }
+    .table th { font-size: 0.68rem; padding: 0.5rem 0.55rem; }
+    .table td { padding: 0.5rem 0.55rem; }
+    .btn-sm { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
+    .input-group-text { padding: 0.5rem 0.65rem; font-size: 0.82rem; }
+    .form-control { padding: 0.6rem 0.85rem; min-height: 42px; }
+    .modal-dialog { margin: 0; max-width: 100%; }
+    .modal-content { border-radius: 0; border: none; max-height: 100vh; height: 100vh; }
+    .modal-dialog-centered { margin-top: 0; align-items: stretch; }
+    .empty-state { padding: 2rem 1rem !important; }
+    .empty-state i { font-size: 2.5rem !important; }
+}
+
+/* ===== Very Small Mobile (max-width: 400px) ===== */
+@media (max-width: 400px) {
+    .main-content-area { padding: 8px; }
+    .stat-card h2 { font-size: 1.2rem; }
+    .stat-card h6 { font-size: 0.7rem; }
+    .stat-icon { width: 34px; height: 34px; font-size: 0.9rem; }
+    .table th, .table td { padding: 0.4rem 0.45rem; font-size: 0.7rem; }
+    .badge { font-size: 0.65rem; }
+    .form-control, .form-select { padding: 0.55rem 0.75rem; min-height: 40px; }
+    .form-label { font-size: 0.78rem; }
+    .card-body { padding: 0.75rem; }
+    .list-card-actions { flex-wrap: wrap; gap: 0.4rem !important; }
+    .list-card-actions .btn-sm { font-size: 0.7rem; padding: 0.3rem 0.5rem; }
+}
+
+/* ===== Tablet (768px - 991px) ===== */
+@media (min-width: 768px) and (max-width: 991px) {
+    .stat-card h2 { font-size: 1.75rem; }
+    .stat-icon { width: 52px; height: 52px; }
+    .card-body { padding: 1.15rem; }
+    .table { font-size: 0.82rem; }
+    .form-control, .form-select { font-size: 0.9rem; padding: 0.65rem 1rem; }
+}
+
+/* ===== List Card Styles ===== */
+.list-card {
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm); transition: var(--transition);
+    background: var(--white); display: flex; flex-direction: column;
+}
+.list-card:hover { box-shadow: var(--shadow-md); }
+.list-card-header { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.75rem; }
+.list-card-icon {
+    width: 44px; height: 44px; min-width: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white;
+}
+.icon-blue { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+.icon-emerald { background: linear-gradient(135deg, var(--success-light), var(--success)); }
+.icon-orange { background: linear-gradient(135deg, var(--warning-light), var(--warning)); }
+.icon-purple { background: linear-gradient(135deg, var(--secondary-light), var(--secondary)); }
+.header-text { flex: 1; min-width: 0; }
+.header-text h6 { margin-bottom: 0; font-size: 0.92rem; font-weight: 700; }
+.header-sub { font-size: 0.75rem; color: var(--muted); }
+.list-card-badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.list-card-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.75rem; }
+.info-item { background: var(--light-bg); border-radius: 10px; padding: 0.55rem 0.75rem; text-align: center; }
+.info-label { font-size: 0.68rem; color: var(--muted); font-weight: 500; margin-bottom: 0.1rem; }
+.info-value { font-size: 0.88rem; font-weight: 700; }
+.list-card-divider { height: 1px; background: var(--border-light); margin: 0.5rem 0; }
+.list-card-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+@media (max-width: 575px) {
+    .list-card-header { gap: 0.65rem; }
+    .list-card-icon { width: 38px; height: 38px; min-width: 38px; font-size: 1rem; border-radius: 10px; }
+    .header-text h6 { font-size: 0.85rem; }
+    .header-sub { font-size: 0.7rem; }
+    .list-card-info { gap: 0.4rem; }
+    .info-item { padding: 0.45rem 0.5rem; }
+    .info-label { font-size: 0.63rem; }
+    .info-value { font-size: 0.82rem; }
+    .list-card-actions { gap: 0.4rem; }
+}
+
+/* ===== Accounting Financial Card ===== */
+.list-card-financial { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; margin: 0.75rem 0; }
+.fin-item { background: var(--light-bg); border-radius: 8px; padding: 0.5rem 0.65rem; text-align: center; }
+.fin-label { font-size: 0.65rem; color: var(--muted); font-weight: 500; }
+.fin-value { font-size: 0.82rem; font-weight: 700; }
+.list-card-highlight {
+    background: linear-gradient(135deg, var(--primary-glow), rgba(99,102,241,0.08));
+    border: 1.5px solid rgba(99,102,241,0.2); border-radius: 12px;
+    padding: 0.75rem; text-align: center; margin: 0.75rem 0;
+}
+.highlight-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; margin-bottom: 0.15rem; }
+.highlight-value { font-size: 1.15rem; font-weight: 800; color: var(--primary); }
+
+@media (max-width: 575px) {
+    .list-card-financial { gap: 0.3rem; }
+    .fin-item { padding: 0.4rem 0.5rem; }
+    .fin-label { font-size: 0.6rem; }
+    .fin-value { font-size: 0.75rem; }
+    .list-card-highlight { padding: 0.6rem; }
+    .highlight-value { font-size: 1rem; }
+}
+
+/* ===== Empty State ===== */
+.empty-state { text-align: center; padding: 3rem 1rem; direction: rtl; }
+.empty-state i { font-size: 3rem; color: var(--border); margin-bottom: 0.75rem; display: block; }
+.empty-state p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0; }

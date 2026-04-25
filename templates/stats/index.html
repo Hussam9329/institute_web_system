@@ -2,83 +2,115 @@
 
 {% block title %}الإحصائيات - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Stats page mobile improvements */
+@media (max-width: 767px) {
+    .stat-card .card-body { padding: 1rem; }
+    .stat-card .d-flex { gap: 0.5rem !important; }
+    .stat-card h2 { font-size: 1.4rem; }
+    .stat-card h6 { font-size: 0.72rem; }
+    .stat-icon { width: 40px; height: 40px; font-size: 1rem; }
+    .stat-card .small { font-size: 0.7rem; }
+    .stat-card .mt-2 { margin-top: 0.5rem !important; }
+    .stat-card .d-flex .d-flex { display: block !important; }
+}
+@media (max-width: 575px) {
+    .stat-card h2 { font-size: 1.2rem; }
+    .stat-icon { width: 34px; height: 34px; font-size: 0.9rem; }
+    .stat-card .card-body { padding: 0.85rem; }
+}
+/* Statistics detail table mobile */
+@media (max-width: 767px) {
+    .stats-detail-table td:first-child { font-size: 0.82rem; padding: 0.6rem 0.75rem; }
+    .stats-detail-table td:last-child { font-size: 1rem; }
+    .progress { height: 20px !important; }
+    .progress-bar { font-size: 0.7rem; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="row mb-3 mb-md-4">
-        <div class="col-12">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
             <h4 class="fw-bold mb-1 text-gradient-purple">
-                <i class="fas fa-chart-pie me-2"></i>الإحصائيات العامة
+                <i class="fas fa-chart-bar me-2"></i>الإحصائيات العامة
             </h4>
-            <p class="text-muted mb-0 small">نظرة عامة على النظام</p>
+            <p class="text-muted mb-0 small">نظرة شاملة على أداء المعهد</p>
         </div>
     </div>
 
     <!-- ===== بطاقات الإحصائيات الرئيسية ===== -->
-    <div class="row g-2 g-md-3 mb-3 mb-md-4">
+    <div class="row g-3 mb-4">
         
-        <div class="col-6 col-md-3">
-            <div class="card border h-100 shadow-sm">
-                <div class="card-body py-2 px-2 py-md-3 px-md-3 text-center">
-                    <i class="fas fa-user-graduate text-primary mb-1 mb-md-2" style="font-size:1.5rem"></i>
-                    <h4 class="fw-bold text-primary mb-0 fs-5 fs-md-4">{{ stats.total_students }}</h4>
-                    <small class="text-muted">إجمالي الطلاب</small>
-                    <hr class="my-2 my-md-3">
-                    <div class="d-flex justify-content-around small flex-column gap-1">
+        <div class="col-6 col-xl-3">
+            <div class="card stat-card border h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon" style="background: var(--primary-glow); color: var(--primary);"><i class="fas fa-user-graduate"></i></div>
                         <div>
-                            <i class="fas fa-check-circle text-success"></i>
-                            <strong>{{ stats.active_students }}</strong> مستمر
-                        </div>
-                        <div>
-                            <i class="fas fa-times-circle text-danger"></i>
-                            <strong>{{ stats.withdrawn_students }}</strong> منسحب
+                            <h2 class="mb-0 text-primary">{{ stats.total_students }}</h2>
+                            <h6 class="mb-0 text-muted">الطلاب</h6>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-md-3">
-            <div class="card border h-100 shadow-sm">
-                <div class="card-body py-2 px-2 py-md-3 px-md-3 text-center">
-                    <i class="fas fa-chalkboard-teacher text-success mb-1 mb-md-2" style="font-size:1.5rem"></i>
-                    <h4 class="fw-bold text-success mb-0 fs-5 fs-md-4">{{ stats.total_teachers }}</h4>
-                    <small class="text-muted">إجمالي المدرسين</small>
-                    <hr class="my-2 my-md-3">
-                    <div class="small">
-                        <i class="fas fa-book text-info"></i>
-                        <strong>{{ stats.total_subjects }}</strong> مواد دراسية
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-check-circle me-1"></i>{{ stats.active_students }} مستمر
+                        <span class="mx-1">|</span>
+                        <i class="fas fa-times-circle me-1"></i>{{ stats.withdrawn_students }} منسحب
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-6 col-md-3">
-            <div class="card border h-100 shadow-sm">
-                <div class="card-body py-2 px-2 py-md-3 px-md-3 text-center">
-                    <i class="fas fa-money-bill-wave text-info mb-1 mb-md-2" style="font-size:1.5rem"></i>
-                    <h4 class="fw-bold text-info mb-0 fs-5 fs-md-4">{{ stats.total_installments }}</h4>
-                    <small class="text-muted">عدد الأقساط</small>
-                    <hr class="my-2 my-md-3">
-                    <div class="fw-bold text-success fs-6 fs-md-5">
-                        {{ format_currency(stats.total_amount_paid) }}
-                        <div class="small text-muted fw-normal">إجمالي المدفوعات</div>
+        <div class="col-6 col-xl-3">
+            <div class="card stat-card border h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon" style="background: var(--success-glow); color: var(--success);"><i class="fas fa-chalkboard-teacher"></i></div>
+                        <div>
+                            <h2 class="mb-0 text-success">{{ stats.total_teachers }}</h2>
+                            <h6 class="mb-0 text-muted">المدرسين</h6>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-book me-1"></i>{{ stats.total_subjects }} مواد دراسية
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-6 col-md-3">
-            <div class="card border h-100 shadow-sm">
-                <div class="card-body py-2 px-2 py-md-3 px-md-3 text-center">
-                    <i class="fas fa-hand-holding-usd text-warning mb-1 mb-md-2" style="font-size:1.5rem"></i>
-                    <h4 class="fw-bold text-warning mb-0 fs-5 fs-md-4">{{ format_currency(stats.total_withdrawals) }}</h4>
-                    <small class="text-muted">إجمالي السحوبات</small>
-                    <hr class="my-2 my-md-3">
-                    <div class="small text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        صرفت للمدرسين
+        <div class="col-6 col-xl-3">
+            <div class="card stat-card border h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon" style="background: rgba(139,92,246,0.1); color: var(--secondary);"><i class="fas fa-money-check-alt"></i></div>
+                        <div>
+                            <h2 class="mb-0" style="color: var(--secondary);">{{ stats.total_installments }}</h2>
+                            <h6 class="mb-0 text-muted">الأقساط</h6>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-coins me-1"></i>{{ format_currency(stats.total_amount_paid) }} إجمالي
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-xl-3">
+            <div class="card stat-card border h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon" style="background: var(--warning-glow); color: var(--warning-dark);"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div>
+                            <h2 class="mb-0 text-warning">{{ format_currency(stats.total_withdrawals) }}</h2>
+                            <h6 class="mb-0 text-muted">السحوبات</h6>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-chart-line me-1"></i>صافي: {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
                     </div>
                 </div>
             </div>
@@ -86,59 +118,165 @@
 
     </div>
 
-    <!-- ===== جدول تفصيلي ===== -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card border shadow-sm">
-                <div class="card-header bg-gradient-purple text-white border-0 py-2 py-md-3">
-                    <h6 class="mb-0"><i class="fas fa-table me-2"></i>جدول الإحصائيات التفصيلية</h6>
+    <!-- ===== الرسوم البيانية ===== -->
+    <div class="row g-3 mb-4">
+        <!-- رسوم بيانية: الطلاب حسب الحالة -->
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-users me-2 text-primary"></i>الطلاب حسب الحالة</h6>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle table-sm">
-                            <tbody>
-                                <tr>
-                                    <td class="fw-bold">إجمالي الطلاب المسجلين</td>
-                                    <td class="text-center">{{ stats.total_students }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">الطلاب المستمرون</td>
-                                    <td class="text-center text-success">{{ stats.active_students }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">الطلاب المنسحبون</td>
-                                    <td class="text-center text-danger">{{ stats.withdrawn_students }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">إجمالي المدرسين</td>
-                                    <td class="text-center">{{ stats.total_teachers }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">عدد المواد الدراسية</td>
-                                    <td class="text-center">{{ stats.total_subjects }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">عدد عمليات الدفع</td>
-                                    <td class="text-center">{{ stats.total_installments }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">إجمالي المبالغ المدفوعة</td>
-                                    <td class="text-center text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">إجمالي السحوبات</td>
-                                    <td class="text-center text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</td>
-                                </tr>
-                                <tr class="table-success">
-                                    <td class="fw-bold">صافي الإيرادات (المدفوع - المسحوب)</td>
-                                    <td class="text-center text-success fw-bold">
-                                        {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-semibold">مستمر</span>
+                                <span class="text-success fw-bold">{{ stats.active_students }}</span>
+                            </div>
+                            <div class="progress" style="height: 24px;">
+                                {% if stats.total_students > 0 %}
+                                {% set active_pct = ((stats.active_students / stats.total_students) * 100) | round(1) %}
+                                {% else %}
+                                {% set active_pct = 0 %}
+                                {% endif %}
+                                <div class="progress-bar bg-success" style="width: {{ active_pct }}%">{{ active_pct }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-semibold">منسحب</span>
+                                <span class="text-danger fw-bold">{{ stats.withdrawn_students }}</span>
+                            </div>
+                            <div class="progress" style="height: 24px;">
+                                {% if stats.total_students > 0 %}
+                                {% set withdrawn_pct = ((stats.withdrawn_students / stats.total_students) * 100) | round(1) %}
+                                {% else %}
+                                {% set withdrawn_pct = 0 %}
+                                {% endif %}
+                                <div class="progress-bar bg-danger" style="width: {{ withdrawn_pct }}%">{{ withdrawn_pct }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-semibold">غير مرتبط</span>
+                                <span class="text-secondary fw-bold">{{ stats.total_students - stats.active_students - stats.withdrawn_students }}</span>
+                            </div>
+                            <div class="progress" style="height: 24px;">
+                                {% if stats.total_students > 0 %}
+                                {% set unlinked_pct = (((stats.total_students - stats.active_students - stats.withdrawn_students) / stats.total_students) * 100) | round(1) %}
+                                {% else %}
+                                {% set unlinked_pct = 0 %}
+                                {% endif %}
+                                <div class="progress-bar bg-secondary" style="width: {{ unlinked_pct if unlinked_pct > 0 else 0 }}%">{{ unlinked_pct if unlinked_pct > 0 else 0 }}%</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- رسوم بيانية: المالية -->
+        <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-coins me-2 text-warning"></i>ملخص مالي</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold"><i class="fas fa-arrow-down text-success me-1"></i>إجمالي المدفوعات</span>
+                            <span class="text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</span>
+                        </div>
+                        <div class="progress" style="height: 28px;">
+                            <div class="progress-bar bg-primary progress-bar-striped" style="width: 100%">
+                                <i class="fas fa-money-bill-wave me-1"></i>المدفوعات
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-semibold"><i class="fas fa-arrow-up text-warning me-1"></i>إجمالي السحوبات</span>
+                            <span class="text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</span>
+                        </div>
+                        <div class="progress" style="height: 28px;">
+                            {% if stats.total_amount_paid > 0 %}
+                            {% set withdraw_pct = ((stats.total_withdrawals / stats.total_amount_paid) * 100) | round(1) %}
+                            {% else %}
+                            {% set withdraw_pct = 0 %}
+                            {% endif %}
+                            <div class="progress-bar bg-warning" style="width: {{ withdraw_pct }}%">
+                                {{ withdraw_pct }}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-3 rounded-3 {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}bg-success-subtle{% else %}bg-danger-subtle{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">
+                                <i class="fas fa-chart-line me-1"></i>صافي الإيرادات
+                            </span>
+                            <span class="fw-bold fs-5 {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== جدول تفصيلي ===== -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <h6 class="mb-0 fw-bold"><i class="fas fa-table me-2 text-secondary"></i>جدول الإحصائيات التفصيلية</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle stats-detail-table">
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold px-3" style="width: 50%"><i class="fas fa-user-graduate me-2 text-primary"></i>إجمالي الطلاب المسجلين</td>
+                            <td class="text-center fs-5 fw-bold">{{ stats.total_students }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-check-circle me-2 text-success"></i>الطلاب المستمرون</td>
+                            <td class="text-center fs-5 text-success fw-bold">{{ stats.active_students }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-times-circle me-2 text-danger"></i>الطلاب المنسحبون</td>
+                            <td class="text-center fs-5 text-danger fw-bold">{{ stats.withdrawn_students }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-chalkboard-teacher me-2 text-success"></i>إجمالي المدرسين</td>
+                            <td class="text-center fs-5 fw-bold">{{ stats.total_teachers }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-book-open me-2 text-info"></i>عدد المواد الدراسية</td>
+                            <td class="text-center fs-5 fw-bold">{{ stats.total_subjects }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-money-check-alt me-2 text-primary"></i>عدد عمليات الدفع</td>
+                            <td class="text-center fs-5 fw-bold">{{ stats.total_installments }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-coins me-2 text-warning"></i>إجمالي المبالغ المدفوعة</td>
+                            <td class="text-center fs-5 text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold px-3"><i class="fas fa-hand-holding-usd me-2 text-warning"></i>إجمالي السحوبات</td>
+                            <td class="text-center fs-5 text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td class="fw-bold px-3"><i class="fas fa-chart-line me-2"></i>صافي الإيرادات (المدفوع - المسحوب)</td>
+                            <td class="text-center fs-5 text-success fw-bold">
+                                {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

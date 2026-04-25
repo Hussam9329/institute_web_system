@@ -63,20 +63,14 @@
 
     <!-- ===== بحث ===== -->
     <div class="mb-3">
-        <form method="GET" action="/payments" id="paymentSearchForm">
         <div class="input-group">
             <span class="input-group-text bg-transparent border-end-0">
                 <i class="fas fa-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 ps-0" 
-                   placeholder="بحث بالاسم أو المادة أو المدرس..." id="paymentSearch"
-                   name="search"
-                   value="{{ search }}">
-            <button type="submit" class="btn btn-outline-primary border-start-0" title="بحث">
-                <i class="fas fa-search"></i>
-            </button>
+                   placeholder="بحث مباشر بالاسم أو المادة أو المدرس..." id="paymentSearch"
+                   value="{{ request.args.get('search', '') }}">
         </div>
-        </form>
     </div>
 
     {% if installments %}
@@ -94,8 +88,8 @@
                                 <th class="d-none d-md-table-cell">المادة</th>
                                 <th class="text-center">المبلغ</th>
                                 <th class="text-center d-none d-sm-table-cell">النوع</th>
-                                <th class="text-center d-none d-md-table-cell">التاريخ</th>
-                                <th class="text-center" style="width:60px;">إجراءات</th>
+                                <th class="text-center d-none d-sm-table-cell">التاريخ</th>
+                                <th class="text-center" style="width:70px;">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -106,11 +100,10 @@
                                     <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
                                         {{ inst.student_name }}
                                     </a>
-                                    <!-- معلومات إضافية على الهاتف فقط -->
-                                    <div class="d-md-none mt-1">
+                                    <div class="d-sm-none mt-1">
                                         <span class="badge bg-light text-dark me-1">{{ inst.subject }}</span>
-                                        <span class="badge bg-info-subtle text-info me-1">{{ inst.installment_type }}</span>
-                                        <small class="text-muted">{{ inst.payment_date }}</small>
+                                        <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
+                                        <span class="text-muted small">{{ inst.payment_date }}</span>
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">
@@ -125,10 +118,10 @@
                                 <td class="text-center d-none d-sm-table-cell">
                                     <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                                 </td>
-                                <td class="text-center text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
+                                <td class="text-center text-muted d-none d-sm-table-cell">{{ inst.payment_date }}</td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info d-none d-sm-inline-block" title="وصل PDF">
+                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                         <button class="btn btn-outline-danger" onclick="deletePayment({{ inst.id }})" title="حذف">
@@ -140,11 +133,6 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-                <!-- رسالة لا توجد نتائج بحث للجدول -->
-                <div id="noTableResults" class="text-center py-4 d-none">
-                    <i class="fas fa-search fa-2x text-muted d-block mb-2"></i>
-                    <p class="text-muted small mb-0">لا توجد نتائج مطابقة للبحث</p>
                 </div>
             </div>
         </div>
@@ -296,6 +284,8 @@
 </div>
 
 <script>
+document.getElementById('pay_date').value = getTodayDate();
+
 function switchView(view, btn) {
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -397,62 +387,31 @@ async function deletePayment(installmentId) {
     }
 }
 
-// بحث مباشر (فلترة فورية) - ينتظر تحميل جميع السكريبتات
-function initPaymentSearch() {
-    const paymentSearchInput = document.getElementById('paymentSearch');
-    if (paymentSearchInput) {
-        paymentSearchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-
-        // فلترة صفوف الجدول
-        let tableVisible = 0;
-        document.querySelectorAll('.payment-row').forEach(row => {
-            const name = row.dataset.name || '';
-            const teacher = row.dataset.teacher || '';
-            const subject = row.dataset.subject || '';
-            const visible = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
-            row.style.display = visible ? '' : 'none';
-            if (visible) tableVisible++;
-        });
-
-        // رسالة لا توجد نتائج للجدول
-        const noTableResults = document.getElementById('noTableResults');
-        if (noTableResults) {
-            const totalRows = document.querySelectorAll('.payment-row').length;
-            noTableResults.classList.toggle('d-none', !(totalRows > 0 && tableVisible === 0 && query.length > 0));
-        }
-
-        // فلترة الكارتات
-        let cardVisible = 0;
-        document.querySelectorAll('.payment-card').forEach(card => {
-            const name = card.dataset.name || '';
-            const teacher = card.dataset.teacher || '';
-            const subject = card.dataset.subject || '';
-            const visible = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
-            card.style.display = visible ? '' : 'none';
-            if (visible) cardVisible++;
-        });
-        const noCards = document.getElementById('noCardsResults');
-        if (noCards) {
-            const totalCards = document.querySelectorAll('.payment-card').length;
-            noCards.classList.toggle('d-none', !(totalCards > 0 && cardVisible === 0 && query.length > 0));
-        }
+// بحث مباشر
+document.getElementById('paymentSearch')?.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    // Filter table rows
+    document.querySelectorAll('.payment-row').forEach(row => {
+        const name = row.dataset.name || '';
+        const teacher = row.dataset.teacher || '';
+        const subject = row.dataset.subject || '';
+        row.style.display = (name.includes(query) || teacher.includes(query) || subject.includes(query)) ? '' : 'none';
     });
-
-        // إرسال النموذج عند الضغط على Enter
-        paymentSearchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('paymentSearchForm').submit();
-            }
-        });
+    // Filter cards
+    let cardVisible = 0;
+    document.querySelectorAll('.payment-card').forEach(card => {
+        const name = card.dataset.name || '';
+        const teacher = card.dataset.teacher || '';
+        const subject = card.dataset.subject || '';
+        const visible = name.includes(query) || teacher.includes(query) || subject.includes(query);
+        card.style.display = visible ? '' : 'none';
+        if (visible) cardVisible++;
+    });
+    const noCards = document.getElementById('noCardsResults');
+    if (noCards) {
+        const cards = document.querySelectorAll('.payment-card');
+        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
     }
-}
-// تأخير التنفيذ حتى يتم تحميل كل السكريبتات
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPaymentSearch);
-} else {
-    initPaymentSearch();
-}
+});
 </script>
 {% endblock %}

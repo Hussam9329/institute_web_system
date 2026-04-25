@@ -2,6 +2,14 @@
 
 {% block title %}تفاصيل المدرس - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+@media (max-width: 767px) {
+    .teacher-detail-actions .btn { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
 <div class="container-fluid">
@@ -14,10 +22,10 @@
             </h4>
             <p class="text-muted mb-0 small"><i class="fas fa-book me-1"></i>{{ teacher.subject }}</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="d-flex gap-2">
             <a href="/teachers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-right me-1"></i> رجوع</a>
             <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-success btn-sm"><i class="fas fa-edit me-1"></i> تعديل</a>
-            <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-info btn-sm d-none d-sm-inline-block" target="_blank"><i class="fas fa-file-pdf me-1"></i> PDF</a>
+            <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-info btn-sm" target="_blank"><i class="fas fa-file-pdf me-1"></i> PDF</a>
             <form method="POST" action="/teachers/{{ teacher.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد؟')">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i> حذف</button>
             </form>
@@ -99,7 +107,13 @@
                             <div class="card bg-gradient-purple text-white border-0 p-2 p-md-3 text-center h-100">
                                 <small class="opacity-75 d-block">خصم المعهد</small>
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.institute_deduction) }}</h5>
-                                <small class="opacity-75 d-none d-md-block">حسب نسبة/مبلغ كل نوع تدريس</small>
+                                {% if teacher.institute_deduction_type == 'percentage' %}
+                                <small class="opacity-75 d-none d-md-block">{{ teacher.institute_deduction_value }}% من القسط 1 و 2</small>
+                                {% elif teacher.institute_deduction_value %}
+                                <small class="opacity-75 d-none d-md-block">{{ financial_info.paying_students_count }} طالب × {{ format_currency(teacher.institute_deduction_value) }}</small>
+                                {% else %}
+                                <small class="opacity-75 d-none d-md-block">لا يوجد خصم</small>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
