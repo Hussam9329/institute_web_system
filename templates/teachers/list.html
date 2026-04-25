@@ -89,12 +89,12 @@
                             <tr>
                                 <th class="text-center" style="width:40px">#</th>
                                 <th>الاسم</th>
-                                <th class="text-center">المادة</th>
-                                <th class="text-center">الأجر الكلي</th>
-                                <th class="text-center">المدفوع</th>
-                                <th class="text-center">المتبقي</th>
-                                <th class="text-center">عدد الطلاب</th>
-                                <th class="text-center" style="min-width:100px; width:140px;">الإجراءات</th>
+                                <th class="text-center d-none d-md-table-cell">المادة</th>
+                                <th class="text-center d-none d-lg-table-cell">الأجر الكلي</th>
+                                <th class="text-center d-none d-md-table-cell">المدفوع</th>
+                                <th class="text-center d-none d-lg-table-cell">المتبقي</th>
+                                <th class="text-center d-none d-lg-table-cell">عدد الطلاب</th>
+                                <th class="text-center" style="min-width:90px;">الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -108,22 +108,30 @@
                                     {% if teacher.notes %}
                                     <br><small class="text-muted">{{ teacher.notes[:40] }}</small>
                                     {% endif %}
+                                    <!-- معلومات إضافية على الهاتف فقط -->
+                                    <div class="d-md-none mt-1">
+                                        <span class="badge bg-light text-dark me-1">{{ teacher.subject }}</span>
+                                        {% if teacher.total_remaining > 0 %}
+                                        <span class="badge bg-danger">{{ format_currency(teacher.total_remaining) }}</span>
+                                        {% endif %}
+                                        <span class="badge bg-secondary">{{ teacher.students_count or 0 }} طالب</span>
+                                    </div>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center d-none d-md-table-cell">
                                     <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
                                 </td>
-                                <td class="text-center fw-bold text-primary">
+                                <td class="text-center fw-bold text-primary d-none d-lg-table-cell">
                                     {{ format_currency(teacher.total_fee) }}
                                 </td>
-                                <td class="text-center fw-bold text-success">
+                                <td class="text-center fw-bold text-success d-none d-md-table-cell">
                                     {{ format_currency(teacher.total_received) }}
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center d-none d-lg-table-cell">
                                     <span class="fw-bold {% if teacher.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
                                         {{ format_currency(teacher.total_remaining) }}
                                     </span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center d-none d-lg-table-cell">
                                     <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
                                 </td>
                                 <td class="text-center">
@@ -134,7 +142,7 @@
                                         <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning" title="تعديل">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-info" target="_blank" title="PDF">
+                                        <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-info d-none d-md-inline-block" target="_blank" title="PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                         {% if teacher.students_count and teacher.students_count > 0 %}

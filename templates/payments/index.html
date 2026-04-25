@@ -90,12 +90,12 @@
                             <tr>
                                 <th class="text-center" style="width:40px">#</th>
                                 <th>الاسم</th>
-                                <th>المدرس</th>
-                                <th>المادة</th>
+                                <th class="d-none d-md-table-cell">المدرس</th>
+                                <th class="d-none d-md-table-cell">المادة</th>
                                 <th class="text-center">المبلغ</th>
-                                <th class="text-center">النوع</th>
-                                <th class="text-center">التاريخ</th>
-                                <th class="text-center" style="width:70px;">إجراءات</th>
+                                <th class="text-center d-none d-sm-table-cell">النوع</th>
+                                <th class="text-center d-none d-md-table-cell">التاريخ</th>
+                                <th class="text-center" style="width:60px;">إجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -106,23 +106,29 @@
                                     <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
                                         {{ inst.student_name }}
                                     </a>
+                                    <!-- معلومات إضافية على الهاتف فقط -->
+                                    <div class="d-md-none mt-1">
+                                        <span class="badge bg-light text-dark me-1">{{ inst.subject }}</span>
+                                        <span class="badge bg-info-subtle text-info me-1">{{ inst.installment_type }}</span>
+                                        <small class="text-muted">{{ inst.payment_date }}</small>
+                                    </div>
                                 </td>
-                                <td>
+                                <td class="d-none d-md-table-cell">
                                     <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none">
                                         {{ inst.teacher_name }}
                                     </a>
                                 </td>
-                                <td>
+                                <td class="d-none d-md-table-cell">
                                     <span class="badge bg-light text-dark">{{ inst.subject }}</span>
                                 </td>
                                 <td class="text-center fw-bold text-success">{{ format_currency(inst.amount) }}</td>
-                                <td class="text-center">
+                                <td class="text-center d-none d-sm-table-cell">
                                     <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                                 </td>
-                                <td class="text-center text-muted">{{ inst.payment_date }}</td>
+                                <td class="text-center text-muted d-none d-md-table-cell">{{ inst.payment_date }}</td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
+                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info d-none d-sm-inline-block" title="وصل PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                         <button class="btn btn-outline-danger" onclick="deletePayment({{ inst.id }})" title="حذف">
