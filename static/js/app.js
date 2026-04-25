@@ -68,9 +68,16 @@ function checkUrlMessages() {
         showAlert('يجب اختيار نوع تدريس واحد على الأقل', 'warning');
     }
 
-    // تنظيف URL
+    // تنظيف URL - فقط إزالة msg و error مع الحفاظ على باقي المعاملات
     if (msg || error) {
-        window.history.replaceState({}, '', window.location.pathname);
+        const params = new URLSearchParams(window.location.search);
+        params.delete('msg');
+        params.delete('error');
+        params.delete('count');
+        params.delete('name');
+        const remaining = params.toString();
+        const newUrl = window.location.pathname + (remaining ? '?' + remaining : '');
+        window.history.replaceState({}, '', newUrl);
     }
 }
 

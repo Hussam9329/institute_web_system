@@ -124,6 +124,11 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- رسالة لا توجد نتائج بحث للجدول -->
+                <div id="noTableResults" class="text-center py-4 d-none">
+                    <i class="fas fa-search fa-2x text-muted d-block mb-2"></i>
+                    <p class="text-muted small mb-0">لا توجد نتائج مطابقة للبحث</p>
+                </div>
             </div>
         </div>
     </div>
@@ -294,26 +299,38 @@ document.getElementById('editSubjectForm').addEventListener('submit', async func
 });
 
 // بحث مباشر
-document.getElementById('subjectLiveSearch')?.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    // Filter table rows
-    document.querySelectorAll('.subject-row').forEach(row => {
-        const name = row.dataset.name || '';
-        row.style.display = name.includes(query) ? '' : 'none';
+const subjectSearchInput = document.getElementById('subjectLiveSearch');
+if (subjectSearchInput) {
+    subjectSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        // فلترة صفوف الجدول
+        let tableVisible = 0;
+        document.querySelectorAll('.subject-row').forEach(row => {
+            const name = row.dataset.name || '';
+            const visible = !query || name.includes(query);
+            row.style.display = visible ? '' : 'none';
+            if (visible) tableVisible++;
+        });
+        // رسالة لا توجد نتائج للجدول
+        const noTableResults = document.getElementById('noTableResults');
+        if (noTableResults) {
+            const totalRows = document.querySelectorAll('.subject-row').length;
+            noTableResults.classList.toggle('d-none', !(totalRows > 0 && tableVisible === 0 && query.length > 0));
+        }
+        // فلترة الكارتات
+        let cardVisible = 0;
+        document.querySelectorAll('.subject-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const visible = !query || name.includes(query);
+            card.style.display = visible ? '' : 'none';
+            if (visible) cardVisible++;
+        });
+        const noCards = document.getElementById('noCardsResults');
+        if (noCards) {
+            const cards = document.querySelectorAll('.subject-card');
+            noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
+        }
     });
-    // Filter cards
-    let cardVisible = 0;
-    document.querySelectorAll('.subject-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const visible = name.includes(query);
-        card.style.display = visible ? '' : 'none';
-        if (visible) cardVisible++;
-    });
-    const noCards = document.getElementById('noCardsResults');
-    if (noCards) {
-        const cards = document.querySelectorAll('.subject-card');
-        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
-    }
-});
+}
 </script>
 {% endblock %}

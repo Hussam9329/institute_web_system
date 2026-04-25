@@ -58,7 +58,7 @@
                         </span>
                         <input type="text" name="search" class="form-control border-start-0 ps-0" 
                                placeholder="بحث بالاسم أو المادة..." id="teacherLiveSearch"
-                               value="{{ request.args.get('search', '') }}">
+                               value="{{ search }}">
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-3">
@@ -154,6 +154,11 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <!-- رسالة لا توجد نتائج بحث للجدول -->
+                <div id="noTableResults" class="text-center py-4 d-none">
+                    <i class="fas fa-search fa-2x text-muted d-block mb-2"></i>
+                    <p class="text-muted small mb-0">لا توجد نتائج مطابقة للبحث</p>
                 </div>
             </div>
         </div>
@@ -258,28 +263,40 @@ function confirmDelete(id, name) {
 }
 
 // بحث مباشر
-document.getElementById('teacherLiveSearch')?.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    // Filter table rows
-    document.querySelectorAll('.teacher-row').forEach(row => {
-        const name = row.dataset.name || '';
-        const subject = row.dataset.subject || '';
-        row.style.display = (name.includes(query) || subject.includes(query)) ? '' : 'none';
+const teacherSearchInput = document.getElementById('teacherLiveSearch');
+if (teacherSearchInput) {
+    teacherSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        // فلترة صفوف الجدول
+        let tableVisible = 0;
+        document.querySelectorAll('.teacher-row').forEach(row => {
+            const name = row.dataset.name || '';
+            const subject = row.dataset.subject || '';
+            const visible = !query || name.includes(query) || subject.includes(query);
+            row.style.display = visible ? '' : 'none';
+            if (visible) tableVisible++;
+        });
+        // رسالة لا توجد نتائج للجدول
+        const noTableResults = document.getElementById('noTableResults');
+        if (noTableResults) {
+            const totalRows = document.querySelectorAll('.teacher-row').length;
+            noTableResults.classList.toggle('d-none', !(totalRows > 0 && tableVisible === 0 && query.length > 0));
+        }
+        // فلترة الكارتات
+        let cardVisible = 0;
+        document.querySelectorAll('.teacher-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const subject = card.dataset.subject || '';
+            const visible = !query || name.includes(query) || subject.includes(query);
+            card.style.display = visible ? '' : 'none';
+            if (visible) cardVisible++;
+        });
+        const noCards = document.getElementById('noCardsResults');
+        if (noCards) {
+            const cards = document.querySelectorAll('.teacher-card');
+            noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
+        }
     });
-    // Filter cards
-    let cardVisible = 0;
-    document.querySelectorAll('.teacher-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const subject = card.dataset.subject || '';
-        const visible = name.includes(query) || subject.includes(query);
-        card.style.display = visible ? '' : 'none';
-        if (visible) cardVisible++;
-    });
-    const noCards = document.getElementById('noCardsResults');
-    if (noCards) {
-        const cards = document.querySelectorAll('.teacher-card');
-        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
-    }
-});
+}
 </script>
 {% endblock %}

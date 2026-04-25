@@ -35,13 +35,19 @@
 
         <!-- ===== بحث ===== -->
         <div class="mb-3">
-            <div class="input-group">
-                <span class="input-group-text bg-transparent border-end-0">
-                    <i class="fas fa-search text-muted"></i>
-                </span>
-                <input type="text" class="form-control border-start-0 ps-0"
-                       placeholder="بحث مباشر عن طالب بالاسم أو الرمز..." id="studentLiveSearch">
-            </div>
+            <form method="GET" action="/students" id="studentSearchForm">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0"
+                           placeholder="بحث بالاسم أو الرمز..." id="studentLiveSearch" name="search"
+                           value="{{ search }}">
+                    <button type="submit" class="btn btn-outline-primary border-start-0" title="بحث">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
         </div>
 
         {% if students %}
@@ -109,6 +115,11 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+                <!-- رسالة لا توجد نتائج بحث للجدول -->
+                <div id="noTableResults" class="text-center py-4 d-none">
+                    <i class="fas fa-search fa-2x text-muted d-block mb-2"></i>
+                    <p class="text-muted small mb-0">لا توجد نتائج مطابقة للبحث</p>
                 </div>
             </div>
         </div>
@@ -200,26 +211,48 @@ function confirmDelete(id, name) {
     }
 }
 
-document.getElementById('studentLiveSearch')?.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    document.querySelectorAll('.student-row').forEach(row => {
-        const name = row.dataset.name || '';
-        const barcode = row.dataset.barcode || '';
-        row.style.display = (name.includes(query) || barcode.includes(query)) ? '' : 'none';
+// بحث مباشر + إرسال فورم عند Enter
+const studentSearchInput = document.getElementById('studentLiveSearch');
+if (studentSearchInput) {
+    studentSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        // فلترة صفوف الجدول
+        let tableVisible = 0;
+        document.querySelectorAll('.student-row').forEach(row => {
+            const name = row.dataset.name || '';
+            const barcode = row.dataset.barcode || '';
+            const visible = !query || name.includes(query) || barcode.includes(query);
+            row.style.display = visible ? '' : 'none';
+            if (visible) tableVisible++;
+        });
+        // رسالة لا توجد نتائج للجدول
+        const noTableResults = document.getElementById('noTableResults');
+        if (noTableResults) {
+            const totalRows = document.querySelectorAll('.student-row').length;
+            noTableResults.classList.toggle('d-none', !(totalRows > 0 && tableVisible === 0 && query.length > 0));
+        }
+        // فلترة الكارتات
+        let cardVisible = 0;
+        document.querySelectorAll('.student-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const barcode = card.dataset.barcode || '';
+            const visible = !query || name.includes(query) || barcode.includes(query);
+            card.style.display = visible ? '' : 'none';
+            if (visible) cardVisible++;
+        });
+        const noCards = document.getElementById('noCardsResults');
+        if (noCards) {
+            const cards = document.querySelectorAll('.student-card');
+            noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
+        }
     });
-    let cardVisible = 0;
-    document.querySelectorAll('.student-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const barcode = card.dataset.barcode || '';
-        const visible = name.includes(query) || barcode.includes(query);
-        card.style.display = visible ? '' : 'none';
-        if (visible) cardVisible++;
+    // إرسال الفورم عند الضغط على Enter
+    studentSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('studentSearchForm').submit();
+        }
     });
-    const noCards = document.getElementById('noCardsResults');
-    if (noCards) {
-        const cards = document.querySelectorAll('.student-card');
-        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
-    }
-});
+}
 </script>
 {% endblock %}

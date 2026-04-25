@@ -60,13 +60,18 @@
 
     <!-- ===== بحث ===== -->
     <div class="mb-3">
-        <div class="input-group">
-            <span class="input-group-text bg-transparent border-end-0">
-                <i class="fas fa-search text-muted"></i>
-            </span>
-            <input type="text" class="form-control border-start-0 ps-0" 
-                   placeholder="بحث مباشر عن مدرس..." value="{{ request.args.get('search', '') }}" id="accountingLiveSearch">
-        </div>
+        <form method="GET" action="/accounting" id="accountingSearchForm">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 ps-0" 
+                       placeholder="بحث بالاسم أو المادة..." value="{{ search }}" id="accountingLiveSearch" name="search">
+                <button type="submit" class="btn btn-outline-primary border-start-0" title="بحث">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
     </div>
 
     {% if teachers %}
@@ -224,22 +229,32 @@
 <script src="/static/js/accounting.js"></script>
 
 <script>
-// بحث مباشر
-document.getElementById('accountingLiveSearch')?.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
-    let cardVisible = 0;
-    document.querySelectorAll('.accounting-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const subject = card.dataset.subject || '';
-        const visible = name.includes(query) || subject.includes(query);
-        card.style.display = visible ? '' : 'none';
-        if (visible) cardVisible++;
+// بحث مباشر + إرسال فورم عند Enter
+const accountingSearchInput = document.getElementById('accountingLiveSearch');
+if (accountingSearchInput) {
+    accountingSearchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        let cardVisible = 0;
+        document.querySelectorAll('.accounting-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const subject = card.dataset.subject || '';
+            const visible = !query || name.includes(query) || subject.includes(query);
+            card.style.display = visible ? '' : 'none';
+            if (visible) cardVisible++;
+        });
+        const noCards = document.getElementById('noCardsResults');
+        if (noCards) {
+            const cards = document.querySelectorAll('.accounting-card');
+            noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
+        }
     });
-    const noCards = document.getElementById('noCardsResults');
-    if (noCards) {
-        const cards = document.querySelectorAll('.accounting-card');
-        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
-    }
-});
+    // إرسال الفورم عند الضغط على Enter
+    accountingSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('accountingSearchForm').submit();
+        }
+    });
+}
 </script>
 {% endblock %}
