@@ -40,41 +40,106 @@
     line-height: 1.5;
 }
 
-/* Financial summary labels containment */
-.fin-row-label {
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.fin-row-value {
-    flex-shrink: 0;
-    margin-right: 0.5rem;
-}
-
-/* Net revenue section */
-.net-revenue-row {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.net-revenue-label {
-    flex: 1;
-    min-width: 0;
-}
-
-.net-revenue-value {
-    flex-shrink: 0;
-}
-
 /* Detail table responsive */
 .stats-detail-table td:first-child {
     white-space: normal;
     word-break: break-word;
     -webkit-hyphens: auto;
     hyphens: auto;
+}
+
+/* ===== Financial Summary Card - New Design ===== */
+.fin-card {
+    border: none !important;
+    overflow: hidden;
+}
+
+.fin-card .card-body {
+    padding: 1.25rem !important;
+}
+
+/* Financial stat mini cards */
+.fin-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.fin-stat-item:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.fin-stat-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+}
+
+.fin-stat-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.fin-stat-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+    line-height: 1.3;
+}
+
+.fin-stat-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Net revenue highlight box */
+.net-box {
+    padding: 1rem 1.15rem;
+    border-radius: var(--radius-lg);
+    border: 2px solid;
+}
+
+.net-box-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.net-box-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.net-box-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.net-box-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
 }
 
 /* ===== Tablet (768px - 991px) ===== */
@@ -87,6 +152,14 @@
     .stat-card .stat-meta { font-size: 0.7rem; }
     .stats-detail-table td:first-child { font-size: 0.88rem; }
     .stats-detail-table td:last-child { font-size: 1rem; }
+
+    .fin-card .card-body { padding: 1rem !important; }
+    .fin-stat-item { padding: 0.75rem 0.85rem; gap: 0.75rem; }
+    .fin-stat-icon { width: 42px; height: 42px; min-width: 42px; font-size: 1rem; }
+    .fin-stat-value { font-size: 1.1rem; }
+    .net-box { padding: 0.85rem 1rem; }
+    .net-box-value { font-size: 1.35rem; }
+    .net-box-icon { width: 38px; height: 38px; min-width: 38px; }
 }
 
 /* ===== Mobile Large (576px - 767px) ===== */
@@ -102,13 +175,17 @@
     /* Detail table mobile */
     .stats-detail-table td:first-child { font-size: 0.82rem; padding: 0.6rem 0.75rem; }
     .stats-detail-table td:last-child { font-size: 0.95rem; }
-    .progress { height: 20px !important; }
-    .progress-bar { font-size: 0.7rem; }
 
     /* Financial summary mobile */
-    .fin-row-label { font-size: 0.85rem; }
-    .fin-row-value { font-size: 0.85rem; }
-    .net-revenue-value { font-size: 1rem !important; }
+    .fin-card .card-body { padding: 0.85rem !important; }
+    .fin-stat-item { padding: 0.65rem 0.7rem; gap: 0.6rem; }
+    .fin-stat-icon { width: 38px; height: 38px; min-width: 38px; font-size: 0.95rem; }
+    .fin-stat-label { font-size: 0.72rem; }
+    .fin-stat-value { font-size: 1rem; }
+    .net-box { padding: 0.75rem 0.85rem; }
+    .net-box-icon { width: 34px; height: 34px; min-width: 34px; font-size: 0.95rem; }
+    .net-box-value { font-size: 1.2rem; }
+    .net-box-sub { font-size: 0.68rem; }
 }
 
 /* ===== Mobile Small (375px - 575px) ===== */
@@ -125,10 +202,15 @@
     .stats-detail-table td:last-child { font-size: 0.88rem; padding: 0.5rem 0.6rem; }
 
     /* Financial summary compact */
-    .fin-row-label { font-size: 0.8rem; }
-    .fin-row-value { font-size: 0.8rem; }
-    .net-revenue-value { font-size: 0.95rem !important; }
-    .net-revenue-box { padding: 0.65rem !important; }
+    .fin-card .card-body { padding: 0.75rem !important; }
+    .fin-stat-item { padding: 0.55rem 0.6rem; gap: 0.5rem; border-radius: var(--radius-md); }
+    .fin-stat-icon { width: 34px; height: 34px; min-width: 34px; font-size: 0.85rem; border-radius: var(--radius-sm); }
+    .fin-stat-label { font-size: 0.68rem; }
+    .fin-stat-value { font-size: 0.92rem; }
+    .net-box { padding: 0.65rem 0.7rem; border-radius: var(--radius-md); }
+    .net-box-icon { width: 30px; height: 30px; min-width: 30px; font-size: 0.85rem; }
+    .net-box-value { font-size: 1.05rem; }
+    .net-box-label { font-size: 0.75rem; }
 }
 
 /* ===== Very Small Mobile (320px - 374px) ===== */
@@ -141,6 +223,15 @@
 
     .stats-detail-table td:first-child { font-size: 0.75rem; padding: 0.4rem 0.5rem; }
     .stats-detail-table td:last-child { font-size: 0.82rem; }
+
+    .fin-card .card-body { padding: 0.65rem !important; }
+    .fin-stat-item { padding: 0.45rem 0.5rem; gap: 0.4rem; }
+    .fin-stat-icon { width: 30px; height: 30px; min-width: 30px; font-size: 0.8rem; }
+    .fin-stat-label { font-size: 0.65rem; }
+    .fin-stat-value { font-size: 0.85rem; }
+    .net-box { padding: 0.55rem 0.6rem; }
+    .net-box-icon { width: 28px; height: 28px; min-width: 28px; font-size: 0.8rem; }
+    .net-box-value { font-size: 0.95rem; }
 }
 </style>
 {% endblock %}
@@ -294,49 +385,77 @@
             </div>
         </div>
 
-        <!-- رسوم بيانية: المالية -->
+        <!-- ===== ملخص مالي - تصميم جديد ===== -->
         <div class="col-12 col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card fin-card shadow-sm h-100">
                 <div class="card-header bg-white border-bottom">
                     <h6 class="mb-0 fw-bold"><i class="fas fa-coins me-2 text-warning"></i>ملخص مالي</h6>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1" style="min-width: 0;">
-                            <span class="fw-semibold fin-row-label"><i class="fas fa-arrow-down text-success me-1"></i>إجمالي المدفوعات</span>
-                            <span class="text-primary fw-bold fin-row-value">{{ format_currency(stats.total_amount_paid) }}</span>
-                        </div>
-                        <div class="progress" style="height: 28px;">
-                            <div class="progress-bar bg-primary progress-bar-striped" style="width: 100%">
-                                <i class="fas fa-money-bill-wave me-1"></i>المدفوعات
+                    <div class="d-flex flex-column gap-3">
+
+                        <!-- إجمالي المدفوعات -->
+                        <div class="fin-stat-item" style="background: var(--primary-glow);">
+                            <div class="fin-stat-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="fin-stat-body">
+                                <div class="fin-stat-label">إجمالي المدفوعات</div>
+                                <div class="fin-stat-value text-primary">{{ format_currency(stats.total_amount_paid) }}</div>
+                            </div>
+                            <div class="text-end" style="flex-shrink: 0;">
+                                <span class="badge bg-primary-subtle text-primary" style="font-size: 0.68rem;">{{ stats.total_installments }} عملية</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1" style="min-width: 0;">
-                            <span class="fw-semibold fin-row-label"><i class="fas fa-arrow-up text-warning me-1"></i>إجمالي السحوبات</span>
-                            <span class="text-warning fw-bold fin-row-value">{{ format_currency(stats.total_withdrawals) }}</span>
-                        </div>
-                        <div class="progress" style="height: 28px;">
-                            {% if stats.total_amount_paid > 0 %}
-                            {% set withdraw_pct = ((stats.total_withdrawals / stats.total_amount_paid) * 100) | round(1) %}
-                            {% else %}
-                            {% set withdraw_pct = 0 %}
-                            {% endif %}
-                            <div class="progress-bar bg-warning" style="width: {{ withdraw_pct }}%">
-                                {{ withdraw_pct }}%
+
+                        <!-- إجمالي السحوبات -->
+                        <div class="fin-stat-item" style="background: var(--warning-glow);">
+                            <div class="fin-stat-icon" style="background: linear-gradient(135deg, var(--warning), var(--warning-dark)); color: white;">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="fin-stat-body">
+                                <div class="fin-stat-label">إجمالي السحوبات</div>
+                                <div class="fin-stat-value text-warning">{{ format_currency(stats.total_withdrawals) }}</div>
+                            </div>
+                            <div class="text-end" style="flex-shrink: 0;">
+                                {% if stats.total_amount_paid > 0 %}
+                                {% set withdraw_pct = ((stats.total_withdrawals / stats.total_amount_paid) * 100) | round(1) %}
+                                {% else %}
+                                {% set withdraw_pct = 0 %}
+                                {% endif %}
+                                <span class="badge bg-warning-subtle" style="font-size: 0.68rem; color: var(--warning-dark);">{{ withdraw_pct }}% من المدفوعات</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="p-3 rounded-3 net-revenue-box {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}bg-success-subtle{% else %}bg-danger-subtle{% endif %}">
-                        <div class="d-flex justify-content-between align-items-center net-revenue-row">
-                            <span class="fw-bold net-revenue-label">
-                                <i class="fas fa-chart-line me-1"></i>صافي الإيرادات
-                            </span>
-                            <span class="fw-bold net-revenue-value {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
-                            </span>
+
+                        <!-- صافي الإيرادات -->
+                        {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}
+                        <div class="net-box" style="background: var(--success-glow); border-color: rgba(16, 185, 129, 0.25);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="net-box-icon" style="background: linear-gradient(135deg, var(--success-light), var(--success)); color: white;">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="net-box-label">صافي الإيرادات</div>
+                                    <div class="net-box-value text-success">{{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}</div>
+                                    <div class="net-box-sub"><i class="fas fa-check-circle me-1"></i>المدفوعات تتجاوز السحوبات</div>
+                                </div>
+                            </div>
                         </div>
+                        {% else %}
+                        <div class="net-box" style="background: var(--danger-glow); border-color: rgba(239, 68, 68, 0.25);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="net-box-icon" style="background: linear-gradient(135deg, var(--danger-light), var(--danger)); color: white;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="net-box-label">صافي الإيرادات</div>
+                                    <div class="net-box-value text-danger">{{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}</div>
+                                    <div class="net-box-sub"><i class="fas fa-exclamation-circle me-1"></i>السحوبات تتجاوز المدفوعات</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
                     </div>
                 </div>
             </div>
