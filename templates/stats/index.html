@@ -4,28 +4,143 @@
 
 {% block extra_css %}
 <style>
-/* Stats page mobile improvements */
-@media (max-width: 767px) {
+/* ===== Stats Page - Comprehensive Responsive Fix ===== */
+
+/* Stat card column overflow fix */
+.stats-row > [class*="col-"] {
+    min-width: 0;
+}
+
+/* Stat card text containment */
+.stat-card {
+    overflow: hidden;
+}
+
+.stat-card .card-body {
+    overflow: hidden;
+}
+
+.stat-card .stat-value-wrap {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.stat-card h2 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stat-card .stat-meta {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.72rem;
+    line-height: 1.5;
+}
+
+/* Financial summary labels containment */
+.fin-row-label {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fin-row-value {
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+}
+
+/* Net revenue section */
+.net-revenue-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.net-revenue-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.net-revenue-value {
+    flex-shrink: 0;
+}
+
+/* Detail table responsive */
+.stats-detail-table td:first-child {
+    white-space: normal;
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+}
+
+/* ===== Tablet (768px - 991px) ===== */
+@media (max-width: 991px) {
     .stat-card .card-body { padding: 1rem; }
-    .stat-card .d-flex { gap: 0.5rem !important; }
-    .stat-card h2 { font-size: 1.4rem; }
+    .stat-card .d-flex.gap-3 { gap: 0.65rem !important; }
+    .stat-card h2 { font-size: 1.6rem; }
+    .stat-card h6 { font-size: 0.78rem; }
+    .stat-icon { width: 48px; height: 48px; font-size: 1.2rem; }
+    .stat-card .stat-meta { font-size: 0.7rem; }
+    .stats-detail-table td:first-child { font-size: 0.88rem; }
+    .stats-detail-table td:last-child { font-size: 1rem; }
+}
+
+/* ===== Mobile Large (576px - 767px) ===== */
+@media (max-width: 767px) {
+    .stat-card .card-body { padding: 0.85rem; }
+    .stat-card .d-flex.gap-3 { gap: 0.5rem !important; }
+    .stat-card h2 { font-size: 1.35rem; }
     .stat-card h6 { font-size: 0.72rem; }
     .stat-icon { width: 40px; height: 40px; font-size: 1rem; }
-    .stat-card .small { font-size: 0.7rem; }
-    .stat-card .mt-2 { margin-top: 0.5rem !important; }
-    .stat-card .d-flex .d-flex { display: block !important; }
-}
-@media (max-width: 575px) {
-    .stat-card h2 { font-size: 1.2rem; }
-    .stat-icon { width: 34px; height: 34px; font-size: 0.9rem; }
-    .stat-card .card-body { padding: 0.85rem; }
-}
-/* Statistics detail table mobile */
-@media (max-width: 767px) {
+    .stat-card .stat-meta { font-size: 0.68rem; }
+    .stat-card .mt-2 { margin-top: 0.4rem !important; }
+
+    /* Detail table mobile */
     .stats-detail-table td:first-child { font-size: 0.82rem; padding: 0.6rem 0.75rem; }
-    .stats-detail-table td:last-child { font-size: 1rem; }
+    .stats-detail-table td:last-child { font-size: 0.95rem; }
     .progress { height: 20px !important; }
     .progress-bar { font-size: 0.7rem; }
+
+    /* Financial summary mobile */
+    .fin-row-label { font-size: 0.85rem; }
+    .fin-row-value { font-size: 0.85rem; }
+    .net-revenue-value { font-size: 1rem !important; }
+}
+
+/* ===== Mobile Small (375px - 575px) ===== */
+@media (max-width: 575px) {
+    .stat-card .card-body { padding: 0.7rem; }
+    .stat-card .d-flex.gap-3 { gap: 0.4rem !important; }
+    .stat-card h2 { font-size: 1.15rem; }
+    .stat-card h6 { font-size: 0.68rem; }
+    .stat-icon { width: 34px; height: 34px; font-size: 0.9rem; border-radius: var(--radius-md); }
+    .stat-card .stat-meta { font-size: 0.65rem; }
+
+    /* Detail table compact */
+    .stats-detail-table td:first-child { font-size: 0.78rem; padding: 0.5rem 0.6rem; }
+    .stats-detail-table td:last-child { font-size: 0.88rem; padding: 0.5rem 0.6rem; }
+
+    /* Financial summary compact */
+    .fin-row-label { font-size: 0.8rem; }
+    .fin-row-value { font-size: 0.8rem; }
+    .net-revenue-value { font-size: 0.95rem !important; }
+    .net-revenue-box { padding: 0.65rem !important; }
+}
+
+/* ===== Very Small Mobile (320px - 374px) ===== */
+@media (max-width: 374px) {
+    .stat-card .card-body { padding: 0.6rem; }
+    .stat-card h2 { font-size: 1rem; }
+    .stat-card h6 { font-size: 0.65rem; }
+    .stat-icon { width: 30px; height: 30px; font-size: 0.8rem; }
+    .stat-card .stat-meta { font-size: 0.62rem; }
+
+    .stats-detail-table td:first-child { font-size: 0.75rem; padding: 0.4rem 0.5rem; }
+    .stats-detail-table td:last-child { font-size: 0.82rem; }
 }
 </style>
 {% endblock %}
@@ -44,19 +159,19 @@
     </div>
 
     <!-- ===== بطاقات الإحصائيات الرئيسية ===== -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4 stats-row">
         
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-md-4 col-xl-3">
             <div class="card stat-card border h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3">
                         <div class="stat-icon" style="background: var(--primary-glow); color: var(--primary);"><i class="fas fa-user-graduate"></i></div>
-                        <div>
+                        <div class="stat-value-wrap">
                             <h2 class="mb-0 text-primary">{{ stats.total_students }}</h2>
                             <h6 class="mb-0 text-muted">الطلاب</h6>
                         </div>
                     </div>
-                    <div class="mt-2 small text-muted">
+                    <div class="mt-2 stat-meta text-muted">
                         <i class="fas fa-check-circle me-1"></i>{{ stats.active_students }} مستمر
                         <span class="mx-1">|</span>
                         <i class="fas fa-times-circle me-1"></i>{{ stats.withdrawn_students }} منسحب
@@ -65,51 +180,51 @@
             </div>
         </div>
 
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-md-4 col-xl-3">
             <div class="card stat-card border h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3">
                         <div class="stat-icon" style="background: var(--success-glow); color: var(--success);"><i class="fas fa-chalkboard-teacher"></i></div>
-                        <div>
+                        <div class="stat-value-wrap">
                             <h2 class="mb-0 text-success">{{ stats.total_teachers }}</h2>
                             <h6 class="mb-0 text-muted">المدرسين</h6>
                         </div>
                     </div>
-                    <div class="mt-2 small text-muted">
+                    <div class="mt-2 stat-meta text-muted">
                         <i class="fas fa-book me-1"></i>{{ stats.total_subjects }} مواد دراسية
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-md-4 col-xl-3">
             <div class="card stat-card border h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3">
                         <div class="stat-icon" style="background: rgba(139,92,246,0.1); color: var(--secondary);"><i class="fas fa-money-check-alt"></i></div>
-                        <div>
+                        <div class="stat-value-wrap">
                             <h2 class="mb-0" style="color: var(--secondary);">{{ stats.total_installments }}</h2>
                             <h6 class="mb-0 text-muted">الأقساط</h6>
                         </div>
                     </div>
-                    <div class="mt-2 small text-muted">
+                    <div class="mt-2 stat-meta text-muted">
                         <i class="fas fa-coins me-1"></i>{{ format_currency(stats.total_amount_paid) }} إجمالي
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-6 col-xl-3">
+        <div class="col-6 col-md-4 col-xl-3">
             <div class="card stat-card border h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3">
                         <div class="stat-icon" style="background: var(--warning-glow); color: var(--warning-dark);"><i class="fas fa-hand-holding-usd"></i></div>
-                        <div>
+                        <div class="stat-value-wrap">
                             <h2 class="mb-0 text-warning">{{ format_currency(stats.total_withdrawals) }}</h2>
                             <h6 class="mb-0 text-muted">السحوبات</h6>
                         </div>
                     </div>
-                    <div class="mt-2 small text-muted">
+                    <div class="mt-2 stat-meta text-muted">
                         <i class="fas fa-chart-line me-1"></i>صافي: {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
                     </div>
                 </div>
@@ -128,7 +243,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1" style="min-width: 0;">
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-semibold">مستمر</span>
                                 <span class="text-success fw-bold">{{ stats.active_students }}</span>
@@ -144,7 +259,7 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1" style="min-width: 0;">
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-semibold">منسحب</span>
                                 <span class="text-danger fw-bold">{{ stats.withdrawn_students }}</span>
@@ -160,7 +275,7 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-3">
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1" style="min-width: 0;">
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-semibold">غير مرتبط</span>
                                 <span class="text-secondary fw-bold">{{ stats.total_students - stats.active_students - stats.withdrawn_students }}</span>
@@ -187,9 +302,9 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-semibold"><i class="fas fa-arrow-down text-success me-1"></i>إجمالي المدفوعات</span>
-                            <span class="text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1" style="min-width: 0;">
+                            <span class="fw-semibold fin-row-label"><i class="fas fa-arrow-down text-success me-1"></i>إجمالي المدفوعات</span>
+                            <span class="text-primary fw-bold fin-row-value">{{ format_currency(stats.total_amount_paid) }}</span>
                         </div>
                         <div class="progress" style="height: 28px;">
                             <div class="progress-bar bg-primary progress-bar-striped" style="width: 100%">
@@ -198,9 +313,9 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-semibold"><i class="fas fa-arrow-up text-warning me-1"></i>إجمالي السحوبات</span>
-                            <span class="text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-1" style="min-width: 0;">
+                            <span class="fw-semibold fin-row-label"><i class="fas fa-arrow-up text-warning me-1"></i>إجمالي السحوبات</span>
+                            <span class="text-warning fw-bold fin-row-value">{{ format_currency(stats.total_withdrawals) }}</span>
                         </div>
                         <div class="progress" style="height: 28px;">
                             {% if stats.total_amount_paid > 0 %}
@@ -213,12 +328,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="p-3 rounded-3 {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}bg-success-subtle{% else %}bg-danger-subtle{% endif %}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">
+                    <div class="p-3 rounded-3 net-revenue-box {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}bg-success-subtle{% else %}bg-danger-subtle{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center net-revenue-row">
+                            <span class="fw-bold net-revenue-label">
                                 <i class="fas fa-chart-line me-1"></i>صافي الإيرادات
                             </span>
-                            <span class="fw-bold fs-5 {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            <span class="fw-bold net-revenue-value {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}text-success{% else %}text-danger{% endif %}">
                                 {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
                             </span>
                         </div>
@@ -238,40 +353,40 @@
                 <table class="table table-hover mb-0 align-middle stats-detail-table">
                     <tbody>
                         <tr>
-                            <td class="fw-bold px-3" style="width: 50%"><i class="fas fa-user-graduate me-2 text-primary"></i>إجمالي الطلاب المسجلين</td>
-                            <td class="text-center fs-5 fw-bold">{{ stats.total_students }}</td>
+                            <td class="fw-bold px-3" style="width: 55%"><i class="fas fa-user-graduate me-2 text-primary"></i>إجمالي الطلاب المسجلين</td>
+                            <td class="text-center fw-bold">{{ stats.total_students }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-check-circle me-2 text-success"></i>الطلاب المستمرون</td>
-                            <td class="text-center fs-5 text-success fw-bold">{{ stats.active_students }}</td>
+                            <td class="text-center text-success fw-bold">{{ stats.active_students }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-times-circle me-2 text-danger"></i>الطلاب المنسحبون</td>
-                            <td class="text-center fs-5 text-danger fw-bold">{{ stats.withdrawn_students }}</td>
+                            <td class="text-center text-danger fw-bold">{{ stats.withdrawn_students }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-chalkboard-teacher me-2 text-success"></i>إجمالي المدرسين</td>
-                            <td class="text-center fs-5 fw-bold">{{ stats.total_teachers }}</td>
+                            <td class="text-center fw-bold">{{ stats.total_teachers }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-book-open me-2 text-info"></i>عدد المواد الدراسية</td>
-                            <td class="text-center fs-5 fw-bold">{{ stats.total_subjects }}</td>
+                            <td class="text-center fw-bold">{{ stats.total_subjects }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-money-check-alt me-2 text-primary"></i>عدد عمليات الدفع</td>
-                            <td class="text-center fs-5 fw-bold">{{ stats.total_installments }}</td>
+                            <td class="text-center fw-bold">{{ stats.total_installments }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-coins me-2 text-warning"></i>إجمالي المبالغ المدفوعة</td>
-                            <td class="text-center fs-5 text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</td>
+                            <td class="text-center text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-hand-holding-usd me-2 text-warning"></i>إجمالي السحوبات</td>
-                            <td class="text-center fs-5 text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</td>
+                            <td class="text-center text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</td>
                         </tr>
                         <tr class="table-success">
                             <td class="fw-bold px-3"><i class="fas fa-chart-line me-2"></i>صافي الإيرادات (المدفوع - المسحوب)</td>
-                            <td class="text-center fs-5 text-success fw-bold">
+                            <td class="text-center text-success fw-bold">
                                 {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
                             </td>
                         </tr>
