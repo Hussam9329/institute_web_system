@@ -2,180 +2,735 @@
 
 {% block title %}الرئيسية - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== Dashboard Styles ===== */
+
+/* Welcome Banner */
+.dash-welcome {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+    border-radius: var(--radius-xl);
+    padding: 1.75rem 2rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+.dash-welcome::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+}
+.dash-welcome::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    right: -5%;
+    width: 250px;
+    height: 250px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 50%;
+}
+.dash-welcome .welcome-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fbbf24;
+    flex-shrink: 0;
+}
+.dash-welcome h4 {
+    color: white;
+    font-weight: 800;
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+.dash-welcome p {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
+/* Stat Cards Grid */
+.dash-stats .stat-card {
+    border: none;
+    padding: 0;
+}
+.dash-stats .stat-card .card-body {
+    padding: 1.25rem;
+}
+.dash-stats .stat-icon {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    border-radius: 14px;
+    font-size: 1.2rem;
+}
+.dash-stats .stat-value {
+    font-size: 1.65rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: white;
+}
+.dash-stats .stat-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0;
+}
+.dash-stats .stat-detail {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.dash-stats .stat-detail i {
+    font-size: 0.65rem;
+}
+
+/* Net Revenue Card */
+.dash-net-card {
+    background: white;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    transition: var(--transition);
+}
+.dash-net-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--success);
+}
+.dash-net-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+.dash-net-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+}
+.dash-net-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.dash-net-breakdown {
+    display: flex;
+    gap: 1.5rem;
+    margin-right: auto;
+}
+.dash-net-item {
+    text-align: center;
+}
+.dash-net-item .val {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+.dash-net-item .lbl {
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+/* Quick Access */
+.dash-quick {
+    margin-bottom: 1.5rem;
+}
+.dash-quick-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.dash-quick-title i {
+    color: var(--warning);
+}
+.dash-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.75rem;
+}
+.dash-quick-item {
+    background: white;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 1rem 0.5rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.dash-quick-item:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+.dash-quick-item .qi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: var(--transition);
+}
+.dash-quick-item:hover .qi-icon {
+    transform: scale(1.08);
+}
+.dash-quick-item .qi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1.3;
+}
+
+/* Recent Payments Section */
+.dash-recent {
+    background: white;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+.dash-recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-light);
+}
+.dash-recent-header h6 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.dash-recent-table {
+    margin: 0;
+}
+.dash-recent-table thead {
+    background: var(--light-bg);
+}
+.dash-recent-table thead th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    white-space: nowrap;
+}
+.dash-recent-table tbody td {
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+}
+.dash-recent-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.dash-recent-table tbody tr:hover {
+    background: var(--primary-glow);
+}
+
+/* Mobile payment cards */
+.dash-payment-card {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: var(--transition-fast);
+}
+.dash-payment-card:last-child {
+    border-bottom: none;
+}
+.dash-payment-card:hover {
+    background: var(--primary-glow);
+}
+.dash-pc-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+}
+.dash-pc-info {
+    flex: 1;
+    min-width: 0;
+}
+.dash-pc-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dash-pc-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dash-pc-amount {
+    text-align: left;
+    flex-shrink: 0;
+}
+.dash-pc-amount .amount-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--success);
+}
+.dash-pc-amount .amount-date {
+    font-size: 0.68rem;
+    color: var(--muted);
+}
+
+/* Empty state */
+.dash-empty {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+.dash-empty i {
+    font-size: 2.5rem;
+    color: var(--border);
+    margin-bottom: 0.75rem;
+}
+.dash-empty p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+/* ===== Animations ===== */
+.dash-animate {
+    animation: fadeUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.dash-delay-1 { animation-delay: 0.05s; }
+.dash-delay-2 { animation-delay: 0.1s; }
+.dash-delay-3 { animation-delay: 0.15s; }
+.dash-delay-4 { animation-delay: 0.2s; }
+.dash-delay-5 { animation-delay: 0.25s; }
+.dash-delay-6 { animation-delay: 0.3s; }
+.dash-delay-7 { animation-delay: 0.35s; }
+
+/* ===== Responsive ===== */
+@media (max-width: 991px) {
+    .dash-welcome {
+        padding: 1.25rem 1.5rem;
+    }
+    .dash-welcome h4 {
+        font-size: 1.1rem;
+    }
+    .dash-net-breakdown {
+        display: none;
+    }
+    .dash-net-card {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .dash-net-card .dash-net-info {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .dash-quick-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.6rem;
+    }
+    .dash-quick-item {
+        padding: 0.75rem 0.25rem;
+    }
+    .dash-quick-item .qi-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    .dash-quick-item .qi-label {
+        font-size: 0.7rem;
+    }
+    .dash-stats .stat-value {
+        font-size: 1.35rem;
+    }
+    .dash-stats .stat-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        font-size: 1rem;
+    }
+    .dash-net-card {
+        padding: 1rem;
+        margin-bottom: 1.25rem;
+    }
+    .dash-net-value {
+        font-size: 1.15rem;
+    }
+    .dash-welcome {
+        padding: 1.15rem 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .dash-welcome h4 {
+        font-size: 1rem;
+    }
+    .dash-welcome .welcome-icon {
+        width: 46px;
+        height: 46px;
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 575px) {
+    .dash-stats .stat-card .card-body {
+        padding: 1rem;
+    }
+    .dash-stats .stat-value {
+        font-size: 1.2rem;
+    }
+    .dash-stats .stat-detail {
+        font-size: 0.68rem;
+    }
+    .dash-quick-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+    .dash-quick-item {
+        padding: 0.65rem 0.15rem;
+        gap: 0.35rem;
+    }
+    .dash-quick-item .qi-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+        border-radius: 10px;
+    }
+    .dash-quick-item .qi-label {
+        font-size: 0.65rem;
+    }
+    .dash-recent-header {
+        padding: 0.85rem 1rem;
+    }
+    .dash-payment-card {
+        padding: 0.75rem;
+        gap: 0.6rem;
+    }
+    .dash-pc-avatar {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 0.85rem;
+        border-radius: 10px;
+    }
+    .dash-pc-name {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .dash-quick-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
 <div class="container-fluid">
 
-    <!-- ===== الترحيب ===== -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h4 class="mb-1 fw-bold text-gradient-blue">مرحباً بك في لوحة التحكم</h4>
-            <p class="text-muted mb-0 small">إدارة شاملة للمعهد - الطلاب والمدرسين والأقساط</p>
+    <!-- ===== Welcome Banner ===== -->
+    <div class="dash-welcome dash-animate">
+        <div class="d-flex align-items-center gap-3 position-relative" style="z-index:1">
+            <div class="welcome-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h4>نظام إدارة المعهد</h4>
+                <p>لوحة تحكم شاملة للطلاب والمدرسين والأقساط والمحاسبة</p>
+            </div>
         </div>
     </div>
 
-    <!-- ===== البطاقات الإحصائية ===== -->
-    <div class="row g-3 mb-4">
-
-        <!-- بطاقة الطلاب -->
-        <div class="col-6 col-lg-3">
+    <!-- ===== Stat Cards ===== -->
+    <div class="row g-3 mb-3 dash-stats">
+        <!-- الطلاب -->
+        <div class="col-6 col-md-3 dash-animate dash-delay-1">
             <div class="card stat-card bg-gradient-blue text-white">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
                             <i class="fas fa-user-graduate"></i>
                         </div>
                         <div>
-                            <h2 class="mb-0">{{ stats.total_students }}</h2>
-                            <h6 class="mb-0 opacity-75">الطلاب</h6>
+                            <div class="stat-value">{{ stats.total_students }}</div>
+                            <div class="stat-label">الطلاب</div>
                         </div>
                     </div>
-                    <div class="mt-2 small opacity-75">
-                        <i class="fas fa-check-circle me-1"></i>{{ stats.active_students }} مستمر
-                        <span class="mx-1">|</span>
-                        <i class="fas fa-times-circle me-1"></i>{{ stats.withdrawn_students }} منسحب
+                    <div class="stat-detail">
+                        <i class="fas fa-check-circle text-light"></i>
+                        <span>{{ stats.active_students }} مستمر</span>
+                        <span class="opacity-50 mx-1">|</span>
+                        <i class="fas fa-user-minus"></i>
+                        <span>{{ stats.withdrawn_students }} منسحب</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- بطاقة المدرسين -->
-        <div class="col-6 col-lg-3">
+        <!-- المدرسين -->
+        <div class="col-6 col-md-3 dash-animate dash-delay-2">
             <div class="card stat-card bg-gradient-emerald text-white">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
                             <i class="fas fa-chalkboard-teacher"></i>
                         </div>
                         <div>
-                            <h2 class="mb-0">{{ stats.total_teachers }}</h2>
-                            <h6 class="mb-0 opacity-75">المدرسين</h6>
+                            <div class="stat-value">{{ stats.total_teachers }}</div>
+                            <div class="stat-label">المدرسين</div>
                         </div>
                     </div>
-                    <div class="mt-2 small opacity-75">
-                        <i class="fas fa-book me-1"></i>{{ stats.total_subjects }} مواد دراسية
+                    <div class="stat-detail">
+                        <i class="fas fa-book-open text-light"></i>
+                        <span>{{ stats.total_subjects }} مواد دراسية</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- بطاقة الأقساط -->
-        <div class="col-6 col-lg-3">
+        <!-- المدفوعات -->
+        <div class="col-6 col-md-3 dash-animate dash-delay-3">
             <div class="card stat-card bg-gradient-purple text-white">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
                             <i class="fas fa-money-check-alt"></i>
                         </div>
                         <div>
-                            <h2 class="mb-0">{{ stats.total_installments }}</h2>
-                            <h6 class="mb-0 opacity-75">الأقساط</h6>
+                            <div class="stat-value">{{ stats.total_installments }}</div>
+                            <div class="stat-label">عملية دفع</div>
                         </div>
                     </div>
-                    <div class="mt-2 small opacity-75">
-                        <i class="fas fa-coins me-1"></i>{{ format_currency(stats.total_amount_paid) }} إجمالي المدفوع
+                    <div class="stat-detail">
+                        <i class="fas fa-coins text-light"></i>
+                        <span>{{ format_currency(stats.total_amount_paid) }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- بطاقة السحوبات -->
-        <div class="col-6 col-lg-3">
+        <!-- السحوبات -->
+        <div class="col-6 col-md-3 dash-animate dash-delay-4">
             <div class="card stat-card bg-gradient-orange text-white">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
                             <i class="fas fa-hand-holding-usd"></i>
                         </div>
                         <div>
-                            <h2 class="mb-0">{{ format_currency(stats.total_withdrawals) }}</h2>
-                            <h6 class="mb-0 opacity-75">السحوبات</h6>
+                            <div class="stat-value" style="font-size:1.25rem;">{{ format_currency(stats.total_withdrawals) }}</div>
+                            <div class="stat-label">السحوبات</div>
                         </div>
                     </div>
-                    <div class="mt-2 small opacity-75">
-                        <i class="fas fa-wallet me-1"></i>صرفت للمدرسين
+                    <div class="stat-detail">
+                        <i class="fas fa-wallet text-light"></i>
+                        <span>صرفت للمدرسين</span>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <!-- ===== أزرار الوصول السريع ===== -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h6 class="fw-bold mb-3"><i class="fas fa-bolt text-warning me-2"></i>وصول سريع</h6>
-            <div class="d-flex flex-wrap gap-2">
-                <a href="/students/add" class="btn btn-primary btn-sm">
-                    <i class="fas fa-user-plus me-1"></i> إضافة طالب
-                </a>
-                <a href="/teachers/add" class="btn btn-success btn-sm">
-                    <i class="fas fa-chalkboard-teacher me-1"></i> إضافة مدرس
-                </a>
-                <a href="/subjects" class="btn btn-info btn-sm">
-                    <i class="fas fa-book-open me-1"></i> المواد
-                </a>
-                <a href="/payments" class="btn btn-warning btn-sm">
-                    <i class="fas fa-money-check-alt me-1"></i> الأقساط
-                </a>
-                <a href="/accounting" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-calculator me-1"></i> المحاسبة
-                </a>
-                <a href="/stats" class="btn btn-outline-success btn-sm">
-                    <i class="fas fa-chart-pie me-1"></i> الإحصائيات
-                </a>
+    <!-- ===== صافي الإيرادات ===== -->
+    {% set net_revenue = (stats.total_amount_paid or 0) - (stats.total_withdrawals or 0) %}
+    <div class="dash-net-card dash-animate dash-delay-5">
+        <div class="dash-net-icon" style="background: var(--success-glow); color: var(--success);">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="dash-net-info">
+            <div class="dash-net-label">صافي الإيرادات</div>
+            <div class="dash-net-value {% if net_revenue >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ format_currency(net_revenue|abs) }}
+                {% if net_revenue < 0 %}عجز{% endif %}
             </div>
+        </div>
+        <div class="dash-net-breakdown">
+            <div class="dash-net-item">
+                <div class="val text-primary">{{ format_currency(stats.total_amount_paid) }}</div>
+                <div class="lbl">المدفوعات</div>
+            </div>
+            <div class="dash-net-item">
+                <div class="val" style="color:var(--warning-dark)">{{ format_currency(stats.total_withdrawals) }}</div>
+                <div class="lbl">السحوبات</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== وصول سريع ===== -->
+    <div class="dash-quick dash-animate dash-delay-5">
+        <div class="dash-quick-title">
+            <i class="fas fa-bolt"></i>
+            وصول سريع
+        </div>
+        <div class="dash-quick-grid">
+            <a href="/students/add" class="dash-quick-item">
+                <div class="qi-icon" style="background: var(--primary-glow); color: var(--primary);">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <span class="qi-label">إضافة طالب</span>
+            </a>
+            <a href="/teachers/add" class="dash-quick-item">
+                <div class="qi-icon" style="background: var(--success-glow); color: var(--success);">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <span class="qi-label">إضافة مدرس</span>
+            </a>
+            <a href="/students" class="dash-quick-item">
+                <div class="qi-icon" style="background: rgba(99,102,241,0.08); color: var(--primary);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <span class="qi-label">الطلاب</span>
+            </a>
+            <a href="/payments" class="dash-quick-item">
+                <div class="qi-icon" style="background: var(--warning-glow); color: var(--warning-dark);">
+                    <i class="fas fa-money-check-alt"></i>
+                </div>
+                <span class="qi-label">الأقساط</span>
+            </a>
+            <a href="/accounting" class="dash-quick-item">
+                <div class="qi-icon" style="background: rgba(6,182,212,0.08); color: var(--info-dark);">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <span class="qi-label">المحاسبة</span>
+            </a>
+            <a href="/stats" class="dash-quick-item">
+                <div class="qi-icon" style="background: rgba(139,92,246,0.08); color: var(--secondary);">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <span class="qi-label">الإحصائيات</span>
+            </a>
         </div>
     </div>
 
     <!-- ===== آخر المدفوعات ===== -->
-    <div class="card">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0"><i class="fas fa-history text-primary me-2"></i>آخر المدفوعات</h6>
-                <a href="/payments" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-list me-1"></i>عرض الكل
-                </a>
-            </div>
-
+    <div class="dash-recent dash-animate dash-delay-6">
+        <div class="dash-recent-header">
+            <h6><i class="fas fa-history text-primary"></i> آخر المدفوعات</h6>
             {% if recent_installments %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle table-gradient-blue">
-                    <thead>
-                        <tr>
-                            <th>الطالب</th>
-                            <th>المدرس</th>
-                            <th>المادة</th>
-                            <th class="text-center">المبلغ</th>
-                            <th class="text-center">النوع</th>
-                            <th>التاريخ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for inst in recent_installments %}
-                        <tr>
-                            <td class="fw-semibold">{{ inst.student_name }}</td>
-                            <td>{{ inst.teacher_name }}</td>
-                            <td>
-                                <span class="badge bg-light text-dark">{{ inst.subject }}</span>
-                            </td>
-                            <td class="text-center fw-bold text-emerald">{{ format_currency(inst.amount) }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
-                            </td>
-                            <td class="text-muted">{{ inst.payment_date }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <i class="fas fa-receipt d-block"></i>
-                <p class="mb-0">لا توجد عمليات دفع بعد</p>
-            </div>
+            <a href="/payments" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem; padding:0.3rem 0.75rem;">
+                عرض الكل <i class="fas fa-arrow-left me-1" style="font-size:0.65rem;"></i>
+            </a>
             {% endif %}
         </div>
+
+        {% if recent_installments %}
+        <!-- عرض الجدول للشاشات المتوسطة والكبيرة -->
+        <div class="d-none d-md-block">
+            <table class="table dash-recent-table mb-0">
+                <thead>
+                    <tr>
+                        <th>الطالب</th>
+                        <th>المدرس</th>
+                        <th>المادة</th>
+                        <th class="text-center">المبلغ</th>
+                        <th class="text-center">النوع</th>
+                        <th>التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inst in recent_installments %}
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="/students/{{ inst.student_id }}" class="text-decoration-none text-primary">{{ inst.student_name }}</a>
+                        </td>
+                        <td>
+                            <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none text-dark">{{ inst.teacher_name }}</a>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark" style="font-size:0.75rem;">{{ inst.subject }}</span>
+                        </td>
+                        <td class="text-center fw-bold text-success">{{ format_currency(inst.amount) }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-info-subtle text-info" style="font-size:0.75rem;">{{ inst.installment_type }}</span>
+                        </td>
+                        <td class="text-muted" style="font-size:0.82rem;">{{ inst.payment_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- عرض كارتات للشاشات الصغيرة -->
+        <div class="d-md-none">
+            {% for inst in recent_installments %}
+            <a href="/students/{{ inst.student_id }}" class="dash-payment-card text-decoration-none" style="color:inherit;">
+                <div class="dash-pc-avatar" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                    {{ inst.student_name[0] }}
+                </div>
+                <div class="dash-pc-info">
+                    <div class="dash-pc-name">{{ inst.student_name }}</div>
+                    <div class="dash-pc-sub">{{ inst.teacher_name }} - {{ inst.subject }}</div>
+                </div>
+                <div class="dash-pc-amount">
+                    <div class="amount-val">{{ format_currency(inst.amount) }}</div>
+                    <div class="amount-date">{{ inst.payment_date }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="dash-empty">
+            <i class="fas fa-receipt d-block"></i>
+            <p>لا توجد عمليات دفع بعد</p>
+            <a href="/payments" class="btn btn-primary btn-sm mt-2" style="font-size:0.8rem;">
+                <i class="fas fa-plus me-1"></i> تسجيل أول قسط
+            </a>
+        </div>
+        {% endif %}
     </div>
 
 </div>
