@@ -920,9 +920,23 @@
 /* ===== Large Desktop (1400px+) ===== */
 @media (min-width: 1400px) {
     .main-content-area {
-        max-width: 1400px;
+        max-width: 1600px;
         margin-left: auto;
         margin-right: auto;
+    }
+}
+
+/* ===== Very Large Desktop / Zoomed Out (1600px+) ===== */
+@media (min-width: 1600px) {
+    .main-content-area {
+        max-width: 1800px;
+    }
+}
+
+/* ===== Ultra Wide (1900px+) ===== */
+@media (min-width: 1900px) {
+    .main-content-area {
+        max-width: 2000px;
     }
 }
 
@@ -1204,5 +1218,127 @@
 
     .badge {
         font-weight: 600;
+    }
+}
+
+/* ===== Universal Zoom-Safe Layout ===== */
+/* يضمن عدم فقدان أي عنصر عند تصغير أو تكبير المتصفح */
+
+/* منع تجاوز المحتوى أفقيًا تحت أي ظرف */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+}
+
+/* المحتوى الرئيسي لا يتجاوز الشاشة أبدًا */
+.main-content-area {
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* الحاوية السائلة تتكيف مع أي حجم */
+.container-fluid {
+    max-width: 100% !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+/* الكروت لا تخرج عن إطار الحاوية */
+.card {
+    max-width: 100%;
+    overflow: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* الجداول تبقى ضمن الحاوية دائمًا */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+.table {
+    table-layout: auto;
+    max-width: 100%;
+}
+
+/* النصوص لا تتجاوز الحاوية */
+h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* البطاقات والكلمات الطويلة تنكسر */
+.badge, .btn, .text-truncate {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* الـ Input Groups لا تتمدد خارج الحاوية */
+.input-group {
+    max-width: 100%;
+    flex-wrap: nowrap;
+}
+
+.input-group .form-control {
+    min-width: 0;
+    flex: 1 1 auto;
+    max-width: 100%;
+}
+
+/* صفوف الـ Grid تتكيف */
+.row {
+    max-width: 100%;
+}
+
+.row > [class*="col-"] {
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* شريط التقدم ضمن الحاوية */
+.progress {
+    max-width: 100%;
+}
+
+/* Modal لا يخرج عن الشاشة */
+.modal-dialog {
+    max-width: calc(100vw - 2rem);
+    margin: 1rem auto;
+}
+
+/* تحسين عند التكبير جداً (Zoom In) */
+@media screen and (max-width: 480px) {
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .row.g-3 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+    
+    .row.g-2 {
+        --bs-gutter-x: 0.4rem;
+        --bs-gutter-y: 0.4rem;
+    }
+}
+
+/* تحسين عند التصغير جداً (Zoom Out) */
+@media screen and (min-width: 2000px) {
+    .main-content-area {
+        max-width: 2200px;
+        padding: 2rem;
+    }
+    
+    .container-fluid {
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
 }
