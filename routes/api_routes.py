@@ -446,9 +446,18 @@ async def api_add_withdrawal(withdrawal: AddWithdrawal):
     db = Database()
     
     try:
+        # احتياط: إذا كان المبلغ صغير جداً (أقل من 1000) يُحتمل أنه مدخل بالألف
+        # تحويله تلقائياً × 1000
+        amount = withdrawal.amount
+        balance_info = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
+        available = balance_info['remaining_balance']
+        
+        if amount > 0 and amount < 1000 and available >= amount * 1000:
+            amount = amount * 1000
+
         can_withdraw, message, balance = finance_service.can_teacher_withdraw(
             withdrawal.teacher_id, 
-            withdrawal.amount
+            amount
         )
         
         if not can_withdraw:
@@ -461,7 +470,7 @@ async def api_add_withdrawal(withdrawal: AddWithdrawal):
         
         db.execute_query(insert_query, (
             withdrawal.teacher_id,
-            withdrawal.amount,
+            amount,
             withdrawal.withdrawal_date,
             withdrawal.notes
         ))
@@ -469,7 +478,7 @@ async def api_add_withdrawal(withdrawal: AddWithdrawal):
         new_balance = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
         
         return {
-            "success": True,
+            "success": True, 
             "message": "تم تسجيل السحب بنجاح",
             "new_balance": new_balance
         }
