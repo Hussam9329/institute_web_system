@@ -493,18 +493,21 @@
     }
     </script>
 
-    <!-- تحديث الوقت والتاريخ في الشريط الجانبي -->
+    <!-- تحديث الوقت والتاريخ في الشريط الجانبي - نظام 12 ساعة -->
     <script>
     function updateSidebarDateTime() {
         const now = new Date();
         
-        // Time
-        const hours = String(now.getHours()).padStart(2, '0');
+        // Time - نظام 12 ساعة مع AM/PM
+        let hours = now.getHours();
+        const ampm = hours >= 12 ? 'م' : 'ص';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
         const timeEl = document.getElementById('sidebar-time');
         if (timeEl) {
-            timeEl.textContent = hours + ':' + minutes + ':' + seconds;
+            timeEl.textContent = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
         }
         
         // Day name in Arabic
@@ -602,12 +605,21 @@
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
-                searchInput.focus();
+                // فتح الشريط الجانبي إذا كان مغلق
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (!sidebar.classList.contains('open') && window.innerWidth < 992) {
+                    sidebar.classList.add('open');
+                    overlay.classList.add('active');
+                }
+                setTimeout(() => searchInput.focus(), 100);
             }
             if (e.key === 'Escape') {
                 searchResults.classList.remove('show');
                 searchInput.blur();
-                closeSidebar();
+                if (window.innerWidth < 992) {
+                    closeSidebar();
+                }
             }
         });
     }
