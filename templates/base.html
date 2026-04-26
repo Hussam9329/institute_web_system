@@ -408,6 +408,10 @@
             <i class="fas fa-calculator"></i>
             <span>المحاسبة</span>
         </a>
+        <a class="nav-link {% if '/withdrawals' in request.url.path %}active{% endif %}" href="/withdrawals" onclick="closeSidebarMobile()">
+            <i class="fas fa-hand-holding-usd"></i>
+            <span>السحوبات</span>
+        </a>
         <a class="nav-link {% if '/stats' in request.url.path %}active{% endif %}" href="/stats" onclick="closeSidebarMobile()">
             <i class="fas fa-chart-pie"></i>
             <span>الإحصائيات</span>

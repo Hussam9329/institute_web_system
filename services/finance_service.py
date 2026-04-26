@@ -416,6 +416,25 @@ class FinanceService:
         
         return True, "يمكن إجراء السحب", current_balance
     
+    def get_all_withdrawals(self, limit: int = 100) -> List[Dict]:
+        """
+        الحصول على جميع السحوبات مع اسم المدرس
+        
+        Returns:
+            list: قائمة بجميع السحوبات مرتبة حسب التاريخ
+        """
+        query = '''
+            SELECT w.id, w.teacher_id, w.amount, w.withdrawal_date, w.notes,
+                   t.name as teacher_name, t.subject
+            FROM teacher_withdrawals w
+            JOIN teachers t ON w.teacher_id = t.id
+            ORDER BY w.withdrawal_date DESC
+            LIMIT %s
+        '''
+        results = self.db.execute_query(query, (limit,))
+        
+        return [dict(row) for row in results] if results else []
+    
     def get_teacher_recent_withdrawals(self, teacher_id: int, limit: int = 5) -> List[Dict]:
         """
         الحصول على آخر سحوبات المدرس

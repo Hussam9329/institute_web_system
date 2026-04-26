@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}السحوبات - نظام إدارة المعهد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .withdraw-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .stat-card {
+        border-radius: 14px;
+        padding: 16px 20px;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    @media (max-width: 767px) {
+        .action-btns .btn { padding: 0.25rem 0.4rem; font-size: 0.72rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-transition">
+<div class="container-fluid">
+
+    <!-- ===== رأس الصفحة ===== -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
+            <h4 class="fw-bold mb-1 text-gradient-orange">
+                <i class="fas fa-hand-holding-usd me-2"></i>السحوبات
+            </h4>
+            <p class="text-muted mb-0 small">إدارة جميع سحوبات المدرسين</p>
+        </div>
+        <button class="btn btn-success btn-sm" onclick="openAddWithdrawalModal()">
+            <i class="fas fa-plus me-1"></i>سحب جديد
+        </button>
+    </div>
+
+    <!-- ===== بطاقات الإحصائيات ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="stat-card bg-gradient-orange text-white">
+                <small class="opacity-75 d-block"><i class="fas fa-hand-holding-usd me-1"></i>إجمالي المسحوبات</small>
+                <h5 class="fw-bold mb-0 mt-1">{{ format_currency(total_withdrawn) }}</h5>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="stat-card bg-gradient-blue text-white">
+                <small class="opacity-75 d-block"><i class="fas fa-list me-1"></i>عدد عمليات السحب</small>
+                <h5 class="fw-bold mb-0 mt-1">{{ withdrawals|length }}</h5>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== جدول السحوبات ===== -->
+    <div class="card withdraw-card">
+        <div class="card-header bg-gradient-emerald text-white border-0 py-2">
+            <h6 class="mb-0">
+                <i class="fas fa-table me-2"></i>سجل السحوبات
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            {% if withdrawals %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle table-sm">
+                    <thead class="table-gradient-emerald">
+                        <tr>
+                            <th>#</th>
+                            <th>المدرس</th>
+                            <th class="text-center d-none d-sm-table-cell">المادة</th>
+                            <th class="text-center">المبلغ</th>
+                            <th class="d-none d-sm-table-cell">التاريخ</th>
+                            <th class="d-none d-md-table-cell">ملاحظات</th>
+                            <th class="text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for w in withdrawals %}
+                        <tr>
+                            <td class="fw-bold text-muted">{{ loop.index }}</td>
+                            <td>
+                                <a href="/teachers/{{ w.teacher_id }}" class="text-decoration-none fw-semibold">
+                                    {{ w.teacher_name }}
+                                </a>
+                            </td>
+                            <td class="text-center d-none d-sm-table-cell">
+                                <span class="badge bg-light text-dark">{{ w.subject }}</span>
+                            </td>
+                            <td class="text-center fw-bold text-warning">{{ format_currency(w.amount) }}</td>
+                            <td class="text-muted d-none d-sm-table-cell">{{ w.withdrawal_date }}</td>
+                            <td class="text-muted small d-none d-md-table-cell">{{ w.notes[:30] if w.notes else '-' }}</td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm action-btns">
+                                    <button class="btn btn-outline-warning" onclick="editWithdrawal({{ w.id }}, {{ w.amount }}, '{{ w.withdrawal_date }}', '{{ w.notes or '' }}')" title="تعديل">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteWithdrawal({{ w.id }})" title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-active fw-bold">
+                        <tr>
+                            <td colspan="3" class="text-center">الإجمالي</td>
+                            <td class="text-center text-warning">{{ format_currency(total_withdrawn) }}</td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-receipt fa-3x text-muted d-block mb-3"></i>
+                <p class="text-muted mb-0">لا توجد سحوبات مسجلة</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- ===== Modal إضافة سحب ===== -->
+<div class="modal fade" id="addWithdrawalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-emerald text-white border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-hand-holding-usd me-2"></i>تسجيل سحب جديد
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addWithdrawalForm" onsubmit="submitAddWithdrawal(event)">
+                <div class="modal-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">المدرس:</label>
+                        <select class="form-select form-select-lg" id="aw_teacher_id" required onchange="onTeacherChange()">
+                            <option value="">-- اختر المدرس --</option>
+                            {% for t in teachers %}
+                            <option value="{{ t.id }}" data-balance="0">{{ t.name }} ({{ t.subject }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info border-0 mb-3 d-none" id="aw_balance_alert">
+                        <strong>الرصيد المتاح:</strong> <span id="aw_available_balance" class="fw-bold text-success">-</span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">مبلغ السحب (بالألف د.ع):</label>
+                            <input type="number" class="form-control form-control-lg" id="aw_amount" min="1" required placeholder="أدخل المبلغ">
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">التاريخ:</label>
+                            <input type="date" class="form-control form-control-lg" id="aw_date" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">ملاحظات:</label>
+                            <input type="text" class="form-control" id="aw_notes" placeholder="اختياري...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>تسجيل السحب
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal تعديل سحب ===== -->
+<div class="modal fade" id="editWithdrawalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-orange text-white border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>تعديل السحب
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editWithdrawalForm" onsubmit="submitEditWithdrawal(event)">
+                <div class="modal-body p-3 p-md-4">
+                    <input type="hidden" id="ew_id">
+
+                    <div class="row g-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">مبلغ السحب (بالألف د.ع):</label>
+                            <input type="number" class="form-control form-control-lg" id="ew_amount" min="1" required>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">التاريخ:</label>
+                            <input type="date" class="form-control form-control-lg" id="ew_date" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">ملاحظات:</label>
+                            <input type="text" class="form-control" id="ew_notes" placeholder="اختياري...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>حفظ التعديل
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let addModal, editModal;
+let teacherBalances = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    addModal = new bootstrap.Modal(document.getElementById('addWithdrawalModal'));
+    editModal = new bootstrap.Modal(document.getElementById('editWithdrawalModal'));
+    document.getElementById('aw_date').value = getTodayDate();
+});
+
+// تحميل أرصدة المدرسين عند فتح الـ modal
+async function openAddWithdrawalModal() {
+    document.getElementById('addWithdrawalForm').reset();
+    document.getElementById('aw_date').value = getTodayDate();
+    document.getElementById('aw_balance_alert').classList.add('d-none');
+
+    // تحميل أرصدة المدرسين
+    try {
+        const teachers = document.querySelectorAll('#aw_teacher_id option[value]');
+        for (const opt of teachers) {
+            const tid = parseInt(opt.value);
+            const result = await apiRequest(`/api/withdrawals/teacher/${tid}?limit=1`);
+            if (result && result.total_withdrawn !== undefined) {
+                // نحتاج الرصيد الكامل - نجلب من حسابات المدرس
+                const balanceResult = await apiRequest(`/api/teachers/${tid}/balance`);
+                if (balanceResult && balanceResult.remaining_balance !== undefined) {
+                    opt.dataset.balance = balanceResult.remaining_balance;
+                }
+            }
+        }
+    } catch (e) {
+        console.log('Error loading balances:', e);
+    }
+
+    addModal.show();
+}
+
+function onTeacherChange() {
+    const select = document.getElementById('aw_teacher_id');
+    const selectedOption = select.options[select.selectedIndex];
+    const balance = parseInt(selectedOption.dataset.balance) || 0;
+    const alertEl = document.getElementById('aw_balance_alert');
+    const balanceEl = document.getElementById('aw_available_balance');
+
+    if (select.value) {
+        alertEl.classList.remove('d-none');
+        balanceEl.textContent = formatCurrency(balance);
+        document.getElementById('aw_amount').max = Math.ceil(balance / 1000);
+    } else {
+        alertEl.classList.add('d-none');
+    }
+}
+
+function editWithdrawal(id, amount, date, notes) {
+    document.getElementById('ew_id').value = id;
+    document.getElementById('ew_amount').value = Math.round(amount / 1000);
+    document.getElementById('ew_date').value = date;
+    document.getElementById('ew_notes').value = notes;
+    editModal.show();
+}
+
+async function submitEditWithdrawal(event) {
+    event.preventDefault();
+    const id = parseInt(document.getElementById('ew_id').value);
+    const amount = toFullAmount(document.getElementById('ew_amount').value);
+
+    if (!amount || amount <= 0) {
+        showAlert('يرجى إدخال مبلغ صحيح', 'warning');
+        return;
+    }
+
+    try {
+        const result = await apiRequest(`/api/withdrawals/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                amount: amount,
+                withdrawal_date: document.getElementById('ew_date').value,
+                notes: document.getElementById('ew_notes').value
+            })
+        });
+
+        if (result.success) {
+            showAlert('تم تعديل السحب بنجاح', 'success');
+            editModal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+async function deleteWithdrawal(withdrawalId) {
+    if (!confirmAction('هل أنت متأكد من حذف هذا السحب؟')) return;
+
+    try {
+        const result = await apiRequest(`/api/withdrawals/${withdrawalId}`, {
+            method: 'DELETE'
+        });
+
+        if (result.success) {
+            showAlert('تم حذف السحب بنجاح', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+async function submitAddWithdrawal(event) {
+    event.preventDefault();
+
+    const teacherId = parseInt(document.getElementById('aw_teacher_id').value);
+    const amount = toFullAmount(document.getElementById('aw_amount').value);
+
+    if (!teacherId) {
+        showAlert('يرجى اختيار المدرس', 'warning');
+        return;
+    }
+
+    if (!amount || amount <= 0) {
+        showAlert('يرجى إدخال مبلغ صحيح', 'warning');
+        return;
+    }
+
+    const data = {
+        teacher_id: teacherId,
+        amount: amount,
+        withdrawal_date: document.getElementById('aw_date').value,
+        notes: document.getElementById('aw_notes').value
+    };
+
+    try {
+        const result = await apiRequest('/api/withdrawals', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        if (result.success) {
+            showAlert(result.message, 'success');
+            addModal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+</script>
+{% endblock %}

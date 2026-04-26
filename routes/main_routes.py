@@ -611,7 +611,6 @@ async def teacher_detail(request: Request, teacher_id: int):
     teacher = dict(teacher_result[0])
     students_list = finance_service.get_teacher_students_list(teacher_id)
     financial_info = finance_service.calculate_teacher_balance(teacher_id)
-    recent_withdrawals = finance_service.get_teacher_recent_withdrawals(teacher_id, limit=20)
 
     counts_query = '''
         SELECT
@@ -629,7 +628,6 @@ async def teacher_detail(request: Request, teacher_id: int):
         "teacher": teacher,
         "students_list": students_list,
         "financial_info": financial_info,
-        "recent_withdrawals": recent_withdrawals,
         "study_counts": study_counts,
         "format_currency": format_currency
     })
@@ -709,6 +707,33 @@ async def accounting_page(request: Request, search: str = ""):
         "request": request,
         "teachers": teachers_with_finance,
         "search": search,
+        "format_currency": format_currency
+    })
+
+
+# ===== السحوبات =====
+
+@router.get("/withdrawals", response_class=HTMLResponse)
+async def withdrawals_page(request: Request):
+    """صفحة إدارة السحوبات"""
+    db = Database()
+
+    try:
+        all_withdrawals = finance_service.get_all_withdrawals(limit=200)
+        teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
+    except Exception as e:
+        all_withdrawals = []
+        teachers = []
+        print(f"Error loading withdrawals page: {e}")
+
+    # حساب الإجمالي
+    total_withdrawn = sum(w.get('amount', 0) for w in all_withdrawals)
+
+    return templates.TemplateResponse("withdrawals/index.html", {
+        "request": request,
+        "withdrawals": all_withdrawals,
+        "teachers": teachers,
+        "total_withdrawn": total_withdrawn,
         "format_currency": format_currency
     })
 
