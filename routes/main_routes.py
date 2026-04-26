@@ -364,49 +364,15 @@ async def student_delete(request: Request, student_id: int):
 # ===== المدرسين =====
 
 def _build_institute_rate_display(teacher: dict) -> str:
-    """
-    بناء نص يعرض نسبة/مبلغ المعهد حسب أنواع التدريس النشطة للمدرس
-    يُرجع نص مثل: '16%' أو '50,000' أو '16% / 12% / 20%'
-    """
-    teaching_types = teacher.get('teaching_types') or ''
-    
-    type_config = {
-        'حضوري': {
-            'ded_type': teacher.get('inst_ded_type_in_person', 'percentage'),
-            'pct': teacher.get('institute_pct_in_person', 0),
-            'manual': teacher.get('inst_ded_manual_in_person', 0),
-        },
-        'الكتروني': {
-            'ded_type': teacher.get('inst_ded_type_electronic', 'percentage'),
-            'pct': teacher.get('institute_pct_electronic', 0),
-            'manual': teacher.get('inst_ded_manual_electronic', 0),
-        },
-        'مدمج': {
-            'ded_type': teacher.get('inst_ded_type_blended', 'percentage'),
-            'pct': teacher.get('institute_pct_blended', 0),
-            'manual': teacher.get('inst_ded_manual_blended', 0),
-        },
-    }
-    
-    parts = []
-    for type_name in ['حضوري', 'الكتروني', 'مدمج']:
-        if type_name in teaching_types:
-            cfg = type_config[type_name]
-            if cfg['ded_type'] == 'manual' and cfg['manual'] > 0:
-                parts.append(format_currency(cfg['manual']))
-            elif cfg['pct'] and cfg['pct'] > 0:
-                parts.append(f"{cfg['pct']}%")
-    
-    # إذا لم يكن هناك أنواع تدريس محددة، استخدم القيم الافتراضية
-    if not parts:
-        ded_type = teacher.get('institute_deduction_type', 'percentage')
-        ded_value = teacher.get('institute_deduction_value', 0) or 0
-        if ded_type == 'manual' and ded_value > 0:
-            parts.append(format_currency(ded_value))
-        elif ded_value > 0:
-            parts.append(f"{ded_value}%")
-    
-    return ' / '.join(parts) if parts else '-'
+    """عرض نسبة/مبلغ المعهد الأساسي الي حُدد عند إضافة المدرس"""
+    ded_type = teacher.get('institute_deduction_type', 'percentage')
+    ded_value = teacher.get('institute_deduction_value', 0) or 0
+
+    if ded_type == 'manual' and ded_value > 0:
+        return format_currency(ded_value)
+    elif ded_value > 0:
+        return f"{ded_value}%"
+    return '-'
 
 
 @router.get("/teachers", response_class=HTMLResponse)
