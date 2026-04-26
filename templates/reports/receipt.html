@@ -1,0 +1,118 @@
+{% extends "reports/base_report.html" %}
+
+{% block title %}وصل دفع - {{ installment.student_name }}{% endblock %}
+
+{% block extra_style %}
+<style>
+    .receipt-badge {
+        background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+        color: white;
+        text-align: center;
+        padding: 6px;
+        font-weight: 700;
+        font-size: 13px;
+    }
+    .receipt-notes {
+        background: var(--light);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin: 12px 24px;
+    }
+    .receipt-notes .notes-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 500;
+    }
+    .receipt-notes .notes-value {
+        font-size: 13px;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block container_class %}receipt-container{% endblock %}
+
+{% block content %}
+
+<!-- رأس الوصل -->
+<div class="report-header" style="padding:20px 24px;">
+    <div class="report-title" style="font-size:18px;">{{ app_title }}</div>
+    <div class="report-subtitle" style="font-size:11px;">وصل دفع رسمي</div>
+</div>
+
+<div class="receipt-badge">
+    <i class="fas fa-receipt me-2"></i>وصل دفع رسمي
+</div>
+
+<!-- بطاقات المعلومات -->
+<div class="receipt-grid" style="margin-top:14px;">
+    <div class="info-card">
+        <div class="info-label">اسم الطالب</div>
+        <div class="info-value">{{ installment.student_name }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">الرمز</div>
+        <div class="info-value">{{ installment.barcode }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">اسم المدرس</div>
+        <div class="info-value">{{ installment.teacher_name }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">المادة</div>
+        <div class="info-value">{{ installment.subject }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">نوع القسط</div>
+        <div class="info-value">{{ installment.installment_type }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">تاريخ الدفع</div>
+        <div class="info-value">{{ format_date(installment.payment_date) }}</div>
+    </div>
+</div>
+
+<!-- المبلغ المدفوع -->
+<div class="receipt-amount">
+    <div class="amount-label">المبلغ المدفوع</div>
+    <div class="amount-value">{{ format_currency(installment.amount) }}</div>
+</div>
+
+<!-- الملخص المالي -->
+<div class="receipt-summary">
+    <div class="info-card">
+        <div class="info-label">القسط الكلي</div>
+        <div class="info-value">{{ format_currency(total_fee) }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">إجمالي المدفوع</div>
+        <div class="info-value" style="color:var(--success)">{{ format_currency(total_paid) }}</div>
+    </div>
+    <div class="info-card" style="border-color:{% if remaining_balance > 0 %}var(--danger){% elif remaining_balance == 0 %}var(--success){% else %}var(--warning){% endif %};">
+        <div class="info-label">المبلغ المتبقي</div>
+        <div class="info-value" style="color:{% if remaining_balance > 0 %}var(--danger){% elif remaining_balance == 0 %}var(--success){% else %}var(--warning){% endif %}">{{ format_currency(remaining_balance) }}</div>
+    </div>
+</div>
+
+<!-- ملاحظات -->
+{% if installment.notes and installment.notes.strip() %}
+<div class="receipt-notes">
+    <div class="notes-label">ملاحظات</div>
+    <div class="notes-value">{{ installment.notes }}</div>
+</div>
+{% endif %}
+
+<!-- التوقيع -->
+<div class="signature-area">
+    <div style="font-size:12px; color:var(--muted);">التاريخ: {{ report_date_only }} - الوقت: {{ report_time }}</div>
+    <hr class="signature-line">
+    <div style="font-size:12px; color:var(--muted-light);">توقيع المسؤول</div>
+</div>
+
+<!-- تذييل -->
+<div class="footer-text">
+    نظام إدارة المعهد || HussamVision
+</div>
+
+{% endblock %}

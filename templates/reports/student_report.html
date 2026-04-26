@@ -1,0 +1,154 @@
+{% extends "reports/base_report.html" %}
+
+{% block title %}تقرير الطالب - {{ student.name }}{% endblock %}
+
+{% block content %}
+
+<!-- رأس التقرير -->
+<div class="report-header">
+    <div class="report-title">{{ app_title }}</div>
+    <div class="report-subtitle">تقرير الطالب المالي الشامل</div>
+    <div class="report-date">تاريخ التقرير: {{ report_date }}</div>
+</div>
+
+<!-- KPI -->
+<div class="kpi-grid">
+    <div class="kpi-card kpi-accent">
+        <div class="kpi-value">{{ total_fee }}</div>
+        <div class="kpi-label">إجمالي الأجور</div>
+    </div>
+    <div class="kpi-card kpi-success">
+        <div class="kpi-value">{{ total_paid }}</div>
+        <div class="kpi-label">إجمالي المدفوع</div>
+    </div>
+    <div class="kpi-card {% if remaining > 0 %}kpi-danger{% else %}kpi-success{% endif %}">
+        <div class="kpi-value">{{ remaining }}</div>
+        <div class="kpi-label">إجمالي المتبقي</div>
+    </div>
+    <div class="kpi-card {% if payment_pct >= 100 %}kpi-success{% else %}kpi-warning{% endif %}">
+        <div class="kpi-value">{{ payment_pct }}%</div>
+        <div class="kpi-label">نسبة الدفع</div>
+    </div>
+</div>
+
+<!-- معلومات الطالب -->
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-user"></i>
+        معلومات الطالب
+    </div>
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-label">اسم الطالب</div>
+            <div class="info-value">{{ student.name }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">الرمز</div>
+            <div class="info-value">{{ student.barcode }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">عدد المدرسين</div>
+            <div class="info-value">{{ num_teachers }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">ملاحظات</div>
+            <div class="info-value">{{ student.notes or 'لا توجد ملاحظات' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- التفاصيل المالية -->
+{% if teachers_summary %}
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-chart-pie"></i>
+        التفاصيل المالية حسب المدرس
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width:35px; text-align:center">#</th>
+                    <th>المدرس</th>
+                    <th>المادة</th>
+                    <th style="text-align:center">نوع الدراسة</th>
+                    <th style="text-align:center">الأجر</th>
+                    <th style="text-align:center">المدفوع</th>
+                    <th style="text-align:center">المتبقي</th>
+                    <th style="text-align:center">النسبة</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ts in teachers_summary %}
+                <tr>
+                    <td style="text-align:center; color:var(--muted)">{{ loop.index }}</td>
+                    <td style="font-weight:600">{{ ts.teacher_name }}</td>
+                    <td><span class="badge-continue">{{ ts.subject }}</span></td>
+                    <td style="text-align:center">
+                        <span class="badge-continue">{{ ts.get('study_type', 'حضوري') }}</span>
+                    </td>
+                    <td style="text-align:center; font-weight:600">{{ format_currency(ts.total_fee) }}</td>
+                    <td style="text-align:center; font-weight:600; color:var(--success)">{{ format_currency(ts.paid_total) }}</td>
+                    <td style="text-align:center; font-weight:600; color:{% if ts.remaining_balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
+                        {{ format_currency(ts.remaining_balance) }}
+                    </td>
+                    <td style="text-align:center">{{ ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0 }}%</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td colspan="4" style="text-align:center">الإجمالي</td>
+                    <td style="text-align:center">{{ format_currency(total_fee_raw) }}</td>
+                    <td style="text-align:center; color:var(--success)">{{ format_currency(total_paid_raw) }}</td>
+                    <td style="text-align:center; color:{% if remaining > 0 %}var(--danger){% else %}var(--success){% endif %}">{{ format_currency(remaining_raw) }}</td>
+                    <td style="text-align:center">{{ payment_pct }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- سجل المدفوعات -->
+{% if installments %}
+<div class="report-section" style="padding-bottom:24px;">
+    <div class="section-title">
+        <i class="fas fa-history"></i>
+        سجل المدفوعات التفصيلي
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width:35px; text-align:center">#</th>
+                    <th>المدرس</th>
+                    <th>المادة</th>
+                    <th style="text-align:center">المبلغ</th>
+                    <th style="text-align:center">النوع</th>
+                    <th style="text-align:center">التاريخ</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inst in installments %}
+                <tr>
+                    <td style="text-align:center; color:var(--muted)">{{ loop.index }}</td>
+                    <td style="font-weight:600">{{ inst.teacher_name }}</td>
+                    <td><span class="badge-continue">{{ inst.subject }}</span></td>
+                    <td style="text-align:center; font-weight:700; color:var(--success)">{{ format_currency(inst.amount) }}</td>
+                    <td style="text-align:center"><span class="badge-continue">{{ inst.installment_type }}</span></td>
+                    <td style="text-align:center; color:var(--muted)">{{ format_date(inst.payment_date) }}</td>
+                    <td style="color:var(--muted); font-size:12px">{{ inst.notes or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- تذييل -->
+<div class="footer-text">
+    نظام إدارة المعهد - HussamVision
+</div>
+
+{% endblock %}

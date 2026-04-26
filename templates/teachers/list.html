@@ -138,8 +138,8 @@
                                         <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning" title="تعديل">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="/pdf/teacher/{{ teacher.id }}" class="btn btn-outline-info" target="_blank" title="PDF">
-                                            <i class="fas fa-file-pdf"></i>
+                                        <a href="/reports/teacher/{{ teacher.id }}" class="btn btn-outline-info" target="_blank" title="طباعة">
+                                            <i class="fas fa-print"></i>
                                         </a>
                                         {% if teacher.students_count and teacher.students_count > 0 %}
                                         <button type="button" class="btn btn-outline-danger" disabled
@@ -208,7 +208,7 @@
                         <div class="list-card-actions mt-auto">
                             <a href="/teachers/{{ teacher.id }}" class="btn btn-outline-success btn-sm"><i class="fas fa-eye me-1"></i>عرض</a>
                             <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit me-1"></i>تعديل</a>
-                            <a href="/pdf/teacher/{{ teacher.id }}" target="_blank" class="btn btn-outline-info btn-sm" title="PDF"><i class="fas fa-file-pdf"></i></a>
+                            <a href="/reports/teacher/{{ teacher.id }}" target="_blank" class="btn btn-outline-info btn-sm" title="طباعة"><i class="fas fa-print"></i></a>
                             {% if teacher.students_count and teacher.students_count > 0 %}
                             <button type="button" class="btn btn-outline-danger btn-sm" disabled
                                     title="لا يمكن الحذف - يوجد {{ teacher.students_count }} طلاب مسجلين">

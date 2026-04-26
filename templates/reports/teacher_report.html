@@ -1,0 +1,185 @@
+{% extends "reports/base_report.html" %}
+
+{% block title %}تقرير المدرس - {{ teacher.name }}{% endblock %}
+
+{% block content %}
+
+<!-- رأس التقرير -->
+<div class="report-header">
+    <div class="report-title">{{ app_title }}</div>
+    <div class="report-subtitle">تقرير المدرس المالي الشامل</div>
+    <div class="report-date">تاريخ التقرير: {{ report_date }}</div>
+</div>
+
+<!-- KPI -->
+<div class="kpi-grid">
+    <div class="kpi-card kpi-accent">
+        <div class="kpi-value">{{ format_currency(balance_info.total_received) }}</div>
+        <div class="kpi-label">إجمالي الاستلامات</div>
+    </div>
+    <div class="kpi-card kpi-info">
+        <div class="kpi-value">{{ format_currency(balance_info.teacher_due) }}</div>
+        <div class="kpi-label">مستحق المدرس</div>
+    </div>
+    <div class="kpi-card kpi-warning">
+        <div class="kpi-value">{{ format_currency(balance_info.withdrawn_total) }}</div>
+        <div class="kpi-label">إجمالي المسحوب</div>
+    </div>
+    <div class="kpi-card {% if balance_info.remaining_balance > 0 %}kpi-danger{% else %}kpi-success{% endif %}">
+        <div class="kpi-value">{{ format_currency(balance_info.remaining_balance) }}</div>
+        <div class="kpi-label">الرصيد المتبقي</div>
+    </div>
+</div>
+
+<!-- معلومات المدرس -->
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-chalkboard-teacher"></i>
+        معلومات المدرس
+    </div>
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-label">اسم المدرس</div>
+            <div class="info-value">{{ teacher.name }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">المادة</div>
+            <div class="info-value">{{ teacher.subject }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">الأجر الكلي</div>
+            <div class="info-value">{{ format_currency(teacher.total_fee) }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">عدد الطلاب</div>
+            <div class="info-value">{{ students_list|length }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">ملاحظات</div>
+            <div class="info-value">{{ teacher.notes or 'لا توجد ملاحظات' }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- التفاصيل المالية -->
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-calculator"></i>
+        التفاصيل المالية
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <tbody>
+                <tr>
+                    <td style="width:40%"><span style="color:var(--muted)">إجمالي الاستلامات</span></td>
+                    <td style="font-weight:700">{{ format_currency(balance_info.total_received) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">عدد الطلاب الدافعين</span></td>
+                    <td style="font-weight:700">{{ balance_info.paying_students_count }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">إجمالي خصم المعهد</span></td>
+                    <td style="font-weight:700">{{ format_currency(balance_info.institute_deduction) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">مستحق المدرس</span></td>
+                    <td style="font-weight:700; color:var(--info)">{{ format_currency(balance_info.teacher_due) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">إجمالي المسحوب</span></td>
+                    <td style="font-weight:700; color:var(--warning)">{{ format_currency(balance_info.withdrawn_total) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">الرصيد المتبقي</span></td>
+                    <td style="font-weight:700; color:{% if balance_info.remaining_balance > 0 %}var(--danger){% else %}var(--success){% endif %}">{{ format_currency(balance_info.remaining_balance) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- قائمة الطلاب -->
+{% if students_list %}
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-users"></i>
+        قائمة الطلاب ودفعاتهم
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width:35px; text-align:center">#</th>
+                    <th>الطالب</th>
+                    <th style="text-align:center">نوع الدراسة</th>
+                    <th style="text-align:center">الحالة</th>
+                    <th style="text-align:center">المدفوع</th>
+                    <th style="text-align:center">المتبقي</th>
+                    <th style="text-align:center">حالة الدفع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students_list %}
+                <tr>
+                    <td style="text-align:center; color:var(--muted)">{{ loop.index }}</td>
+                    <td style="font-weight:600">{{ s.name }}</td>
+                    <td style="text-align:center"><span class="badge-continue">{{ s.get('study_type', 'حضوري') }}</span></td>
+                    <td style="text-align:center"><span class="badge-continue">{{ s.get('status', 'مستمر') }}</span></td>
+                    <td style="text-align:center; font-weight:600; color:var(--success)">{{ format_currency(s.paid_total) }}</td>
+                    <td style="text-align:center; font-weight:600; color:{% if s.remaining_balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
+                        {{ format_currency(s.remaining_balance) }}
+                    </td>
+                    <td style="text-align:center">
+                        {% if s.is_paying %}
+                            <span class="badge-paid"><i class="fas fa-check"></i> دافع</span>
+                        {% else %}
+                            <span class="badge-unpaid"><i class="fas fa-times"></i> غير دافع</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- سجل السحوبات -->
+{% if recent_withdrawals %}
+<div class="report-section" style="padding-bottom:24px;">
+    <div class="section-title">
+        <i class="fas fa-hand-holding-usd"></i>
+        سجل السحوبات
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width:35px; text-align:center">#</th>
+                    <th style="text-align:center">المبلغ</th>
+                    <th style="text-align:center">التاريخ</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in recent_withdrawals %}
+                <tr>
+                    <td style="text-align:center; color:var(--muted)">{{ loop.index }}</td>
+                    <td style="text-align:center; font-weight:700; color:var(--warning)">{{ format_currency(w.amount) }}</td>
+                    <td style="text-align:center; color:var(--muted)">{{ format_date(w.withdrawal_date) }}</td>
+                    <td style="color:var(--muted); font-size:12px">{{ w.notes or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- تذييل -->
+<div class="footer-text">
+    نظام إدارة المعهد - HussamVision
+</div>
+
+{% endblock %}

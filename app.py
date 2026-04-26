@@ -31,6 +31,7 @@ from database import init_db
 from routes.main_routes import router as main_router
 from routes.api_routes import router as api_router
 from routes.pdf_routes import router as pdf_router
+from routes.report_routes import router as report_router
 
 
 @asynccontextmanager
@@ -76,6 +77,7 @@ app = FastAPI(
 app.include_router(main_router)
 app.include_router(api_router)
 app.include_router(pdf_router)
+app.include_router(report_router)
 
 # مجلد القوالب
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))

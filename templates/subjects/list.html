@@ -21,8 +21,8 @@
                     <i class="fas fa-th-large"></i>
                 </button>
             </div>
-            <a href="/pdf/subjects/all" target="_blank" class="btn btn-outline-info btn-sm">
-                <i class="fas fa-file-pdf me-1"></i> PDF شامل
+            <a href="/reports/subjects/all" target="_blank" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-print me-1"></i> طباعة شاملة
             </a>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
                 <i class="fas fa-plus me-1"></i> إضافة مادة
@@ -73,7 +73,7 @@
                                 <th class="text-center" style="width: 50px">#</th>
                                 <th>اسم المادة</th>
                                 <th class="text-center">عدد المدرسين</th>
-                                <th class="text-center" style="width: 60px;">PDF</th>
+                                <th class="text-center" style="width: 60px;">طباعة</th>
                                 <th class="text-center" style="width: 110px;">الإجراءات</th>
                             </tr>
                         </thead>
@@ -95,8 +95,8 @@
                                     <span class="badge bg-purple-gradient">{{ subject.teachers_count }} مدرس</span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="/pdf/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="تحميل PDF">
-                                        <i class="fas fa-file-pdf"></i>
+                                    <a href="/reports/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="طباعة">
+                                        <i class="fas fa-print"></i>
                                     </a>
                                 </td>
                                 <td class="text-center">
@@ -160,8 +160,8 @@
                             <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')">
                                 <i class="fas fa-edit me-1"></i>تعديل
                             </button>
-                            <a href="/pdf/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="PDF">
-                                <i class="fas fa-file-pdf"></i>
+                            <a href="/reports/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="طباعة">
+                                <i class="fas fa-print"></i>
                             </a>
                             {% if subject.teachers_count > 0 %}
                             <button type="button" class="btn btn-outline-danger btn-sm" disabled

@@ -23,8 +23,8 @@
                 <a href="/students/{{ student.id }}/edit" class="btn btn-primary btn-sm">
                     <i class="fas fa-edit me-1"></i> تعديل
                 </a>
-                <a href="/pdf/student/{{ student.id }}" class="btn btn-info btn-sm" target="_blank">
-                    <i class="fas fa-file-pdf me-1"></i> PDF
+                <a href="/reports/student/{{ student.id }}" class="btn btn-info btn-sm" target="_blank">
+                    <i class="fas fa-print me-1"></i> طباعة
                 </a>
                 <form method="POST" action="/students/{{ student.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطالب؟')">
                     <button type="submit" class="btn btn-outline-danger btn-sm">
@@ -220,8 +220,8 @@
                                         </td>
                                         <td class="text-center text-muted d-none d-sm-table-cell">{{ inst.payment_date }}</td>
                                         <td class="text-center">
-                                            <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل PDF">
-                                                <i class="fas fa-file-pdf"></i>
+                                            <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل طباعة">
+                                                <i class="fas fa-print"></i>
                                             </a>
                                         </td>
                                     </tr>

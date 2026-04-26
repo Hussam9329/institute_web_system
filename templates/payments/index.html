@@ -121,8 +121,8 @@
                                 <td class="text-center text-muted d-none d-sm-table-cell">{{ inst.payment_date }}</td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm d-flex justify-content-center">
-                                        <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل PDF">
-                                            <i class="fas fa-file-pdf"></i>
+                                        <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل طباعة">
+                                            <i class="fas fa-print"></i>
                                         </a>
                                         <button class="btn btn-outline-danger" onclick="deletePayment({{ inst.id }})" title="حذف">
                                             <i class="fas fa-trash"></i>
@@ -178,7 +178,7 @@
 
                         <!-- أزرار الإجراءات -->
                         <div class="list-card-actions">
-                            <a href="/pdf/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-file-pdf me-1"></i>الوصل</a>
+                            <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-print me-1"></i>الوصل</a>
                             <button class="btn btn-outline-danger btn-sm" onclick="deletePayment({{ inst.id }})" title="حذف"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
@@ -339,7 +339,7 @@ async function submitPayment(event) {
         if (result.success) {
             showAlert(result.message, 'success');
             if (result.installment_id) {
-                const receiptUrl = `/pdf/receipt/${result.installment_id}`;
+                const receiptUrl = `/reports/receipt/${result.installment_id}`;
                 const receiptId = 'receipt-' + Date.now();
                 const receiptAlert = document.createElement('div');
                 receiptAlert.id = receiptId;
@@ -348,11 +348,11 @@ async function submitPayment(event) {
                 receiptAlert.innerHTML = `
                     <div class="d-flex align-items-center gap-3 p-3">
                         <div class="alert-icon-wrap">
-                            <i class="fas fa-file-pdf"></i>
+                            <i class="fas fa-print"></i>
                         </div>
                         <div class="alert-text">تم تسجيل القسط - يمكنك تحميل الوصل</div>
                         <a href="${receiptUrl}" target="_blank" class="alert-close-btn" style="background:rgba(255,255,255,0.35); font-size:12px; width:auto; padding:4px 10px; border-radius:8px; text-decoration:none;">
-                            <i class="fas fa-download me-1"></i>تحميل
+                            <i class="fas fa-print me-1"></i>طباعة
                         </a>
                         <button type="button" class="alert-close-btn" onclick="dismissAlert('${receiptId}')">
                             <i class="fas fa-times"></i>
