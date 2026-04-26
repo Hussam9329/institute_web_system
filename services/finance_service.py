@@ -257,6 +257,12 @@ class FinanceService:
             # Determine deduction type and value based on study type
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
             
+            # إذا كان مبلغ القسط الأول يساوي القسط الكلي → اعتبره دفع كامل
+            student_total_fee = self._get_fee_for_study_type(t, study_type)
+            if has_first and not has_full and not has_second and first_amount >= student_total_fee and student_total_fee > 0:
+                has_full = True
+                has_first = False
+
             if ded_value <= 0:
                 continue
             
@@ -272,7 +278,6 @@ class FinanceService:
             else:
                 # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
                 # مثال: قسط كلي 500، نسبة 16% → خصم المعهد 80 → كل قسط 40
-                student_total_fee = self._get_fee_for_study_type(t, study_type)
 
                 if has_full:
                     total_deduction += int((student_total_fee * ded_value) / 100)
