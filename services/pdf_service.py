@@ -1,7 +1,7 @@
 # ============================================
 # services/pdf_service.py
-# خدمة توليد تقارير PDF احترافية متقدمة - ReportLab + دعم عربي
-# خط Calibri + تصميم RTL كامل
+# خدمة توليد تقارير PDF احترافية - ReportLab + دعم عربي كامل
+# تصميم RTL هندسي دقيق - محاذاة وهوامش وجداول محسوبة
 # ============================================
 
 import os
@@ -31,12 +31,35 @@ from database import Database
 
 # ===== تسجيل الخطوط - DejaVu Sans (يدعم العربية + لاتيني) =====
 FONT_DIR = os.path.join(BASE_DIR, "static", "fonts")
-# DejaVu Sans يدعم العربية واللاتيني - خط احترافي ونظيف
 pdfmetrics.registerFont(TTFont('Calibri', os.path.join(FONT_DIR, 'DejaVuSans.ttf')))
 pdfmetrics.registerFont(TTFont('Calibri-Bold', os.path.join(FONT_DIR, 'DejaVuSans-Bold.ttf')))
 
 addMapping('Calibri', 0, 0, 'Calibri')
 addMapping('Calibri', 1, 0, 'Calibri-Bold')
+
+
+# ===== نظام الأبعاد الهندسي - محسوب بدقة =====
+# أبعاد A4 بالـ points
+A4_W, A4_H = A4  # (595.28, 841.89) pt
+
+# هوامش دقيقة ومتناظرة
+MARGIN_SIDE = 15 * mm   # 42.52 pt
+MARGIN_TOP = 12 * mm    # 33.96 pt
+MARGIN_BOTTOM = 18 * mm # 50.95 pt (مساحة للشريط السفلي)
+
+# عرض المحتوى الفعلي (المنطقة المتاحة للمحتوى)
+CONTENT_W = A4_W - 2 * MARGIN_SIDE  # 510.24 pt
+
+# هوامش وصل الدفع (A5)
+RECEIPT_MARGIN = 10 * mm
+RECEIPT_CONTENT_W = A4_W - 2 * RECEIPT_MARGIN  # 538.58 pt
+
+# نظام المسافات (مضاعفات قاعدة 3pt)
+SP_XS = 3
+SP_SM = 6
+SP_MD = 10
+SP_LG = 14
+SP_XL = 20
 
 
 # ===== نظام الألوان الحديث =====
@@ -75,6 +98,7 @@ C = ThemeColors
 
 # محاذاة RTL - اليمين
 RTL = 2
+CENTER = 1
 
 
 def ar(text):
@@ -91,78 +115,90 @@ def ar_para(text, style):
 
 
 class PageNumberCanvas:
-    """إضافة أرقام الصفحات والشريط السفلي"""
+    """شريط تذييل احترافي مع رقم صفحة واسم النظام"""
     def __init__(self, canvas, doc):
         self.canvas = canvas
         self.doc = doc
 
     def __call__(self, canvas, doc):
         canvas.saveState()
+
+        # الشريط الرئيسي (سميك)
         canvas.setStrokeColor(C.PRIMARY)
-        canvas.setLineWidth(2)
-        canvas.line(15*mm, 10*mm, A4[0] - 15*mm, 10*mm)
+        canvas.setLineWidth(2.5)
+        x_left = MARGIN_SIDE
+        x_right = A4_W - MARGIN_SIDE
+        y_line = MARGIN_BOTTOM - 4 * mm
+        canvas.line(x_left, y_line, x_right, y_line)
+
+        # الشريط الثانوي (رفيع)
         canvas.setStrokeColor(C.ACCENT)
-        canvas.setLineWidth(0.5)
-        canvas.line(15*mm, 9*mm, A4[0] - 15*mm, 9*mm)
+        canvas.setLineWidth(0.6)
+        canvas.line(x_left, y_line - 1.5 * mm, x_right, y_line - 1.5 * mm)
+
+        # رقم الصفحة - وسط
         canvas.setFont('Calibri', 7)
         canvas.setFillColor(C.MUTED)
         page_num = canvas.getPageNumber()
-        canvas.drawCentredString(A4[0] / 2, 5*mm, str(page_num))
+        canvas.drawCentredString(A4_W / 2, y_line - 5 * mm, str(page_num))
+
+        # اسم النظام - يمين
         canvas.setFont('Calibri', 6)
-        system_text = "HussamVision"
-        canvas.drawRightString(A4[0] - 15*mm, 5*mm, system_text)
+        canvas.drawRightString(x_right, y_line - 5 * mm, "HussamVision")
+
         canvas.restoreState()
 
 
 class PDFService:
-    """خدمة توليد تقارير PDF احترافية متقدمة بدعم كامل للعربية و RTL"""
+    """خدمة توليد تقارير PDF احترافية بدعم كامل للعربية و RTL - تصميم هندسي دقيق"""
 
     def __init__(self):
         self.db = Database()
 
     # ===== أنماط الطباعة =====
     def _get_styles(self):
-        """أنماط طباعة RTL بخط Calibri"""
+        """أنماط طباعة RTL بخط Calibri (DejaVu Sans)"""
         styles = {}
+
         styles['title'] = ParagraphStyle(
-            'title', fontName='Calibri-Bold', fontSize=22, alignment=RTL,
-            textColor=C.WHITE, spaceAfter=2, leading=28
+            'title', fontName='Calibri-Bold', fontSize=20, alignment=CENTER,
+            textColor=C.WHITE, spaceAfter=2, leading=26
         )
         styles['subtitle'] = ParagraphStyle(
-            'subtitle', fontName='Calibri', fontSize=11, alignment=RTL,
-            textColor=colors.HexColor('#93c5fd'), spaceAfter=0, leading=16
+            'subtitle', fontName='Calibri', fontSize=10, alignment=CENTER,
+            textColor=colors.HexColor('#93c5fd'), spaceAfter=0, leading=14
         )
         styles['report_title'] = ParagraphStyle(
-            'report_title', fontName='Calibri-Bold', fontSize=16, alignment=RTL,
-            textColor=C.PRIMARY, spaceBefore=4, spaceAfter=2, leading=22
+            'report_title', fontName='Calibri-Bold', fontSize=15, alignment=RTL,
+            textColor=C.PRIMARY, spaceBefore=4, spaceAfter=2, leading=20
         )
         styles['section'] = ParagraphStyle(
-            'section', fontName='Calibri-Bold', fontSize=11, alignment=RTL,
-            textColor=C.WHITE, spaceBefore=10, spaceAfter=0, leading=16,
-            backColor=C.ACCENT, borderPadding=(6, 10, 6, 10)
+            'section', fontName='Calibri-Bold', fontSize=10, alignment=RTL,
+            textColor=C.WHITE, spaceBefore=SP_SM, spaceAfter=0, leading=15,
+            borderPadding=(5, 8, 5, 8)
         )
         styles['normal'] = ParagraphStyle(
             'normal', fontName='Calibri', fontSize=9, alignment=RTL,
-            textColor=C.TEXT, leading=14
+            textColor=C.TEXT, leading=13
         )
         styles['normal_center'] = ParagraphStyle(
-            'normal_center', fontName='Calibri', fontSize=9, alignment=1,
-            textColor=C.TEXT, leading=14
+            'normal_center', fontName='Calibri', fontSize=9, alignment=CENTER,
+            textColor=C.TEXT, leading=13
         )
         styles['bold'] = ParagraphStyle(
             'bold', fontName='Calibri-Bold', fontSize=9, alignment=RTL,
-            textColor=C.DARK, leading=14
+            textColor=C.DARK, leading=13
         )
         styles['bold_center'] = ParagraphStyle(
-            'bold_center', fontName='Calibri-Bold', fontSize=9, alignment=1,
-            textColor=C.DARK, leading=14
+            'bold_center', fontName='Calibri-Bold', fontSize=9, alignment=CENTER,
+            textColor=C.DARK, leading=13
         )
         styles['small'] = ParagraphStyle(
             'small', fontName='Calibri', fontSize=7, alignment=RTL,
             textColor=C.MUTED, leading=10
         )
         styles['small_center'] = ParagraphStyle(
-            'small_center', fontName='Calibri', fontSize=7, alignment=1,
+            'small_center', fontName='Calibri', fontSize=7, alignment=CENTER,
             textColor=C.MUTED, leading=10
         )
         styles['success'] = ParagraphStyle(
@@ -178,130 +214,132 @@ class PDFService:
             textColor=C.WARNING, leading=13
         )
         styles['kpi_value'] = ParagraphStyle(
-            'kpi_value', fontName='Calibri-Bold', fontSize=14, alignment=RTL,
-            textColor=C.DARK, leading=18
+            'kpi_value', fontName='Calibri-Bold', fontSize=13, alignment=CENTER,
+            textColor=C.DARK, leading=17
         )
         styles['kpi_label'] = ParagraphStyle(
-            'kpi_label', fontName='Calibri', fontSize=7, alignment=RTL,
+            'kpi_label', fontName='Calibri', fontSize=7, alignment=CENTER,
             textColor=C.TEXT_SECONDARY, leading=10
         )
         styles['footer_text'] = ParagraphStyle(
-            'footer_text', fontName='Calibri', fontSize=7, alignment=1,
+            'footer_text', fontName='Calibri', fontSize=7, alignment=CENTER,
             textColor=C.MUTED, leading=10
+        )
+        styles['date_style'] = ParagraphStyle(
+            'date_line', fontName='Calibri', fontSize=8, alignment=RTL,
+            textColor=C.TEXT_SECONDARY, leading=11
         )
         return styles
 
-    # ===== مكونات التصميم - RTL =====
+    # ===== مكونات التصميم الهندسي - RTL =====
 
     def _build_header(self, styles, subtitle_text, report_type_icon=""):
-        """رأس احترافي متدرج الألوان - RTL"""
+        """رأس احترافي - عرض دقيق = CONTENT_W"""
         elements = []
 
         header_content = []
         if report_type_icon:
             header_content.append(ar_para(report_type_icon, ParagraphStyle(
-                'icon', fontName='Calibri-Bold', fontSize=10, alignment=RTL,
-                textColor=C.HEADER_ACCENT, leading=14
+                'icon', fontName='Calibri-Bold', fontSize=9, alignment=RTL,
+                textColor=C.HEADER_ACCENT, leading=13
             )))
         header_content.append(ar_para(APP_TITLE, styles['title']))
         header_content.append(ar_para(subtitle_text, styles['subtitle']))
 
-        header_data = [[header_content]]
-        header_table = Table(header_data, colWidths=[520])
+        header_table = Table([[header_content]], colWidths=[CONTENT_W])
         header_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), C.PRIMARY),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
             ('LEFTPADDING', (0, 0), (-1, -1), 10),
             ('RIGHTPADDING', (0, 0), (-1, -1), 10),
         ]))
         elements.append(header_table)
 
-        accent_data = [['', '']]
-        accent_table = Table(accent_data, colWidths=[260, 260])
+        # شريط ألوان ثنائي
+        half_w = CONTENT_W / 2
+        accent_table = Table([['', '']], colWidths=[half_w, half_w])
         accent_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (0, 0), C.ACCENT),
             ('BACKGROUND', (1, 0), (1, 0), C.PRIMARY_LIGHT),
             ('TOPPADDING', (0, 0), (-1, -1), 0),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ('LINEBELOW', (0, 0), (-1, -1), 2, C.ACCENT),
+            ('LINEBELOW', (0, 0), (-1, -1), 1.5, C.ACCENT),
         ]))
         elements.append(accent_table)
 
         now = datetime.now().strftime("%Y/%m/%d - %H:%M")
-        elements.append(Spacer(1, 6))
-        date_style = ParagraphStyle(
-            'date_line', fontName='Calibri', fontSize=8, alignment=RTL,
-            textColor=C.TEXT_SECONDARY, leading=12
-        )
-        elements.append(ar_para(f"تاريخ التقرير: {now}", date_style))
-        elements.append(Spacer(1, 8))
+        elements.append(Spacer(1, SP_SM))
+        elements.append(ar_para(f"تاريخ التقرير: {now}", styles['date_style']))
+        elements.append(Spacer(1, SP_MD))
 
         return elements
 
     def _build_kpi_cards(self, kpi_data, styles):
-        """بطاقات ملونة للمؤشرات الرئيسية - RTL"""
+        """بطاقات ملونة للمؤشرات الرئيسية - أبعاد دقيقة ومحاذاة مثالية"""
         elements = []
         num_cards = len(kpi_data)
         if num_cards == 0:
             return elements
 
-        total_width = 520
-        card_width = total_width / num_cards
-        spacing = 4
+        card_width = CONTENT_W / num_cards
+        gap = 3  # مسافة بين البطاقات
 
         cards = []
         for label, value, text_color, bg_color, border_color in kpi_data:
+            inner_w = card_width - gap * 2
+
             val_style = ParagraphStyle(
-                f'kv_{label}', fontName='Calibri-Bold', fontSize=13, alignment=RTL,
+                f'kv_{label}', fontName='Calibri-Bold', fontSize=13, alignment=CENTER,
                 textColor=text_color, leading=17
             )
             lbl_style = ParagraphStyle(
-                f'kl_{label}', fontName='Calibri', fontSize=7, alignment=RTL,
+                f'kl_{label}', fontName='Calibri', fontSize=7, alignment=CENTER,
                 textColor=C.TEXT_SECONDARY, leading=10
             )
 
-            card_content = Table(
+            card = Table(
                 [[ar_para(str(value), val_style)],
                  [ar_para(label, lbl_style)]],
-                colWidths=[card_width - spacing * 2]
+                colWidths=[inner_w]
             )
-            card_content.setStyle(TableStyle([
+            card.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('BACKGROUND', (0, 0), (-1, -1), bg_color),
                 ('TOPPADDING', (0, 0), (0, 0), 8),
-                ('BOTTOMPADDING', (0, -1), (0, -1), 8),
-                ('TOPPADDING', (0, 1), (0, 1), 2),
-                ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, -1), (0, -1), 7),
+                ('TOPPADDING', (0, 1), (0, 1), 1),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
                 ('LINEABOVE', (0, 0), (-1, 0), 3, border_color),
+                ('BOX', (0, 0), (-1, -1), 0.3, C.BORDER),
             ]))
-            cards.append(card_content)
+            cards.append(card)
 
         kpi_row = Table([cards], colWidths=[card_width] * num_cards)
         kpi_row.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), spacing / 2),
-            ('RIGHTPADDING', (0, 0), (-1, -1), spacing / 2),
+            ('LEFTPADDING', (0, 0), (-1, -1), gap / 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), gap / 2),
         ]))
         elements.append(kpi_row)
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, SP_MD))
         return elements
 
     def _build_section_header(self, title, styles, icon=""):
-        """رأس قسم احترافي - RTL"""
+        """رأس قسم - عرض دقيق = CONTENT_W"""
         elements = []
         title_text = f"{icon}  {title}" if icon else title
 
-        section_data = [[ar_para(title_text, styles['section'])]]
-        section_table = Table(section_data, colWidths=[520])
+        section_table = Table([[ar_para(title_text, styles['section'])]], colWidths=[CONTENT_W])
         section_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), C.ACCENT),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ('LEFTPADDING', (0, 0), (-1, -1), 10),
@@ -309,14 +347,14 @@ class PDFService:
             ('ROUNDEDCORNERS', [3, 3, 3, 3]),
         ]))
         elements.append(section_table)
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, SP_SM))
         return elements
 
     def _build_info_cards(self, data, styles, columns=2):
-        """بطاقات معلومات منظمة - RTL"""
+        """بطاقات معلومات منظمة - عرض محسوب بدقة"""
         elements = []
-        card_width = 520 / columns
-        padding = 4
+        card_width = CONTENT_W / columns
+        gap = 3
 
         rows_data = []
         current_row = []
@@ -330,10 +368,11 @@ class PDFService:
                 textColor=C.DARK, leading=13
             )
 
+            inner_w = card_width - gap * 2
             cell = Table(
                 [[ar_para(label, lbl_style)],
                  [ar_para(str(value), val_style)]],
-                colWidths=[card_width - padding * 2]
+                colWidths=[inner_w]
             )
             cell.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, -1), C.WHITE),
@@ -342,6 +381,7 @@ class PDFService:
                 ('BOTTOMPADDING', (0, -1), (0, -1), 6),
                 ('LEFTPADDING', (0, 0), (-1, -1), 8),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
             ]))
 
             current_row.append(cell)
@@ -351,7 +391,8 @@ class PDFService:
 
         if current_row:
             while len(current_row) < columns:
-                empty = Table([['']], colWidths=[card_width - padding * 2])
+                inner_w = card_width - gap * 2
+                empty = Table([['']], colWidths=[inner_w])
                 empty.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, -1), C.WHITE),
                     ('BOX', (0, 0), (-1, -1), 0.5, C.BORDER),
@@ -363,16 +404,19 @@ class PDFService:
         info_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), padding / 2),
-            ('RIGHTPADDING', (0, 0), (-1, -1), padding / 2),
-            ('TOPPADDING', (0, 0), (-1, -1), padding / 2),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), padding / 2),
+            ('LEFTPADDING', (0, 0), (-1, -1), gap / 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), gap / 2),
+            ('TOPPADDING', (0, 0), (-1, -1), gap / 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), gap / 2),
         ]))
         elements.append(info_table)
         return elements
 
     def _build_info_table(self, data, styles):
-        """جدول معلومات احترافي - RTL (البيان يمين، القيمة يسار)"""
+        """جدول معلومات احترافي - RTL (البيان يمين، القيمة يسار) - عرض دقيق"""
+        col_label = CONTENT_W * 0.30  # 30% للبيان
+        col_value = CONTENT_W * 0.70  # 70% للقيمة
+
         table_data = []
         for label, value in data:
             lbl_style = ParagraphStyle(
@@ -389,12 +433,12 @@ class PDFService:
                 ar_para(str(label), lbl_style)
             ])
 
-        t = Table(table_data, colWidths=[360, 160])
+        t = Table(table_data, colWidths=[col_value, col_label])
         style_cmds = [
             ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 7),
+            ('TOPPADDING', (0, 0), (-1, -1), 7),
             ('LEFTPADDING', (0, 0), (-1, -1), 8),
             ('RIGHTPADDING', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 0.4, C.BORDER),
@@ -405,14 +449,23 @@ class PDFService:
         return t
 
     def _build_data_table(self, headers, rows, styles, col_widths=None):
-        """جدول بيانات احترافي - RTL (الأعمدة معكوسة يميناً)"""
+        """جدول بيانات احترافي - RTL
+        يتم عكس ترتيب الأعمدة تلقائياً لعرض RTL صحيح.
+        col_widths: تُمرّر بالترتيب المنطقي (متوافق مع headers) ويتم عكسها تلقائياً.
+        """
         # عكس ترتيب الأعمدة لـ RTL
         headers_rtl = list(reversed(headers))
         rows_rtl = [list(reversed(row)) for row in rows]
 
+        # عكس أطوال الأعمدة أيضاً
+        if col_widths:
+            col_widths_rtl = list(reversed(col_widths))
+        else:
+            col_widths_rtl = None
+
         # رأس الجدول
         header_style = ParagraphStyle(
-            'th', fontName='Calibri-Bold', fontSize=8, alignment=RTL,
+            'th', fontName='Calibri-Bold', fontSize=8, alignment=CENTER,
             textColor=C.WHITE, leading=12
         )
         table_data = [[ar_para(h, header_style) for h in headers_rtl]]
@@ -428,23 +481,25 @@ class PDFService:
                 styled_row.append(ar_para(str(cell), cell_style))
             table_data.append(styled_row)
 
-        t = Table(table_data, colWidths=col_widths)
+        t = Table(table_data, colWidths=col_widths_rtl)
         style_cmds = [
             ('BACKGROUND', (0, 0), (-1, 0), C.PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, 0), C.WHITE),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Calibri-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 7),
+            ('TOPPADDING', (0, 0), (-1, 0), 7),
             ('ALIGN', (0, 1), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 1), (-1, -1), 'Calibri'),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-            ('TOPPADDING', (0, 1), (-1, -1), 6),
-            ('LEFTPADDING', (0, 1), (-1, -1), 4),
-            ('RIGHTPADDING', (0, 1), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+            ('TOPPADDING', (0, 1), (-1, -1), 5),
+            ('LEFTPADDING', (0, 1), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 1), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, 0), 6),
+            ('RIGHTPADDING', (0, 0), (-1, 0), 6),
             ('GRID', (0, 0), (-1, -1), 0.3, C.BORDER),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [C.WHITE, C.LIGHT_BG]),
             ('BOX', (0, 0), (-1, -1), 1, C.PRIMARY_LIGHT),
@@ -468,8 +523,8 @@ class PDFService:
         styles = self._get_styles()
         doc = SimpleDocTemplate(
             filepath, pagesize=A4,
-            rightMargin=15*mm, leftMargin=15*mm,
-            topMargin=12*mm, bottomMargin=15*mm
+            rightMargin=MARGIN_SIDE, leftMargin=MARGIN_SIDE,
+            topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM
         )
 
         teachers_summary = finance_service.get_student_all_teachers_summary(student_id)
@@ -502,7 +557,7 @@ class PDFService:
             ("عدد المدرسين", str(num_teachers)),
             ("ملاحظات", student['notes'] or 'لا توجد ملاحظات'),
         ], styles, columns=2))
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, SP_LG))
 
         elements.extend(self._build_section_header("التفاصيل المالية حسب المدرس", styles))
 
@@ -527,15 +582,19 @@ class PDFService:
             rows.append(["", "الإجمالي", "", "", format_currency(total_fee_all),
                         format_currency(total_paid_all), format_currency(total_remaining_all), f"{total_pct}%"])
 
-            t = self._build_data_table(headers, rows, styles, col_widths=[40, 75, 75, 55, 52, 75, 75, 22])
+            # أعمدة محسوبة بدقة: المجموع = CONTENT_W
+            cw = [30, 95, 82, 63, 68, 68, 68, 36]
+            assert sum(cw) == int(CONTENT_W), f"Column widths sum {sum(cw)} != {int(CONTENT_W)}"
+
+            t = self._build_data_table(headers, rows, styles, col_widths=cw)
 
             total_cmds = [
                 ('BACKGROUND', (0, -1), (-1, -1), C.ACCENT_BG),
                 ('FONTNAME', (0, -1), (-1, -1), 'Calibri-Bold'),
                 ('FONTSIZE', (0, -1), (-1, -1), 8),
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, C.PRIMARY),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 8),
-                ('TOPPADDING', (0, -1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 7),
+                ('TOPPADDING', (0, -1), (-1, -1), 7),
             ]
             t.setStyle(TableStyle(total_cmds))
             elements.append(t)
@@ -552,7 +611,7 @@ class PDFService:
             ''', (student_id,))
 
             if installments:
-                elements.append(Spacer(1, 14))
+                elements.append(Spacer(1, SP_LG))
                 elements.extend(self._build_section_header("سجل المدفوعات التفصيلي", styles))
 
                 inst_headers = ["#", "المدرس", "المادة", "المبلغ", "النوع", "التاريخ", "ملاحظات"]
@@ -567,9 +626,10 @@ class PDFService:
                         format_date(inst['payment_date']),
                         inst['notes'] or '-'
                     ])
+                # أعمدة محسوبة بدقة
+                cw = [30, 95, 78, 68, 60, 82, 97]
                 elements.append(self._build_data_table(
-                    inst_headers, inst_rows, styles,
-                    col_widths=[130, 68, 60, 70, 55, 75, 22]
+                    inst_headers, inst_rows, styles, col_widths=cw
                 ))
         except Exception:
             pass
@@ -597,8 +657,8 @@ class PDFService:
         styles = self._get_styles()
         doc = SimpleDocTemplate(
             filepath, pagesize=A4,
-            rightMargin=15*mm, leftMargin=15*mm,
-            topMargin=12*mm, bottomMargin=15*mm
+            rightMargin=MARGIN_SIDE, leftMargin=MARGIN_SIDE,
+            topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM
         )
 
         elements = self._build_header(styles, "تقرير المدرس المالي الشامل", "")
@@ -622,7 +682,7 @@ class PDFService:
             ("عدد الطلاب", str(len(students_list))),
             ("ملاحظات", teacher['notes'] or 'لا توجد ملاحظات'),
         ], styles, columns=2))
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, SP_LG))
 
         elements.extend(self._build_section_header("التفاصيل المالية", styles))
         elements.append(self._build_info_table([
@@ -633,7 +693,7 @@ class PDFService:
             ("إجمالي المسحوب", format_currency(balance_info['withdrawn_total'])),
             ("الرصيد المتبقي", format_currency(balance_info['remaining_balance'])),
         ], styles))
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, SP_LG))
 
         if students_list:
             elements.extend(self._build_section_header("قائمة الطلاب ودفعاتهم", styles))
@@ -650,20 +710,20 @@ class PDFService:
                     format_currency(s['remaining_balance']),
                     status
                 ])
+            cw = [28, 98, 72, 52, 80, 80, 100]
             elements.append(self._build_data_table(
-                headers, rows, styles,
-                col_widths=[55, 72, 72, 50, 55, 95, 22]
+                headers, rows, styles, col_widths=cw
             ))
 
         if recent_withdrawals:
-            elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, SP_LG))
             elements.extend(self._build_section_header("سجل السحوبات", styles))
             headers = ["#", "المبلغ", "التاريخ", "ملاحظات"]
             rows = [[str(i), format_currency(w['amount']), format_date(w['withdrawal_date']), w['notes'] or '-']
                     for i, w in enumerate(recent_withdrawals, 1)]
+            cw = [30, 140, 140, 200]
             elements.append(self._build_data_table(
-                headers, rows, styles,
-                col_widths=[265, 100, 100, 25]
+                headers, rows, styles, col_widths=cw
             ))
 
         doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
@@ -723,32 +783,30 @@ class PDFService:
         styles = self._get_styles()
 
         page_w, page_h = 210 * mm, 148 * mm
-        usable_w = page_w - 20 * mm
+        usable_w = RECEIPT_CONTENT_W
 
         doc = SimpleDocTemplate(
             filepath, pagesize=(page_w, page_h),
-            rightMargin=10*mm, leftMargin=10*mm,
-            topMargin=8*mm, bottomMargin=8*mm,
+            rightMargin=RECEIPT_MARGIN, leftMargin=RECEIPT_MARGIN,
+            topMargin=8 * mm, bottomMargin=8 * mm,
         )
 
         elements = []
 
-        # رأس الوصل
-        header_data = [[ar(APP_TITLE)]]
-        header_table = Table(header_data, colWidths=[usable_w])
+        # رأس الوصل - عرض دقيق = usable_w
+        header_table = Table([[ar(APP_TITLE)]], colWidths=[usable_w])
         header_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), C.PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, -1), C.WHITE),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, -1), 'Calibri-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 13),
-            ('TOPPADDING', (0, 0), (-1, -1), 7),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('FONTSIZE', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
         elements.append(header_table)
 
-        receipt_title_data = [[ar("وصل دفع رسمي")]]
-        receipt_title_table = Table(receipt_title_data, colWidths=[usable_w])
+        receipt_title_table = Table([[ar("وصل دفع رسمي")]], colWidths=[usable_w])
         receipt_title_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), C.ACCENT),
             ('TEXTCOLOR', (0, 0), (-1, -1), C.WHITE),
@@ -761,9 +819,11 @@ class PDFService:
         elements.append(receipt_title_table)
 
         # بطاقات المعلومات - RTL
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, SP_SM))
 
-        card_w = usable_w / 3 - 3
+        card_gap = 3
+        card_w = (usable_w - card_gap * 4) / 3  # 3 بطاقات مع 4 فواصل
+
         lbl_s = ParagraphStyle('rl', fontName='Calibri', fontSize=7, alignment=RTL, textColor=C.TEXT_SECONDARY, leading=10)
         val_s = ParagraphStyle('rv', fontName='Calibri-Bold', fontSize=9, alignment=RTL, textColor=C.DARK, leading=13)
 
@@ -775,10 +835,12 @@ class PDFService:
             cell.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, -1), bg),
                 ('BOX', (0, 0), (-1, -1), 0.8, border),
-                ('TOPPADDING', (0, 0), (0, 0), 4),
-                ('BOTTOMPADDING', (0, -1), (0, -1), 4),
-                ('LEFTPADDING', (0, 0), (-1, -1), 5),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (0, 0), 5),
+                ('BOTTOMPADDING', (0, -1), (0, -1), 5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
             return cell
 
@@ -793,25 +855,25 @@ class PDFService:
             _make_card("تاريخ الدفع", format_date(installment['payment_date'])),
         ]
 
-        info_grid = Table([row1, row2], colWidths=[card_w + 3] * 3)
+        info_grid = Table([row1, row2], colWidths=[card_w + card_gap * 2] * 3)
         info_grid.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 1.5),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
-            ('TOPPADDING', (0, 0), (-1, -1), 1.5),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
+            ('LEFTPADDING', (0, 0), (-1, -1), card_gap / 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), card_gap / 2),
+            ('TOPPADDING', (0, 0), (-1, -1), card_gap / 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), card_gap / 2),
         ]))
         elements.append(info_grid)
 
         # بطاقة المبلغ المدفوع
-        elements.append(Spacer(1, 4))
+        elements.append(Spacer(1, SP_SM))
         amount_cell = Table(
             [[ar_para("المبلغ المدفوع", ParagraphStyle(
-                'al', fontName='Calibri', fontSize=8, alignment=RTL, textColor=C.WHITE, leading=12
+                'al', fontName='Calibri', fontSize=8, alignment=CENTER, textColor=C.WHITE, leading=12
             ))],
              [ar_para(format_currency(installment['amount']), ParagraphStyle(
-                'av', fontName='Calibri-Bold', fontSize=16, alignment=RTL, textColor=C.WHITE, leading=22
+                'av', fontName='Calibri-Bold', fontSize=16, alignment=CENTER, textColor=C.WHITE, leading=22
             ))]],
             colWidths=[usable_w]
         )
@@ -824,8 +886,8 @@ class PDFService:
         ]))
         elements.append(amount_cell)
 
-        # الملخص المالي - RTL
-        elements.append(Spacer(1, 4))
+        # الملخص المالي
+        elements.append(Spacer(1, SP_SM))
 
         if remaining_balance > 0:
             bal_color, bal_bg, bal_border = C.DANGER, C.DANGER_BG, C.DANGER
@@ -839,8 +901,8 @@ class PDFService:
             _make_card("إجمالي المدفوع", format_currency(total_paid), C.LIGHT_BG, C.BORDER),
         ]
 
-        bal_val_s = ParagraphStyle('bv', fontName='Calibri-Bold', fontSize=11, alignment=RTL, textColor=bal_color, leading=15)
-        bal_lbl_s = ParagraphStyle('bl', fontName='Calibri-Bold', fontSize=8, alignment=RTL, textColor=bal_color, leading=12)
+        bal_val_s = ParagraphStyle('bv', fontName='Calibri-Bold', fontSize=11, alignment=CENTER, textColor=bal_color, leading=15)
+        bal_lbl_s = ParagraphStyle('bl', fontName='Calibri-Bold', fontSize=8, alignment=CENTER, textColor=bal_color, leading=12)
         bal_card = Table(
             [[ar_para("المبلغ المتبقي", bal_lbl_s)], [ar_para(format_currency(remaining_balance), bal_val_s)]],
             colWidths=[card_w]
@@ -848,27 +910,28 @@ class PDFService:
         bal_card.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), bal_bg),
             ('BOX', (0, 0), (-1, -1), 1.5, bal_border),
-            ('TOPPADDING', (0, 0), (0, 0), 4),
-            ('BOTTOMPADDING', (0, -1), (0, -1), 4),
-            ('LEFTPADDING', (0, 0), (-1, -1), 5),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+            ('TOPPADDING', (0, 0), (0, 0), 5),
+            ('BOTTOMPADDING', (0, -1), (0, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ]))
         summary_cards.append(bal_card)
 
-        summary_table = Table([summary_cards], colWidths=[card_w + 3] * 3)
+        summary_table = Table([summary_cards], colWidths=[card_w + card_gap * 2] * 3)
         summary_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 1.5),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
-            ('TOPPADDING', (0, 0), (-1, -1), 1.5),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
+            ('LEFTPADDING', (0, 0), (-1, -1), card_gap / 2),
+            ('RIGHTPADDING', (0, 0), (-1, -1), card_gap / 2),
+            ('TOPPADDING', (0, 0), (-1, -1), card_gap / 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), card_gap / 2),
         ]))
         elements.append(summary_table)
 
         has_notes = bool(installment.get('notes') and str(installment['notes']).strip())
         if has_notes:
-            elements.append(Spacer(1, 3))
+            elements.append(Spacer(1, SP_XS))
             note_lbl = ParagraphStyle('nl', fontName='Calibri', fontSize=7, alignment=RTL, textColor=C.TEXT_SECONDARY, leading=10)
             note_val = ParagraphStyle('nv', fontName='Calibri', fontSize=8, alignment=RTL, textColor=C.TEXT, leading=12)
             note_cell = Table(
@@ -882,18 +945,19 @@ class PDFService:
                 ('BOTTOMPADDING', (0, -1), (0, -1), 4),
                 ('LEFTPADDING', (0, 0), (-1, -1), 6),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
             ]))
             elements.append(note_cell)
 
         # التذييل
-        elements.append(Spacer(1, 8))
+        elements.append(Spacer(1, SP_MD))
         now = datetime.now()
-        footer_s = ParagraphStyle('ft', fontName='Calibri', fontSize=7, alignment=RTL, textColor=C.MUTED, leading=10)
+        footer_s = ParagraphStyle('ft', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.MUTED, leading=10)
         elements.append(ar_para(f"التاريخ: {now.strftime('%Y/%m/%d')} - الوقت: {now.strftime('%H:%M')}", footer_s))
-        elements.append(Spacer(1, 8))
+        elements.append(Spacer(1, SP_MD))
         elements.append(HRFlowable(width="35%", thickness=0.5, color=C.DARK, spaceBefore=0, spaceAfter=2))
-        elements.append(ar_para("توقيع المسؤول", ParagraphStyle('sig', fontName='Calibri', fontSize=7, alignment=1, textColor=C.TEXT_SECONDARY, leading=10)))
-        elements.append(Spacer(1, 4))
+        elements.append(ar_para("توقيع المسؤول", ParagraphStyle('sig', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.TEXT_SECONDARY, leading=10)))
+        elements.append(Spacer(1, SP_XS))
         elements.append(ar_para("نظام إدارة المعهد || HussamVision", footer_s))
 
         doc.build(elements)
@@ -916,8 +980,8 @@ class PDFService:
         styles = self._get_styles()
         doc = SimpleDocTemplate(
             filepath, pagesize=A4,
-            rightMargin=15*mm, leftMargin=15*mm,
-            topMargin=12*mm, bottomMargin=15*mm
+            rightMargin=MARGIN_SIDE, leftMargin=MARGIN_SIDE,
+            topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM
         )
 
         elements = self._build_header(styles, f"تقرير مادة: {subject_name}", "")
@@ -945,7 +1009,8 @@ class PDFService:
         for i, (t, sc) in enumerate(teacher_data, 1):
             rows.append([str(i), t['name'], format_currency(t['total_fee']), str(sc)])
 
-        t = self._build_data_table(headers, rows, styles, col_widths=[100, 120, 180, 30])
+        cw = [30, 160, 240, 80]
+        t = self._build_data_table(headers, rows, styles, col_widths=cw)
 
         total_cmds = [
             ('BACKGROUND', (0, -1), (-1, -1), C.ACCENT_BG),
@@ -974,8 +1039,8 @@ class PDFService:
         styles = self._get_styles()
         doc = SimpleDocTemplate(
             filepath, pagesize=A4,
-            rightMargin=15*mm, leftMargin=15*mm,
-            topMargin=12*mm, bottomMargin=15*mm
+            rightMargin=MARGIN_SIDE, leftMargin=MARGIN_SIDE,
+            topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM
         )
 
         total_subjects = len(subjects)
@@ -1028,7 +1093,8 @@ class PDFService:
                 for i, (t, sc) in enumerate(subj['teachers'], 1):
                     rows.append([str(i), t['name'], format_currency(t['total_fee']), str(sc)])
 
-                t = self._build_data_table(headers, rows, styles, col_widths=[100, 120, 180, 30])
+                cw = [30, 160, 240, 80]
+                t = self._build_data_table(headers, rows, styles, col_widths=cw)
 
                 total_cmds = [
                     ('BACKGROUND', (0, -1), (-1, -1), C.ACCENT_BG),
@@ -1042,7 +1108,7 @@ class PDFService:
                 elements.append(ar_para("لا يوجد مدرسين", styles['normal_center']))
 
             if idx < len(subject_details) - 1:
-                elements.append(Spacer(1, 8))
+                elements.append(Spacer(1, SP_MD))
 
         doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
         return filepath
