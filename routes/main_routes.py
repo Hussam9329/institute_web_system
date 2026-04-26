@@ -176,7 +176,6 @@ async def student_form(request: Request):
 async def student_add(
     request: Request,
     name: str = Form(...),
-    has_card: bool = Form(False),
     notes: str = Form("")
 ):
     """حفظ طالب جديد"""
@@ -189,13 +188,12 @@ async def student_add(
     barcode = generate_barcode(next_id)
 
     insert_query = '''
-        INSERT INTO students (name, has_card, barcode, notes, created_at)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO students (name, barcode, notes, created_at)
+        VALUES (%s, %s, %s, %s)
     '''
 
     db.execute_query(insert_query, (
         name,
-        1 if has_card else 0,
         barcode, notes,
         get_current_date()
     ))
@@ -261,7 +259,6 @@ async def student_update(
     request: Request,
     student_id: int,
     name: str = Form(...),
-    has_card: bool = Form(False),
     notes: str = Form("")
 ):
     """تحديث بيانات طالب"""
@@ -269,13 +266,12 @@ async def student_update(
 
     update_query = '''
         UPDATE students
-        SET name=%s, has_card=%s, notes=%s
+        SET name=%s, notes=%s
         WHERE id = %s
     '''
 
     db.execute_query(update_query, (
         name,
-        1 if has_card else 0,
         notes, student_id
     ))
 

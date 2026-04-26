@@ -68,7 +68,6 @@ def init_db():
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 study_type VARCHAR(20) CHECK(study_type IN ('حضوري', 'الكتروني')) DEFAULT 'حضوري',
-                has_card INTEGER NOT NULL DEFAULT 0,
                 has_badge INTEGER NOT NULL DEFAULT 0,
                 status VARCHAR(20) NOT NULL DEFAULT 'مستمر',
                 barcode VARCHAR(50) UNIQUE NOT NULL,

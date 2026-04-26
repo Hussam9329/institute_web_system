@@ -14,7 +14,6 @@ class StudentBase(BaseModel):
     """الحقوق الأساسية للطالب"""
     name: str = Field(..., min_length=2, max_length=100, description="اسم الطالب")
     study_type: str = Field(default="حضوري", description="نوع الدراسة")
-    has_card: bool = Field(default=False, description="هل لديه بطاقة؟")
     notes: Optional[str] = Field(default="", description="ملاحظات")
     
     @validator('study_type')
@@ -33,7 +32,6 @@ class StudentUpdate(BaseModel):
     """نموذج تحديث بيانات طالب"""
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     study_type: Optional[str] = None
-    has_card: Optional[bool] = None
     notes: Optional[str] = None
 
 
