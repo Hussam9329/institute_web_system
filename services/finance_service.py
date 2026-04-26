@@ -297,16 +297,29 @@ class FinanceService:
             'الكتروني': ('electronic', 'pct_electronic', 'ded_type_electronic', 'ded_manual_electronic'),
             'مدمج': ('blended', 'pct_blended', 'ded_type_blended', 'ded_manual_blended'),
         }
-        
+
         keys = type_map.get(study_type, type_map['حضوري'])
         ded_type = teacher_data.get('inst_' + keys[2]) or 'percentage'
-        
+
+        # القيمة الاحتياطية من الحقل الأساسي
+        fallback_pct = teacher_data.get('institute_deduction_value', 0) or 0
+
         if ded_type == 'manual':
             manual_val = teacher_data.get('inst_' + keys[3]) or 0
-            return ('manual', manual_val)
+            if manual_val > 0:
+                return ('manual', manual_val)
+            # إذا كان النوع يدوي لكن القيمة صفر، ارجع للقيمة الأساسية
+            if fallback_pct > 0:
+                return ('percentage', fallback_pct)
+            return ('manual', 0)
         else:
             pct_val = teacher_data.get('institute_' + keys[1]) or 0
-            return ('percentage', pct_val)
+            if pct_val > 0:
+                return ('percentage', pct_val)
+            # إذا لم تُحدد نسبة لنوع الدراسة، استخدم القيمة الأساسية
+            if fallback_pct > 0:
+                return ('percentage', fallback_pct)
+            return ('percentage', 0)
     
     def _get_fee_for_study_type(self, teacher_data: dict, study_type: str) -> int:
         """إرجاع القسط الكلي حسب نوع الدراسة"""
