@@ -92,7 +92,7 @@
                                 <th class="text-center d-none d-sm-table-cell">المادة</th>
                                 <th class="text-center d-none d-xl-table-cell">المطلوب كلي</th>
                                 <th class="text-center d-none d-lg-table-cell">المدفوع</th>
-                                <th class="text-center d-none d-xl-table-cell">نسبة التحصيل</th>
+                                <th class="text-center d-none d-xl-table-cell">نسبة المعهد</th>
                                 <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
                                 <th class="text-center d-none d-xl-table-cell">مستحق المدرس</th>
                                 <th class="text-center d-none d-xl-table-cell">المسحوب</th>
@@ -132,17 +132,9 @@
                                 <td class="text-center d-none d-lg-table-cell fw-bold text-success">
                                     {{ format_currency(teacher.total_received) }}
                                 </td>
-                                {# نسبة التحصيل #}
+                                {# نسبة المعهد #}
                                 <td class="text-center d-none d-xl-table-cell">
-                                    {% if teacher.collection_pct >= 100 %}
-                                    <span class="badge bg-success text-white">{{ teacher.collection_pct }}%</span>
-                                    {% elif teacher.collection_pct >= 70 %}
-                                    <span class="badge bg-warning text-dark">{{ teacher.collection_pct }}%</span>
-                                    {% elif teacher.collection_pct > 0 %}
-                                    <span class="badge bg-danger text-white">{{ teacher.collection_pct }}%</span>
-                                    {% else %}
-                                    <span class="badge bg-secondary">0%</span>
-                                    {% endif %}
+                                    <span class="badge bg-light text-dark">{{ teacher.institute_rate_display }}</span>
                                 </td>
                                 {# خصم المعهد #}
                                 <td class="text-center d-none d-xl-table-cell text-danger">
@@ -250,9 +242,9 @@
                             </div>
                         </div>
 
-                        <!-- نسبة التحصيل -->
+                        <!-- نسبة المعهد -->
                         <div class="list-card-badges mt-2">
-                            <span class="badge bg-light text-dark"><i class="fas fa-chart-line me-1"></i>تحصيل {% if teacher.collection_pct >= 100 %}<span class="text-success">{{ teacher.collection_pct }}%</span>{% elif teacher.collection_pct >= 70 %}<span class="text-warning">{{ teacher.collection_pct }}%</span>{% else %}<span class="text-danger">{{ teacher.collection_pct }}%</span>{% endif %}</span>
+                            <span class="badge bg-light text-dark"><i class="fas fa-percent me-1"></i>نسبة المعهد: {{ teacher.institute_rate_display }}</span>
                             <span class="badge bg-light text-dark"><i class="fas fa-users me-1"></i>{{ teacher.students_count or 0 }}</span>
                         </div>
 

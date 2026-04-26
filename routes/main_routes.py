@@ -363,6 +363,52 @@ async def student_delete(request: Request, student_id: int):
 
 # ===== المدرسين =====
 
+def _build_institute_rate_display(teacher: dict) -> str:
+    """
+    بناء نص يعرض نسبة/مبلغ المعهد حسب أنواع التدريس النشطة للمدرس
+    يُرجع نص مثل: '16%' أو '50,000' أو '16% / 12% / 20%'
+    """
+    teaching_types = teacher.get('teaching_types') or ''
+    
+    type_config = {
+        'حضوري': {
+            'ded_type': teacher.get('inst_ded_type_in_person', 'percentage'),
+            'pct': teacher.get('institute_pct_in_person', 0),
+            'manual': teacher.get('inst_ded_manual_in_person', 0),
+        },
+        'الكتروني': {
+            'ded_type': teacher.get('inst_ded_type_electronic', 'percentage'),
+            'pct': teacher.get('institute_pct_electronic', 0),
+            'manual': teacher.get('inst_ded_manual_electronic', 0),
+        },
+        'مدمج': {
+            'ded_type': teacher.get('inst_ded_type_blended', 'percentage'),
+            'pct': teacher.get('institute_pct_blended', 0),
+            'manual': teacher.get('inst_ded_manual_blended', 0),
+        },
+    }
+    
+    parts = []
+    for type_name in ['حضوري', 'الكتروني', 'مدمج']:
+        if type_name in teaching_types:
+            cfg = type_config[type_name]
+            if cfg['ded_type'] == 'manual' and cfg['manual'] > 0:
+                parts.append(format_currency(cfg['manual']))
+            elif cfg['pct'] and cfg['pct'] > 0:
+                parts.append(f"{cfg['pct']}%")
+    
+    # إذا لم يكن هناك أنواع تدريس محددة، استخدم القيم الافتراضية
+    if not parts:
+        ded_type = teacher.get('institute_deduction_type', 'percentage')
+        ded_value = teacher.get('institute_deduction_value', 0) or 0
+        if ded_type == 'manual' and ded_value > 0:
+            parts.append(format_currency(ded_value))
+        elif ded_value > 0:
+            parts.append(f"{ded_value}%")
+    
+    return ' / '.join(parts) if parts else '-'
+
+
 @router.get("/teachers", response_class=HTMLResponse)
 async def teachers_list(request: Request, subject: str = "", search: str = ""):
     """صفحة قائمة المدرسين"""
@@ -391,7 +437,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 t['teacher_due'] = balance_info.get('teacher_due', 0)
                 t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
                 t['remaining_balance'] = balance_info.get('remaining_balance', 0)
-                # حساب نسبة التحصيل: المدفوع / المطلوب الكلي
+                # حساب المطلوب الكلي
                 try:
                     all_fees = db.execute_query(
                         '''SELECT COALESCE(SUM(st.total_fee), 0) as total 
@@ -400,10 +446,10 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                     )
                     total_fees = all_fees[0]['total'] if all_fees else 0
                     t['total_fees'] = total_fees
-                    t['collection_pct'] = round((t['total_received'] / total_fees) * 100, 1) if total_fees > 0 else 0
                 except:
                     t['total_fees'] = 0
-                    t['collection_pct'] = 0
+                # حساب عرض نسبة المعهد حسب أنواع التدريس
+                t['institute_rate_display'] = _build_institute_rate_display(t)
             except:
                 t['total_received'] = 0
                 t['total_remaining'] = 0
@@ -412,7 +458,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 t['withdrawn_total'] = 0
                 t['remaining_balance'] = 0
                 t['total_fees'] = 0
-                t['collection_pct'] = 0
+                t['institute_rate_display'] = ''
     except:
         teachers = []
 
