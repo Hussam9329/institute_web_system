@@ -117,7 +117,7 @@ class FinanceService:
                 'teacher_id': teacher['id'],
                 'teacher_name': teacher['name'],
                 'subject': teacher['subject'],
-                'total_fee': teacher['total_fee'],
+                'total_fee': balance['total_fee'],
                 'paid_total': balance['paid_total'],
                 'remaining_balance': balance['remaining_balance'],
                 'study_type': teacher.get('study_type', 'حضوري'),
