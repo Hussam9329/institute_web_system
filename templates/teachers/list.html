@@ -90,7 +90,6 @@
                                 <th class="text-center" style="width:40px">#</th>
                                 <th>الاسم</th>
                                 <th class="text-center d-none d-sm-table-cell">المادة</th>
-                                <th class="text-center d-none d-xl-table-cell">المطلوب كلي</th>
                                 <th class="text-center d-none d-lg-table-cell">المدفوع</th>
                                 <th class="text-center d-none d-xl-table-cell">نسبة المعهد</th>
                                 <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
@@ -123,10 +122,6 @@
                                 </td>
                                 <td class="text-center d-none d-sm-table-cell">
                                     <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
-                                </td>
-                                {# المطلوب كلي #}
-                                <td class="text-center d-none d-xl-table-cell fw-bold text-primary">
-                                    {{ format_currency(teacher.total_fees) }}
                                 </td>
                                 {# المدفوع #}
                                 <td class="text-center d-none d-lg-table-cell fw-bold text-success">
@@ -214,10 +209,6 @@
 
                         <!-- التفاصيل المالية -->
                         <div class="list-card-info">
-                            <div class="info-item">
-                                <div class="info-label">المطلوب كلي</div>
-                                <div class="info-value text-primary">{{ format_currency(teacher.total_fees) }}</div>
-                            </div>
                             <div class="info-item">
                                 <div class="info-label">المدفوع</div>
                                 <div class="info-value text-success">{{ format_currency(teacher.total_received) }}</div>
