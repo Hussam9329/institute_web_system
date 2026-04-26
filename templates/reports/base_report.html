@@ -447,74 +447,282 @@
             font-weight: 600;
         }
 
-        /* ===== طباعة ===== */
+        /* ===== طباعة احترافية A4 ===== */
         @media print {
-            body {
-                background: white !important;
+            *,
+            *::before,
+            *::after {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
 
-            .report-toolbar {
+            body {
+                background: white !important;
+                font-size: 11pt;
+                line-height: 1.5;
+            }
+
+            /* إعدادات الصفحة */
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm 12mm 10mm;
+            }
+
+            /* إخفاء العناصر غير المطلوبة */
+            .report-toolbar,
+            .no-print,
+            .btn-close-report {
                 display: none !important;
             }
 
+            /* الحاوية الرئيسية - ملء الصفحة */
             .report-container {
-                max-width: 100%;
-                margin: 0;
-                padding: 0;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
 
+            /* البطاقة الرئيسية - بدون ظل ولا حدود مستديرة */
             .report-card {
                 box-shadow: none !important;
                 border-radius: 0 !important;
+                overflow: visible !important;
             }
 
+            /* ===== رأس التقرير ===== */
             .report-header {
                 border-radius: 0 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                padding: 16px 20px !important;
+                margin: 0 !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+
+            .report-header::after {
+                display: none !important;
+            }
+
+            .report-title {
+                font-size: 18pt !important;
+            }
+
+            .report-subtitle {
+                font-size: 11pt !important;
+            }
+
+            .report-date {
+                font-size: 9pt !important;
+                margin-top: 4px !important;
+            }
+
+            /* ===== بطاقات KPI ===== */
+            .kpi-grid {
+                display: grid !important;
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 6px !important;
+                padding: 12px 16px !important;
+                margin: 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }
 
             .kpi-card {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                border-radius: 6px !important;
+                padding: 10px 8px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .kpi-card::before {
+                height: 2px !important;
+            }
+
+            .kpi-value {
+                font-size: 13pt !important;
+            }
+
+            .kpi-label {
+                font-size: 8pt !important;
+            }
+
+            /* ===== الأقسام ===== */
+            .report-section {
+                padding: 0 16px !important;
+                margin-top: 14px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .section-title {
+                border-radius: 6px !important;
+                padding: 6px 12px !important;
+                font-size: 10pt !important;
+                margin-bottom: 8px !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* ===== بطاقات المعلومات ===== */
+            .info-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 6px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .info-card {
+                border-radius: 6px !important;
+                padding: 8px 10px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .info-label {
+                font-size: 8pt !important;
+            }
+
+            .info-value {
+                font-size: 10pt !important;
+            }
+
+            /* ===== الجداول ===== */
+            .report-table-wrapper {
+                border-radius: 6px !important;
+                border: 1px solid #cbd5e1 !important;
+                overflow: visible !important;
+                page-break-inside: auto !important;
+            }
+
+            .report-table {
+                font-size: 9pt !important;
+                width: 100% !important;
+            }
+
+            .report-table thead {
+                display: table-header-group !important;
+            }
+
+            .report-table tfoot[role="repeat-header"] {
+                display: table-footer-group !important;
+            }
+
+            .report-table tfoot[role="repeat-header"] th {
+                padding: 5px 8px !important;
+                font-size: 7pt !important;
+                background: #f1f5f9 !important;
+                color: #64748b !important;
+                border-top: 1px solid #cbd5e1 !important;
+                border-bottom: none !important;
             }
 
             .report-table thead th {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                padding: 6px 8px !important;
+                font-size: 8pt !important;
+                white-space: nowrap !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .report-table tbody td {
+                padding: 5px 8px !important;
+                font-size: 9pt !important;
+            }
+
+            .report-table tbody tr {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
 
             .report-table tbody tr:nth-child(even) {
-                background: #fafbfc !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                background: #f8fafc !important;
             }
 
             .report-table .total-row {
                 background: #eff6ff !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .report-table .total-row td {
+                border-top: 2px solid #818cf8 !important;
+            }
+
+            /* ===== الشارات ===== */
+            .badge-paid,
+            .badge-unpaid,
+            .badge-continue,
+            .badge-withdrawn {
+                padding: 1px 6px !important;
+                font-size: 7pt !important;
+                border-radius: 10px !important;
+            }
+
+            /* ===== وصل الدفع ===== */
+            .receipt-container .report-container {
+                max-width: 100% !important;
+            }
+
+            .receipt-badge {
+                padding: 4px !important;
+                font-size: 10pt !important;
+                border-radius: 4px !important;
             }
 
             .receipt-amount {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                padding: 12px !important;
+                border-radius: 8px !important;
+                margin: 10px 16px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
 
-            .section-title {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+            .receipt-amount .amount-value {
+                font-size: 22pt !important;
             }
 
-            .no-print {
-                display: none !important;
+            .receipt-grid,
+            .receipt-summary {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 6px !important;
+                padding: 0 16px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
 
-            @page {
-                margin: 10mm;
-                size: A4;
+            .receipt-notes {
+                margin: 8px 16px !important;
+                border-radius: 6px !important;
+                padding: 8px 10px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .signature-area {
+                padding: 12px 16px 16px !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .signature-line {
+                width: 30% !important;
+            }
+
+            /* ===== التذييل ===== */
+            .footer-text {
+                border-top: 1px solid #e2e8f0 !important;
+                padding: 8px 16px !important;
+                font-size: 8pt !important;
+                margin-top: 12px !important;
             }
         }
 
@@ -582,7 +790,7 @@
             <span>{{ app_title }}</span>
         </div>
         <div class="toolbar-actions">
-            <button class="btn-print" onclick="window.print()">
+            <button class="btn-print" onclick="smartPrint()">
                 <i class="fas fa-print"></i>
                 طباعة / حفظ PDF
             </button>
@@ -601,9 +809,29 @@
     </div>
 
     <script>
-        // طباعة تلقائية عند فتح وصل الدفع
-        if (window.location.pathname.includes('/receipt/')) {
-            // لا تطبع تلقائياً - دع المستخدم يضغط الزر
+        // طباعة احترافية - ضبط الجداول الطويلة قبل الطباعة
+        function smartPrint() {
+            // تكرار رأس الجدول في كل صفحة (tfoot يظهر في الأسفل كرأس للصفحة التالية)
+            const tables = document.querySelectorAll('.report-table');
+            tables.forEach(table => {
+                const thead = table.querySelector('thead');
+                const tfoot = table.querySelector('tfoot');
+                if (thead && !tfoot) {
+                    // إنشاء tfoot بنفس محتوى thead
+                    const newTfoot = document.createElement('tfoot');
+                    newTfoot.innerHTML = thead.innerHTML;
+                    newTfoot.setAttribute('role', 'repeat-header');
+                    table.appendChild(newTfoot);
+                }
+            });
+
+            // طباعة
+            window.print();
+
+            // تنظيف tfoot المُنشأة بعد الطباعة
+            setTimeout(() => {
+                document.querySelectorAll('tfoot[role="repeat-header"]').forEach(el => el.remove());
+            }, 500);
         }
     </script>
 </body>
