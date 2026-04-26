@@ -3,7 +3,7 @@
 # نقاط نهاية API للعمليات AJAX
 # ============================================
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import Database
@@ -508,6 +508,41 @@ async def api_delete_withdrawal(withdrawal_id: int):
     try:
         db.execute_query("DELETE FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         return {"success": True, "message": "تم حذف السحب"}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.put("/withdrawals/{withdrawal_id}")
+async def api_edit_withdrawal(withdrawal_id: int, data: dict = Body(...)):
+    """تعديل سحب"""
+    db = Database()
+    
+    try:
+        amount = int(data.get('amount', 0))
+        withdrawal_date = data.get('withdrawal_date', '')
+        notes = data.get('notes', '')
+        
+        # احتياط: تحويل المبلغ الصغير
+        old = db.execute_query("SELECT teacher_id, amount FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
+        if not old:
+            return {"success": False, "message": "السحب غير موجود"}
+        
+        teacher_id = old[0]['teacher_id']
+        balance_info = finance_service.calculate_teacher_balance(teacher_id)
+        other_withdrawn = balance_info['withdrawn_total'] - old[0]['amount']
+        max_allowed = balance_info['teacher_due'] - other_withdrawn
+        
+        if amount > 0 and amount < 1000 and max_allowed >= amount * 1000:
+            amount = amount * 1000
+        
+        if amount > max_allowed:
+            return {"success": False, "message": f"المبلغ يتجاوز الرصيد المتاح ({format_currency(max_allowed)})"}
+        
+        db.execute_query(
+            "UPDATE teacher_withdrawals SET amount = %s, withdrawal_date = %s, notes = %s WHERE id = %s",
+            (amount, withdrawal_date, notes, withdrawal_id)
+        )
+        return {"success": True, "message": "تم تعديل السحب بنجاح"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 

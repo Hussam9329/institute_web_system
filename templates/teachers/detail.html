@@ -237,6 +237,7 @@
                                     <th class="text-center">المبلغ</th>
                                     <th class="d-none d-sm-table-cell">التاريخ</th>
                                     <th class="d-none d-md-table-cell">ملاحظات</th>
+                                    <th class="text-center">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -246,13 +247,23 @@
                                     <td class="text-center fw-bold text-warning">{{ format_currency(w.amount) }}</td>
                                     <td class="text-muted d-none d-sm-table-cell">{{ w.withdrawal_date }}</td>
                                     <td class="text-muted small d-none d-md-table-cell">{{ w.notes[:20] if w.notes else '-' }}</td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-warning" onclick="editWithdrawal({{ w.id }}, {{ w.amount }}, '{{ w.withdrawal_date }}', '{{ w.notes or '' }}')" title="تعديل">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="deleteWithdrawal({{ w.id }})" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                             <tfoot class="table-active fw-bold d-none d-sm-table-footer-group">
                                 <tr>
                                     <td colspan="2" class="text-center">الإجمالي: {{ format_currency(financial_info.withdrawn_total) }}</td>
-                                    <td colspan="2"></td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -320,11 +331,53 @@
     </div>
 </div>
 
+<!-- ===== Modal تعديل سحب ===== -->
+<div class="modal fade" id="editWithdrawalModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-orange text-white border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>تعديل السحب
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editWithdrawalForm" onsubmit="submitEditWithdrawal(event)">
+                <div class="modal-body p-3 p-md-4">
+                    <input type="hidden" id="ew_id">
+                    <input type="hidden" id="ew_teacher_id" value="{{ teacher.id }}">
+
+                    <div class="row g-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">مبلغ السحب (بالألف د.ع):</label>
+                            <input type="number" class="form-control form-control-lg" id="ew_amount" min="1" required>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">التاريخ:</label>
+                            <input type="date" class="form-control form-control-lg" id="ew_date" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">ملاحظات:</label>
+                            <input type="text" class="form-control" id="ew_notes" placeholder="اختياري...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>حفظ التعديل
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-let wpModal;
+let wpModal, ewModal;
 
 document.addEventListener('DOMContentLoaded', function() {
     wpModal = new bootstrap.Modal(document.getElementById('withdrawalPageModal'));
+    ewModal = new bootstrap.Modal(document.getElementById('editWithdrawalModal'));
     document.getElementById('wp_date').value = getTodayDate();
 });
 
@@ -332,6 +385,65 @@ function openWithdrawalModalPage() {
     document.getElementById('wp_amount').value = '';
     document.getElementById('wp_notes').value = '';
     wpModal.show();
+}
+
+function editWithdrawal(id, amount, date, notes) {
+    document.getElementById('ew_id').value = id;
+    document.getElementById('ew_amount').value = Math.round(amount / 1000);
+    document.getElementById('ew_date').value = date;
+    document.getElementById('ew_notes').value = notes;
+    ewModal.show();
+}
+
+async function submitEditWithdrawal(event) {
+    event.preventDefault();
+    const id = parseInt(document.getElementById('ew_id').value);
+    const amount = toFullAmount(document.getElementById('ew_amount').value);
+
+    if (!amount || amount <= 0) {
+        showAlert('يرجى إدخال مبلغ صحيح', 'warning');
+        return;
+    }
+
+    try {
+        const result = await apiRequest(`/api/withdrawals/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                amount: amount,
+                withdrawal_date: document.getElementById('ew_date').value,
+                notes: document.getElementById('ew_notes').value
+            })
+        });
+
+        if (result.success) {
+            showAlert('تم تعديل السحب بنجاح', 'success');
+            ewModal.hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+async function deleteWithdrawal(withdrawalId) {
+    if (!confirmAction('هل أنت متأكد من حذف هذا السحب؟')) return;
+
+    try {
+        const result = await apiRequest(`/api/withdrawals/${withdrawalId}`, {
+            method: 'DELETE'
+        });
+
+        if (result.success) {
+            showAlert('تم حذف السحب بنجاح', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
 }
 
 async function submitWithdrawalPage(event) {
