@@ -142,6 +142,10 @@ class PageNumberCanvas:
         page_num = canvas.getPageNumber()
         canvas.drawCentredString(A4_W / 2, y_line - 5 * mm, str(page_num))
 
+        # التاريخ - يسار
+        canvas.setFont('Calibri', 6)
+        canvas.drawString(x_left, y_line - 5 * mm, datetime.now().strftime("%Y/%m/%d"))
+
         # اسم النظام - يمين
         canvas.setFont('Calibri', 6)
         canvas.drawRightString(x_right, y_line - 5 * mm, "HussamVision")
@@ -154,6 +158,46 @@ class PDFService:
 
     def __init__(self):
         self.db = Database()
+
+    # ===== Helpers احترافية =====
+    def _safe_text(self, value, fallback='-'):
+        """تنظيف النصوص ومنع None والفراغات"""
+        if value is None:
+            return fallback
+        s = str(value).strip()
+        return s if s else fallback
+
+    def _truncate(self, text, max_len=90):
+        """قص ناعم للنص الطويل للحفاظ على الشكل"""
+        s = self._safe_text(text, '')
+        return s if len(s) <= max_len else (s[:max_len - 1] + '…')
+
+    def _status_badge(self, text, kind='info'):
+        """شارة حالة لعرض رسائل قصيرة بشكل احترافي"""
+        color_map = {
+            'info': (C.INFO_BG, C.INFO, C.INFO),
+            'success': (C.SUCCESS_BG, C.SUCCESS, C.SUCCESS),
+            'warning': (C.WARNING_BG, C.WARNING, C.WARNING),
+            'danger': (C.DANGER_BG, C.DANGER, C.DANGER),
+        }
+        bg, fg, border = color_map.get(kind, color_map['info'])
+
+        s = ParagraphStyle(
+            f'badge_{kind}',
+            fontName='Calibri-Bold', fontSize=8, alignment=CENTER,
+            textColor=fg, leading=11
+        )
+        badge = Table([[ar_para(text, s)]], colWidths=[CONTENT_W])
+        badge.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), bg),
+            ('BOX', (0, 0), (-1, -1), 0.8, border),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+        return badge
 
     # ===== أنماط الطباعة =====
     def _get_styles(self):
@@ -245,6 +289,10 @@ class PDFService:
             )))
         header_content.append(ar_para(APP_TITLE, styles['title']))
         header_content.append(ar_para(subtitle_text, styles['subtitle']))
+        header_content.append(ar_para("تقارير مالية دقيقة • تنسيق احترافي • دعم RTL كامل", ParagraphStyle(
+            'header_micro', fontName='Calibri', fontSize=7, alignment=CENTER,
+            textColor=colors.HexColor('#bfdbfe'), leading=10
+        )))
 
         header_table = Table([[header_content]], colWidths=[CONTENT_W])
         header_table.setStyle(TableStyle([
@@ -288,15 +336,15 @@ class PDFService:
         gap = 3  # مسافة بين البطاقات
 
         cards = []
-        for label, value, text_color, bg_color, border_color in kpi_data:
+        for idx, (label, value, text_color, bg_color, border_color) in enumerate(kpi_data):
             inner_w = card_width - gap * 2
 
             val_style = ParagraphStyle(
-                f'kv_{label}', fontName='Calibri-Bold', fontSize=13, alignment=CENTER,
+                f'kv_{idx}', fontName='Calibri-Bold', fontSize=13, alignment=CENTER,
                 textColor=text_color, leading=17
             )
             lbl_style = ParagraphStyle(
-                f'kl_{label}', fontName='Calibri', fontSize=7, alignment=CENTER,
+                f'kl_{idx}', fontName='Calibri', fontSize=7, alignment=CENTER,
                 textColor=C.TEXT_SECONDARY, leading=10
             )
 
@@ -371,7 +419,7 @@ class PDFService:
             inner_w = card_width - gap * 2
             cell = Table(
                 [[ar_para(label, lbl_style)],
-                 [ar_para(str(value), val_style)]],
+                 [ar_para(self._safe_text(value, '-'), val_style)]],
                 colWidths=[inner_w]
             )
             cell.setStyle(TableStyle([
@@ -418,22 +466,21 @@ class PDFService:
         col_value = CONTENT_W * 0.70  # 70% للقيمة
 
         table_data = []
-        for label, value in data:
+        for i, (label, value) in enumerate(data):
             lbl_style = ParagraphStyle(
-                f'tl_{label}', fontName='Calibri', fontSize=9, alignment=RTL,
+                f'tl_{i}', fontName='Calibri', fontSize=9, alignment=RTL,
                 textColor=C.TEXT_SECONDARY, leading=13
             )
             val_style = ParagraphStyle(
-                f'tv_{label}', fontName='Calibri-Bold', fontSize=9, alignment=RTL,
+                f'tv_{i}', fontName='Calibri-Bold', fontSize=9, alignment=RTL,
                 textColor=C.DARK, leading=13
             )
-            # RTL: البيان يمين، القيمة يسار
             table_data.append([
-                ar_para(str(value), val_style),
-                ar_para(str(label), lbl_style)
+                ar_para(self._safe_text(value), val_style),
+                ar_para(self._safe_text(label), lbl_style)
             ])
 
-        t = Table(table_data, colWidths=[col_value, col_label])
+        t = Table(table_data, colWidths=[col_value, col_label], hAlign='RIGHT')
         style_cmds = [
             ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -444,6 +491,7 @@ class PDFService:
             ('GRID', (0, 0), (-1, -1), 0.4, C.BORDER),
             ('ROWBACKGROUNDS', (0, 0), (-1, -1), [C.WHITE, C.LIGHT_BG]),
             ('BOX', (0, 0), (-1, -1), 1, C.PRIMARY_LIGHT),
+            ('WORDWRAP', (0, 0), (-1, -1), 'RTL'),
         ]
         t.setStyle(TableStyle(style_cmds))
         return t
@@ -453,35 +501,39 @@ class PDFService:
         يتم عكس ترتيب الأعمدة تلقائياً لعرض RTL صحيح.
         col_widths: تُمرّر بالترتيب المنطقي (متوافق مع headers) ويتم عكسها تلقائياً.
         """
-        # عكس ترتيب الأعمدة لـ RTL
         headers_rtl = list(reversed(headers))
         rows_rtl = [list(reversed(row)) for row in rows]
 
-        # عكس أطوال الأعمدة أيضاً
         if col_widths:
             col_widths_rtl = list(reversed(col_widths))
         else:
             col_widths_rtl = None
 
-        # رأس الجدول
         header_style = ParagraphStyle(
             'th', fontName='Calibri-Bold', fontSize=8, alignment=CENTER,
             textColor=C.WHITE, leading=12
         )
         table_data = [[ar_para(h, header_style) for h in headers_rtl]]
 
-        # بيانات الصفوف
-        for row in rows_rtl:
+        for r_idx, row in enumerate(rows_rtl):
             styled_row = []
-            for cell in row:
+            for c_idx, cell in enumerate(row):
                 cell_style = ParagraphStyle(
-                    f'td_{cell}', fontName='Calibri', fontSize=8, alignment=RTL,
+                    f'td_{r_idx}_{c_idx}',
+                    fontName='Calibri', fontSize=8, alignment=RTL,
                     textColor=C.TEXT, leading=12
                 )
-                styled_row.append(ar_para(str(cell), cell_style))
+                styled_row.append(ar_para(self._safe_text(cell), cell_style))
             table_data.append(styled_row)
 
-        t = Table(table_data, colWidths=col_widths_rtl)
+        t = Table(
+            table_data,
+            colWidths=col_widths_rtl,
+            repeatRows=1,
+            splitByRow=1,
+            hAlign='RIGHT'
+        )
+
         style_cmds = [
             ('BACKGROUND', (0, 0), (-1, 0), C.PRIMARY),
             ('TEXTCOLOR', (0, 0), (-1, 0), C.WHITE),
@@ -503,10 +555,10 @@ class PDFService:
             ('GRID', (0, 0), (-1, -1), 0.3, C.BORDER),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [C.WHITE, C.LIGHT_BG]),
             ('BOX', (0, 0), (-1, -1), 1, C.PRIMARY_LIGHT),
+            ('WORDWRAP', (0, 0), (-1, -1), 'RTL'),
         ]
         t.setStyle(TableStyle(style_cmds))
         return t
-
     # =====================================================
     # تقرير الطالب PDF
     # =====================================================
@@ -552,10 +604,10 @@ class PDFService:
 
         elements.extend(self._build_section_header("معلومات الطالب", styles))
         elements.extend(self._build_info_cards([
-            ("اسم الطالب", student['name']),
-            ("الرمز", student['barcode']),
+            ("اسم الطالب", self._truncate(student.get('name'), 40)),
+            ("الرمز", self._safe_text(student.get('barcode'))),
             ("عدد المدرسين", str(num_teachers)),
-            ("ملاحظات", student['notes'] or 'لا توجد ملاحظات'),
+            ("ملاحظات", self._truncate(student.get('notes') or 'لا توجد ملاحظات', 90)),
         ], styles, columns=2))
         elements.append(Spacer(1, SP_LG))
 
@@ -569,18 +621,26 @@ class PDFService:
                 pct = int((ts['paid_total'] / ts['total_fee']) * 100) if ts['total_fee'] > 0 else 0
                 rows.append([
                     str(i),
-                    ts['teacher_name'],
-                    ts['subject'],
-                    ts.get('study_type', 'حضوري'),
-                    format_currency(ts['total_fee']),
-                    format_currency(ts['paid_total']),
-                    format_currency(ts['remaining_balance']),
+                    self._truncate(ts.get('teacher_name'), 28),
+                    self._truncate(ts.get('subject'), 22),
+                    self._truncate(ts.get('study_type', 'حضوري'), 14),
+                    format_currency(ts.get('total_fee', 0)),
+                    format_currency(ts.get('paid_total', 0)),
+                    format_currency(ts.get('remaining_balance', 0)),
                     f"{pct}%"
                 ])
 
             total_pct = int((total_paid_all / total_fee_all) * 100) if total_fee_all > 0 else 0
-            rows.append(["", "الإجمالي", "", "", format_currency(total_fee_all),
-                        format_currency(total_paid_all), format_currency(total_remaining_all), f"{total_pct}%"])
+            rows.append([
+                "",
+                "الإجمالي",
+                "",
+                "",
+                format_currency(total_fee_all),
+                format_currency(total_paid_all),
+                format_currency(total_remaining_all),
+                f"{total_pct}%"
+            ])
 
             # أعمدة محسوبة بدقة: المجموع = CONTENT_W
             cw = [30, 95, 82, 63, 68, 68, 68, 36]
@@ -592,6 +652,7 @@ class PDFService:
                 ('BACKGROUND', (0, -1), (-1, -1), C.ACCENT_BG),
                 ('FONTNAME', (0, -1), (-1, -1), 'Calibri-Bold'),
                 ('FONTSIZE', (0, -1), (-1, -1), 8),
+                ('TEXTCOLOR', (0, -1), (-1, -1), C.PRIMARY_DARK),
                 ('LINEABOVE', (0, -1), (-1, -1), 1.5, C.PRIMARY),
                 ('BOTTOMPADDING', (0, -1), (-1, -1), 7),
                 ('TOPPADDING', (0, -1), (-1, -1), 7),
@@ -599,7 +660,7 @@ class PDFService:
             t.setStyle(TableStyle(total_cmds))
             elements.append(t)
         else:
-            elements.append(ar_para("لا يوجد مدرسين مرتبطين بهذا الطالب", styles['normal_center']))
+            elements.append(self._status_badge("لا يوجد مدرسين مرتبطين بهذا الطالب", "warning"))
 
         try:
             installments = self.db.execute_query('''
@@ -619,18 +680,21 @@ class PDFService:
                 for i, inst in enumerate(installments, 1):
                     inst_rows.append([
                         str(i),
-                        inst['teacher_name'],
-                        inst['subject'],
-                        format_currency(inst['amount']),
-                        inst['installment_type'],
-                        format_date(inst['payment_date']),
-                        inst['notes'] or '-'
+                        self._truncate(inst.get('teacher_name'), 24),
+                        self._truncate(inst.get('subject'), 20),
+                        format_currency(inst.get('amount', 0)),
+                        self._truncate(inst.get('installment_type'), 14),
+                        format_date(inst.get('payment_date')),
+                        self._truncate(inst.get('notes') or '-', 34)
                     ])
-                # أعمدة محسوبة بدقة
+
                 cw = [30, 95, 78, 68, 60, 82, 97]
                 elements.append(self._build_data_table(
                     inst_headers, inst_rows, styles, col_widths=cw
                 ))
+            else:
+                elements.append(Spacer(1, SP_MD))
+                elements.append(self._status_badge("لا يوجد سجل مدفوعات لهذا الطالب", "info"))
         except Exception:
             pass
 
@@ -676,11 +740,11 @@ class PDFService:
 
         elements.extend(self._build_section_header("معلومات المدرس", styles))
         elements.extend(self._build_info_cards([
-            ("اسم المدرس", teacher['name']),
-            ("المادة", teacher['subject']),
-            ("الأجر الكلي", format_currency(teacher['total_fee'])),
+            ("اسم المدرس", self._truncate(teacher.get('name'), 40)),
+            ("المادة", self._truncate(teacher.get('subject'), 28)),
+            ("الأجر الكلي", format_currency(teacher.get('total_fee', 0))),
             ("عدد الطلاب", str(len(students_list))),
-            ("ملاحظات", teacher['notes'] or 'لا توجد ملاحظات'),
+            ("ملاحظات", self._truncate(teacher.get('notes') or 'لا توجد ملاحظات', 90)),
         ], styles, columns=2))
         elements.append(Spacer(1, SP_LG))
 
@@ -700,35 +764,43 @@ class PDFService:
             headers = ["#", "الطالب", "نوع الدراسة", "الحالة", "المدفوع", "المتبقي", "حالة الدفع"]
             rows = []
             for i, s in enumerate(students_list, 1):
-                status = "دافع" if s['is_paying'] else "غير دافع"
+                status = "دافع" if s.get('is_paying') else "غير دافع"
                 rows.append([
                     str(i),
-                    s['name'],
-                    s.get('study_type', 'حضوري'),
-                    s.get('status', 'مستمر'),
-                    format_currency(s['paid_total']),
-                    format_currency(s['remaining_balance']),
+                    self._truncate(s.get('name'), 30),
+                    self._truncate(s.get('study_type', 'حضوري'), 14),
+                    self._truncate(s.get('status', 'مستمر'), 14),
+                    format_currency(s.get('paid_total', 0)),
+                    format_currency(s.get('remaining_balance', 0)),
                     status
                 ])
             cw = [28, 98, 72, 52, 80, 80, 100]
             elements.append(self._build_data_table(
                 headers, rows, styles, col_widths=cw
             ))
+        else:
+            elements.append(self._status_badge("لا يوجد طلاب مرتبطين بهذا المدرس", "warning"))
 
         if recent_withdrawals:
             elements.append(Spacer(1, SP_LG))
             elements.extend(self._build_section_header("سجل السحوبات", styles))
             headers = ["#", "المبلغ", "التاريخ", "ملاحظات"]
-            rows = [[str(i), format_currency(w['amount']), format_date(w['withdrawal_date']), w['notes'] or '-']
-                    for i, w in enumerate(recent_withdrawals, 1)]
+            rows = [[
+                str(i),
+                format_currency(w.get('amount', 0)),
+                format_date(w.get('withdrawal_date')),
+                self._truncate(w.get('notes') or '-', 44)
+            ] for i, w in enumerate(recent_withdrawals, 1)]
             cw = [30, 140, 140, 200]
             elements.append(self._build_data_table(
                 headers, rows, styles, col_widths=cw
             ))
+        else:
+            elements.append(Spacer(1, SP_MD))
+            elements.append(self._status_badge("لا يوجد سجل سحوبات حتى الآن", "info"))
 
         doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
         return filepath
-
     # =====================================================
     # وصل الدفع PDF - RTL
     # =====================================================
@@ -818,7 +890,6 @@ class PDFService:
         ]))
         elements.append(receipt_title_table)
 
-        # بطاقات المعلومات - RTL
         elements.append(Spacer(1, SP_SM))
 
         card_gap = 3
@@ -829,7 +900,7 @@ class PDFService:
 
         def _make_card(label, value, bg=C.WHITE, border=C.BORDER):
             cell = Table(
-                [[ar_para(label, lbl_s)], [ar_para(str(value), val_s)]],
+                [[ar_para(label, lbl_s)], [ar_para(self._safe_text(value), val_s)]],
                 colWidths=[card_w]
             )
             cell.setStyle(TableStyle([
@@ -845,14 +916,14 @@ class PDFService:
             return cell
 
         row1 = [
-            _make_card("اسم الطالب", installment['student_name']),
-            _make_card("الرمز", installment['barcode']),
-            _make_card("اسم المدرس", installment['teacher_name']),
+            _make_card("اسم الطالب", self._truncate(installment.get('student_name'), 26)),
+            _make_card("الرمز", installment.get('barcode')),
+            _make_card("اسم المدرس", self._truncate(installment.get('teacher_name'), 26)),
         ]
         row2 = [
-            _make_card("المادة", installment['subject']),
-            _make_card("نوع القسط", installment['installment_type']),
-            _make_card("تاريخ الدفع", format_date(installment['payment_date'])),
+            _make_card("المادة", self._truncate(installment.get('subject'), 22)),
+            _make_card("نوع القسط", self._truncate(installment.get('installment_type'), 16)),
+            _make_card("تاريخ الدفع", format_date(installment.get('payment_date'))),
         ]
 
         info_grid = Table([row1, row2], colWidths=[card_w + card_gap * 2] * 3)
@@ -872,7 +943,7 @@ class PDFService:
             [[ar_para("المبلغ المدفوع", ParagraphStyle(
                 'al', fontName='Calibri', fontSize=8, alignment=CENTER, textColor=C.WHITE, leading=12
             ))],
-             [ar_para(format_currency(installment['amount']), ParagraphStyle(
+             [ar_para(format_currency(installment.get('amount', 0)), ParagraphStyle(
                 'av', fontName='Calibri-Bold', fontSize=16, alignment=CENTER, textColor=C.WHITE, leading=22
             ))]],
             colWidths=[usable_w]
@@ -935,7 +1006,7 @@ class PDFService:
             note_lbl = ParagraphStyle('nl', fontName='Calibri', fontSize=7, alignment=RTL, textColor=C.TEXT_SECONDARY, leading=10)
             note_val = ParagraphStyle('nv', fontName='Calibri', fontSize=8, alignment=RTL, textColor=C.TEXT, leading=12)
             note_cell = Table(
-                [[ar_para("ملاحظات", note_lbl)], [ar_para(installment['notes'], note_val)]],
+                [[ar_para("ملاحظات", note_lbl)], [ar_para(self._truncate(installment['notes'], 220), note_val)]],
                 colWidths=[usable_w]
             )
             note_cell.setStyle(TableStyle([
@@ -997,7 +1068,7 @@ class PDFService:
             teacher_data.append((t, sc))
 
         elements.extend(self._build_kpi_cards([
-            ("اسم المادة", subject_name, C.DARK, C.ACCENT_BG, C.ACCENT),
+            ("اسم المادة", self._truncate(subject_name, 28), C.DARK, C.ACCENT_BG, C.ACCENT),
             ("عدد المدرسين", str(len(teachers)), C.INFO, C.INFO_BG, C.INFO),
             ("إجمالي الطلاب", str(total_students), C.PRIMARY, C.ACCENT_BG, C.PRIMARY),
             ("إجمالي الأجور", format_currency(total_fees), C.SUCCESS, C.SUCCESS_BG, C.SUCCESS),
@@ -1007,7 +1078,7 @@ class PDFService:
         headers = ["#", "المدرس", "الأجر الكلي", "عدد الطلاب"]
         rows = []
         for i, (t, sc) in enumerate(teacher_data, 1):
-            rows.append([str(i), t['name'], format_currency(t['total_fee']), str(sc)])
+            rows.append([str(i), self._truncate(t.get('name'), 36), format_currency(t.get('total_fee', 0)), str(sc)])
 
         cw = [30, 160, 240, 80]
         t = self._build_data_table(headers, rows, styles, col_widths=cw)
@@ -1016,6 +1087,7 @@ class PDFService:
             ('BACKGROUND', (0, -1), (-1, -1), C.ACCENT_BG),
             ('FONTNAME', (0, -1), (-1, -1), 'Calibri-Bold'),
             ('FONTSIZE', (0, -1), (-1, -1), 8),
+            ('TEXTCOLOR', (0, -1), (-1, -1), C.PRIMARY_DARK),
             ('LINEABOVE', (0, -1), (-1, -1), 1.5, C.PRIMARY),
         ]
         t.setStyle(TableStyle(total_cmds))
@@ -1091,7 +1163,7 @@ class PDFService:
                 headers = ["#", "المدرس", "الأجر", "الطلاب"]
                 rows = []
                 for i, (t, sc) in enumerate(subj['teachers'], 1):
-                    rows.append([str(i), t['name'], format_currency(t['total_fee']), str(sc)])
+                    rows.append([str(i), self._truncate(t.get('name'), 36), format_currency(t.get('total_fee', 0)), str(sc)])
 
                 cw = [30, 160, 240, 80]
                 t = self._build_data_table(headers, rows, styles, col_widths=cw)
@@ -1100,12 +1172,13 @@ class PDFService:
                     ('BACKGROUND', (0, -1), (-1, -1), C.ACCENT_BG),
                     ('FONTNAME', (0, -1), (-1, -1), 'Calibri-Bold'),
                     ('FONTSIZE', (0, -1), (-1, -1), 8),
+                    ('TEXTCOLOR', (0, -1), (-1, -1), C.PRIMARY_DARK),
                     ('LINEABOVE', (0, -1), (-1, -1), 1.5, C.PRIMARY),
                 ]
                 t.setStyle(TableStyle(total_cmds))
                 elements.append(t)
             else:
-                elements.append(ar_para("لا يوجد مدرسين", styles['normal_center']))
+                elements.append(self._status_badge("لا يوجد مدرسين لهذه المادة", "warning"))
 
             if idx < len(subject_details) - 1:
                 elements.append(Spacer(1, SP_MD))
