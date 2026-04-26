@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import Database
 from services.finance_service import finance_service
-from config import get_current_date
+from config import get_current_date, format_currency
 
 router = APIRouter(prefix="/api")
 
@@ -330,6 +330,21 @@ async def api_add_installment(installment: AddInstallment):
                 (installment.student_id, installment.teacher_id)
             )
         
+        # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
+        current_balance = finance_service.calculate_student_teacher_balance(
+            installment.student_id, installment.teacher_id
+        )
+        total_fee = current_balance['total_fee']
+        already_paid = current_balance['paid_total']
+        new_total = already_paid + installment.amount
+        
+        if new_total > total_fee and total_fee > 0:
+            remaining = total_fee - already_paid
+            return {
+                "success": False,
+                "message": f"المبلغ يتجاوز القسط الكلي! القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)}، المتبقي {format_currency(remaining)}"
+            }
+
         insert_query = '''
             INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, notes)
             VALUES (%s, %s, %s, %s, %s, %s)
