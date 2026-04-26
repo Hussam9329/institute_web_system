@@ -509,10 +509,18 @@ async def api_global_search(q: str = ""):
         return {"success": True, "data": results}
     
     try:
-        # بحث الطلاب
+        # بحث الطلاب - عرض نوع الدراسة الفعلي من جدول student_teacher
         students = db.execute_query(
-            '''SELECT id, name, barcode, study_type FROM students 
-               WHERE name LIKE %s OR barcode LIKE %s ORDER BY name LIMIT 10''',
+            '''SELECT s.id, s.name, s.barcode, 
+               COALESCE(
+                   STRING_AGG(DISTINCT st.study_type, ' / '),
+                   s.study_type
+               ) as study_type
+               FROM students s
+               LEFT JOIN student_teacher st ON st.student_id = s.id
+               WHERE s.name LIKE %s OR s.barcode LIKE %s
+               GROUP BY s.id, s.name, s.barcode, s.study_type
+               ORDER BY s.name LIMIT 10''',
             (f'%{q}%', f'%{q}%')
         )
         results["students"] = [dict(r) for r in students] if students else []
