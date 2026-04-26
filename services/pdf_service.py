@@ -29,17 +29,14 @@ from services.finance_service import finance_service
 from database import Database
 
 
-# ===== تسجيل خطوط Calibri (Carlito - بديل متوافق) =====
+# ===== تسجيل الخطوط - DejaVu Sans (يدعم العربية + لاتيني) =====
 FONT_DIR = os.path.join(BASE_DIR, "static", "fonts")
-pdfmetrics.registerFont(TTFont('Calibri', os.path.join(FONT_DIR, 'Calibri.ttf')))
-pdfmetrics.registerFont(TTFont('Calibri-Bold', os.path.join(FONT_DIR, 'Calibri-Bold.ttf')))
-pdfmetrics.registerFont(TTFont('Calibri-Italic', os.path.join(FONT_DIR, 'Calibri-Italic.ttf')))
-pdfmetrics.registerFont(TTFont('Calibri-BoldItalic', os.path.join(FONT_DIR, 'Calibri-BoldItalic.ttf')))
+# DejaVu Sans يدعم العربية واللاتيني - خط احترافي ونظيف
+pdfmetrics.registerFont(TTFont('Calibri', os.path.join(FONT_DIR, 'DejaVuSans.ttf')))
+pdfmetrics.registerFont(TTFont('Calibri-Bold', os.path.join(FONT_DIR, 'DejaVuSans-Bold.ttf')))
 
 addMapping('Calibri', 0, 0, 'Calibri')
 addMapping('Calibri', 1, 0, 'Calibri-Bold')
-addMapping('Calibri', 0, 1, 'Calibri-Italic')
-addMapping('Calibri', 1, 1, 'Calibri-BoldItalic')
 
 
 # ===== نظام الألوان الحديث =====
