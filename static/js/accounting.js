@@ -37,7 +37,7 @@ async function addWithdrawal(event) {
     event.preventDefault();
     
     const teacherId = parseInt(document.getElementById('w_teacher_id').value);
-    const amount = parseInt(document.getElementById('w_amount').value);
+    const amount = toFullAmount(document.getElementById('w_amount').value);
     const availableBalance = parseInt(document.getElementById('w_available_balance').dataset.balance);
     
     // التحقق من المبلغ
