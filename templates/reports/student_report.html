@@ -21,7 +21,7 @@
         <div class="kpi-value">{{ total_paid }}</div>
         <div class="kpi-label">إجمالي المدفوع</div>
     </div>
-    <div class="kpi-card {% if remaining > 0 %}kpi-danger{% else %}kpi-success{% endif %}">
+    <div class="kpi-card {% if remaining_raw > 0 %}kpi-danger{% else %}kpi-success{% endif %}">
         <div class="kpi-value">{{ remaining }}</div>
         <div class="kpi-label">إجمالي المتبقي</div>
     </div>
@@ -99,7 +99,7 @@
                     <td colspan="4" style="text-align:center">الإجمالي</td>
                     <td style="text-align:center">{{ format_currency(total_fee_raw) }}</td>
                     <td style="text-align:center; color:var(--success)">{{ format_currency(total_paid_raw) }}</td>
-                    <td style="text-align:center; color:{% if remaining > 0 %}var(--danger){% else %}var(--success){% endif %}">{{ format_currency(remaining_raw) }}</td>
+                    <td style="text-align:center; color:{% if remaining_raw > 0 %}var(--danger){% else %}var(--success){% endif %}">{{ format_currency(remaining_raw) }}</td>
                     <td style="text-align:center">{{ payment_pct }}%</td>
                 </tr>
             </tbody>
