@@ -90,10 +90,14 @@
                                 <th class="text-center" style="width:40px">#</th>
                                 <th>الاسم</th>
                                 <th class="text-center d-none d-sm-table-cell">المادة</th>
-                                <th class="text-center d-none d-md-table-cell">الأجر الكلي</th>
-                                <th class="text-center d-none d-md-table-cell">المدفوع</th>
-                                <th class="text-center d-none d-md-table-cell">المتبقي</th>
-                                <th class="text-center d-none d-md-table-cell">عدد الطلاب</th>
+                                <th class="text-center d-none d-xl-table-cell">المطلوب كلي</th>
+                                <th class="text-center d-none d-lg-table-cell">المدفوع</th>
+                                <th class="text-center d-none d-xl-table-cell">نسبة التحصيل</th>
+                                <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
+                                <th class="text-center d-none d-xl-table-cell">مستحق المدرس</th>
+                                <th class="text-center d-none d-xl-table-cell">المسحوب</th>
+                                <th class="text-center d-none d-lg-table-cell">متبقي المدرس</th>
+                                <th class="text-center d-none d-md-table-cell">الطلاب</th>
                                 <th class="text-center d-none d-sm-table-cell" style="min-width:100px; width:140px;">الإجراءات</th>
                             </tr>
                         </thead>
@@ -110,23 +114,55 @@
                                     {% endif %}
                                     <div class="d-sm-none mt-1">
                                         <span class="badge bg-light text-dark me-1">{{ teacher.subject }}</span>
-                                        <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }} طالب</span>
+                                        <span class="badge bg-light text-dark me-1">{{ teacher.students_count or 0 }} طالب</span>
+                                    </div>
+                                    <div class="d-sm-none mt-1">
+                                        <small class="text-muted">مدفوع: </small><small class="fw-bold text-success">{{ format_currency(teacher.total_received) }}</small>
+                                        <small class="text-muted ms-2">متبقي: </small><small class="fw-bold {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">{{ format_currency(teacher.remaining_balance) }}</small>
                                     </div>
                                 </td>
                                 <td class="text-center d-none d-sm-table-cell">
                                     <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
                                 </td>
-                                <td class="text-center d-none d-md-table-cell fw-bold text-primary">
-                                    {{ format_currency(teacher.total_fee) }}
+                                {# المطلوب كلي #}
+                                <td class="text-center d-none d-xl-table-cell fw-bold text-primary">
+                                    {{ format_currency(teacher.total_fees) }}
                                 </td>
-                                <td class="text-center d-none d-md-table-cell fw-bold text-success">
+                                {# المدفوع #}
+                                <td class="text-center d-none d-lg-table-cell fw-bold text-success">
                                     {{ format_currency(teacher.total_received) }}
                                 </td>
-                                <td class="text-center d-none d-md-table-cell">
-                                    <span class="fw-bold {% if teacher.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
-                                        {{ format_currency(teacher.total_remaining) }}
+                                {# نسبة التحصيل #}
+                                <td class="text-center d-none d-xl-table-cell">
+                                    {% if teacher.collection_pct >= 100 %}
+                                    <span class="badge bg-success text-white">{{ teacher.collection_pct }}%</span>
+                                    {% elif teacher.collection_pct >= 70 %}
+                                    <span class="badge bg-warning text-dark">{{ teacher.collection_pct }}%</span>
+                                    {% elif teacher.collection_pct > 0 %}
+                                    <span class="badge bg-danger text-white">{{ teacher.collection_pct }}%</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">0%</span>
+                                    {% endif %}
+                                </td>
+                                {# خصم المعهد #}
+                                <td class="text-center d-none d-xl-table-cell text-danger">
+                                    {{ format_currency(teacher.institute_deduction) }}
+                                </td>
+                                {# مستحق المدرس #}
+                                <td class="text-center d-none d-xl-table-cell fw-bold text-info">
+                                    {{ format_currency(teacher.teacher_due) }}
+                                </td>
+                                {# المسحوب #}
+                                <td class="text-center d-none d-xl-table-cell fw-bold" style="color: var(--warning-dark);">
+                                    {{ format_currency(teacher.withdrawn_total) }}
+                                </td>
+                                {# متبقي المدرس (القابل للسحب) #}
+                                <td class="text-center d-none d-lg-table-cell">
+                                    <span class="fw-bold {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
+                                        {{ format_currency(teacher.remaining_balance) }}
                                     </span>
                                 </td>
+                                {# عدد الطلاب #}
                                 <td class="text-center d-none d-md-table-cell">
                                     <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
                                 </td>
@@ -187,19 +223,37 @@
                         <!-- التفاصيل المالية -->
                         <div class="list-card-info">
                             <div class="info-item">
-                                <div class="info-label">الأجر الكلي</div>
-                                <div class="info-value text-primary">{{ format_currency(teacher.total_fee) }}</div>
+                                <div class="info-label">المطلوب كلي</div>
+                                <div class="info-value text-primary">{{ format_currency(teacher.total_fees) }}</div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label">المدفوع</div>
                                 <div class="info-value text-success">{{ format_currency(teacher.total_received) }}</div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">المتبقي</div>
-                                <div class="info-value {% if teacher.total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">
-                                    {{ format_currency(teacher.total_remaining) }}
+                                <div class="info-label">خصم المعهد</div>
+                                <div class="info-value text-danger">{{ format_currency(teacher.institute_deduction) }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">مستحق المدرس</div>
+                                <div class="info-value text-info">{{ format_currency(teacher.teacher_due) }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">المسحوب</div>
+                                <div class="info-value" style="color: var(--warning-dark);">{{ format_currency(teacher.withdrawn_total) }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">متبقي المدرس</div>
+                                <div class="info-value {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
+                                    {{ format_currency(teacher.remaining_balance) }}
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- نسبة التحصيل -->
+                        <div class="list-card-badges mt-2">
+                            <span class="badge bg-light text-dark"><i class="fas fa-chart-line me-1"></i>تحصيل {% if teacher.collection_pct >= 100 %}<span class="text-success">{{ teacher.collection_pct }}%</span>{% elif teacher.collection_pct >= 70 %}<span class="text-warning">{{ teacher.collection_pct }}%</span>{% else %}<span class="text-danger">{{ teacher.collection_pct }}%</span>{% endif %}</span>
+                            <span class="badge bg-light text-dark"><i class="fas fa-users me-1"></i>{{ teacher.students_count or 0 }}</span>
                         </div>
 
                         <div class="list-card-divider"></div>

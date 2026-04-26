@@ -379,7 +379,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
             query = "SELECT * FROM teachers ORDER BY subject, name"
             teachers = db.execute_query(query)
 
-        # عدد الطلاب لكل مدرس + البيانات المالية
+        # عدد الطلاب لكل مدرس + البيانات المالية الكاملة
         for t in teachers:
             cnt = db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
             t['students_count'] = cnt[0]['cnt'] if cnt else 0
@@ -387,9 +387,32 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 balance_info = finance_service.calculate_teacher_balance(t['id'])
                 t['total_received'] = balance_info.get('total_received', 0)
                 t['total_remaining'] = balance_info.get('remaining_balance', 0)
+                t['institute_deduction'] = balance_info.get('institute_deduction', 0)
+                t['teacher_due'] = balance_info.get('teacher_due', 0)
+                t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
+                t['remaining_balance'] = balance_info.get('remaining_balance', 0)
+                # حساب نسبة التحصيل: المدفوع / المطلوب الكلي
+                try:
+                    all_fees = db.execute_query(
+                        '''SELECT COALESCE(SUM(st.total_fee), 0) as total 
+                           FROM student_teacher st WHERE st.teacher_id = %s''',
+                        (t['id'],)
+                    )
+                    total_fees = all_fees[0]['total'] if all_fees else 0
+                    t['total_fees'] = total_fees
+                    t['collection_pct'] = round((t['total_received'] / total_fees) * 100, 1) if total_fees > 0 else 0
+                except:
+                    t['total_fees'] = 0
+                    t['collection_pct'] = 0
             except:
                 t['total_received'] = 0
                 t['total_remaining'] = 0
+                t['institute_deduction'] = 0
+                t['teacher_due'] = 0
+                t['withdrawn_total'] = 0
+                t['remaining_balance'] = 0
+                t['total_fees'] = 0
+                t['collection_pct'] = 0
     except:
         teachers = []
 
