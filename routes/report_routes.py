@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from datetime import datetime
 import os
 
-from config import APP_TITLE, BASE_DIR, format_currency, format_date
+from config import APP_TITLE, BASE_DIR, format_currency, format_date, format_report_datetime, format_report_date, format_report_time
 from services.finance_service import finance_service
 from database import Database
 
@@ -65,7 +65,7 @@ async def student_report(request: Request, student_id: int):
         "remaining_raw": remaining_all,
         "payment_pct": payment_pct,
         "installments": installments,
-        "report_date": datetime.now().strftime("%Y/%m/%d - %H:%M"),
+        "report_date": format_report_datetime(),
     })
 
 
@@ -89,7 +89,7 @@ async def teacher_report(request: Request, teacher_id: int):
         "balance_info": balance_info,
         "students_list": students_list,
         "recent_withdrawals": recent_withdrawals,
-        "report_date": datetime.now().strftime("%Y/%m/%d - %H:%M"),
+        "report_date": format_report_datetime(),
     })
 
 
@@ -140,17 +140,15 @@ async def receipt_report(request: Request, installment_id: int):
     total_paid = paid_result[0]['total'] if paid_result else 0
     remaining_balance = total_fee - total_paid
 
-    now = datetime.now()
-
     return templates.TemplateResponse("reports/receipt.html", {
         "request": request,
         "installment": installment,
         "total_fee": total_fee,
         "total_paid": total_paid,
         "remaining_balance": remaining_balance,
-        "report_date": now.strftime("%Y/%m/%d - %H:%M"),
-        "report_date_only": now.strftime("%Y/%m/%d"),
-        "report_time": now.strftime("%H:%M"),
+        "report_date": format_report_datetime(),
+        "report_date_only": format_report_date(),
+        "report_time": format_report_time(),
     })
 
 
@@ -188,7 +186,7 @@ async def subject_report(request: Request, subject_name: str):
         "teacher_data": teacher_data,
         "total_students": total_students,
         "total_fees": total_fees,
-        "report_date": datetime.now().strftime("%Y/%m/%d - %H:%M"),
+        "report_date": format_report_datetime(),
     })
 
 
@@ -246,5 +244,5 @@ async def all_subjects_report(request: Request):
         "total_students": total_students,
         "total_fees": total_fees,
         "subject_details": subject_details,
-        "report_date": datetime.now().strftime("%Y/%m/%d - %H:%M"),
+        "report_date": format_report_datetime(),
     })

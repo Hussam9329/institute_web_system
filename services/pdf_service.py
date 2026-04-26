@@ -23,7 +23,7 @@ from bidi.algorithm import get_display
 
 from config import (
     STUDENT_PDFS_DIR, TEACHER_PDFS_DIR, RECEIPTS_DIR, REPORTS_DIR,
-    format_currency, format_date, APP_TITLE, BASE_DIR
+    format_currency, format_date, format_report_datetime, format_report_date, format_report_time, APP_TITLE, BASE_DIR
 )
 from services.finance_service import finance_service
 from database import Database
@@ -144,7 +144,7 @@ class PageNumberCanvas:
 
         # التاريخ - يسار
         canvas.setFont('Calibri', 6)
-        canvas.drawString(x_left, y_line - 5 * mm, datetime.now().strftime("%Y/%m/%d"))
+        canvas.drawString(x_left, y_line - 5 * mm, format_report_date())
 
         # اسم النظام - يمين
         canvas.setFont('Calibri', 6)
@@ -318,7 +318,7 @@ class PDFService:
         ]))
         elements.append(accent_table)
 
-        now = datetime.now().strftime("%Y/%m/%d - %H:%M")
+        now = format_report_datetime()
         elements.append(Spacer(1, SP_SM))
         elements.append(ar_para(f"تاريخ التقرير: {now}", styles['date_style']))
         elements.append(Spacer(1, SP_MD))
@@ -1024,7 +1024,7 @@ class PDFService:
         elements.append(Spacer(1, SP_MD))
         now = datetime.now()
         footer_s = ParagraphStyle('ft', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.MUTED, leading=10)
-        elements.append(ar_para(f"التاريخ: {now.strftime('%Y/%m/%d')} - الوقت: {now.strftime('%H:%M')}", footer_s))
+        elements.append(ar_para(f"التاريخ: {format_report_date()} - الوقت: {format_report_time()}", footer_s))
         elements.append(Spacer(1, SP_MD))
         elements.append(HRFlowable(width="35%", thickness=0.5, color=C.DARK, spaceBefore=0, spaceAfter=2))
         elements.append(ar_para("توقيع المسؤول", ParagraphStyle('sig', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.TEXT_SECONDARY, leading=10)))

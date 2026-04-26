@@ -101,6 +101,33 @@ def format_date(date_string: str) -> str:
     except:
         return date_string
 
+# ===== تنسيق تاريخ ووقت التقارير =====
+def format_report_datetime() -> str:
+    """
+    تنسيق التاريخ والوقت الحالي للتقارير بشكل عربي
+    Output: "15/01/2025 - 03:30 م"
+    """
+    from datetime import datetime
+    now = datetime.now()
+    ampm = "ص" if now.hour < 12 else "م"
+    hours = now.hour % 12
+    hours = hours if hours else 12
+    return now.strftime(f"%d/%m/%Y - {hours}:%M {ampm}")
+
+def format_report_date() -> str:
+    """تنسيق التاريخ فقط للتقارير: DD/MM/YYYY"""
+    from datetime import datetime
+    return datetime.now().strftime("%d/%m/%Y")
+
+def format_report_time() -> str:
+    """تنسيق الوقت فقط للتقارير: 12 ساعة مع ص/م"""
+    from datetime import datetime
+    now = datetime.now()
+    ampm = "ص" if now.hour < 12 else "م"
+    hours = now.hour % 12
+    hours = hours if hours else 12
+    return f"{hours}:{now.strftime('%M')} {ampm}"
+
 # ===== الحصول على التاريخ الحالي =====
 def get_current_date() -> str:
     """إرجاع التاريخ الحالي بصيغة YYYY-MM-DD"""
