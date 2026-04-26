@@ -107,7 +107,7 @@ async function unlinkTeacher(studentId, teacherId, teacherName) {
 /**
  * فتح نموذج إضافة قسط
  */
-function openInstallmentModal(studentId, teacherId, teacherName) {
+function openInstallmentModal(studentId, teacherId, teacherName, studyType, totalFee) {
     document.getElementById('inst_student_id').value = studentId;
     document.getElementById('inst_teacher_id').value = teacherId;
     document.getElementById('inst_teacher_name').textContent = teacherName;
@@ -115,7 +115,18 @@ function openInstallmentModal(studentId, teacherId, teacherName) {
     document.getElementById('inst_date').value = getTodayDate();
     document.getElementById('inst_type').selectedIndex = 0;
     document.getElementById('inst_notes').value = '';
-    
+
+    // عرض قسط الاستاد حسب نوع الدراسة
+    const hintEl = document.getElementById('inst_fee_hint');
+    const hintText = document.getElementById('inst_fee_hint_text');
+    if (totalFee && totalFee > 0 && studyType) {
+        const formatted = formatCurrency(totalFee);
+        hintText.textContent = `قسط الاستاد ${teacherName} (${studyType}) = ${formatted}`;
+        hintEl.classList.remove('d-none');
+    } else {
+        hintEl.classList.add('d-none');
+    }
+
     installmentModal.show();
 }
 

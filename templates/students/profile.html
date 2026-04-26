@@ -134,7 +134,7 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="دفع قسط">
+                                                <button class="btn btn-outline-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}', '{{ ts.study_type }}', {{ ts.total_fee }})" title="دفع قسط">
                                                     <i class="fas fa-money-bill"></i>
                                                 </button>
                                                 <button class="btn btn-outline-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
@@ -304,6 +304,9 @@
                         <i class="fas fa-info-circle me-1"></i>
                         <strong>الطالب:</strong> {{ student.name }} |
                         <strong>المدرس:</strong> <span id="inst_teacher_name"></span>
+                    </div>
+                    <div id="inst_fee_hint" class="alert alert-light border mb-3 py-2 d-none">
+                        <small class="text-muted mb-0"><i class="fas fa-calculator me-1"></i><span id="inst_fee_hint_text"></span></small>
                     </div>
 
                     <div class="row g-3">
