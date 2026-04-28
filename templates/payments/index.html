@@ -257,7 +257,7 @@
                             <label class="form-label fw-bold">
                                 <i class="fas fa-chalkboard-teacher me-1 text-orange"></i>المدرس
                             </label>
-                            <select class="form-select" id="pay_teacher_id" required>
+                            <select class="form-select" id="pay_teacher_id" required onchange="showTeacherBalance(this.value)">
                                 <option value="">-- اختر المدرس أولاً --</option>
                                 {% for teacher in teachers %}
                                 <option value="{{ teacher.id }}" data-fee="{{ teacher.total_fee }}">{{ teacher.name }} - {{ teacher.subject }}</option>
@@ -308,26 +308,18 @@
 </div>
 
 <script>
-let teachersBalanceData = {};
+var teachersBalanceData = {};
 document.getElementById('pay_date').value = getTodayDate();
 
-// إعادة تعيين المودال عند إغلاقه
-document.getElementById('addPaymentModal')?.addEventListener('hidden.bs.modal', function() {
-    document.getElementById('teacherBalanceMsg').classList.add('d-none');
-    teachersBalanceData = {};
-});
-
-// onchange للمدرس - يعرض الرصيد عند الاختيار
-document.getElementById('pay_teacher_id').addEventListener('change', function() {
-    var teacherId = this.value;
+function showTeacherBalance(teacherId) {
     var msgDiv = document.getElementById('teacherBalanceMsg');
     
-    if (!teacherId || !teachersBalanceData[teacherId]) {
+    if (!teacherId || !teachersBalanceData[String(teacherId)]) {
         msgDiv.classList.add('d-none');
         return;
     }
     
-    var data = teachersBalanceData[teacherId];
+    var data = teachersBalanceData[String(teacherId)];
     var paid = formatCurrency(data.paid_total);
     var remaining = formatCurrency(data.remaining_balance);
     
@@ -337,7 +329,7 @@ document.getElementById('pay_teacher_id').addEventListener('change', function() 
         msgDiv.innerHTML = '<div class="alert py-2 px-3 mb-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #fef2f2 100%); border: 1px solid #e5e7eb; font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-exclamation-triangle me-1"></i> <strong class="text-danger">المتبقي: ' + remaining + '</strong></div></div>';
     }
     msgDiv.classList.remove('d-none');
-});
+}
 
 function switchView(view, btn) {
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
@@ -362,7 +354,7 @@ function loadStudentTeachers(studentId) {
                 opt.value = t.teacher_id;
                 opt.textContent = t.teacher_name + ' - ' + t.subject;
                 teacherSelect.appendChild(opt);
-                teachersBalanceData[t.teacher_id] = t;
+                teachersBalanceData[String(t.teacher_id)] = t;
             }
         }
     }).catch(function(err) {
