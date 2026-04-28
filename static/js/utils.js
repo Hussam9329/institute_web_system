@@ -8,8 +8,8 @@
  * @returns {string} المبلغ منسق
  */
 function formatCurrency(amount) {
-    if (amount === null || amount === undefined) return '0 د.ع';
-    return amount.toLocaleString('en-US') + ' د.ع';
+    if (amount === null || amount === undefined) return '0د.ع';
+    return amount.toLocaleString('en-US').replace(/,/g, '.') + 'د.ع';
 }
 
 /**

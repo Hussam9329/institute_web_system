@@ -78,11 +78,11 @@ def format_currency(amount: int) -> str:
     Output: "150,000 د.ع"
     """
     if amount is None:
-        return "0 د.ع"
+        return "0د.ع"
     
-    # تحويل لـ string وإضافة فاصلة الآلاف
-    formatted = f"{amount:,}"
-    return f"{formatted} د.ع"
+    # تحويل لـ string واستبدال الفاصلة بنقطة
+    formatted = f"{amount:,}".replace(",", ".")
+    return f"{formatted}د.ع"
 
 # ===== تنسيق التاريخ =====
 def format_date(date_string: str) -> str:
