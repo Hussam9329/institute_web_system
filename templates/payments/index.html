@@ -87,8 +87,8 @@
                                 <th class="d-none d-md-table-cell">المدرس</th>
                                 <th class="d-none d-md-table-cell">المادة</th>
                                 <th class="text-center">المبلغ</th>
-                                <th class="text-center d-none d-sm-table-cell">المتبقي</th>
-                                <th class="text-center d-none d-sm-table-cell">النوع</th>
+                                <th class="text-center">المتبقي</th>
+                                <th class="text-center d-none d-md-table-cell">النوع</th>
                                 <th class="text-center d-none d-sm-table-cell">التاريخ</th>
                                 <th class="text-center" style="width:70px;">إجراءات</th>
                             </tr>
@@ -103,8 +103,11 @@
                                     </a>
                                     <div class="d-sm-none mt-1">
                                         <span class="badge bg-light text-dark me-1">{{ inst.subject }}</span>
-                                        <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
-                                        <span class="text-muted small">{{ inst.payment_date }}</span>
+                                        {% if inst.remaining > 0 %}
+                                        <span class="badge bg-danger">متبقي {{ format_currency(inst.remaining) }}</span>
+                                        {% else %}
+                                        <span class="badge bg-success"><i class="fas fa-check"></i></span>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">
@@ -116,14 +119,14 @@
                                     <span class="badge bg-light text-dark">{{ inst.subject }}</span>
                                 </td>
                                 <td class="text-center fw-bold text-success">{{ format_currency(inst.amount) }}</td>
-                                <td class="text-center d-none d-sm-table-cell">
+                                <td class="text-center">
                                     {% if inst.remaining > 0 %}
                                     <span class="fw-bold text-danger">{{ format_currency(inst.remaining) }}</span>
                                     {% else %}
                                     <span class="text-success"><i class="fas fa-check-circle"></i></span>
                                     {% endif %}
                                 </td>
-                                <td class="text-center d-none d-sm-table-cell">
+                                <td class="text-center d-none d-md-table-cell">
                                     <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                                 </td>
                                 <td class="text-center text-muted d-none d-sm-table-cell">{{ inst.payment_date }}</td>
@@ -170,8 +173,8 @@
                             <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                         </div>
 
-                        <!-- المبلغ والتاريخ -->
-                        <div class="list-card-info" style="grid-template-columns: 1fr 1fr;">
+                        <!-- المبلغ والتاريخ والمتبقي -->
+                        <div class="list-card-info" style="grid-template-columns: 1fr 1fr 1fr;">
                             <div class="info-item" style="background: var(--success-glow);">
                                 <div class="info-label">المبلغ</div>
                                 <div class="info-value text-success">{{ format_currency(inst.amount) }}</div>
@@ -180,6 +183,17 @@
                                 <div class="info-label">التاريخ</div>
                                 <div class="info-value" style="font-size: 0.82rem;">{{ inst.payment_date }}</div>
                             </div>
+                            {% if inst.remaining > 0 %}
+                            <div class="info-item" style="background: rgba(220,38,38,0.08);">
+                                <div class="info-label">المتبقي</div>
+                                <div class="info-value text-danger">{{ format_currency(inst.remaining) }}</div>
+                            </div>
+                            {% else %}
+                            <div class="info-item" style="background: rgba(34,197,94,0.08);">
+                                <div class="info-label">الحالة</div>
+                                <div class="info-value text-success"><i class="fas fa-check-circle"></i> مكتمل</div>
+                            </div>
+                            {% endif %}
                         </div>
 
                         <div class="list-card-divider"></div>
@@ -243,7 +257,7 @@
                             <label class="form-label fw-bold">
                                 <i class="fas fa-chalkboard-teacher me-1 text-orange"></i>المدرس
                             </label>
-                            <select class="form-select" id="pay_teacher_id" required onchange="showTeacherBalance(this.value)">
+                            <select class="form-select" id="pay_teacher_id" required>
                                 <option value="">-- اختر المدرس أولاً --</option>
                                 {% for teacher in teachers %}
                                 <option value="{{ teacher.id }}" data-fee="{{ teacher.total_fee }}">{{ teacher.name }} - {{ teacher.subject }}</option>
@@ -294,21 +308,35 @@
 </div>
 
 <script>
+let teachersBalanceData = {};
 document.getElementById('pay_date').value = getTodayDate();
-
-// إخفاء رسالة الرصيد عند تغيير الطالب
-const studentSelect = document.getElementById('pay_student_id');
-if (studentSelect) {
-    studentSelect.addEventListener('change', function() {
-        document.getElementById('teacherBalanceMsg').classList.add('d-none');
-        teachersBalanceData = {};
-    });
-}
 
 // إعادة تعيين المودال عند إغلاقه
 document.getElementById('addPaymentModal')?.addEventListener('hidden.bs.modal', function() {
     document.getElementById('teacherBalanceMsg').classList.add('d-none');
     teachersBalanceData = {};
+});
+
+// onchange للمدرس - يعرض الرصيد عند الاختيار
+document.getElementById('pay_teacher_id').addEventListener('change', function() {
+    var teacherId = this.value;
+    var msgDiv = document.getElementById('teacherBalanceMsg');
+    
+    if (!teacherId || !teachersBalanceData[teacherId]) {
+        msgDiv.classList.add('d-none');
+        return;
+    }
+    
+    var data = teachersBalanceData[teacherId];
+    var paid = formatCurrency(data.paid_total);
+    var remaining = formatCurrency(data.remaining_balance);
+    
+    if (data.remaining_balance <= 0) {
+        msgDiv.innerHTML = '<div class="alert alert-success py-2 px-3 mb-0" style="font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-check-double me-1"></i> تمت التسوية بالكامل</div></div>';
+    } else {
+        msgDiv.innerHTML = '<div class="alert py-2 px-3 mb-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #fef2f2 100%); border: 1px solid #e5e7eb; font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-exclamation-triangle me-1"></i> <strong class="text-danger">المتبقي: ' + remaining + '</strong></div></div>';
+    }
+    msgDiv.classList.remove('d-none');
 });
 
 function switchView(view, btn) {
@@ -318,59 +346,28 @@ function switchView(view, btn) {
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
 
-let teachersBalanceData = {};
-
 function loadStudentTeachers(studentId) {
     if (!studentId) return;
     
     teachersBalanceData = {};
     document.getElementById('teacherBalanceMsg').classList.add('d-none');
+    var teacherSelect = document.getElementById('pay_teacher_id');
+    teacherSelect.innerHTML = '<option value="">-- اختر المدرس --</option>';
     
-    apiRequest(`/api/students/${studentId}/teachers`).then(result => {
-        const select = document.getElementById('pay_teacher_id');
-        select.innerHTML = '<option value="">-- اختر المدرس --</option>';
-        
+    apiRequest('/api/students/' + studentId + '/teachers').then(function(result) {
         if (result.data && result.data.length > 0) {
-            result.data.forEach(t => {
-                const opt = document.createElement('option');
+            for (var i = 0; i < result.data.length; i++) {
+                var t = result.data[i];
+                var opt = document.createElement('option');
                 opt.value = t.teacher_id;
-                opt.textContent = `${t.teacher_name} - ${t.subject}`;
-                select.appendChild(opt);
+                opt.textContent = t.teacher_name + ' - ' + t.subject;
+                teacherSelect.appendChild(opt);
                 teachersBalanceData[t.teacher_id] = t;
-            });
+            }
         }
-    }).catch(err => {
+    }).catch(function(err) {
         console.error(err);
     });
-}
-
-function showTeacherBalance(teacherId) {
-    const msgDiv = document.getElementById('teacherBalanceMsg');
-    if (!teacherId || !teachersBalanceData[teacherId]) {
-        msgDiv.classList.add('d-none');
-        return;
-    }
-    const data = teachersBalanceData[teacherId];
-    const paid = formatCurrency(data.paid_total);
-    const remaining = formatCurrency(data.remaining_balance);
-    const isFullyPaid = data.remaining_balance <= 0;
-    
-    if (isFullyPaid) {
-        msgDiv.innerHTML = `
-            <div class="alert alert-success py-2 px-3 mb-0" style="font-size:0.88rem;">
-                <div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ${paid}</strong></div>
-                <div><i class="fas fa-check-double me-1"></i> تمت التسوية بالكامل</div>
-            </div>
-        `;
-    } else {
-        msgDiv.innerHTML = `
-            <div class="alert py-2 px-3 mb-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #fef2f2 100%); border: 1px solid #e5e7eb; font-size:0.88rem;">
-                <div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ${paid}</strong></div>
-                <div><i class="fas fa-exclamation-triangle me-1"></i> <strong class="text-danger">المتبقي: ${remaining}</strong></div>
-            </div>
-        `;
-    }
-    msgDiv.classList.remove('d-none');
 }
 
 async function submitPayment(event) {
