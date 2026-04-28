@@ -362,7 +362,7 @@ async function submitPayment(event) {
                 `;
                 document.getElementById('alert-container').prepend(receiptAlert);
             }
-            setTimeout(() => location.reload(), 3000);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }
@@ -378,7 +378,7 @@ async function deletePayment(installmentId) {
         const result = await apiRequest(`/api/installments/${installmentId}`, { method: 'DELETE' });
         if (result.success) {
             showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }

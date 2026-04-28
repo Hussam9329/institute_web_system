@@ -69,7 +69,7 @@ async function linkStudentTeacher(event) {
             showAlert(result.message, 'success');
             linkTeacherModal.hide();
             // إعادة تحميل الصفحة بعد ثانيتين
-            setTimeout(() => location.reload(), 1500);
+            location.reload();
         } else {
             showAlert(result.message, 'warning');
         }
@@ -93,7 +93,7 @@ async function unlinkTeacher(studentId, teacherId, teacherName) {
 
         if (result.success) {
             showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1500);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }
@@ -160,7 +160,7 @@ async function addInstallment(event) {
         if (result.success) {
             showAlert(result.message, 'success');
             installmentModal.hide();
-            setTimeout(() => location.reload(), 1500);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }

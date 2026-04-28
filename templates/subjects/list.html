@@ -289,7 +289,7 @@ document.getElementById('editSubjectForm').addEventListener('submit', async func
         
         if (result.success) {
             showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }

@@ -303,7 +303,7 @@ async function submitEditWithdrawal(event) {
         if (result.success) {
             showAlert('تم تعديل السحب بنجاح', 'success');
             editModal.hide();
-            setTimeout(() => location.reload(), 1000);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }
@@ -322,7 +322,7 @@ async function deleteWithdrawal(withdrawalId) {
 
         if (result.success) {
             showAlert('تم حذف السحب بنجاح', 'success');
-            setTimeout(() => location.reload(), 1000);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }
@@ -363,7 +363,7 @@ async function submitAddWithdrawal(event) {
         if (result.success) {
             showAlert(result.message, 'success');
             addModal.hide();
-            setTimeout(() => location.reload(), 1000);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }

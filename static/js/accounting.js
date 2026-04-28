@@ -27,7 +27,7 @@ function openWithdrawalModal(teacherId, teacherName, availableBalance) {
     withdrawalModal.show();
     
     // التركيز على حقل المبلغ
-    setTimeout(() => document.getElementById('w_amount').focus(), 500);
+    document.getElementById('w_amount').focus();
 }
 
 /**
@@ -67,8 +67,7 @@ async function addWithdrawal(event) {
         if (result.success) {
             showAlert(result.message, 'success');
             withdrawalModal.hide();
-            // إعادة تحميل الصفحة لتحديث الأرقام
-            setTimeout(() => location.reload(), 1500);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }
@@ -127,7 +126,7 @@ async function deleteWithdrawal(withdrawalId) {
 
         if (result.success) {
             showAlert(result.message, 'success');
-            setTimeout(() => location.reload(), 1500);
+            location.reload();
         } else {
             showAlert(result.message, 'error');
         }

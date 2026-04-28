@@ -71,7 +71,7 @@ function showAlert(message, type = 'info', duration = 4000) {
 
     container.insertAdjacentHTML('beforeend', alertHTML);
 
-    // إخفاء تلقائي بعد المدة المحددة مع أنيميشن الخروج
+    // إخفاء تلقائي بعد المدة المحددة
     setTimeout(() => {
         dismissAlert(alertId);
     }, duration);
@@ -85,15 +85,10 @@ function dismissAlert(alertId) {
     const alertEl = document.getElementById(alertId);
     if (!alertEl) return;
 
-    // إضافة كلاس الخروج
-    alertEl.classList.add('removing');
-
-    // إزالة من DOM بعد انتهاء الأنيميشن
-    setTimeout(() => {
-        if (alertEl.parentNode) {
-            alertEl.parentNode.removeChild(alertEl);
-        }
-    }, 400);
+    // إزالة من DOM مباشرة
+    if (alertEl.parentNode) {
+        alertEl.parentNode.removeChild(alertEl);
+    }
 }
 
 /**

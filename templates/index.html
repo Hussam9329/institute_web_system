@@ -344,17 +344,13 @@
     margin-bottom: 0;
 }
 
-/* ===== Animations ===== */
+/* ===== No Animations - Instant ===== */
 .dash-animate {
-    animation: fadeUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: none;
 }
-.dash-delay-1 { animation-delay: 0.05s; }
-.dash-delay-2 { animation-delay: 0.1s; }
-.dash-delay-3 { animation-delay: 0.15s; }
-.dash-delay-4 { animation-delay: 0.2s; }
-.dash-delay-5 { animation-delay: 0.25s; }
-.dash-delay-6 { animation-delay: 0.3s; }
-.dash-delay-7 { animation-delay: 0.35s; }
+.dash-delay-1, .dash-delay-2, .dash-delay-3, .dash-delay-4, .dash-delay-5, .dash-delay-6, .dash-delay-7 {
+    animation-delay: 0s;
+}
 
 /* ===== Responsive ===== */
 @media (max-width: 991px) {
