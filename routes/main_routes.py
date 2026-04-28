@@ -768,6 +768,12 @@ async def payments_page(request: Request, search: str = ""):
     except:
         installments = []
 
+    # حساب المتبقي لكل قسط (المتبقي = قسط المدرس - مجموع المدفوعات)
+    for inst in installments:
+        balance = finance_service.calculate_student_teacher_balance(inst['student_id'], inst['teacher_id'])
+        inst['remaining'] = balance['remaining_balance']
+        inst['total_fee'] = balance['total_fee']
+
     teachers = db.execute_query("SELECT id, name, subject, total_fee FROM teachers ORDER BY name")
     students = db.execute_query("SELECT id, name, barcode FROM students ORDER BY name")
 
