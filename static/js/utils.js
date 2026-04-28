@@ -9,7 +9,7 @@
  */
 function formatCurrency(amount) {
     if (amount === null || amount === undefined) return '0 د.ع';
-    return amount.toLocaleString('ar-IQ') + ' د.ع';
+    return amount.toLocaleString('en-US') + ' د.ع';
 }
 
 /**
