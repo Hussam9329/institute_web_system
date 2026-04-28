@@ -227,7 +227,7 @@
                             <select class="form-select" id="pay_student_id" required onchange="loadStudentTeachers(this.value)">
                                 <option value="">-- اختر الطالب --</option>
                                 {% for student in students %}
-                                <option value="{{ student.id }}">{{ student.name }} ({{ student.barcode }})</option>
+                                <option value="{{ student.id }}">{{ student.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
