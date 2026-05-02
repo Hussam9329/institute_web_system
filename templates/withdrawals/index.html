@@ -91,7 +91,7 @@
                                 <span class="badge bg-light text-dark">{{ w.subject }}</span>
                             </td>
                             <td class="text-center fw-bold text-warning">{{ format_currency(w.amount) }}</td>
-                            <td class="text-muted d-none d-sm-table-cell">{{ w.withdrawal_date }}</td>
+                            <td class="text-muted d-none d-sm-table-cell">{{ format_date(w.withdrawal_date) }}</td>
                             <td class="text-muted small d-none d-md-table-cell">{{ w.notes[:30] if w.notes else '-' }}</td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm action-btns">

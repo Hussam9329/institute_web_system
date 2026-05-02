@@ -519,12 +519,30 @@ class FinanceService:
             result = self.db.execute_query("SELECT COUNT(*) as count FROM students")
             stats['total_students'] = result[0]['count'] if result else 0
             
-            # الطلاب المستمرين
-            result = self.db.execute_query("SELECT COUNT(*) as count FROM students WHERE status = 'مستمر'")
+            # الطلاب المستمرين - بناءً على student_teacher (المصدر الحقيقي)
+            result = self.db.execute_query('''
+                SELECT COUNT(DISTINCT s.id) as count 
+                FROM students s
+                WHERE s.id IN (
+                    SELECT DISTINCT st1.student_id FROM student_teacher st1 
+                    WHERE st1.status = 'مستمر'
+                )
+                OR s.id NOT IN (
+                    SELECT DISTINCT st2.student_id FROM student_teacher st2
+                )
+            ''')
             stats['active_students'] = result[0]['count'] if result else 0
             
-            # الطلاب المنسحبين
-            result = self.db.execute_query("SELECT COUNT(*) as count FROM students WHERE status = 'منسحب'")
+            # الطلاب المنسحبين - كل روابطهم منسحبة
+            result = self.db.execute_query('''
+                SELECT COUNT(DISTINCT s.id) as count 
+                FROM students s
+                WHERE s.id IN (
+                    SELECT DISTINCT st.student_id FROM student_teacher st
+                    GROUP BY st.student_id
+                    HAVING COUNT(*) FILTER (WHERE st.status = 'منسحب') = COUNT(*)
+                )
+            ''')
             stats['withdrawn_students'] = result[0]['count'] if result else 0
             
             # عدد المدرسين
@@ -564,3 +582,27 @@ class FinanceService:
 
 # ===== إنشاء نسخة واحدة من الخدمة (Singleton) =====
 finance_service = FinanceService()
+
+
+def sync_student_status(student_id: int):
+    """تحديث حالة الطالب في جدول students بناءً على روابط student_teacher"""
+    db = Database()
+    try:
+        result = db.execute_query('''
+            SELECT 
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE status = 'منسحب') as withdrawn
+            FROM student_teacher 
+            WHERE student_id = %s
+        ''', (student_id,))
+        
+        if not result or result[0]['total'] == 0:
+            new_status = 'مستمر'
+        elif result[0]['withdrawn'] == result[0]['total']:
+            new_status = 'منسحب'
+        else:
+            new_status = 'مستمر'
+        
+        db.execute_query("UPDATE students SET status = %s WHERE id = %s", (new_status, student_id))
+    except Exception:
+        pass

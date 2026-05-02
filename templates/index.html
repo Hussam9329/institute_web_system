@@ -672,7 +672,7 @@
                         <td class="text-center">
                             <span class="badge bg-info-subtle text-info" style="font-size:0.75rem;">{{ inst.installment_type }}</span>
                         </td>
-                        <td class="text-muted" style="font-size:0.82rem;">{{ inst.payment_date }}</td>
+                        <td class="text-muted" style="font-size:0.82rem;">{{ format_date(inst.payment_date) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -692,7 +692,7 @@
                 </div>
                 <div class="dash-pc-amount">
                     <div class="amount-val">{{ format_currency(inst.amount) }}</div>
-                    <div class="amount-date">{{ inst.payment_date }}</div>
+                    <div class="amount-date">{{ format_date(inst.payment_date) }}</div>
                 </div>
             </a>
             {% endfor %}

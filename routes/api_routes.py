@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import Database
-from services.finance_service import finance_service
+from services.finance_service import finance_service, sync_student_status
 from config import get_current_date, format_currency
 
 router = APIRouter(prefix="/api")
@@ -210,6 +210,8 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
             (link.student_id, link.teacher_id, link.study_type, link.status)
         )
         
+        sync_student_status(link.student_id)
+        
         return {"success": True, "message": "تم الربط بنجاح"}
         
     except HTTPException:
@@ -265,6 +267,8 @@ async def api_link_student_teachers(data: dict):
             )
             linked += 1
         
+        sync_student_status(int(student_id))
+        
         return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -283,6 +287,8 @@ async def api_update_student_teacher_link(student_id: int, teacher_id: int, data
             "UPDATE student_teacher SET study_type = %s, status = %s WHERE student_id = %s AND teacher_id = %s",
             (study_type, status, student_id, teacher_id)
         )
+        
+        sync_student_status(student_id)
         
         return {"success": True, "message": "تم التحديث بنجاح"}
     except Exception as e:
@@ -304,6 +310,8 @@ async def api_unlink_student_teacher(student_id: int, teacher_id: int):
             "DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
         )
+        
+        sync_student_status(student_id)
         
         return {"success": True, "message": "تم إلغاء الربط وحذف الأقساط"}
         

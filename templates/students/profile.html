@@ -214,7 +214,7 @@
                                         <td class="text-center d-none d-sm-table-cell">
                                             <span class="badge bg-info-subtle text-info">{{ inst.installment_type }}</span>
                                         </td>
-                                        <td class="text-center text-muted d-none d-sm-table-cell">{{ inst.payment_date }}</td>
+                                        <td class="text-center text-muted d-none d-sm-table-cell">{{ format_date(inst.payment_date) }}</td>
                                         <td class="text-center">
                                             <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل طباعة">
                                                 <i class="fas fa-print"></i>

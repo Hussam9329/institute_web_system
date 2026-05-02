@@ -84,7 +84,7 @@
                         <!-- الأجر الكلي (يُحسب تلقائياً) -->
                         <input type="hidden" name="total_fee" id="total_fee" value="{{ teacher.total_fee if teacher else 0 }}">
                         <input type="hidden" name="institute_deduction_type" id="institute_deduction_type" value="{{ teacher.institute_deduction_type if teacher else 'percentage' }}">
-                        <input type="hidden" name="institute_deduction_value" id="institute_deduction_value" value="{{ teacher.institute_deduction_value if teacher and teacher.institute_deduction_type == 'percentage' else 0 }}">
+                        <input type="hidden" name="institute_deduction_value" id="institute_deduction_value" value="{{ teacher.institute_deduction_value if teacher else 0 }}">
 
                         <!-- أنواع التدريس -->
                         <div class="mb-3">
@@ -378,10 +378,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        // تحديد نوع الخصم الأساسي: إذا كانت كل الأنواع يدوية → manual، وإلا → percentage
+        const manualTypes = [];
+        const types_map2 = {in_person: 'حضوري', electronic: 'الكتروني', blended: 'مدمج'};
+        for (const [key, label] of Object.entries(types_map2)) {
+            const typeSelect = document.querySelector(`select[name="inst_ded_type_${key}"]`);
+            if (typeSelect && typeSelect.value === 'manual') {
+                const v = document.querySelector(`input[name="inst_ded_manual_${key}"]`);
+                if (v && parseInt(v.value) > 0) manualTypes.push(parseInt(v.value));
+            }
+        }
+        
         const dedTypeInput = document.getElementById('institute_deduction_type');
         const dedValueInput = document.getElementById('institute_deduction_value');
-        dedTypeInput.value = pcts.length > 0 ? 'percentage' : 'percentage';
-        dedValueInput.value = pcts.length > 0 ? Math.max(...pcts) : 0;
+        if (pcts.length > 0) {
+            dedTypeInput.value = 'percentage';
+            dedValueInput.value = Math.max(...pcts);
+        } else if (manualTypes.length > 0) {
+            dedTypeInput.value = 'manual';
+            dedValueInput.value = Math.max(...manualTypes);
+        } else {
+            dedTypeInput.value = 'percentage';
+            dedValueInput.value = 0;
+        }
     });
 });
 

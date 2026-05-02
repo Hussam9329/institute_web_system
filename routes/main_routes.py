@@ -8,11 +8,14 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import Database
-from services.finance_service import finance_service
-from config import get_current_date, format_currency, BASE_DIR, generate_barcode
+from services.finance_service import finance_service, sync_student_status
+from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
+# إضافة دوال عامة للقوالب
+templates.env.globals['format_date'] = format_date
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -219,6 +222,8 @@ async def student_add(
                 except:
                     pass
 
+        sync_student_status(student_id)
+
     return RedirectResponse(url="/students?msg=added", status_code=303)
 
 
@@ -313,6 +318,8 @@ async def student_update(
         db.execute_query("DELETE FROM installments WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
         db.execute_query("DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
 
+    sync_student_status(student_id)
+
     return RedirectResponse(url="/students?msg=updated", status_code=303)
 
 
@@ -364,7 +371,36 @@ async def student_delete(request: Request, student_id: int):
 # ===== المدرسين =====
 
 def _build_institute_rate_display(teacher: dict) -> str:
-    """عرض نسبة/مبلغ المعهد الأساسي الي حُدد عند إضافة المدرس"""
+    """عرض نسبة/مبلغ خصم المعهد - يدعم العرض حسب أنواع التدريس المختلفة"""
+    # محاولة عرض معلومات الخصم حسب نوع التدريس
+    teaching_types = (teacher.get('teaching_types') or 'حضوري').split(',')
+    teaching_types = [t.strip() for t in teaching_types if t.strip()]
+    
+    type_map = {
+        'حضوري': ('institute_pct_in_person', 'inst_ded_type_in_person', 'inst_ded_manual_in_person'),
+        'الكتروني': ('institute_pct_electronic', 'inst_ded_type_electronic', 'inst_ded_manual_electronic'),
+        'مدمج': ('institute_pct_blended', 'inst_ded_type_blended', 'inst_ded_manual_blended'),
+    }
+    
+    displays = []
+    for tt in teaching_types:
+        if tt in type_map:
+            pct_key, ded_type_key, manual_key = type_map[tt]
+            ded_type = teacher.get(ded_type_key, 'percentage')
+            
+            if ded_type == 'manual':
+                manual_val = teacher.get(manual_key, 0) or 0
+                if manual_val > 0:
+                    displays.append(f"{tt}: {format_currency(manual_val)}")
+            else:
+                pct_val = teacher.get(pct_key, 0) or 0
+                if pct_val > 0:
+                    displays.append(f"{tt}: {pct_val}%")
+    
+    if displays:
+        return ' | '.join(displays)
+    
+    # fallback للحقول الأساسية
     ded_type = teacher.get('institute_deduction_type', 'percentage')
     ded_value = teacher.get('institute_deduction_value', 0) or 0
 
@@ -403,11 +439,20 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 t['teacher_due'] = balance_info.get('teacher_due', 0)
                 t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
                 t['remaining_balance'] = balance_info.get('remaining_balance', 0)
-                # حساب المطلوب الكلي
+                # حساب المطلوب الكلي - مجموع أقساط المدرس حسب نوع الدراسة لكل طالب
                 try:
                     all_fees = db.execute_query(
-                        '''SELECT COALESCE(SUM(st.total_fee), 0) as total 
-                           FROM student_teacher st WHERE st.teacher_id = %s''',
+                        '''SELECT COALESCE(SUM(
+                               CASE 
+                                   WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN t.fee_electronic
+                                   WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN t.fee_blended
+                                   WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN t.fee_in_person
+                                   ELSE t.total_fee
+                               END
+                           ), 0) as total 
+                           FROM student_teacher st 
+                           JOIN teachers t ON st.teacher_id = t.id
+                           WHERE st.teacher_id = %s''',
                         (t['id'],)
                     )
                     total_fees = all_fees[0]['total'] if all_fees else 0
