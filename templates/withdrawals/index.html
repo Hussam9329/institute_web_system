@@ -240,13 +240,11 @@ async function openAddWithdrawalModal() {
         const teachers = document.querySelectorAll('#aw_teacher_id option[value]');
         for (const opt of teachers) {
             const tid = parseInt(opt.value);
-            const result = await apiRequest(`/api/withdrawals/teacher/${tid}?limit=1`);
-            if (result && result.total_withdrawn !== undefined) {
-                // نحتاج الرصيد الكامل - نجلب من حسابات المدرس
-                const balanceResult = await apiRequest(`/api/teachers/${tid}/balance`);
-                if (balanceResult && balanceResult.remaining_balance !== undefined) {
-                    opt.dataset.balance = balanceResult.remaining_balance;
-                }
+            if (!tid) continue;
+            // جلب الرصيد الكامل من API المدرس
+            const balanceResult = await apiRequest(`/api/teachers/${tid}/balance`);
+            if (balanceResult && balanceResult.data && balanceResult.data.remaining_balance !== undefined) {
+                opt.dataset.balance = balanceResult.data.remaining_balance;
             }
         }
     } catch (e) {
