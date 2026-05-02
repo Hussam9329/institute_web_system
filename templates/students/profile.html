@@ -26,11 +26,18 @@
                 <a href="/reports/student/{{ student.id }}" class="btn btn-info btn-sm" target="_blank">
                     <i class="fas fa-print me-1"></i> طباعة تقرير
                 </a>
+                {% if teachers_summary %}
+                <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                        title="لا يمكن الحذف - يوجد مدرسين مرتبطين">
+                    <i class="fas fa-trash me-1"></i> حذف
+                </button>
+                {% else %}
                 <form method="POST" action="/students/{{ student.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطالب؟')">
                     <button type="submit" class="btn btn-outline-danger btn-sm">
                         <i class="fas fa-trash me-1"></i> حذف
                     </button>
                 </form>
+                {% endif %}
             </div>
         </div>
 

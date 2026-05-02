@@ -38,19 +38,34 @@ document.addEventListener('DOMContentLoaded', function() {
  * @param {number} availableBalance - الرصيد المتاح
  */
 function openWithdrawalModal(teacherId, teacherName, availableBalance) {
-    document.getElementById('w_teacher_id').value = teacherId;
-    document.getElementById('w_teacher_name').textContent = teacherName;
-    document.getElementById('w_available_balance').textContent = formatCurrency(availableBalance);
-    document.getElementById('w_available_balance').dataset.balance = availableBalance;
-    document.getElementById('w_amount').value = '';
-    document.getElementById('w_amount').max = availableBalance;
-    document.getElementById('w_date').value = getTodayDate();
-    document.getElementById('w_notes').value = '';
+    const elTeacherId = document.getElementById('w_teacher_id');
+    const elTeacherName = document.getElementById('w_teacher_name');
+    const elBalance = document.getElementById('w_available_balance');
+    const elAmount = document.getElementById('w_amount');
+    const elDate = document.getElementById('w_date');
+    const elNotes = document.getElementById('w_notes');
     
-    withdrawalModal.show();
+    if (!elTeacherId || !elAmount || !elDate) {
+        showAlert('خطأ في تحميل نموذج السحب', 'error');
+        return;
+    }
     
-    // التركيز على حقل المبلغ
-    document.getElementById('w_amount').focus();
+    elTeacherId.value = teacherId;
+    if (elTeacherName) elTeacherName.textContent = teacherName;
+    if (elBalance) {
+        elBalance.textContent = formatCurrency(availableBalance);
+        elBalance.dataset.balance = availableBalance;
+    }
+    elAmount.value = '';
+    elDate.value = getTodayDate();
+    if (elNotes) elNotes.value = '';
+    
+    if (withdrawalModal) {
+        withdrawalModal.show();
+        setTimeout(() => elAmount.focus(), 300);
+    } else {
+        showAlert('خطأ في فتح نموذج السحب', 'error');
+    }
 }
 
 /**
@@ -60,26 +75,42 @@ async function addWithdrawal(event) {
     event.preventDefault();
     
     const teacherId = parseInt(document.getElementById('w_teacher_id').value);
-    const amount = toFullAmount(document.getElementById('w_amount').value);
-    const availableBalance = parseInt(document.getElementById('w_available_balance').dataset.balance);
+    const amountInput = document.getElementById('w_amount').value;
+    const amount = toFullAmount(amountInput);
+    const dateValue = document.getElementById('w_date').value;
+    const availableBalanceEl = document.getElementById('w_available_balance');
+    const availableBalance = availableBalanceEl ? parseInt(availableBalanceEl.dataset.balance || '0') : 0;
     
     // التحقق من المبلغ
-    if (!amount || amount <= 0) {
+    if (!amountInput || isNaN(amount) || amount <= 0) {
         showAlert('يرجى إدخال مبلغ صحيح أكبر من صفر', 'warning');
         return;
     }
     
+    if (!dateValue) {
+        showAlert('يرجى تحديد تاريخ السحب', 'warning');
+        return;
+    }
+    
     if (amount > availableBalance) {
-        showAlert(`❌ المبلغ (${formatCurrency(amount)}) أكبر من الرصيد المتاح (${formatCurrency(availableBalance)})`, 'error');
+        showAlert('المبلغ (' + formatCurrency(amount) + ') أكبر من الرصيد المتاح (' + formatCurrency(availableBalance) + ')', 'error');
         return;
     }
 
     const data = {
         teacher_id: teacherId,
         amount: amount,
-        withdrawal_date: document.getElementById('w_date').value,
-        notes: document.getElementById('w_notes').value
+        withdrawal_date: dateValue,
+        notes: (document.getElementById('w_notes').value || '')
     };
+
+    // تعطيل الزر أثناء المعالجة
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>جاري التسجيل...';
+    }
 
     try {
         const result = await apiRequest('/api/withdrawals', {
@@ -89,49 +120,19 @@ async function addWithdrawal(event) {
 
         if (result.success) {
             showAlert(result.message, 'success');
-            withdrawalModal.hide();
-            location.reload();
+            if (withdrawalModal) withdrawalModal.hide();
+            setTimeout(() => location.reload(), 500);
         } else {
-            showAlert(result.message, 'error');
+            showAlert(result.message || 'خطأ في تسجيل السحب', 'error');
         }
     } catch (error) {
-        showAlert(error.message, 'error');
-    }
-}
-
-/**
- * عرض آخر سحوبات المدرس
- * @param {number} teacherId - رقم المدرس
- */
-async function showRecentWithdrawals(teacherId) {
-    try {
-        const result = await apiRequest(`/api/withdrawals/teacher/${teacherId}?limit=10`);
-        
-        let html = '<ul class="list-group">';
-        
-        if (result.data && result.data.length > 0) {
-            result.data.forEach(w => {
-                html += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>
-                            ${formatCurrency(w.amount)}
-                            <small class="text-muted d-block">${w.notes || 'بدون ملاحظات'}</small>
-                        </span>
-                        <span class="badge bg-secondary">${formatDate(w.withdrawal_date)}</span>
-                    </li>
-                `;
-            });
-        } else {
-            html += '<li class="list-group-item text-muted text-center">لا توجد سحوبات</li>';
+        showAlert('خطأ: ' + (error.message || 'فشل الاتصال بالخادم'), 'error');
+    } finally {
+        // إعادة تفعيل الزر
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
         }
-        
-        html += '</ul>';
-        html += `<div class="mt-2 text-muted small">الإجمالي: ${formatCurrency(result.total_withdrawn)}</div>`;
-        
-        // عرض في modal أو popover
-        
-    } catch (error) {
-        showAlert(error.message, 'error');
     }
 }
 

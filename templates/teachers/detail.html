@@ -26,9 +26,16 @@
             <a href="/teachers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-right me-1"></i> رجوع</a>
             <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-success btn-sm"><i class="fas fa-edit me-1"></i> تعديل</a>
             <a href="/reports/teacher/{{ teacher.id }}" class="btn btn-info btn-sm" target="_blank"><i class="fas fa-print me-1"></i> طباعة</a>
+            {% if students_list %}
+            <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                    title="لا يمكن الحذف - يوجد {{ students_list|length }} طلاب مسجلين">
+                <i class="fas fa-trash me-1"></i> حذف
+            </button>
+            {% else %}
             <form method="POST" action="/teachers/{{ teacher.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد؟')">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i> حذف</button>
             </form>
+            {% endif %}
         </div>
     </div>
 

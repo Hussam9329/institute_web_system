@@ -200,20 +200,56 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
 async function addInstallment(event) {
     event.preventDefault();
     
+    const studentIdEl = document.getElementById('inst_student_id');
+    const teacherIdEl = document.getElementById('inst_teacher_id');
+    const amountEl = document.getElementById('inst_amount');
+    const dateEl = document.getElementById('inst_date');
+    const typeEl = document.getElementById('inst_type');
+    const studyTypeEl = document.getElementById('inst_study_type');
+    const notesEl = document.getElementById('inst_notes');
+    
+    if (!studentIdEl || !teacherIdEl || !amountEl || !dateEl) {
+        showAlert('خطأ: عناصر النموذج غير موجودة', 'error');
+        return;
+    }
+    
     const data = {
-        student_id: parseInt(document.getElementById('inst_student_id').value),
-        teacher_id: parseInt(document.getElementById('inst_teacher_id').value),
-        amount: toFullAmount(document.getElementById('inst_amount').value),
-        payment_date: document.getElementById('inst_date').value,
-        installment_type: document.getElementById('inst_type').value,
-        study_type: document.getElementById('inst_study_type')?.value || 'حضوري',
-        notes: document.getElementById('inst_notes').value
+        student_id: parseInt(studentIdEl.value),
+        teacher_id: parseInt(teacherIdEl.value),
+        amount: toFullAmount(amountEl.value),
+        payment_date: dateEl.value,
+        installment_type: typeEl ? typeEl.value : 'القسط الأول',
+        study_type: studyTypeEl ? studyTypeEl.value : 'حضوري',
+        notes: notesEl ? notesEl.value : ''
     };
 
     // التحقق من البيانات
+    if (!data.student_id || isNaN(data.student_id)) {
+        showAlert('بيانات الطالب غير صحيحة', 'warning');
+        return;
+    }
+    
+    if (!data.teacher_id || isNaN(data.teacher_id)) {
+        showAlert('بيانات المدرس غير صحيحة', 'warning');
+        return;
+    }
+    
     if (!data.amount || data.amount <= 0) {
         showAlert('يرجى إدخال مبلغ صحيح', 'warning');
         return;
+    }
+    
+    if (!data.payment_date) {
+        showAlert('يرجى تحديد تاريخ الدفع', 'warning');
+        return;
+    }
+
+    // تعطيل الزر أثناء المعالجة
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>جاري الحفظ...';
     }
 
     try {
@@ -224,13 +260,19 @@ async function addInstallment(event) {
 
         if (result.success) {
             showAlert(result.message, 'success');
-            installmentModal.hide();
-            location.reload();
+            if (installmentModal) installmentModal.hide();
+            setTimeout(() => location.reload(), 500);
         } else {
-            showAlert(result.message, 'error');
+            showAlert(result.message || 'خطأ في إضافة القسط', 'error');
         }
     } catch (error) {
-        showAlert(error.message, 'error');
+        showAlert('خطأ: ' + (error.message || 'فشل الاتصال بالخادم'), 'error');
+    } finally {
+        // إعادة تفعيل الزر
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
     }
 }
 

@@ -488,8 +488,8 @@
                 <p class="d-none d-sm-block">لوحة تحكم شاملة للطلاب والمدرسين والأقساط والمحاسبة</p>
             </div>
             <div class="ms-auto">
-                <button class="btn btn-sm" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.25);" onclick="exportAllData()" title="تصدير شامل CSV">
-                    <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">تصدير شامل</span>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.25);" onclick="exportDatabaseBackup()" title="نسخة احتياطية لقاعدة البيانات">
+                    <i class="fas fa-database me-1"></i><span class="d-none d-sm-inline">نسخة احتياطية</span>
                 </button>
             </div>
         </div>
@@ -797,9 +797,9 @@
 </div>
 
 <script>
-// تصدير شامل لجميع بيانات النظام
-async function exportAllData() {
-    showAlert('جاري تحميل البيانات للتصدير...', 'info');
+// تصدير نسخة احتياطية كاملة لقاعدة البيانات (JSON)
+async function exportDatabaseBackup() {
+    showAlert('جاري إنشاء النسخة الاحتياطية...', 'info');
     try {
         const result = await apiRequest('/api/export-all');
         if (!result.success) {
@@ -807,112 +807,87 @@ async function exportAllData() {
             return;
         }
         const data = result.data;
-        const csvRows = [];
-        const BOM = '\uFEFF';
         
-        // قسم: الإحصائيات
-        csvRows.push('══════ إحصائيات النظام ══════');
-        csvRows.push('البيان,القيمة');
-        csvRows.push('عدد الطلاب,' + (data.statistics?.total_students || 0));
-        csvRows.push('الطلاب المستمرون,' + (data.statistics?.active_students || 0));
-        csvRows.push('طلاب غير مربوطين,' + (data.statistics?.unlinked_students || 0));
-        csvRows.push('عدد المدرسين,' + (data.statistics?.total_teachers || 0));
-        csvRows.push('المواد الدراسية,' + (data.statistics?.total_subjects || 0));
-        csvRows.push('عدد عمليات الدفع,' + (data.statistics?.total_installments || 0));
-        csvRows.push('إجمالي المدفوعات,' + (data.statistics?.total_amount_paid || 0));
-        csvRows.push('إجمالي المسحوبات,' + (data.statistics?.total_withdrawals || 0));
-        csvRows.push('صافي الإيرادات,' + (data.statistics?.total_institute_deduction || 0));
-        csvRows.push('');
+        // إنشاء كائن النسخة الاحتياطية
+        const backup = {
+            backup_info: {
+                system: 'نظام إدارة المعهد المتكامل',
+                version: '2.0.0',
+                export_date: new Date().toISOString(),
+                export_date_ar: new Date().toLocaleDateString('ar-IQ', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            },
+            statistics: data.statistics || {},
+            students: data.students || [],
+            teachers: data.teachers || [],
+            subjects: data.subjects || [],
+            installments: data.installments || [],
+            withdrawals: data.withdrawals || [],
+            student_teacher_links: data.student_teacher_links || []
+        };
         
-        // قسم: الطلاب
-        if (data.students && data.students.length > 0) {
-            csvRows.push('══════ قائمة الطلاب ══════');
-            csvRows.push('الرقم,الاسم,الباركود,الحالة,ملاحظات');
-            data.students.forEach(s => {
-                csvRows.push([s.id, s.name, s.barcode, s.status, s.notes || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
-            });
-            csvRows.push('');
-        }
-        
-        // قسم: المدرسين
-        if (data.teachers && data.teachers.length > 0) {
-            csvRows.push('══════ قائمة المدرسين ══════');
-            csvRows.push('الرقم,الاسم,المادة,القسط,أنواع التدريس');
-            data.teachers.forEach(t => {
-                csvRows.push([t.id, t.name, t.subject, t.total_fee, t.teaching_types || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
-            });
-            csvRows.push('');
-        }
-        
-        // قسم: الأقساط
-        if (data.installments && data.installments.length > 0) {
-            csvRows.push('══════ سجل الأقساط ══════');
-            csvRows.push('الرقم,الطالب,المدرس,المادة,المبلغ,التاريخ,النوع,ملاحظات');
-            data.installments.forEach(i => {
-                csvRows.push([i.id, i.student_name, i.teacher_name, i.subject, i.amount, i.payment_date, i.installment_type, i.notes || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
-            });
-            csvRows.push('');
-        }
-        
-        // قسم: السحوبات
-        if (data.withdrawals && data.withdrawals.length > 0) {
-            csvRows.push('══════ سجل السحوبات ══════');
-            csvRows.push('الرقم,المدرس,المبلغ,التاريخ,ملاحظات');
-            data.withdrawals.forEach(w => {
-                csvRows.push([w.id, w.teacher_name, w.amount, w.withdrawal_date, w.notes || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
-            });
-            csvRows.push('');
-        }
-        
-        // قسم: روابط الطلاب بالمدرسين
-        if (data.student_teacher_links && data.student_teacher_links.length > 0) {
-            csvRows.push('══════ روابط الطلاب بالمدرسين ══════');
-            csvRows.push('الطالب,المدرس,المادة,نوع الدراسة,الحالة');
-            data.student_teacher_links.forEach(l => {
-                csvRows.push([l.student_name, l.teacher_name, l.subject, l.study_type, l.status].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
-            });
-        }
-        
-        const csvContent = BOM + csvRows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const jsonContent = JSON.stringify(backup, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'تصدير_شامل_النظام.csv';
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.download = 'نسخة_احتياطية_' + dateStr + '.json';
         link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-        showAlert('تم تصدير جميع البيانات بنجاح', 'success');
+        showAlert('تم إنشاء النسخة الاحتياطية بنجاح', 'success');
     } catch (error) {
         showAlert('خطأ في التصدير: ' + error.message, 'error');
     }
 }
 
-// تقرير سريع - خيار عرض أو طباعة
+// تقرير سريع - عرض خيارات للمستخدم
 function quickReport(type) {
-    const urls = {
-        'unpaid': '/payments',
-        'active': '/students',
-        'unlinked': '/students',
-        'revenue': '/stats',
-        'payments': '/payments',
-        'withdrawals': '/withdrawals'
-    };
-    const printUrls = {
-        'unpaid': '/reports/subjects/all',
-        'active': '/reports/subjects/all',
-        'unlinked': '/reports/subjects/all',
-        'revenue': '/reports/subjects/all',
-        'payments': '/reports/subjects/all',
-        'withdrawals': '/reports/subjects/all'
+    const reportInfo = {
+        'unpaid': { title: 'طلاب غير مسددين', viewUrl: '/payments', reportUrl: '/reports/subjects/all' },
+        'active': { title: 'طلاب مستمرون', viewUrl: '/students', reportUrl: '/reports/subjects/all' },
+        'unlinked': { title: 'طلاب غير مربوطين', viewUrl: '/students', reportUrl: '/reports/subjects/all' },
+        'revenue': { title: 'صافي الإيرادات', viewUrl: '/stats', reportUrl: '/reports/subjects/all' },
+        'payments': { title: 'إجمالي المدفوعات', viewUrl: '/payments', reportUrl: '/reports/subjects/all' },
+        'withdrawals': { title: 'إجمالي المسحوبات', viewUrl: '/withdrawals', reportUrl: '/reports/subjects/all' }
     };
     
-    if (confirm('هل تريد طباعة التقرير؟\n\nموافق = طباعة التقرير\nإلغاء = عرض التفاصيل')) {
-        window.open(printUrls[type], '_blank');
-    } else {
-        window.location.href = urls[type];
-    }
+    const info = reportInfo[type];
+    if (!info) return;
+    
+    // إنشاء قائمة خيارات
+    const menuId = 'quickMenu_' + type + '_' + Date.now();
+    const menu = document.createElement('div');
+    menu.id = menuId;
+    menu.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);';
+    menu.innerHTML = `
+        <div style="background:white; border-radius:16px; padding:24px; min-width:300px; max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <h6 style="font-weight:700; margin-bottom:16px; color:#1e1b4b; font-size:1rem;">
+                <i class="fas fa-bolt me-2" style="color:#f59e0b;"></i>${info.title}
+            </h6>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="window.location.href='${info.viewUrl}'; document.getElementById('${menuId}').remove();" 
+                    style="padding:12px 16px; border:2px solid #6366f1; background:#eff6ff; color:#4f46e5; border-radius:12px; font-weight:600; cursor:pointer; font-size:0.9rem; text-align:right; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-eye"></i> عرض التفاصيل
+                </button>
+                <button onclick="window.open('${info.reportUrl}', '_blank'); document.getElementById('${menuId}').remove();" 
+                    style="padding:12px 16px; border:2px solid #8b5cf6; background:#f5f3ff; color:#7c3aed; border-radius:12px; font-weight:600; cursor:pointer; font-size:0.9rem; text-align:right; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-print"></i> طباعة التقرير
+                </button>
+            </div>
+            <button onclick="document.getElementById('${menuId}').remove();" 
+                style="width:100%; margin-top:12px; padding:8px; border:1px solid #e5e7eb; background:#f9fafb; color:#64748b; border-radius:10px; cursor:pointer; font-size:0.85rem;">
+                إلغاء
+            </button>
+        </div>
+    `;
+    document.body.appendChild(menu);
+    
+    // إغلاق عند النقر خارج القائمة
+    menu.addEventListener('click', function(e) {
+        if (e.target === menu) menu.remove();
+    });
 }
 
 // تحميل التنبيهات الذكية

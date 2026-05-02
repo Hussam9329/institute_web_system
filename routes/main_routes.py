@@ -355,8 +355,23 @@ async def student_profile(request: Request, student_id: int):
 
 @router.post("/students/{student_id}/delete")
 async def student_delete(request: Request, student_id: int):
-    """حذف طالب"""
+    """حذف طالب - مع حماية إذا كان مرتبط بمدرسين"""
     db = Database()
+    
+    # فحص إذا كان الطالب مرتبط بمدرسين
+    links_count = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM student_teacher WHERE student_id = %s", 
+        (student_id,)
+    )
+    if links_count and links_count[0]['cnt'] > 0:
+        cnt = links_count[0]['cnt']
+        student = db.execute_query("SELECT name FROM students WHERE id = %s", (student_id,))
+        student_name = student[0]['name'] if student else ''
+        return RedirectResponse(
+            url=f"/students?error=has_teachers&count={cnt}&name={student_name}", 
+            status_code=303
+        )
+    
     db.execute_query("DELETE FROM installments WHERE student_id = %s", (student_id,))
     db.execute_query("DELETE FROM student_teacher WHERE student_id = %s", (student_id,))
     db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
