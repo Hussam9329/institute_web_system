@@ -21,6 +21,9 @@
                     <i class="fas fa-th-large"></i>
                 </button>
             </div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="exportTableToCSV('paymentsTable', 'الأقساط')" title="تصدير CSV">
+                <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">تصدير</span>
+            </button>
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
                 <i class="fas fa-plus me-1"></i> <span class="d-none d-sm-inline">تسجيل دفعة</span><span class="d-sm-none">دفعة</span>
             </button>
@@ -73,6 +76,35 @@
         </div>
     </div>
 
+    <!-- ===== فلتر التاريخ ===== -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-2">
+            <form method="GET" action="/payments" class="row g-2 align-items-end">
+                {% if search %}
+                <input type="hidden" name="search" value="{{ search }}">
+                {% endif %}
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" id="filter_date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" id="filter_date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3">
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="fas fa-filter me-1"></i>تصفية
+                        </button>
+                        <a href="/payments{% if search %}?search={{ search }}{% endif %}" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {% if installments %}
     <!-- ===== جدول الأقساط ===== -->
     <div id="tableView">
@@ -95,7 +127,7 @@
                         </thead>
                         <tbody>
                             {% for inst in installments %}
-                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}">
+                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}">
                                 <td class="text-center text-muted fw-bold">{{ loop.index }}</td>
                                 <td>
                                     <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
@@ -450,12 +482,18 @@ async function deletePayment(installmentId) {
 // بحث مباشر
 document.getElementById('paymentSearch')?.addEventListener('input', function() {
     const query = this.value.toLowerCase();
+    const dateFrom = document.getElementById('filter_date_from')?.value || '';
+    const dateTo = document.getElementById('filter_date_to')?.value || '';
     // Filter table rows
     document.querySelectorAll('.payment-row').forEach(row => {
         const name = row.dataset.name || '';
         const teacher = row.dataset.teacher || '';
         const subject = row.dataset.subject || '';
-        row.style.display = (name.includes(query) || teacher.includes(query) || subject.includes(query)) ? '' : 'none';
+        const rowDate = row.dataset.date || '';
+        const matchText = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
+        const matchDateFrom = !dateFrom || rowDate >= dateFrom;
+        const matchDateTo = !dateTo || rowDate <= dateTo;
+        row.style.display = (matchText && matchDateFrom && matchDateTo) ? '' : 'none';
     });
     // Filter cards
     let cardVisible = 0;
@@ -473,5 +511,28 @@ document.getElementById('paymentSearch')?.addEventListener('input', function() {
         noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
     }
 });
+
+// فلترة التاريخ من جانب العميل
+document.getElementById('filter_date_from')?.addEventListener('change', function() {
+    filterPaymentsByDate();
+});
+document.getElementById('filter_date_to')?.addEventListener('change', function() {
+    filterPaymentsByDate();
+});
+
+function filterPaymentsByDate() {
+    const dateFrom = document.getElementById('filter_date_from')?.value || '';
+    const dateTo = document.getElementById('filter_date_to')?.value || '';
+    document.querySelectorAll('.payment-row').forEach(row => {
+        const rowDate = row.dataset.date || '';
+        const matchDateFrom = !dateFrom || rowDate >= dateFrom;
+        const matchDateTo = !dateTo || rowDate <= dateTo;
+        const currentlyHiddenByText = row.style.display === 'none' && (dateFrom || dateTo);
+        // إذا لم يكن مخفياً بالبحث النصي، طبق فلتر التاريخ
+        if (!currentlyHiddenByText) {
+            row.style.display = (matchDateFrom && matchDateTo) ? '' : 'none';
+        }
+    });
+}
 </script>
 {% endblock %}

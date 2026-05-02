@@ -176,10 +176,15 @@
             <!-- ===== سجل جميع الأقساط ===== -->
             <div class="col-12">
                 <div class="card mb-4 border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom">
+                    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-bold">
                             <i class="fas fa-history me-2 text-primary"></i>سجل المدفوعات
                         </h6>
+                        {% if all_installments %}
+                        <button class="btn btn-success btn-sm" onclick="printAllReceipts({{ student.id }})">
+                            <i class="fas fa-print me-1"></i>طباعة جميع الوصول
+                        </button>
+                        {% endif %}
                     </div>
                     <div class="card-body p-0">
                         {% if all_installments %}
@@ -216,9 +221,11 @@
                                         </td>
                                         <td class="text-center text-muted d-none d-sm-table-cell">{{ format_date(inst.payment_date) }}</td>
                                         <td class="text-center">
-                                            <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-sm btn-outline-info" title="وصل طباعة">
-                                                <i class="fas fa-print"></i>
-                                            </a>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-success" title="طباعة وصل">
+                                                    <i class="fas fa-print me-1"></i>وصل
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -369,4 +376,10 @@
 </div>
 
 <script src="/static/js/students.js"></script>
+<script>
+function printAllReceipts(studentId) {
+    // فتح تقرير الطالب في نافذة جديدة للطباعة
+    window.open('/reports/student/' + studentId, '_blank');
+}
+</script>
 {% endblock %}

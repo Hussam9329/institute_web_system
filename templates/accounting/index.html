@@ -12,6 +12,9 @@
             <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-calculator me-2"></i>محاسبة المدرسين</h4>
             <p class="text-muted mb-0 small">ملخص مالي شامل لجميع المدرسين</p>
         </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="exportAccountingCSV()" title="تصدير CSV">
+            <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">تصدير</span>
+        </button>
     </div>
 
     <!-- ===== تلميح ===== -->
@@ -67,6 +70,35 @@
             <input type="text" class="form-control border-start-0 ps-0" 
                    placeholder="بحث مباشر بالاسم أو المادة..." id="accountingLiveSearch"
                    value="{{ search }}">
+        </div>
+    </div>
+
+    <!-- ===== فلتر التاريخ ===== -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-2">
+            <form method="GET" action="/accounting" class="row g-2 align-items-end">
+                {% if search %}
+                <input type="hidden" name="search" value="{{ search }}">
+                {% endif %}
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" id="acc_filter_date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3">
+                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" id="acc_filter_date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-12 col-sm-4 col-md-3">
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="fas fa-filter me-1"></i>تصفية
+                        </button>
+                        <a href="/accounting{% if search %}?search={{ search }}{% endif %}" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -225,6 +257,41 @@
 <script src="/static/js/accounting.js"></script>
 
 <script>
+// تصدير المحاسبة كـ CSV - لا يوجد جدول مباشر لذا نبني البيانات من الكارتات
+function exportAccountingCSV() {
+    const cards = document.querySelectorAll('.accounting-card');
+    if (!cards || cards.length === 0) {
+        showAlert('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
+
+    const csvRows = [];
+    csvRows.push('المدرس,المادة,المدفوع,خصم المعهد,مستحق المدرس,المسحوب,المتبقي');
+
+    cards.forEach(card => {
+        if (card.style.display === 'none') return;
+        const name = card.querySelector('h6 a')?.textContent.trim() || '';
+        const subject = card.querySelector('.card-sub')?.textContent.replace('📖', '').trim() || '';
+        const finItems = card.querySelectorAll('.fin-item .fin-value');
+        const values = [];
+        finItems.forEach(item => values.push(item.textContent.trim()));
+        csvRows.push([name, subject, ...values].map(v => v.includes(',') ? '"' + v + '"' : v).join(','));
+    });
+
+    const BOM = '\uFEFF';
+    const csvContent = BOM + csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'المحاسبة.csv';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showAlert('تم تصدير البيانات بنجاح', 'success');
+}
+
 // بحث مباشر
 const accountingSearchInput = document.getElementById('accountingLiveSearch');
 if (accountingSearchInput) {

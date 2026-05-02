@@ -487,6 +487,11 @@
                 <h4>نظام إدارة المعهد</h4>
                 <p class="d-none d-sm-block">لوحة تحكم شاملة للطلاب والمدرسين والأقساط والمحاسبة</p>
             </div>
+            <div class="ms-auto">
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.25);" onclick="exportDashboardCSV()" title="تصدير CSV">
+                    <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">تصدير</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -587,6 +592,19 @@
                 <div class="val" style="color:var(--warning-dark)">{{ format_currency(stats.total_withdrawals) }}</div>
                 <div class="lbl">السحوبات</div>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== التنبيهات الذكية ===== -->
+    <div id="smartAlertsSection" class="mb-4" style="display:none;">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <div style="width:28px; height:28px; border-radius:8px; background:var(--warning-glow); display:flex; align-items:center; justify-content:center;">
+                <i class="fas fa-bell" style="color:var(--warning-dark); font-size:0.85rem;"></i>
+            </div>
+            <h6 class="fw-bold mb-0" style="font-size:0.9rem;">التنبيهات الذكية</h6>
+        </div>
+        <div class="row g-2" id="smartAlertsContainer">
+            <!-- سيتم ملؤها عبر AJAX -->
         </div>
     </div>
 
@@ -716,4 +734,104 @@
 
 </div>
 </div>
+
+<script>
+function exportDashboardCSV() {
+    const csvRows = [];
+    csvRows.push('البيان,القيمة');
+    csvRows.push('عدد الطلاب,{{ stats.total_students }}');
+    csvRows.push('الطلاب المستمرون,{{ stats.active_students }}');
+    csvRows.push('الطلاب المنسحبون,{{ stats.withdrawn_students }}');
+    {% if stats.unlinked_students and stats.unlinked_students > 0 %}
+    csvRows.push('طلاب غير مربوطين,{{ stats.unlinked_students }}');
+    {% endif %}
+    csvRows.push('عدد المدرسين,{{ stats.total_teachers }}');
+    csvRows.push('المواد الدراسية,{{ stats.total_subjects }}');
+    csvRows.push('عدد عمليات الدفع,{{ stats.total_installments }}');
+    csvRows.push('إجمالي المدفوعات,{{ format_currency(stats.total_amount_paid) }}');
+    csvRows.push('إجمالي المسحوبات,{{ format_currency(stats.total_withdrawals) }}');
+    csvRows.push('صافي الإيرادات,{{ format_currency(stats.total_institute_deduction or 0) }}');
+
+    const BOM = '\uFEFF';
+    const csvContent = BOM + csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'إحصائيات_لوحة_التحكم.csv';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    showAlert('تم تصدير البيانات بنجاح', 'success');
+}
+
+// تحميل التنبيهات الذكية
+document.addEventListener('DOMContentLoaded', function() {
+    loadSmartAlerts();
+});
+
+async function loadSmartAlerts() {
+    try {
+        const result = await apiRequest('/api/smart-alerts');
+        if (result.success && result.data && result.data.length > 0) {
+            const container = document.getElementById('smartAlertsContainer');
+            const section = document.getElementById('smartAlertsSection');
+            
+            const colorMap = {
+                'warning': { bg: '#fffbeb', border: '#f59e0b', text: '#92400e', icon_bg: '#fef3c7' },
+                'danger': { bg: '#fef2f2', border: '#ef4444', text: '#991b1b', icon_bg: '#fee2e2' },
+                'info': { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af', icon_bg: '#dbeafe' },
+                'success': { bg: '#f0fdf4', border: '#22c55e', text: '#166534', icon_bg: '#dcfce7' }
+            };
+
+            result.data.forEach(alert => {
+                const colors = colorMap[alert.type] || colorMap['info'];
+                const alertHtml = `
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card border-0 shadow-sm h-100" style="background:${colors.bg}; border-right: 4px solid ${colors.border} !important;">
+                            <div class="card-body py-2 px-3">
+                                <div class="d-flex align-items-start gap-2">
+                                    <div style="width:36px; height:36px; border-radius:10px; background:${colors.icon_bg}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                        <i class="fas ${alert.icon}" style="color:${colors.text}; font-size:0.9rem;"></i>
+                                    </div>
+                                    <div style="min-width:0;">
+                                        <div class="fw-bold" style="font-size:0.82rem; color:${colors.text};">${alert.title}</div>
+                                        <div style="font-size:0.75rem; color:${colors.text}; opacity:0.8;" class="mt-1">${alert.message}</div>
+                                        ${alert.link ? `<a href="${alert.link}" style="font-size:0.72rem; color:${colors.border};" class="mt-1 d-inline-block">عرض التفاصيل ←</a>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', alertHtml);
+            });
+            
+            section.style.display = '';
+        } else if (result.success && (!result.data || result.data.length === 0)) {
+            // لا توجد تنبيهات - عرض رسالة نجاح
+            const container = document.getElementById('smartAlertsContainer');
+            const section = document.getElementById('smartAlertsSection');
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm" style="background:#f0fdf4; border-right: 4px solid #22c55e !important;">
+                        <div class="card-body py-2 px-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:36px; height:36px; border-radius:10px; background:#dcfce7; display:flex; align-items:center; justify-content:center;">
+                                    <i class="fas fa-check-circle" style="color:#166534; font-size:1rem;"></i>
+                                </div>
+                                <span style="font-size:0.85rem; color:#166534; font-weight:600;">لا توجد تنبيهات - كل شيء على ما يرام!</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            section.style.display = '';
+        }
+    } catch (error) {
+        console.error('Error loading smart alerts:', error);
+    }
+}
+</script>
 {% endblock %}

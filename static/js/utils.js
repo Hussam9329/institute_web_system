@@ -219,6 +219,80 @@ function toFullAmount(thousands) {
     return (parseInt(thousands) || 0) * 1000;
 }
 
+/**
+ * تصدير جدول HTML إلى ملف CSV
+ * @param {string} tableId - معرف الجدول
+ * @param {string} filename - اسم الملف بدون الامتداد
+ */
+function exportTableToCSV(tableId, filename) {
+    const table = document.getElementById(tableId);
+    if (!table) {
+        showAlert('الجدول غير موجود', 'error');
+        return;
+    }
+
+    const rows = table.querySelectorAll('tbody tr');
+    if (!rows || rows.length === 0) {
+        showAlert('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
+
+    const csvRows = [];
+
+    // استخراج عناوين الأعمدة من thead
+    const headerCells = table.querySelectorAll('thead th');
+    const headers = [];
+    headerCells.forEach(th => {
+        // إزالة أي عناصر HTML داخل th والحصول على النص فقط
+        headers.push(th.textContent.trim().replace(/"/g, '""'));
+    });
+    csvRows.push(headers.join(','));
+
+    // استخراج صفوف البيانات من tbody (فقط الصفوف المرئية)
+    rows.forEach(row => {
+        // تخطي صفوف الإجمالي أو الصفوف المخفية
+        if (row.style.display === 'none') return;
+        if (row.closest('tfoot')) return;
+
+        const cells = row.querySelectorAll('td');
+        const rowData = [];
+        cells.forEach(cell => {
+            // الحصول على النص وتنظيفه
+            let text = cell.textContent.trim();
+            // إزالة المسافات المتعددة
+            text = text.replace(/\s+/g, ' ');
+            // تنسيق النصوص التي تحتوي فواصل أو علامات اقتباس
+            if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+                text = '"' + text.replace(/"/g, '""') + '"';
+            }
+            rowData.push(text);
+        });
+        csvRows.push(rowData.join(','));
+    });
+
+    if (csvRows.length <= 1) {
+        showAlert('لا توجد بيانات للتصدير', 'warning');
+        return;
+    }
+
+    // إضافة UTF-8 BOM لدعم العربية في Excel
+    const BOM = '\uFEFF';
+    const csvContent = BOM + csvRows.join('\n');
+
+    // إنشاء رابط التحميل
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename + '.csv';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
+    showAlert('تم تصدير البيانات بنجاح', 'success');
+}
+
 // تصدير الدوال للاستخدام العام
 window.formatCurrency = formatCurrency;
 window.formatDate = formatDate;
@@ -232,3 +306,4 @@ window.toggleButtonLoading = toggleButtonLoading;
 window.copyToClipboard = copyToClipboard;
 window.printElement = printElement;
 window.toFullAmount = toFullAmount;
+window.exportTableToCSV = exportTableToCSV;

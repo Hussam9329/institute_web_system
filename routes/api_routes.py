@@ -658,3 +658,130 @@ async def api_global_search(q: str = ""):
         print(f"Search error: {e}")
     
     return {"success": True, "data": results}
+
+
+# ===== التنبيهات الذكية =====
+
+@router.get("/smart-alerts")
+async def api_smart_alerts():
+    """الحصول على التنبيهات الذكية للوحة التحكم"""
+    db = Database()
+    alerts = []
+    
+    try:
+        # 1. الطلاب الذين لم يسددوا بالكامل (لديهم رصيد متبقي > 0)
+        students_with_balance = db.execute_query('''
+            SELECT s.id, s.name,
+                   COALESCE(SUM(
+                       CASE 
+                           WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN t.fee_electronic
+                           WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN t.fee_blended
+                           WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN t.fee_in_person
+                           ELSE t.total_fee
+                       END
+                   ), 0) as total_fees,
+                   COALESCE((SELECT SUM(i.amount) FROM installments i WHERE i.student_id = s.id), 0) as total_paid
+            FROM students s
+            INNER JOIN student_teacher st ON st.student_id = s.id AND st.status = 'مستمر'
+            INNER JOIN teachers t ON st.teacher_id = t.id
+            GROUP BY s.id, s.name
+        ''')
+        
+        unpaid_students = []
+        if students_with_balance:
+            for s in students_with_balance:
+                remaining = (s.get('total_fees', 0) or 0) - (s.get('total_paid', 0) or 0)
+                if remaining > 0:
+                    unpaid_students.append({'id': s['id'], 'name': s['name'], 'remaining': remaining})
+        
+        if unpaid_students:
+            alerts.append({
+                'type': 'warning',
+                'icon': 'fa-exclamation-triangle',
+                'title': 'طلاب لم يسددوا بالكامل',
+                'message': f'يوجد {len(unpaid_students)} طالب لديهم أرصدة متبقية لم تسدد بالكامل',
+                'link': '/students'
+            })
+        
+        # 2. المدرسين الذين لديهم أرصدة متاحة للسحب
+        teachers_with_balance = []
+        all_teachers = db.execute_query("SELECT id FROM teachers")
+        if all_teachers:
+            for t in all_teachers:
+                try:
+                    balance = finance_service.calculate_teacher_balance(t['id'])
+                    if balance.get('remaining_balance', 0) > 0:
+                        teachers_with_balance.append(t['id'])
+                except:
+                    pass
+        
+        if teachers_with_balance:
+            alerts.append({
+                'type': 'info',
+                'icon': 'fa-wallet',
+                'title': 'أرصدة متاحة للسحب',
+                'message': f'يوجد {len(teachers_with_balance)} مدرس لديهم أرصدة قابلة للسحب',
+                'link': '/accounting'
+            })
+        
+        # 3. طلاب غير مربوطين بمدرسين
+        unlinked = db.execute_query('''
+            SELECT COUNT(*) as cnt FROM students s
+            WHERE NOT EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id)
+        ''')
+        unlinked_count = unlinked[0]['cnt'] if unlinked else 0
+        if unlinked_count > 0:
+            alerts.append({
+                'type': 'danger',
+                'icon': 'fa-unlink',
+                'title': 'طلاب غير مربوطين',
+                'message': f'يوجد {unlinked_count} طالب غير مربوط بأي مدرس',
+                'link': '/students'
+            })
+        
+        # 4. طلاب دفعوا القسط الأول فقط (لم يسددوا القسط الثاني)
+        first_only = db.execute_query('''
+            SELECT COUNT(DISTINCT i.student_id) as cnt
+            FROM installments i
+            WHERE i.installment_type = 'القسط الأول'
+            AND NOT EXISTS (
+                SELECT 1 FROM installments i2 
+                WHERE i2.student_id = i.student_id 
+                AND i2.teacher_id = i.teacher_id
+                AND i2.installment_type IN ('القسط الثاني', 'دفع كامل')
+            )
+        ''')
+        first_only_count = first_only[0]['cnt'] if first_only else 0
+        if first_only_count > 0:
+            alerts.append({
+                'type': 'warning',
+                'icon': 'fa-clock',
+                'title': 'لم يسددوا القسط الثاني',
+                'message': f'يوجد {first_only_count} طالب دفعوا القسط الأول فقط ولم يسددوا القسط الثاني',
+                'link': '/payments'
+            })
+        
+        # 5. أرصدة كبيرة غير مسحوبة (> 500,000 د.ع)
+        large_balance_teachers = []
+        if all_teachers:
+            for t in all_teachers:
+                try:
+                    balance = finance_service.calculate_teacher_balance(t['id'])
+                    if balance.get('remaining_balance', 0) > 500000:
+                        large_balance_teachers.append(t['id'])
+                except:
+                    pass
+        
+        if large_balance_teachers:
+            alerts.append({
+                'type': 'info',
+                'icon': 'fa-coins',
+                'title': 'أرصدة كبيرة غير مسحوبة',
+                'message': f'يوجد {len(large_balance_teachers)} مدرس لديهم أرصدة غير مسحوبة تتجاوز 500,000 د.ع',
+                'link': '/accounting'
+            })
+    
+    except Exception as e:
+        print(f"Smart alerts error: {e}")
+    
+    return {"success": True, "data": alerts}

@@ -693,7 +693,7 @@ async def teacher_delete(request: Request, teacher_id: int):
 # ===== المحاسبة =====
 
 @router.get("/accounting", response_class=HTMLResponse)
-async def accounting_page(request: Request, search: str = ""):
+async def accounting_page(request: Request, search: str = "", date_from: str = "", date_to: str = ""):
     """صفحة محاسبة المدرسين"""
     db = Database()
 
@@ -747,6 +747,8 @@ async def accounting_page(request: Request, search: str = ""):
         "request": request,
         "teachers": teachers_with_finance,
         "search": search,
+        "date_from": date_from,
+        "date_to": date_to,
         "format_currency": format_currency
     })
 
@@ -754,12 +756,17 @@ async def accounting_page(request: Request, search: str = ""):
 # ===== السحوبات =====
 
 @router.get("/withdrawals", response_class=HTMLResponse)
-async def withdrawals_page(request: Request):
+async def withdrawals_page(request: Request, date_from: str = "", date_to: str = ""):
     """صفحة إدارة السحوبات"""
     db = Database()
 
     try:
         all_withdrawals = finance_service.get_all_withdrawals(limit=200)
+        # فلترة بالتاريخ إذا تم تحديده
+        if date_from:
+            all_withdrawals = [w for w in all_withdrawals if w.get('withdrawal_date', '') >= date_from]
+        if date_to:
+            all_withdrawals = [w for w in all_withdrawals if w.get('withdrawal_date', '') <= date_to]
         teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
     except Exception as e:
         all_withdrawals = []
@@ -774,6 +781,8 @@ async def withdrawals_page(request: Request):
         "withdrawals": all_withdrawals,
         "teachers": teachers,
         "total_withdrawn": total_withdrawn,
+        "date_from": date_from,
+        "date_to": date_to,
         "format_currency": format_currency
     })
 
@@ -781,30 +790,39 @@ async def withdrawals_page(request: Request):
 # ===== الأقساط والمدفوعات =====
 
 @router.get("/payments", response_class=HTMLResponse)
-async def payments_page(request: Request, search: str = ""):
+async def payments_page(request: Request, search: str = "", date_from: str = "", date_to: str = ""):
     """صفحة إدارة الأقساط والمدفوعات"""
     db = Database()
 
     try:
+        conditions = []
+        params = []
+
         if search:
-            query = '''
-                SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
-                FROM installments i
-                JOIN students s ON i.student_id = s.id
-                JOIN teachers t ON i.teacher_id = t.id
-                WHERE s.name LIKE %s OR t.name LIKE %s OR t.subject LIKE %s
-                ORDER BY i.id DESC
-            '''
-            installments = db.execute_query(query, (f'%{search}%', f'%{search}%', f'%{search}%'))
-        else:
-            query = '''
-                SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
-                FROM installments i
-                JOIN students s ON i.student_id = s.id
-                JOIN teachers t ON i.teacher_id = t.id
-                ORDER BY i.id DESC
-            '''
-            installments = db.execute_query(query)
+            conditions.append("(s.name LIKE %s OR t.name LIKE %s OR t.subject LIKE %s)")
+            params.extend([f'%{search}%', f'%{search}%', f'%{search}%'])
+
+        if date_from:
+            conditions.append("i.payment_date >= %s")
+            params.append(date_from)
+
+        if date_to:
+            conditions.append("i.payment_date <= %s")
+            params.append(date_to)
+
+        where_clause = ''
+        if conditions:
+            where_clause = 'WHERE ' + ' AND '.join(conditions)
+
+        query = f'''
+            SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            {where_clause}
+            ORDER BY i.id DESC
+        '''
+        installments = db.execute_query(query, tuple(params))
     except:
         installments = []
 
@@ -829,6 +847,8 @@ async def payments_page(request: Request, search: str = ""):
         "teachers": teachers,
         "students": students,
         "search": search,
+        "date_from": date_from,
+        "date_to": date_to,
         "total_amount": total_amount,
         "format_currency": format_currency
     })
