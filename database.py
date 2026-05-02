@@ -131,7 +131,182 @@ def init_db():
             )
         ''')
         
+        # ===== جداول نظام الصلاحيات =====
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS roles (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(50) NOT NULL UNIQUE,
+                description TEXT DEFAULT '',
+                is_default INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS permissions (
+                id SERIAL PRIMARY KEY,
+                code VARCHAR(80) NOT NULL UNIQUE,
+                name VARCHAR(100) NOT NULL,
+                category VARCHAR(50) NOT NULL,
+                description TEXT DEFAULT ''
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                role_id INTEGER NOT NULL,
+                permission_id INTEGER NOT NULL,
+                PRIMARY KEY (role_id, permission_id),
+                FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+                FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(50) NOT NULL UNIQUE,
+                full_name VARCHAR(100) NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role_id INTEGER NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
+            )
+        ''')
+        
         conn.commit()
+        
+        # ===== إدراج الصلاحيات الافتراضية =====
+        default_permissions = [
+            # الطلاب
+            ('view_students', 'عرض الطلاب', 'الطلاب', 'عرض قائمة الطلاب وبياناتهم'),
+            ('add_students', 'إضافة طلاب', 'الطلاب', 'إضافة طالب جديد'),
+            ('edit_students', 'تعديل الطلاب', 'الطلاب', 'تعديل بيانات الطالب'),
+            ('delete_students', 'حذف الطلاب', 'الطلاب', 'حذف طالب من النظام'),
+            # المدرسين
+            ('view_teachers', 'عرض المدرسين', 'المدرسين', 'عرض قائمة المدرسين وبياناتهم'),
+            ('add_teachers', 'إضافة مدرسين', 'المدرسين', 'إضافة مدرس جديد'),
+            ('edit_teachers', 'تعديل المدرسين', 'المدرسين', 'تعديل بيانات المدرس'),
+            ('delete_teachers', 'حذف المدرسين', 'المدرسين', 'حذف مدرس من النظام'),
+            # المواد
+            ('view_subjects', 'عرض المواد', 'المواد', 'عرض قائمة المواد'),
+            ('add_subjects', 'إضافة مواد', 'المواد', 'إضافة مادة جديدة'),
+            ('edit_subjects', 'تعديل المواد', 'المواد', 'تعديل اسم المادة'),
+            ('delete_subjects', 'حذف المواد', 'المواد', 'حذف مادة من النظام'),
+            # الأقساط
+            ('view_payments', 'عرض الأقساط', 'الأقساط', 'عرض سجل الأقساط والمدفوعات'),
+            ('add_payments', 'إضافة أقساط', 'الأقساط', 'تسجيل قسط جديد'),
+            ('delete_payments', 'حذف الأقساط', 'الأقساط', 'حذف قسط من السجل'),
+            # المحاسبة
+            ('view_accounting', 'عرض المحاسبة', 'المحاسبة', 'عرض صفحة المحاسبة والأرصدة'),
+            # السحوبات
+            ('view_withdrawals', 'عرض السحوبات', 'السحوبات', 'عرض سجل السحوبات'),
+            ('add_withdrawals', 'إضافة سحوبات', 'السحوبات', 'تسجيل سحب جديد'),
+            # الإحصائيات
+            ('view_stats', 'عرض الإحصائيات', 'الإحصائيات', 'عرض لوحة الإحصائيات'),
+            # الصلاحيات
+            ('manage_permissions', 'إدارة الصلاحيات', 'الصلاحيات', 'إدارة المستخدمين والأدوار والصلاحيات'),
+            # التصدير
+            ('export_data', 'تصدير البيانات', 'التصدير', 'تصدير نسخة احتياطية من البيانات'),
+        ]
+        
+        for perm in default_permissions:
+            try:
+                cursor.execute(
+                    'INSERT INTO permissions (code, name, category, description) VALUES (%s, %s, %s, %s) ON CONFLICT (code) DO NOTHING',
+                    perm
+                )
+            except Exception:
+                pass
+        
+        conn.commit()
+        
+        # ===== إدراج الأدوار الافتراضية =====
+        from datetime import datetime as dt
+        now = dt.now().strftime('%Y-%m-%d %H:%M')
+        
+        default_roles = [
+            ('مدير عام', 'التحكم الكامل بجميع أقسام النظام', 1),
+            ('محاسب', 'إدارة العمليات المالية والأقساط والسحوبات', 0),
+            ('مشاهد', 'عرض البيانات فقط بدون إضافة أو تعديل أو حذف', 0),
+        ]
+        
+        for role_name, role_desc, is_default in default_roles:
+            try:
+                cursor.execute(
+                    'INSERT INTO roles (name, description, is_default, created_at) VALUES (%s, %s, %s, %s) ON CONFLICT (name) DO NOTHING',
+                    (role_name, role_desc, is_default, now)
+                )
+            except Exception:
+                pass
+        
+        conn.commit()
+        
+        # ===== إعطاء جميع الصلاحيات لدور المدير العام =====
+        try:
+            cursor.execute('''
+                INSERT INTO role_permissions (role_id, permission_id)
+                SELECT r.id, p.id FROM roles r, permissions p
+                WHERE r.name = 'مدير عام'
+                ON CONFLICT (role_id, permission_id) DO NOTHING
+            ''')
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        # ===== إعطاء صلاحيات المحاسب =====
+        accountant_perms = [
+            'view_students', 'add_students', 'edit_students',
+            'view_teachers',
+            'view_subjects',
+            'view_payments', 'add_payments',
+            'view_accounting',
+            'view_withdrawals', 'add_withdrawals',
+            'view_stats',
+        ]
+        try:
+            for perm_code in accountant_perms:
+                cursor.execute('''
+                    INSERT INTO role_permissions (role_id, permission_id)
+                    SELECT r.id, p.id FROM roles r, permissions p
+                    WHERE r.name = 'محاسب' AND p.code = %s
+                    ON CONFLICT (role_id, permission_id) DO NOTHING
+                ''', (perm_code,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        # ===== إعطاء صلاحيات المشاهد =====
+        viewer_perms = [
+            'view_students', 'view_teachers', 'view_subjects',
+            'view_payments', 'view_accounting', 'view_withdrawals', 'view_stats',
+        ]
+        try:
+            for perm_code in viewer_perms:
+                cursor.execute('''
+                    INSERT INTO role_permissions (role_id, permission_id)
+                    SELECT r.id, p.id FROM roles r, permissions p
+                    WHERE r.name = 'مشاهد' AND p.code = %s
+                    ON CONFLICT (role_id, permission_id) DO NOTHING
+                ''', (perm_code,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        # ===== إنشاء مستخدم مدير افتراضي =====
+        import hashlib
+        try:
+            admin_pass_hash = hashlib.sha256('1111'.encode()).hexdigest()
+            cursor.execute('''
+                INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
+                SELECT 'admin', 'المدير العام', %s, r.id, 1, %s
+                FROM roles r WHERE r.name = 'مدير عام'
+                ON CONFLICT (username) DO NOTHING
+            ''', (admin_pass_hash, now))
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         # ===== ALTER TABLE - إضافة أعمدة جديدة للجداول الموجودة =====
         alter_statements = [

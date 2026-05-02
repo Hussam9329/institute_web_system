@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة الصلاحيات - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="page-transition">
+<div class="container-fluid">
+
+    <!-- ===== عنوان الصفحة ===== -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="fas fa-user-shield me-2" style="-webkit-text-fill-color: #6366f1;"></i>إدارة الصلاحيات
+            </h4>
+            <p class="text-muted mb-0 small">إدارة المستخدمين والأدوار والصلاحيات</p>
+        </div>
+    </div>
+
+    <!-- ===== تبويبات الصفحة ===== -->
+    <ul class="nav nav-tabs mb-3" id="permissionsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active d-flex align-items-center gap-2" id="users-tab" data-bs-toggle="tab" data-bs-target="#usersPanel" type="button" role="tab">
+                <i class="fas fa-users"></i>
+                <span>المستخدمون</span>
+                <span class="badge bg-primary rounded-pill">{{ users|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link d-flex align-items-center gap-2" id="roles-tab" data-bs-toggle="tab" data-bs-target="#rolesPanel" type="button" role="tab">
+                <i class="fas fa-user-tag"></i>
+                <span>الأدوار</span>
+                <span class="badge bg-success rounded-pill">{{ roles|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="permissionsTabContent">
+
+        <!-- ===== تبويب المستخدمين ===== -->
+        <div class="tab-pane fade show active" id="usersPanel" role="tabpanel">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">
+                    <i class="fas fa-plus me-1"></i> إضافة مستخدم
+                </button>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                                <tr>
+                                    <th class="text-center" style="width:50px">#</th>
+                                    <th>اسم المستخدم</th>
+                                    <th>الاسم الكامل</th>
+                                    <th>الدور</th>
+                                    <th class="text-center">الحالة</th>
+                                    <th>تاريخ الإنشاء</th>
+                                    <th class="text-center" style="width:160px">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
+                                                <i class="fas fa-user text-white" style="font-size:0.8rem;"></i>
+                                            </div>
+                                            <span class="fw-bold">{{ user.username }}</span>
+                                            {% if user.username == 'admin' %}
+                                            <span class="badge bg-warning text-dark" style="font-size:0.65rem;">افتراضي</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>{{ user.full_name }}</td>
+                                    <td>
+                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;">
+                                            {{ user.role_name }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if user.is_active == 1 %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="fas fa-check-circle me-1"></i>نشط
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            <i class="fas fa-times-circle me-1"></i>معطل
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ user.created_at }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-warning btn-sm" onclick="openEditUserModal({{ user.id }}, '{{ user.full_name }}', {{ user.role_id }}, {{ user.is_active }})" title="تعديل">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-{{ 'success' if user.is_active == 0 else 'secondary' }} btn-sm"
+                                                    onclick="toggleUserActive({{ user.id }})" title="{{ 'تفعيل' if user.is_active == 0 else 'تعطيل' }}"
+                                                    {% if user.username == 'admin' %}disabled{% endif %}>
+                                                <i class="fas fa-{{ 'check' if user.is_active == 0 else 'ban' }}"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteUser({{ user.id }}, '{{ user.username }}')" title="حذف"
+                                                    {% if user.username == 'admin' %}disabled{% endif %}>
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not users %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="fas fa-users fa-2x text-muted d-block mb-2"></i>
+                                        <p class="text-muted mb-0">لا يوجد مستخدمون</p>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== تبويب الأدوار ===== -->
+        <div class="tab-pane fade" id="rolesPanel" role="tabpanel">
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn btn-success btn-sm" onclick="openAddRoleModal()">
+                    <i class="fas fa-plus me-1"></i> إضافة دور
+                </button>
+            </div>
+
+            <div class="row g-3">
+                {% for role in roles %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid {% if role.is_default == 1 %}#f59e0b{% else %}#6366f1{% endif %} !important;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start justify-content-between mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-1">
+                                        <i class="fas fa-user-tag me-1" style="color:#6366f1;"></i>
+                                        {{ role.name }}
+                                        {% if role.is_default == 1 %}
+                                        <span class="badge bg-warning text-dark" style="font-size:0.6rem;">افتراضي</span>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ role.description }}</small>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="openPermissionsModal({{ role.id }}, '{{ role.name }}')" title="إدارة الصلاحيات">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    {% if role.is_default != 1 %}
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteRole({{ role.id }}, '{{ role.name }}')" title="حذف الدور">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 mt-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    <i class="fas fa-users me-1"></i>{{ role.users_count }} مستخدم
+                                </span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="fas fa-key me-1"></i>{{ role.permissions_count }} صلاحية
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+
+<!-- ===== Modal إضافة مستخدم ===== -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>إضافة مستخدم جديد</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addUserForm">
+                <div class="modal-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-at me-1 text-primary"></i>اسم المستخدم</label>
+                        <input type="text" class="form-control" id="add_username" required minlength="3" maxlength="50" placeholder="مثال: ahmed, sara...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-user me-1 text-primary"></i>الاسم الكامل</label>
+                        <input type="text" class="form-control" id="add_fullname" required minlength="2" maxlength="100" placeholder="الاسم الكامل بالعربية">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-lock me-1 text-primary"></i>كلمة المرور</label>
+                        <input type="password" class="form-control" id="add_password" required minlength="4" placeholder="كلمة المرور (4 أحرف على الأقل)">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-user-tag me-1 text-primary"></i>الدور</label>
+                        <select class="form-select" id="add_role_id" required>
+                            {% for role in roles %}
+                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>إنشاء المستخدم
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal تعديل مستخدم ===== -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-warning text-white border-0">
+                <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>تعديل المستخدم</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="edit_user_id">
+                <div class="modal-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-user me-1 text-warning"></i>الاسم الكامل</label>
+                        <input type="text" class="form-control" id="edit_fullname" required minlength="2" maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-lock me-1 text-warning"></i>كلمة المرور الجديدة</label>
+                        <input type="password" class="form-control" id="edit_password" minlength="4" placeholder="اتركه فارغاً لعدم التغيير">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-user-tag me-1 text-warning"></i>الدور</label>
+                        <select class="form-select" id="edit_role_id" required>
+                            {% for role in roles %}
+                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save me-1"></i>تحديث المستخدم
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal إضافة دور ===== -->
+<div class="modal fade" id="addRoleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>إضافة دور جديد</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addRoleForm">
+                <div class="modal-body p-3 p-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-tag me-1 text-success"></i>اسم الدور</label>
+                        <input type="text" class="form-control" id="add_role_name" required minlength="2" maxlength="50" placeholder="مثال: محاسب، مشاهد...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-align-right me-1 text-success"></i>الوصف</label>
+                        <textarea class="form-control" id="add_role_desc" rows="2" placeholder="وصف مختصر للدور..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>إنشاء الدور
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Modal إدارة صلاحيات الدور ===== -->
+<div class="modal fade" id="permissionsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                <h5 class="modal-title"><i class="fas fa-key me-2"></i>صلاحيات دور: <span id="permRoleName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="permissionsForm">
+                <input type="hidden" id="perm_role_id">
+                <div class="modal-body p-3 p-md-4" style="max-height: 65vh; overflow-y: auto;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">اختر الصلاحيات المطلوبة لهذا الدور</span>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" onclick="toggleAllPermissions(true)">تحديد الكل</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="toggleAllPermissions(false)">إلغاء الكل</button>
+                        </div>
+                    </div>
+
+                    {% for category, perms in permissions_by_category.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-2 pb-1" style="border-bottom: 2px solid #e5e7eb;">
+                            <span class="fw-bold" style="color:#6366f1; font-size:0.9rem;">
+                                {% if category == 'الطلاب' %}<i class="fas fa-user-graduate me-1"></i>
+                                {% elif category == 'المدرسين' %}<i class="fas fa-chalkboard-teacher me-1"></i>
+                                {% elif category == 'المواد' %}<i class="fas fa-book-open me-1"></i>
+                                {% elif category == 'الأقساط' %}<i class="fas fa-money-check-alt me-1"></i>
+                                {% elif category == 'المحاسبة' %}<i class="fas fa-calculator me-1"></i>
+                                {% elif category == 'السحوبات' %}<i class="fas fa-hand-holding-usd me-1"></i>
+                                {% elif category == 'الإحصائيات' %}<i class="fas fa-chart-pie me-1"></i>
+                                {% elif category == 'الصلاحيات' %}<i class="fas fa-user-shield me-1"></i>
+                                {% elif category == 'التصدير' %}<i class="fas fa-download me-1"></i>
+                                {% endif %}
+                                {{ category }}
+                            </span>
+                        </div>
+                        <div class="row g-2">
+                            {% for perm in perms %}
+                            <div class="col-12 col-sm-6">
+                                <div class="form-check">
+                                    <input class="form-check-input perm-checkbox" type="checkbox" value="{{ perm.id }}" id="perm_{{ perm.id }}" data-category="{{ category }}">
+                                    <label class="form-check-label small" for="perm_{{ perm.id }}" style="cursor:pointer;">
+                                        <span class="fw-bold">{{ perm.name }}</span>
+                                        <span class="d-block text-muted" style="font-size:0.7rem;">{{ perm.description }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>حفظ الصلاحيات
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== بيانات الصلاحيات الحالية لكل دور =====
+const rolePermissionsMap = {{ role_permissions_map | tojson }};
+const rolesData = {{ roles | tojson }};
+
+// ===== المستخدمون =====
+function openAddUserModal() {
+    document.getElementById('addUserForm').reset();
+    new bootstrap.Modal(document.getElementById('addUserModal')).show();
+}
+
+document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const data = {
+        username: document.getElementById('add_username').value.trim(),
+        full_name: document.getElementById('add_fullname').value.trim(),
+        password: document.getElementById('add_password').value,
+        role_id: parseInt(document.getElementById('add_role_id').value)
+    };
+    try {
+        const result = await apiRequest('/permissions/api/users', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+});
+
+function openEditUserModal(id, fullName, roleId, isActive) {
+    document.getElementById('edit_user_id').value = id;
+    document.getElementById('edit_fullname').value = fullName;
+    document.getElementById('edit_role_id').value = roleId;
+    document.getElementById('edit_password').value = '';
+    new bootstrap.Modal(document.getElementById('editUserModal')).show();
+}
+
+document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit_user_id').value;
+    const data = {
+        full_name: document.getElementById('edit_fullname').value.trim()
+    };
+    const password = document.getElementById('edit_password').value;
+    if (password) data.password = password;
+    const roleId = document.getElementById('edit_role_id').value;
+    if (roleId) data.role_id = parseInt(roleId);
+
+    try {
+        const result = await apiRequest(`/permissions/api/users/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+});
+
+async function toggleUserActive(id) {
+    try {
+        const result = await apiRequest(`/permissions/api/users/${id}/toggle-active`, {
+            method: 'POST'
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+}
+
+async function deleteUser(id, username) {
+    if (!confirm(`هل أنت متأكد من حذف المستخدم "${username}"؟`)) return;
+    try {
+        const result = await apiRequest(`/permissions/api/users/${id}`, {
+            method: 'DELETE'
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+}
+
+// ===== الأدوار =====
+function openAddRoleModal() {
+    document.getElementById('addRoleForm').reset();
+    new bootstrap.Modal(document.getElementById('addRoleModal')).show();
+}
+
+document.getElementById('addRoleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const data = {
+        name: document.getElementById('add_role_name').value.trim(),
+        description: document.getElementById('add_role_desc').value.trim()
+    };
+    try {
+        const result = await apiRequest('/permissions/api/roles', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+});
+
+async function deleteRole(id, name) {
+    if (!confirm(`هل أنت متأكد من حذف الدور "${name}"؟`)) return;
+    try {
+        const result = await apiRequest(`/permissions/api/roles/${id}`, {
+            method: 'DELETE'
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+}
+
+// ===== صلاحيات الأدوار =====
+function openPermissionsModal(roleId, roleName) {
+    document.getElementById('perm_role_id').value = roleId;
+    document.getElementById('permRoleName').textContent = roleName;
+    
+    // تحديد الصلاحيات الحالية
+    const currentPerms = rolePermissionsMap[roleId] || [];
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        cb.checked = currentPerms.includes(cb.value);
+    });
+    
+    new bootstrap.Modal(document.getElementById('permissionsModal')).show();
+}
+
+function toggleAllPermissions(checked) {
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        cb.checked = checked;
+    });
+}
+
+document.getElementById('permissionsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const roleId = document.getElementById('perm_role_id').value;
+    const permissionIds = [];
+    document.querySelectorAll('.perm-checkbox:checked').forEach(cb => {
+        permissionIds.push(parseInt(cb.value));
+    });
+    
+    try {
+        const result = await apiRequest(`/permissions/api/roles/${roleId}/permissions`, {
+            method: 'PUT',
+            body: JSON.stringify({ permission_ids: permissionIds })
+        });
+        if (result.success) {
+            showAlert(result.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide();
+            location.reload();
+        } else {
+            showAlert(result.message, 'error');
+        }
+    } catch (error) {
+        showAlert('خطأ في الاتصال', 'error');
+    }
+});
+</script>
+{% endblock %}

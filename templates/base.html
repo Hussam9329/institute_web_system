@@ -416,6 +416,10 @@
             <i class="fas fa-chart-pie"></i>
             <span>الإحصائيات</span>
         </a>
+        <a class="nav-link {% if '/permissions' in request.url.path %}active{% endif %}" href="/permissions" onclick="closeSidebarMobile()">
+            <i class="fas fa-user-shield"></i>
+            <span>الصلاحيات</span>
+        </a>
 
     </div>
 
