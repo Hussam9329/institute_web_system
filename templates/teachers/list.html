@@ -171,7 +171,7 @@
                                         </button>
                                         {% else %}
                                         <button type="button" class="btn btn-outline-danger" title="حذف"
-                                                onclick="confirmDelete({{ teacher.id }}, '{{ teacher.name }}')">
+                                                data-action="delete-teacher" data-id="{{ teacher.id }}" data-name="{{ teacher.name | e }}">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         {% endif %}
@@ -253,7 +253,7 @@
                             </button>
                             {% else %}
                             <button type="button" class="btn btn-outline-danger btn-sm" title="حذف"
-                                    onclick="confirmDelete({{ teacher.id }}, '{{ teacher.name }}')">
+                                    data-action="delete-teacher" data-id="{{ teacher.id }}" data-name="{{ teacher.name | e }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                             {% endif %}
@@ -291,12 +291,17 @@ function switchView(view, btn) {
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
 
-function confirmDelete(id, name) {
+// معالجة أحداث الأزرار عبر data-action (بدون XSS)
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-action="delete-teacher"]');
+    if (!btn) return;
+    const id = parseInt(btn.dataset.id);
+    const name = btn.dataset.name;
     if (confirm('هل أنت متأكد من حذف المدرس "' + name + '"؟\n\nسيتم حذف جميع بياناته!')) {
         document.getElementById('deleteForm').action = '/teachers/' + id + '/delete';
         document.getElementById('deleteForm').submit();
     }
-}
+});
 
 // بحث مباشر
 document.getElementById('teacherLiveSearch')?.addEventListener('input', function() {

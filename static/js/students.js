@@ -138,6 +138,17 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
     document.getElementById('inst_type').selectedIndex = 0;
     document.getElementById('inst_notes').value = '';
 
+    // تعيين نوع الدراسة تلقائياً
+    const studyTypeSelect = document.getElementById('inst_study_type');
+    if (studyTypeSelect) {
+        for (let i = 0; i < studyTypeSelect.options.length; i++) {
+            if (studyTypeSelect.options[i].value === studyType) {
+                studyTypeSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
     // عرض قسط الاستاد حسب نوع الدراسة
     const hintEl = document.getElementById('inst_fee_hint');
     const hintText = document.getElementById('inst_fee_hint_text');
@@ -164,6 +175,7 @@ async function addInstallment(event) {
         amount: toFullAmount(document.getElementById('inst_amount').value),
         payment_date: document.getElementById('inst_date').value,
         installment_type: document.getElementById('inst_type').value,
+        study_type: document.getElementById('inst_study_type')?.value || 'حضوري',
         notes: document.getElementById('inst_notes').value
     };
 

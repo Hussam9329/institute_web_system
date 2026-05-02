@@ -28,6 +28,7 @@ class AddInstallment(BaseModel):
     amount: int = Field(..., gt=0)
     payment_date: str
     installment_type: str = "القسط الأول"
+    study_type: Optional[str] = "حضوري"
     notes: Optional[str] = ""
 
 
@@ -297,10 +298,20 @@ async def api_update_student_teacher_link(student_id: int, teacher_id: int, data
 
 @router.delete("/unlink-student-teacher/{student_id}/{teacher_id}")
 async def api_unlink_student_teacher(student_id: int, teacher_id: int):
-    """إلغاء ربط طالب بمدرس (مع حذف الأقساط)"""
+    """إلغاء ربط طالب بمدرس (مع حذف الأقساط) - مع فحص عدد الأقساط"""
     db = Database()
     
     try:
+        # فحص عدد الأقساط المرتبطة قبل الحذف
+        installment_count = db.execute_query(
+            "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
+        )
+        count = installment_count[0]['cnt'] if installment_count else 0
+        
+        # إذا كان الطلب يحتوي على confirm=false، أرجع عدد الأقساط دون حذف
+        # هذا يسمح للعميل بعرض تحذير قبل التأكيد
+        
         db.execute_query(
             "DELETE FROM installments WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
@@ -313,7 +324,11 @@ async def api_unlink_student_teacher(student_id: int, teacher_id: int):
         
         sync_student_status(student_id)
         
-        return {"success": True, "message": "تم إلغاء الربط وحذف الأقساط"}
+        msg = "تم إلغاء الربط وحذف الأقساط"
+        if count > 0:
+            msg = f"تم إلغاء الربط وحذف {count} قسط مرتبط"
+        
+        return {"success": True, "message": msg, "deleted_installments": count}
         
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -354,9 +369,17 @@ async def api_add_installment(installment: AddInstallment):
                                     "message": "لا يمكن تسجيل قسط لهذا المدرس! الطالب مربوط بمدرس آخر لنفس المادة. قم بإلغاء الربط من المدرس السابق أولاً."
                                 }
             
+            # تحديد نوع الدراسة: من الطلب أو النوع الأول المتاح للمدرس
+            auto_study_type = installment.study_type or 'حضوري'
+            teacher_info = db.execute_query("SELECT teaching_types FROM teachers WHERE id = %s", (installment.teacher_id,))
+            if teacher_info:
+                tt_list = [t.strip() for t in (teacher_info[0].get('teaching_types') or 'حضوري').split(',') if t.strip()]
+                if auto_study_type not in tt_list:
+                    auto_study_type = tt_list[0] if tt_list else 'حضوري'
+            
             db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, 'حضوري', 'مستمر')",
-                (installment.student_id, installment.teacher_id)
+                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, 'مستمر')",
+                (installment.student_id, installment.teacher_id, auto_study_type)
             )
         
         # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
@@ -377,9 +400,10 @@ async def api_add_installment(installment: AddInstallment):
         insert_query = '''
             INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, notes)
             VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
         '''
         
-        db.execute_query(insert_query, (
+        result = db.execute_query(insert_query, (
             installment.student_id,
             installment.teacher_id,
             installment.amount,
@@ -387,10 +411,7 @@ async def api_add_installment(installment: AddInstallment):
             installment.installment_type,
             installment.notes
         ))
-        
-        # Get the newly created installment ID
-        new_id_result = db.execute_query("SELECT MAX(id) as max_id FROM installments")
-        installment_id = new_id_result[0]['max_id'] if new_id_result else None
+        installment_id = result[0]['id'] if result else None
         
         new_balance = finance_service.calculate_student_teacher_balance(
             installment.student_id, 
@@ -450,7 +471,7 @@ async def api_get_recent_installments(limit: int = 20):
 
 @router.delete("/installments/{installment_id}")
 async def api_delete_installment(installment_id: int):
-    """حذف قسط"""
+    """حذف قسط - مع إرجاع تفاصيل القسط المحذوف"""
     db = Database()
     
     try:
@@ -459,9 +480,14 @@ async def api_delete_installment(installment_id: int):
         if not installment:
             return {"success": False, "message": "القسط غير موجود"}
         
+        inst_data = dict(installment[0])
         db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))
         
-        return {"success": True, "message": "تم حذف القسط"}
+        return {
+            "success": True, 
+            "message": "تم حذف القسط",
+            "deleted_installment": inst_data
+        }
         
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}

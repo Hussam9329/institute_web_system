@@ -288,6 +288,16 @@
                                 <option value="دفع كامل">دفع كامل</option>
                             </select>
                         </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-chalkboard me-1 text-orange"></i>نوع الدراسة
+                            </label>
+                            <select class="form-select" id="pay_study_type">
+                                <option value="حضوري">حضوري</option>
+                                <option value="الكتروني">إلكتروني</option>
+                                <option value="مدمج">مدمج</option>
+                            </select>
+                        </div>
                         <div class="col-12">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-sticky-note me-1 text-orange"></i>ملاحظات
@@ -371,6 +381,7 @@ async function submitPayment(event) {
         amount: toFullAmount(document.getElementById('pay_amount').value),
         payment_date: document.getElementById('pay_date').value,
         installment_type: document.getElementById('pay_type').value,
+        study_type: document.getElementById('pay_study_type')?.value || 'حضوري',
         notes: document.getElementById('pay_notes').value
     };
     

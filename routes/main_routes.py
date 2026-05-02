@@ -184,25 +184,21 @@ async def student_add(
     """حفظ طالب جديد"""
     db = Database()
 
-    # توليد باركود مؤقت - سيتم تحديثه بعد الإدراج بالـ ID الحقيقي
-    temp_barcode = f"TEMP-{get_current_date()}-{hash(name) % 10000}"
-
+    # توليد باركود حقيقي مباشرة باستخدام RETURNING
+    # أولاً ندرج بدون باركود ثم نحدثه
     insert_query = '''
         INSERT INTO students (name, barcode, notes, created_at)
         VALUES (%s, %s, %s, %s)
+        RETURNING id
     '''
-
-    db.execute_query(insert_query, (
-        name,
-        temp_barcode, notes,
-        get_current_date()
-    ))
-
-    # الحصول على آخر ID واستبدال الباركود بالصيغة الصحيحة
-    new_student = db.execute_query("SELECT MAX(id) as max_id FROM students")
-    student_id = new_student[0]['max_id']
-    real_barcode = generate_barcode(student_id)
-    db.execute_query("UPDATE students SET barcode = %s WHERE id = %s", (real_barcode, student_id))
+    
+    temp_barcode = f"TEMP-{get_current_date()}"
+    result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date()))
+    student_id = result[0]['id'] if result else None
+    
+    if student_id:
+        real_barcode = generate_barcode(student_id)
+        db.execute_query("UPDATE students SET barcode = %s WHERE id = %s", (real_barcode, student_id))
 
     # ربط الطالب بالمدرسين المحددين
     form_data = await request.form()
@@ -859,6 +855,10 @@ async def stats_page(request: Request):
         withdrawn_students = db.execute_query("SELECT COUNT(DISTINCT student_id) as cnt FROM student_teacher WHERE status = 'منسحب'")
         withdrawn_count = withdrawn_students[0]['cnt'] if withdrawn_students else 0
         stat_rows.append({"label": "الطلاب المنسحبين", "value": withdrawn_count, "icon": "fa-user-minus", "color": "danger"})
+
+        unlinked_students = db.execute_query("SELECT COUNT(*) as cnt FROM students s WHERE NOT EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id)")
+        unlinked_count = unlinked_students[0]['cnt'] if unlinked_students else 0
+        stat_rows.append({"label": "طلاب غير مربوطين", "value": unlinked_count, "icon": "fa-unlink", "color": "warning"})
 
         total_teachers = db.execute_query("SELECT COUNT(*) as cnt FROM teachers")
         total_teachers_count = total_teachers[0]['cnt'] if total_teachers else 0

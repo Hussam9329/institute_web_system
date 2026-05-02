@@ -535,6 +535,16 @@ class FinanceService:
             ''')
             stats['withdrawn_students'] = result[0]['count'] if result else 0
             
+            # الطلاب غير مربوطين - ليس لديهم أي رابط بمدرس
+            result = self.db.execute_query('''
+                SELECT COUNT(*) as count 
+                FROM students s
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM student_teacher st WHERE st.student_id = s.id
+                )
+            ''')
+            stats['unlinked_students'] = result[0]['count'] if result else 0
+            
             # عدد المدرسين
             result = self.db.execute_query("SELECT COUNT(*) as count FROM teachers")
             stats['total_teachers'] = result[0]['count'] if result else 0
@@ -560,6 +570,7 @@ class FinanceService:
                 'total_students': 0,
                 'active_students': 0,
                 'withdrawn_students': 0,
+                'unlinked_students': 0,
                 'total_teachers': 0,
                 'total_subjects': 0,
                 'total_installments': 0,

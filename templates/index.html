@@ -511,6 +511,11 @@
                         <span class="opacity-50 mx-1">|</span>
                         <i class="fas fa-user-minus"></i>
                         <span>{{ stats.withdrawn_students }} منسحب</span>
+                        {% if stats.unlinked_students and stats.unlinked_students > 0 %}
+                        <span class="opacity-50 mx-1">|</span>
+                        <i class="fas fa-unlink"></i>
+                        <span>{{ stats.unlinked_students }} غير مربوط</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>

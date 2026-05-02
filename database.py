@@ -32,8 +32,14 @@ class Database:
             cursor.execute(query, params)
             
             # إذا كان الاستعلام SELECT، أرجع النتائج
-            if query.strip().upper().startswith('SELECT'):
+            query_upper = query.strip().upper()
+            if query_upper.startswith('SELECT'):
                 results = cursor.fetchall()
+                return results
+            # إذا كان الاستعلام يحتوي على RETURNING (INSERT/UPDATE/DELETE)
+            elif 'RETURNING' in query_upper:
+                results = cursor.fetchall()
+                conn.commit()
                 return results
             else:
                 conn.commit()
