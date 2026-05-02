@@ -129,9 +129,11 @@ def init_db():
         
         # ===== ALTER TABLE - إضافة أعمدة جديدة للجداول الموجودة =====
         alter_statements = [
-            # إصلاح CHECK constraint لجدول الطلاب - إضافة 'مدمج'
+            # إصلاح CHECK constraint لجدول الطلاب - إضافة 'مدمج' و 'غير مربوط'
             "ALTER TABLE students DROP CONSTRAINT IF EXISTS students_study_type_check",
             "ALTER TABLE students ADD CONSTRAINT students_study_type_check CHECK(study_type IN ('حضوري', 'الكتروني', 'مدمج'))",
+            "ALTER TABLE students DROP CONSTRAINT IF EXISTS students_status_check",
+            "ALTER TABLE students ADD CONSTRAINT students_status_check CHECK(status IN ('مستمر', 'منسحب', 'غير مربوط'))",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_deduction_type VARCHAR(20) DEFAULT 'percentage'",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS institute_deduction_value INTEGER DEFAULT 0",
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'مستمر'",

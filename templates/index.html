@@ -561,7 +561,7 @@
     </div>
 
     <!-- ===== صافي الإيرادات ===== -->
-    {% set net_revenue = (stats.total_amount_paid or 0) - (stats.total_withdrawals or 0) %}
+    {% set net_revenue = stats.total_institute_deduction or 0 %}
     <div class="dash-net-card dash-animate dash-delay-5">
         <div class="dash-net-icon" style="background: var(--success-glow); color: var(--success);">
             <i class="fas fa-chart-line"></i>

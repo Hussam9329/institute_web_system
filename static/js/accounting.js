@@ -6,6 +6,16 @@ let withdrawalModal;
 
 document.addEventListener('DOMContentLoaded', function() {
     withdrawalModal = new bootstrap.Modal(document.getElementById('withdrawalModal'));
+
+    // معالجة أحداث الأزرار عبر data-action (بدون XSS)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-action="withdraw"]');
+        if (!btn) return;
+        const teacherId = parseInt(btn.dataset.teacherId);
+        const teacherName = btn.dataset.teacherName;
+        const balance = parseInt(btn.dataset.balance);
+        openWithdrawalModal(teacherId, teacherName, balance);
+    });
 });
 
 /**

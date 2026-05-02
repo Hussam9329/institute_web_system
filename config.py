@@ -39,7 +39,7 @@ RECEIPTS_DIR = os.path.join(REPORTS_DIR, "receipts")
 STUDY_TYPES = ["حضوري", "الكتروني", "مدمج"]
 
 # ===== حالات الطالب =====
-STUDENT_STATUSES = ["مستمر", "منسحب"]
+STUDENT_STATUSES = ["مستمر", "منسحب", "غير مربوط"]
 
 # ===== أنواع الأقساط =====
 INSTALLMENT_TYPES = [

@@ -95,7 +95,7 @@
                             <td class="text-muted small d-none d-md-table-cell">{{ w.notes[:30] if w.notes else '-' }}</td>
                             <td class="text-center">
                                 <div class="btn-group btn-group-sm action-btns">
-                                    <button class="btn btn-outline-warning" onclick="editWithdrawal({{ w.id }}, {{ w.amount }}, '{{ w.withdrawal_date }}', '{{ w.notes or '' }}')" title="تعديل">
+                                    <button class="btn btn-outline-warning" data-action="edit-withdrawal" data-id="{{ w.id }}" data-amount="{{ w.amount }}" data-date="{{ w.withdrawal_date }}" data-notes="{{ (w.notes or '') | e }}" title="تعديل">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button class="btn btn-outline-danger" onclick="deleteWithdrawal({{ w.id }})" title="حذف">
@@ -227,46 +227,53 @@ document.addEventListener('DOMContentLoaded', function() {
     addModal = new bootstrap.Modal(document.getElementById('addWithdrawalModal'));
     editModal = new bootstrap.Modal(document.getElementById('editWithdrawalModal'));
     document.getElementById('aw_date').value = getTodayDate();
+
+    // معالجة أحداث الأزرار عبر data-action (بدون XSS)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-action="edit-withdrawal"]');
+        if (!btn) return;
+        editWithdrawal(
+            parseInt(btn.dataset.id),
+            parseInt(btn.dataset.amount),
+            btn.dataset.date,
+            btn.dataset.notes
+        );
+    });
 });
 
-// تحميل أرصدة المدرسين عند فتح الـ modal
+// تحميل رصيد المدرس عند اختياره فقط (بدلاً من تحميل أرصدة الجميع)
 async function openAddWithdrawalModal() {
     document.getElementById('addWithdrawalForm').reset();
     document.getElementById('aw_date').value = getTodayDate();
     document.getElementById('aw_balance_alert').classList.add('d-none');
-
-    // تحميل أرصدة المدرسين
-    try {
-        const teachers = document.querySelectorAll('#aw_teacher_id option[value]');
-        for (const opt of teachers) {
-            const tid = parseInt(opt.value);
-            if (!tid) continue;
-            // جلب الرصيد الكامل من API المدرس
-            const balanceResult = await apiRequest(`/api/teachers/${tid}/balance`);
-            if (balanceResult && balanceResult.data && balanceResult.data.remaining_balance !== undefined) {
-                opt.dataset.balance = balanceResult.data.remaining_balance;
-            }
-        }
-    } catch (e) {
-        console.log('Error loading balances:', e);
-    }
-
+    
+    // لا نحمّل أرصدة الجميع - بل نحمّل عند الاختيار فقط
     addModal.show();
 }
 
-function onTeacherChange() {
+async function onTeacherChange() {
     const select = document.getElementById('aw_teacher_id');
-    const selectedOption = select.options[select.selectedIndex];
-    const balance = parseInt(selectedOption.dataset.balance) || 0;
+    const teacherId = parseInt(select.value);
     const alertEl = document.getElementById('aw_balance_alert');
     const balanceEl = document.getElementById('aw_available_balance');
-
-    if (select.value) {
+    
+    if (!teacherId) {
+        alertEl.classList.add('d-none');
+        return;
+    }
+    
+    // جلب رصيد المدرس المختار فقط
+    try {
+        const balanceResult = await apiRequest(`/api/teachers/${teacherId}/balance`);
+        const balance = balanceResult.data.remaining_balance || 0;
         alertEl.classList.remove('d-none');
         balanceEl.textContent = formatCurrency(balance);
+        balanceEl.dataset.balance = balance;
         document.getElementById('aw_amount').max = Math.ceil(balance / 1000);
-    } else {
-        alertEl.classList.add('d-none');
+    } catch (e) {
+        alertEl.classList.remove('d-none');
+        balanceEl.textContent = 'خطأ في التحميل';
+        balanceEl.dataset.balance = 0;
     }
 }
 

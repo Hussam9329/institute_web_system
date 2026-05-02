@@ -219,12 +219,38 @@
 </style>
 
 <script>
+// قائمة المدرسين المرتبطين أصلاً (في وضع التعديل)
+const originallyLinked = [{% if mode == 'edit' and linked_teacher_ids %}{{ linked_teacher_ids | join(',') }}{% endif %}];
+
 function toggleTeacherRow(teacherId) {
     const row = document.getElementById('teacher_row_' + teacherId);
     const cb = document.getElementById('teacher_' + teacherId);
     if (row && cb) {
+        // تحذير عند إلغاء تحديد مدرس كان مربوطاً (سيتم حذف أقساطه)
+        if (!cb.checked && originallyLinked.includes(teacherId)) {
+            const teacherName = row.querySelector('.fw-semibold')?.textContent || 'هذا المدرس';
+            if (!confirmAction('⚠️ تحذير: إلغاء ربط المدرس "' + teacherName + '" سيؤدي إلى حذف جميع الأقساط المسجلة له! هل أنت متأكد؟')) {
+                cb.checked = true;
+                return;
+            }
+        }
         row.classList.toggle('active', cb.checked);
     }
 }
+
+// تحذير إضافي عند إرسال النموذج إذا تم إلغاء تحديد مدرسين
+document.getElementById('studentForm')?.addEventListener('submit', function(e) {
+    {% if mode == 'edit' %}
+    const unchecked = originallyLinked.filter(tid => {
+        const cb = document.getElementById('teacher_' + tid);
+        return cb && !cb.checked;
+    });
+    if (unchecked.length > 0) {
+        if (!confirmAction('⚠️ تحذير: تم إلغاء ربط ' + unchecked.length + ' مدرس. سيتم حذف جميع الأقساط المسجلة لهم نهائياً! هل تريد المتابعة؟')) {
+            e.preventDefault();
+        }
+    }
+    {% endif %}
+});
 </script>
 {% endblock %}

@@ -134,13 +134,13 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="openInstallmentModal({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}', '{{ ts.study_type }}', {{ ts.total_fee }})" title="دفع قسط">
+                                                <button class="btn btn-outline-primary" data-action="pay-installment" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" data-study-type="{{ ts.study_type | e }}" data-total-fee="{{ ts.total_fee }}" title="دفع قسط">
                                                     <i class="fas fa-money-bill"></i>
                                                 </button>
                                                 <button class="btn btn-outline-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
                                                     <i class="fas fa-list"></i>
                                                 </button>
-                                                <button class="btn btn-outline-danger" onclick="unlinkTeacher({{ student.id }}, {{ ts.teacher_id }}, '{{ ts.teacher_name }}')" title="إلغاء الربط">
+                                                <button class="btn btn-outline-danger" data-action="unlink-teacher" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" title="إلغاء الربط">
                                                     <i class="fas fa-unlink"></i>
                                                 </button>
                                             </div>

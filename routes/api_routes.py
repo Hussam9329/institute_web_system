@@ -333,6 +333,27 @@ async def api_add_installment(installment: AddInstallment):
         )
         
         if not link_check:
+            # التحقق من أن الطالب ليس مربوطاً بمدرس آخر لنفس المادة
+            teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (installment.teacher_id,))
+            if teacher_check:
+                teacher_subject = teacher_check[0]['subject']
+                same_subject_links = db.execute_query('''
+                    SELECT st.id, st.teacher_id, st.status
+                    FROM student_teacher st
+                    JOIN teachers t ON st.teacher_id = t.id
+                    WHERE st.student_id = %s AND t.subject = %s
+                ''', (installment.student_id, teacher_subject))
+                
+                if same_subject_links:
+                    for link_row in same_subject_links:
+                        if link_row['teacher_id'] != installment.teacher_id:
+                            link_status = link_row.get('status', 'مستمر')
+                            if link_status != 'منسحب':
+                                return {
+                                    "success": False,
+                                    "message": "لا يمكن تسجيل قسط لهذا المدرس! الطالب مربوط بمدرس آخر لنفس المادة. قم بإلغاء الربط من المدرس السابق أولاً."
+                                }
+            
             db.execute_query(
                 "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, 'حضوري', 'مستمر')",
                 (installment.student_id, installment.teacher_id)

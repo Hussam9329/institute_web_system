@@ -13,6 +13,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // تحميل قائمة المدرسين عند فتح modal الربط
     loadTeachersList();
+
+    // معالجة أحداث الأزرار عبر data-action (بدون XSS)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        if (action === 'pay-installment') {
+            openInstallmentModal(
+                parseInt(btn.dataset.studentId),
+                parseInt(btn.dataset.teacherId),
+                btn.dataset.teacherName,
+                btn.dataset.studyType,
+                parseInt(btn.dataset.totalFee)
+            );
+        } else if (action === 'unlink-teacher') {
+            unlinkTeacher(
+                parseInt(btn.dataset.studentId),
+                parseInt(btn.dataset.teacherId),
+                btn.dataset.teacherName
+            );
+        }
+    });
 });
 
 // ===== وظائف ربط المدرسين =====

@@ -232,9 +232,10 @@ class FinanceService:
         total_deduction = 0
         
         for student_id, payments in student_payments.items():
-            has_first = False
-            has_second = False
-            has_full = False
+            # عدّ الأقساط حسب النوع (بدلاً من boolean) للتعامل مع الأقساط المتكررة
+            first_count = 0
+            second_count = 0
+            full_count = 0
             first_amount = 0
             second_amount = 0
             full_amount = 0
@@ -245,48 +246,42 @@ class FinanceService:
                 itype = p['installment_type']
                 amt = p['amount'] or 0
                 if itype == 'القسط الأول':
-                    has_first = True
-                    first_amount = amt
+                    first_count += 1
+                    first_amount += amt
                 elif itype == 'القسط الثاني':
-                    has_second = True
-                    second_amount = amt
+                    second_count += 1
+                    second_amount += amt
                 elif itype == 'دفع كامل':
-                    has_full = True
-                    full_amount = amt
+                    full_count += 1
+                    full_amount += amt
             
             # Determine deduction type and value based on study type
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
             
             # إذا كان مبلغ القسط الأول يساوي القسط الكلي → اعتبره دفع كامل
             student_total_fee = self._get_fee_for_study_type(t, study_type)
-            if has_first and not has_full and not has_second and first_amount >= student_total_fee and student_total_fee > 0:
-                has_full = True
-                has_first = False
+            if first_count > 0 and full_count == 0 and second_count == 0 and first_amount >= student_total_fee and student_total_fee > 0:
+                full_count = first_count
+                full_amount = first_amount
+                first_count = 0
+                first_amount = 0
 
             if ded_value <= 0:
                 continue
             
             if ded_type == 'manual':
                 # مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً
-                if has_full:
-                    total_deduction += ded_value
-                else:
-                    if has_first:
-                        total_deduction += ded_value // 2
-                    if has_second:
-                        total_deduction += ded_value // 2
+                total_installments = first_count + second_count + (full_count * 2)
+                if total_installments > 0:
+                    # كل قسط أول أو ثاني = نصف المبلغ، كل دفع كامل = المبلغ كاملاً
+                    total_deduction += (full_count * ded_value) + (first_count * (ded_value // 2)) + (second_count * (ded_value // 2))
             else:
                 # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
-                # مثال: قسط كلي 500، نسبة 16% → خصم المعهد 80 → كل قسط 40
-
-                if has_full:
-                    total_deduction += int((student_total_fee * ded_value) / 100)
-                else:
-                    deduction_per_installment = int((student_total_fee * ded_value) / 100) // 2
-                    if has_first:
-                        total_deduction += deduction_per_installment
-                    if has_second:
-                        total_deduction += deduction_per_installment
+                deduction_per_installment = int((student_total_fee * ded_value) / 100) // 2
+                full_deduction = int((student_total_fee * ded_value) / 100)
+                
+                # كل قسط أول أو ثاني يحسب نصف الخصم، كل دفع كامل يحسب الخصم كاملاً
+                total_deduction += (full_count * full_deduction) + (first_count * deduction_per_installment) + (second_count * deduction_per_installment)
         
         return total_deduction
     
@@ -519,17 +514,12 @@ class FinanceService:
             result = self.db.execute_query("SELECT COUNT(*) as count FROM students")
             stats['total_students'] = result[0]['count'] if result else 0
             
-            # الطلاب المستمرين - بناءً على student_teacher (المصدر الحقيقي)
+            # الطلاب المستمرين - لهم رابط نشط (مستمر) في student_teacher
             result = self.db.execute_query('''
                 SELECT COUNT(DISTINCT s.id) as count 
                 FROM students s
-                WHERE s.id IN (
-                    SELECT DISTINCT st1.student_id FROM student_teacher st1 
-                    WHERE st1.status = 'مستمر'
-                )
-                OR s.id NOT IN (
-                    SELECT DISTINCT st2.student_id FROM student_teacher st2
-                )
+                INNER JOIN student_teacher st ON st.student_id = s.id
+                WHERE st.status = 'مستمر'
             ''')
             stats['active_students'] = result[0]['count'] if result else 0
             
@@ -577,6 +567,21 @@ class FinanceService:
                 'total_withdrawals': 0
             }
         
+        # صافي الإيرادات = مجموع خصم المعهد من جميع المدرسين
+        total_institute_deduction = 0
+        try:
+            all_teachers = self.db.execute_query("SELECT id FROM teachers")
+            if all_teachers:
+                for t in all_teachers:
+                    try:
+                        total_institute_deduction += self.calculate_institute_deduction(t['id'])
+                    except:
+                        pass
+        except:
+            pass
+        
+        stats['total_institute_deduction'] = total_institute_deduction
+        
         return stats
 
 
@@ -597,7 +602,8 @@ def sync_student_status(student_id: int):
         ''', (student_id,))
         
         if not result or result[0]['total'] == 0:
-            new_status = 'مستمر'
+            # طالب بدون أي روابط - حالة غير مربوط
+            new_status = 'غير مربوط'
         elif result[0]['withdrawn'] == result[0]['total']:
             new_status = 'منسحب'
         else:

@@ -118,7 +118,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
                             ELSE t2.total_fee
                         END
                     ), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
-                    (SELECT CASE WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
+                    (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
                 FROM students s
                 WHERE s.name LIKE %s OR s.barcode LIKE %s
                 ORDER BY s.name
@@ -137,7 +137,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
                             ELSE t2.total_fee
                         END
                     ), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
-                    (SELECT CASE WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
+                    (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
                 FROM students s
                 ORDER BY s.name
             '''
@@ -184,11 +184,8 @@ async def student_add(
     """حفظ طالب جديد"""
     db = Database()
 
-    # توليد باركود
-    barcode_query = "SELECT MAX(id) as max_id FROM students"
-    result = db.execute_query(barcode_query)
-    next_id = (result[0]['max_id'] or 0) + 1
-    barcode = generate_barcode(next_id)
+    # توليد باركود مؤقت - سيتم تحديثه بعد الإدراج بالـ ID الحقيقي
+    temp_barcode = f"TEMP-{get_current_date()}-{hash(name) % 10000}"
 
     insert_query = '''
         INSERT INTO students (name, barcode, notes, created_at)
@@ -197,19 +194,21 @@ async def student_add(
 
     db.execute_query(insert_query, (
         name,
-        barcode, notes,
+        temp_barcode, notes,
         get_current_date()
     ))
+
+    # الحصول على آخر ID واستبدال الباركود بالصيغة الصحيحة
+    new_student = db.execute_query("SELECT MAX(id) as max_id FROM students")
+    student_id = new_student[0]['max_id']
+    real_barcode = generate_barcode(student_id)
+    db.execute_query("UPDATE students SET barcode = %s WHERE id = %s", (real_barcode, student_id))
 
     # ربط الطالب بالمدرسين المحددين
     form_data = await request.form()
     teacher_ids = form_data.getlist("teacher_ids")
 
     if teacher_ids:
-        # الحصول على آخر ID
-        new_student = db.execute_query("SELECT MAX(id) as max_id FROM students")
-        student_id = new_student[0]['max_id']
-
         for tid in teacher_ids:
             if tid:
                 study_type = form_data.get(f"study_type_{tid}", "حضوري")
@@ -881,7 +880,7 @@ async def stats_page(request: Request):
         total_withdrawn_amount = total_withdrawn[0]['total'] if total_withdrawn else 0
         stat_rows.append({"label": "إجمالي المسحوبات", "value": format_currency(total_withdrawn_amount), "icon": "fa-hand-holding-usd", "color": "orange"})
 
-        net_revenue = total_paid_amount - total_withdrawn_amount
+        net_revenue = stats.get('total_institute_deduction', 0)
         stat_rows.append({"label": "صافي الإيرادات", "value": format_currency(net_revenue), "icon": "fa-chart-line", "color": "purple"})
     except:
         pass
