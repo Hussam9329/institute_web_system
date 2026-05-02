@@ -326,9 +326,11 @@
                         <span class="ms-badge" style="background: var(--success-glow); color: var(--success-dark);">
                             <i class="fas fa-check-circle me-1"></i>{{ stats.active_students }} مستمر
                         </span>
-                        <span class="ms-badge" style="background: var(--danger-glow); color: var(--danger-dark);">
-                            <i class="fas fa-times-circle me-1"></i>{{ stats.withdrawn_students }} منسحب
+                        {% if stats.unlinked_students and stats.unlinked_students > 0 %}
+                        <span class="ms-badge" style="background: var(--warning-glow); color: var(--warning-dark);">
+                            <i class="fas fa-unlink me-1"></i>{{ stats.unlinked_students }} غير مربوط
                         </span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -433,31 +435,15 @@
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="flex-grow-1" style="min-width: 0;">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-semibold">منسحب</span>
-                                <span class="text-danger fw-bold">{{ stats.withdrawn_students }}</span>
-                            </div>
-                            <div class="progress" style="height: 24px;">
-                                {% if stats.total_students > 0 %}
-                                {% set withdrawn_pct = ((stats.withdrawn_students / stats.total_students) * 100) | round(1) %}
-                                {% else %}
-                                {% set withdrawn_pct = 0 %}
-                                {% endif %}
-                                <div class="progress-bar bg-danger" style="width: {{ withdrawn_pct }}%">{{ withdrawn_pct }}%</div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="d-flex align-items-center gap-3">
                         <div class="flex-grow-1" style="min-width: 0;">
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fw-semibold">غير مرتبط</span>
-                                <span class="text-secondary fw-bold">{{ stats.total_students - stats.active_students - stats.withdrawn_students }}</span>
+                                <span class="text-secondary fw-bold">{{ stats.unlinked_students or 0 }}</span>
                             </div>
                             <div class="progress" style="height: 24px;">
                                 {% if stats.total_students > 0 %}
-                                {% set unlinked_pct = (((stats.total_students - stats.active_students - stats.withdrawn_students) / stats.total_students) * 100) | round(1) %}
+                                {% set unlinked_pct = (((stats.unlinked_students or 0) / stats.total_students) * 100) | round(1) %}
                                 {% else %}
                                 {% set unlinked_pct = 0 %}
                                 {% endif %}
@@ -564,8 +550,8 @@
                             <td class="text-center text-success fw-bold">{{ stats.active_students }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-times-circle me-2 text-danger"></i>الطلاب المنسحبون</td>
-                            <td class="text-center text-danger fw-bold">{{ stats.withdrawn_students }}</td>
+                            <td class="fw-bold px-3"><i class="fas fa-unlink me-2 text-warning"></i>طلاب غير مربوطين</td>
+                            <td class="text-center text-warning fw-bold">{{ stats.unlinked_students or 0 }}</td>
                         </tr>
                         <tr>
                             <td class="fw-bold px-3"><i class="fas fa-chalkboard-teacher me-2 text-success"></i>إجمالي المدرسين</td>

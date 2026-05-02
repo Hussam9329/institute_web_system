@@ -7,9 +7,13 @@ let linkTeacherModal, installmentModal, installmentsListModal;
 
 document.addEventListener('DOMContentLoaded', function() {
     // تهيئة Modals
-    linkTeacherModal = new bootstrap.Modal(document.getElementById('linkTeacherModal'));
-    installmentModal = new bootstrap.Modal(document.getElementById('installmentModal'));
-    installmentsListModal = new bootstrap.Modal(document.getElementById('installmentsListModal'));
+    const linkModalEl = document.getElementById('linkTeacherModal');
+    const instModalEl = document.getElementById('installmentModal');
+    const instListModalEl = document.getElementById('installmentsListModal');
+    
+    if (linkModalEl) linkTeacherModal = new bootstrap.Modal(linkModalEl);
+    if (instModalEl) installmentModal = new bootstrap.Modal(instModalEl);
+    if (instListModalEl) installmentsListModal = new bootstrap.Modal(instListModalEl);
     
     // تحميل قائمة المدرسين عند فتح modal الربط
     loadTeachersList();
@@ -20,19 +24,29 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!btn) return;
         const action = btn.dataset.action;
         if (action === 'pay-installment') {
-            openInstallmentModal(
-                parseInt(btn.dataset.studentId),
-                parseInt(btn.dataset.teacherId),
-                btn.dataset.teacherName,
-                btn.dataset.studyType,
-                parseInt(btn.dataset.totalFee)
-            );
+            const studentId = parseInt(btn.dataset.studentId);
+            const teacherId = parseInt(btn.dataset.teacherId);
+            const teacherName = btn.dataset.teacherName || '';
+            const studyType = btn.dataset.studyType || 'حضوري';
+            const totalFee = parseInt(btn.dataset.totalFee) || 0;
+            
+            if (isNaN(studentId) || isNaN(teacherId)) {
+                showAlert('بيانات القسط غير صحيحة', 'error');
+                return;
+            }
+            
+            openInstallmentModal(studentId, teacherId, teacherName, studyType, totalFee);
         } else if (action === 'unlink-teacher') {
-            unlinkTeacher(
-                parseInt(btn.dataset.studentId),
-                parseInt(btn.dataset.teacherId),
-                btn.dataset.teacherName
-            );
+            const studentId = parseInt(btn.dataset.studentId);
+            const teacherId = parseInt(btn.dataset.teacherId);
+            const teacherName = btn.dataset.teacherName || '';
+            
+            if (isNaN(studentId) || isNaN(teacherId)) {
+                showAlert('بيانات الربط غير صحيحة', 'error');
+                return;
+            }
+            
+            unlinkTeacher(studentId, teacherId, teacherName);
         }
     });
 });
@@ -130,20 +144,33 @@ async function unlinkTeacher(studentId, teacherId, teacherName) {
  * فتح نموذج إضافة قسط
  */
 function openInstallmentModal(studentId, teacherId, teacherName, studyType, totalFee) {
-    document.getElementById('inst_student_id').value = studentId;
-    document.getElementById('inst_teacher_id').value = teacherId;
-    document.getElementById('inst_teacher_name').textContent = teacherName;
-    document.getElementById('inst_amount').value = '';
-    document.getElementById('inst_date').value = getTodayDate();
-    document.getElementById('inst_type').selectedIndex = 0;
-    document.getElementById('inst_notes').value = '';
+    const elStudentId = document.getElementById('inst_student_id');
+    const elTeacherId = document.getElementById('inst_teacher_id');
+    const elTeacherName = document.getElementById('inst_teacher_name');
+    const elAmount = document.getElementById('inst_amount');
+    const elDate = document.getElementById('inst_date');
+    const elType = document.getElementById('inst_type');
+    const elNotes = document.getElementById('inst_notes');
+    const elStudyType = document.getElementById('inst_study_type');
+    
+    if (!elStudentId || !elTeacherId) {
+        showAlert('خطأ: عناصر النموذج غير موجودة', 'error');
+        return;
+    }
+    
+    elStudentId.value = studentId;
+    elTeacherId.value = teacherId;
+    if (elTeacherName) elTeacherName.textContent = teacherName;
+    if (elAmount) elAmount.value = '';
+    if (elDate) elDate.value = getTodayDate();
+    if (elType) elType.selectedIndex = 0;
+    if (elNotes) elNotes.value = '';
 
     // تعيين نوع الدراسة تلقائياً
-    const studyTypeSelect = document.getElementById('inst_study_type');
-    if (studyTypeSelect) {
-        for (let i = 0; i < studyTypeSelect.options.length; i++) {
-            if (studyTypeSelect.options[i].value === studyType) {
-                studyTypeSelect.selectedIndex = i;
+    if (elStudyType) {
+        for (let i = 0; i < elStudyType.options.length; i++) {
+            if (elStudyType.options[i].value === studyType) {
+                elStudyType.selectedIndex = i;
                 break;
             }
         }
@@ -152,15 +179,19 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
     // عرض قسط الاستاد حسب نوع الدراسة
     const hintEl = document.getElementById('inst_fee_hint');
     const hintText = document.getElementById('inst_fee_hint_text');
-    if (totalFee && totalFee > 0 && studyType) {
+    if (hintEl && hintText && totalFee && totalFee > 0 && studyType) {
         const formatted = formatCurrency(totalFee);
         hintText.textContent = `قسط الاستاد ${teacherName} (${studyType}) = ${formatted}`;
         hintEl.classList.remove('d-none');
-    } else {
+    } else if (hintEl) {
         hintEl.classList.add('d-none');
     }
 
-    installmentModal.show();
+    if (installmentModal) {
+        installmentModal.show();
+    } else {
+        showAlert('خطأ في فتح نموذج القسط', 'error');
+    }
 }
 
 /**
@@ -238,7 +269,7 @@ async function viewInstallments(studentId, teacherId) {
                         <td>${inst.notes || '-'}</td>
                         <td>
                             <div class="btn-group btn-group-xs">
-                                <a href="/pdf/receipt/${inst.id}" target="_blank" class="btn btn-outline-danger btn-xs" title="طباعة الوصل">
+                                <a href="/reports/receipt/${inst.id}" target="_blank" class="btn btn-outline-success btn-xs" title="طباعة الوصل">
                                     <i class="fas fa-print"></i>
                                 </a>
                                 <button class="btn btn-outline-danger btn-xs" onclick="deleteInstallment(${inst.id})" title="حذف">

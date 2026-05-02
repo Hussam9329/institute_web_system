@@ -5,15 +5,28 @@
 let withdrawalModal;
 
 document.addEventListener('DOMContentLoaded', function() {
-    withdrawalModal = new bootstrap.Modal(document.getElementById('withdrawalModal'));
+    const modalEl = document.getElementById('withdrawalModal');
+    if (modalEl) {
+        withdrawalModal = new bootstrap.Modal(modalEl);
+    }
 
     // معالجة أحداث الأزرار عبر data-action (بدون XSS)
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('[data-action="withdraw"]');
         if (!btn) return;
+        
+        // منع النقر المزدوج
+        if (btn.disabled) return;
+        
         const teacherId = parseInt(btn.dataset.teacherId);
         const teacherName = btn.dataset.teacherName;
         const balance = parseInt(btn.dataset.balance);
+        
+        if (isNaN(teacherId) || isNaN(balance)) {
+            showAlert('بيانات المدرس غير صحيحة', 'error');
+            return;
+        }
+        
         openWithdrawalModal(teacherId, teacherName, balance);
     });
 });

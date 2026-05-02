@@ -523,17 +523,8 @@ class FinanceService:
             ''')
             stats['active_students'] = result[0]['count'] if result else 0
             
-            # الطلاب المنسحبين - كل روابطهم منسحبة
-            result = self.db.execute_query('''
-                SELECT COUNT(DISTINCT s.id) as count 
-                FROM students s
-                WHERE s.id IN (
-                    SELECT DISTINCT st.student_id FROM student_teacher st
-                    GROUP BY st.student_id
-                    HAVING COUNT(*) FILTER (WHERE st.status = 'منسحب') = COUNT(*)
-                )
-            ''')
-            stats['withdrawn_students'] = result[0]['count'] if result else 0
+            # الطلاب المنسحبين - تم إلغاء عرضهم من الإحصائيات
+            stats['withdrawn_students'] = 0
             
             # الطلاب غير مربوطين - ليس لديهم أي رابط بمدرس
             result = self.db.execute_query('''
@@ -592,6 +583,28 @@ class FinanceService:
             pass
         
         stats['total_institute_deduction'] = total_institute_deduction
+        
+        # عدد الطلاب غير المسددين (للتقارير السريعة)
+        try:
+            unpaid_result = self.db.execute_query('''
+                SELECT COUNT(DISTINCT s.id) as count
+                FROM students s
+                INNER JOIN student_teacher st ON st.student_id = s.id AND st.status = 'مستمر'
+                INNER JOIN teachers t ON st.teacher_id = t.id
+                WHERE (
+                    COALESCE(
+                        CASE 
+                            WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN t.fee_electronic
+                            WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN t.fee_blended
+                            WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN t.fee_in_person
+                            ELSE t.total_fee
+                        END, 0
+                    ) - COALESCE((SELECT SUM(i.amount) FROM installments i WHERE i.student_id = s.id AND i.teacher_id = t.id), 0)
+                ) > 0
+            ''')
+            stats['unpaid_students'] = unpaid_result[0]['count'] if unpaid_result else 0
+        except:
+            stats['unpaid_students'] = 0
         
         return stats
 

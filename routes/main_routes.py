@@ -872,10 +872,6 @@ async def stats_page(request: Request):
         active_count = active_students[0]['cnt'] if active_students else 0
         stat_rows.append({"label": "الطلاب النشطين (مستمر)", "value": active_count, "icon": "fa-user-check", "color": "emerald"})
 
-        withdrawn_students = db.execute_query("SELECT COUNT(DISTINCT student_id) as cnt FROM student_teacher WHERE status = 'منسحب'")
-        withdrawn_count = withdrawn_students[0]['cnt'] if withdrawn_students else 0
-        stat_rows.append({"label": "الطلاب المنسحبين", "value": withdrawn_count, "icon": "fa-user-minus", "color": "danger"})
-
         unlinked_students = db.execute_query("SELECT COUNT(*) as cnt FROM students s WHERE NOT EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id)")
         unlinked_count = unlinked_students[0]['cnt'] if unlinked_students else 0
         stat_rows.append({"label": "طلاب غير مربوطين", "value": unlinked_count, "icon": "fa-unlink", "color": "warning"})

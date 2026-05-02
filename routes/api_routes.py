@@ -193,18 +193,24 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
         # Check if student is already linked to another teacher with the same subject
         teacher_subject = teacher_check[0]['subject']
         same_subject_links = db.execute_query('''
-            SELECT st.id, st.teacher_id, t.name as teacher_name, st.status
+            SELECT st.teacher_id, t.name as teacher_name, st.status
             FROM student_teacher st
             JOIN teachers t ON st.teacher_id = t.id
             WHERE st.student_id = %s AND t.subject = %s
         ''', (link.student_id, teacher_subject))
         
+        # بناء قائمة المواد المسجلة للتنبيه
+        registered_subjects = []
         if same_subject_links:
             for link_row in same_subject_links:
                 if link_row['teacher_id'] != link.teacher_id:
                     link_status = link_row.get('status', 'مستمر')
                     if link_status != 'منسحب':
-                        return {"success": False, "message": "لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة إلا إذا تم تعطيل الحالة إلى منسحب من المدرس السابق"}
+                        registered_subjects.append(f"{teacher_subject} (المدرس: {link_row['teacher_name']})")
+        
+        if registered_subjects:
+            subjects_str = ' - '.join(registered_subjects)
+            return {"success": False, "message": f"الطالب مسجل بالمادة ({subjects_str}) ولا يمكن ربطه بأكثر من مدرس لنفس المادة"}
         
         db.execute_query(
             "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
@@ -247,7 +253,7 @@ async def api_link_student_teachers(data: dict):
             if teacher_check:
                 teacher_subject = teacher_check[0]['subject']
                 same_subject_links = db.execute_query('''
-                    SELECT st.id, st.teacher_id, st.status
+                    SELECT st.teacher_id, st.status, t.name as teacher_name
                     FROM student_teacher st
                     JOIN teachers t ON st.teacher_id = t.id
                     WHERE st.student_id = %s AND t.subject = %s
@@ -258,7 +264,7 @@ async def api_link_student_teachers(data: dict):
                         if link_row['teacher_id'] != tid:
                             link_status = link_row.get('status', 'مستمر')
                             if link_status != 'منسحب':
-                                return {"success": False, "message": "لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة إلا إذا تم تعطيل الحالة إلى منسحب من المدرس السابق"}
+                                return {"success": False, "message": f"الطالب مسجل بالمادة ({teacher_subject}) عند المدرس ({link_row['teacher_name']}) ولا يمكن ربطه بأكثر من مدرس لنفس المادة"}
             
             st_study_type = data.get("study_type", "حضوري")
             st_status = data.get("status", "مستمر")
@@ -353,7 +359,7 @@ async def api_add_installment(installment: AddInstallment):
             if teacher_check:
                 teacher_subject = teacher_check[0]['subject']
                 same_subject_links = db.execute_query('''
-                    SELECT st.id, st.teacher_id, st.status
+                    SELECT st.teacher_id, st.status, t.name as teacher_name
                     FROM student_teacher st
                     JOIN teachers t ON st.teacher_id = t.id
                     WHERE st.student_id = %s AND t.subject = %s
@@ -366,7 +372,7 @@ async def api_add_installment(installment: AddInstallment):
                             if link_status != 'منسحب':
                                 return {
                                     "success": False,
-                                    "message": "لا يمكن تسجيل قسط لهذا المدرس! الطالب مربوط بمدرس آخر لنفس المادة. قم بإلغاء الربط من المدرس السابق أولاً."
+                                    "message": f"لا يمكن تسجيل قسط لهذا المدرس! الطالب مسجل بالمادة ({teacher_subject}) عند المدرس ({link_row['teacher_name']})"
                                 }
             
             # تحديد نوع الدراسة: من الطلب أو النوع الأول المتاح للمدرس
@@ -609,6 +615,72 @@ async def api_get_statistics():
     """الحصول على إحصائيات النظام"""
     stats = finance_service.get_system_statistics()
     return {"success": True, "data": stats}
+
+
+# ===== تصدير شامل =====
+
+@router.get("/export-all")
+async def api_export_all():
+    """تصدير شامل لجميع بيانات النظام"""
+    db = Database()
+    export_data = {}
+    
+    try:
+        # الطلاب
+        students = db.execute_query('''
+            SELECT s.id, s.name, s.barcode, s.notes, s.created_at,
+                (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st.status = 'منسحب') = COUNT(*) THEN 'منسحب' ELSE 'مستمر' END 
+                 FROM student_teacher st WHERE st.student_id = s.id) as status
+            FROM students s ORDER BY s.name
+        ''')
+        export_data['students'] = [dict(r) for r in students] if students else []
+        
+        # المدرسين
+        teachers = db.execute_query("SELECT * FROM teachers ORDER BY name")
+        export_data['teachers'] = [dict(r) for r in teachers] if teachers else []
+        
+        # المواد
+        subjects = db.execute_query("SELECT * FROM subjects ORDER BY name")
+        export_data['subjects'] = [dict(r) for r in subjects] if subjects else []
+        
+        # الأقساط
+        installments = db.execute_query('''
+            SELECT i.id, i.student_id, s.name as student_name, i.teacher_id, t.name as teacher_name,
+                   t.subject, i.amount, i.payment_date, i.installment_type, i.notes
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            ORDER BY i.id DESC
+        ''')
+        export_data['installments'] = [dict(r) for r in installments] if installments else []
+        
+        # السحوبات
+        withdrawals = db.execute_query('''
+            SELECT w.id, w.teacher_id, t.name as teacher_name, w.amount, w.withdrawal_date, w.notes
+            FROM teacher_withdrawals w
+            JOIN teachers t ON w.teacher_id = t.id
+            ORDER BY w.id DESC
+        ''')
+        export_data['withdrawals'] = [dict(r) for r in withdrawals] if withdrawals else []
+        
+        # روابط الطلاب بالمدرسين
+        links = db.execute_query('''
+            SELECT st.student_id, s.name as student_name, st.teacher_id, t.name as teacher_name,
+                   t.subject, st.study_type, st.status
+            FROM student_teacher st
+            JOIN students s ON st.student_id = s.id
+            JOIN teachers t ON st.teacher_id = t.id
+            ORDER BY s.name
+        ''')
+        export_data['student_teacher_links'] = [dict(r) for r in links] if links else []
+        
+        # الإحصائيات
+        export_data['statistics'] = finance_service.get_system_statistics()
+        
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في التصدير: {str(e)}"}
+    
+    return {"success": True, "data": export_data}
 
 
 # ===== بحث شامل =====

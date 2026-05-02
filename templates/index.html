@@ -488,8 +488,8 @@
                 <p class="d-none d-sm-block">لوحة تحكم شاملة للطلاب والمدرسين والأقساط والمحاسبة</p>
             </div>
             <div class="ms-auto">
-                <button class="btn btn-sm" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.25);" onclick="exportDashboardCSV()" title="تصدير CSV">
-                    <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">تصدير</span>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.25);" onclick="exportAllData()" title="تصدير شامل CSV">
+                    <i class="fas fa-download me-1"></i><span class="d-none d-sm-inline">تصدير شامل</span>
                 </button>
             </div>
         </div>
@@ -513,9 +513,6 @@
                     <div class="stat-detail">
                         <i class="fas fa-check-circle text-light"></i>
                         <span>{{ stats.active_students }} مستمر</span>
-                        <span class="opacity-50 mx-1">|</span>
-                        <i class="fas fa-user-minus"></i>
-                        <span>{{ stats.withdrawn_students }} منسحب</span>
                         {% if stats.unlinked_students and stats.unlinked_students > 0 %}
                         <span class="opacity-50 mx-1">|</span>
                         <i class="fas fa-unlink"></i>
@@ -605,6 +602,70 @@
         </div>
         <div class="row g-2" id="smartAlertsContainer">
             <!-- سيتم ملؤها عبر AJAX -->
+        </div>
+    </div>
+
+    <!-- ===== بطاقات التقارير السريعة ===== -->
+    <div class="mb-4 dash-animate dash-delay-4">
+        <div class="dash-quick-title">
+            <i class="fas fa-bolt"></i>
+            تقارير سريعة
+        </div>
+        <div class="row g-2">
+            <!-- طلاب غير مسددين -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100 quick-stat-card" style="cursor:pointer; border-right: 4px solid #ef4444 !important;" onclick="quickReport('unpaid')">
+                    <div class="card-body py-2 px-3 text-center">
+                        <div class="text-danger fw-bold fs-4">{{ stats.unpaid_students or 0 }}</div>
+                        <small class="text-muted">طلاب غير مسددين</small>
+                    </div>
+                </div>
+            </div>
+            <!-- طلاب مستمرون -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid #10b981 !important; cursor:pointer;" onclick="quickReport('active')">
+                    <div class="card-body py-2 px-3 text-center">
+                        <div class="text-success fw-bold fs-4">{{ stats.active_students }}</div>
+                        <small class="text-muted">طلاب مستمرون</small>
+                    </div>
+                </div>
+            </div>
+            <!-- طلاب غير مربوطين -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid #f59e0b !important; cursor:pointer;" onclick="quickReport('unlinked')">
+                    <div class="card-body py-2 px-3 text-center">
+                        <div class="text-warning fw-bold fs-4">{{ stats.unlinked_students or 0 }}</div>
+                        <small class="text-muted">طلاب غير مربوطين</small>
+                    </div>
+                </div>
+            </div>
+            <!-- صافي الإيرادات -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid #8b5cf6 !important; cursor:pointer;" onclick="quickReport('revenue')">
+                    <div class="card-body py-2 px-3 text-center">
+                        <div class="fw-bold fs-6" style="color: var(--secondary);">{{ format_currency(stats.total_institute_deduction or 0) }}</div>
+                        <small class="text-muted">صافي الإيرادات</small>
+                    </div>
+                </div>
+            </div>
+            <!-- إجمالي المدفوعات -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid #6366f1 !important; cursor:pointer;" onclick="quickReport('payments')">
+                    <div class="card-body py-2 px-3 text-center">
+                        <div class="text-primary fw-bold fs-6">{{ format_currency(stats.total_amount_paid) }}</div>
+                        <small class="text-muted">إجمالي المدفوعات</small>
+                    </div>
+                </div>
+            </div>
+            <!-- إجمالي المسحوبات -->
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid #f59e0b !important; cursor:pointer;" onclick="quickReport('withdrawals')">
+                    <div class="card-body py-2 px-3 text-center">
+                        <div class="text-warning fw-bold fs-6">{{ format_currency(stats.total_withdrawals) }}</div>
+                        <small class="text-muted">إجمالي المسحوبات</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -736,34 +797,122 @@
 </div>
 
 <script>
-function exportDashboardCSV() {
-    const csvRows = [];
-    csvRows.push('البيان,القيمة');
-    csvRows.push('عدد الطلاب,{{ stats.total_students }}');
-    csvRows.push('الطلاب المستمرون,{{ stats.active_students }}');
-    csvRows.push('الطلاب المنسحبون,{{ stats.withdrawn_students }}');
-    {% if stats.unlinked_students and stats.unlinked_students > 0 %}
-    csvRows.push('طلاب غير مربوطين,{{ stats.unlinked_students }}');
-    {% endif %}
-    csvRows.push('عدد المدرسين,{{ stats.total_teachers }}');
-    csvRows.push('المواد الدراسية,{{ stats.total_subjects }}');
-    csvRows.push('عدد عمليات الدفع,{{ stats.total_installments }}');
-    csvRows.push('إجمالي المدفوعات,{{ format_currency(stats.total_amount_paid) }}');
-    csvRows.push('إجمالي المسحوبات,{{ format_currency(stats.total_withdrawals) }}');
-    csvRows.push('صافي الإيرادات,{{ format_currency(stats.total_institute_deduction or 0) }}');
+// تصدير شامل لجميع بيانات النظام
+async function exportAllData() {
+    showAlert('جاري تحميل البيانات للتصدير...', 'info');
+    try {
+        const result = await apiRequest('/api/export-all');
+        if (!result.success) {
+            showAlert('خطأ في التصدير: ' + (result.message || ''), 'error');
+            return;
+        }
+        const data = result.data;
+        const csvRows = [];
+        const BOM = '\uFEFF';
+        
+        // قسم: الإحصائيات
+        csvRows.push('══════ إحصائيات النظام ══════');
+        csvRows.push('البيان,القيمة');
+        csvRows.push('عدد الطلاب,' + (data.statistics?.total_students || 0));
+        csvRows.push('الطلاب المستمرون,' + (data.statistics?.active_students || 0));
+        csvRows.push('طلاب غير مربوطين,' + (data.statistics?.unlinked_students || 0));
+        csvRows.push('عدد المدرسين,' + (data.statistics?.total_teachers || 0));
+        csvRows.push('المواد الدراسية,' + (data.statistics?.total_subjects || 0));
+        csvRows.push('عدد عمليات الدفع,' + (data.statistics?.total_installments || 0));
+        csvRows.push('إجمالي المدفوعات,' + (data.statistics?.total_amount_paid || 0));
+        csvRows.push('إجمالي المسحوبات,' + (data.statistics?.total_withdrawals || 0));
+        csvRows.push('صافي الإيرادات,' + (data.statistics?.total_institute_deduction || 0));
+        csvRows.push('');
+        
+        // قسم: الطلاب
+        if (data.students && data.students.length > 0) {
+            csvRows.push('══════ قائمة الطلاب ══════');
+            csvRows.push('الرقم,الاسم,الباركود,الحالة,ملاحظات');
+            data.students.forEach(s => {
+                csvRows.push([s.id, s.name, s.barcode, s.status, s.notes || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
+            });
+            csvRows.push('');
+        }
+        
+        // قسم: المدرسين
+        if (data.teachers && data.teachers.length > 0) {
+            csvRows.push('══════ قائمة المدرسين ══════');
+            csvRows.push('الرقم,الاسم,المادة,القسط,أنواع التدريس');
+            data.teachers.forEach(t => {
+                csvRows.push([t.id, t.name, t.subject, t.total_fee, t.teaching_types || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
+            });
+            csvRows.push('');
+        }
+        
+        // قسم: الأقساط
+        if (data.installments && data.installments.length > 0) {
+            csvRows.push('══════ سجل الأقساط ══════');
+            csvRows.push('الرقم,الطالب,المدرس,المادة,المبلغ,التاريخ,النوع,ملاحظات');
+            data.installments.forEach(i => {
+                csvRows.push([i.id, i.student_name, i.teacher_name, i.subject, i.amount, i.payment_date, i.installment_type, i.notes || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
+            });
+            csvRows.push('');
+        }
+        
+        // قسم: السحوبات
+        if (data.withdrawals && data.withdrawals.length > 0) {
+            csvRows.push('══════ سجل السحوبات ══════');
+            csvRows.push('الرقم,المدرس,المبلغ,التاريخ,ملاحظات');
+            data.withdrawals.forEach(w => {
+                csvRows.push([w.id, w.teacher_name, w.amount, w.withdrawal_date, w.notes || ''].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
+            });
+            csvRows.push('');
+        }
+        
+        // قسم: روابط الطلاب بالمدرسين
+        if (data.student_teacher_links && data.student_teacher_links.length > 0) {
+            csvRows.push('══════ روابط الطلاب بالمدرسين ══════');
+            csvRows.push('الطالب,المدرس,المادة,نوع الدراسة,الحالة');
+            data.student_teacher_links.forEach(l => {
+                csvRows.push([l.student_name, l.teacher_name, l.subject, l.study_type, l.status].map(v => String(v).includes(',') ? '"' + v + '"' : v).join(','));
+            });
+        }
+        
+        const csvContent = BOM + csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'تصدير_شامل_النظام.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        showAlert('تم تصدير جميع البيانات بنجاح', 'success');
+    } catch (error) {
+        showAlert('خطأ في التصدير: ' + error.message, 'error');
+    }
+}
 
-    const BOM = '\uFEFF';
-    const csvContent = BOM + csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'إحصائيات_لوحة_التحكم.csv';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-    showAlert('تم تصدير البيانات بنجاح', 'success');
+// تقرير سريع - خيار عرض أو طباعة
+function quickReport(type) {
+    const urls = {
+        'unpaid': '/payments',
+        'active': '/students',
+        'unlinked': '/students',
+        'revenue': '/stats',
+        'payments': '/payments',
+        'withdrawals': '/withdrawals'
+    };
+    const printUrls = {
+        'unpaid': '/reports/subjects/all',
+        'active': '/reports/subjects/all',
+        'unlinked': '/reports/subjects/all',
+        'revenue': '/reports/subjects/all',
+        'payments': '/reports/subjects/all',
+        'withdrawals': '/reports/subjects/all'
+    };
+    
+    if (confirm('هل تريد طباعة التقرير؟\n\nموافق = طباعة التقرير\nإلغاء = عرض التفاصيل')) {
+        window.open(printUrls[type], '_blank');
+    } else {
+        window.location.href = urls[type];
+    }
 }
 
 // تحميل التنبيهات الذكية
