@@ -148,7 +148,8 @@ def init_db():
                 code VARCHAR(80) NOT NULL UNIQUE,
                 name VARCHAR(100) NOT NULL,
                 category VARCHAR(50) NOT NULL,
-                description TEXT DEFAULT ''
+                description TEXT DEFAULT '',
+                level VARCHAR(20) DEFAULT 'view'
             )
         ''')
         
@@ -178,43 +179,73 @@ def init_db():
         conn.commit()
         
         # ===== إدراج الصلاحيات الافتراضية =====
+        # المستوى: view=عرض فقط, preview=معاينة, edit=تعديل, admin=إدارة كاملة
         default_permissions = [
-            # الطلاب
-            ('view_students', 'عرض الطلاب', 'الطلاب', 'عرض قائمة الطلاب وبياناتهم'),
-            ('add_students', 'إضافة طلاب', 'الطلاب', 'إضافة طالب جديد'),
-            ('edit_students', 'تعديل الطلاب', 'الطلاب', 'تعديل بيانات الطالب'),
-            ('delete_students', 'حذف الطلاب', 'الطلاب', 'حذف طالب من النظام'),
-            # المدرسين
-            ('view_teachers', 'عرض المدرسين', 'المدرسين', 'عرض قائمة المدرسين وبياناتهم'),
-            ('add_teachers', 'إضافة مدرسين', 'المدرسين', 'إضافة مدرس جديد'),
-            ('edit_teachers', 'تعديل المدرسين', 'المدرسين', 'تعديل بيانات المدرس'),
-            ('delete_teachers', 'حذف المدرسين', 'المدرسين', 'حذف مدرس من النظام'),
-            # المواد
-            ('view_subjects', 'عرض المواد', 'المواد', 'عرض قائمة المواد'),
-            ('add_subjects', 'إضافة مواد', 'المواد', 'إضافة مادة جديدة'),
-            ('edit_subjects', 'تعديل المواد', 'المواد', 'تعديل اسم المادة'),
-            ('delete_subjects', 'حذف المواد', 'المواد', 'حذف مادة من النظام'),
-            # الأقساط
-            ('view_payments', 'عرض الأقساط', 'الأقساط', 'عرض سجل الأقساط والمدفوعات'),
-            ('add_payments', 'إضافة أقساط', 'الأقساط', 'تسجيل قسط جديد'),
-            ('delete_payments', 'حذف الأقساط', 'الأقساط', 'حذف قسط من السجل'),
-            # المحاسبة
-            ('view_accounting', 'عرض المحاسبة', 'المحاسبة', 'عرض صفحة المحاسبة والأرصدة'),
-            # السحوبات
-            ('view_withdrawals', 'عرض السحوبات', 'السحوبات', 'عرض سجل السحوبات'),
-            ('add_withdrawals', 'إضافة سحوبات', 'السحوبات', 'تسجيل سحب جديد'),
-            # الإحصائيات
-            ('view_stats', 'عرض الإحصائيات', 'الإحصائيات', 'عرض لوحة الإحصائيات'),
-            # الصلاحيات
-            ('manage_permissions', 'إدارة الصلاحيات', 'الصلاحيات', 'إدارة المستخدمين والأدوار والصلاحيات'),
-            # التصدير
-            ('export_data', 'تصدير البيانات', 'التصدير', 'تصدير نسخة احتياطية من البيانات'),
+            # ===== لوحة التحكم (الرئيسية) =====
+            ('view_dashboard', 'عرض لوحة التحكم', 'لوحة التحكم', 'عرض الصفحة الرئيسية والإحصائيات العامة', 'view'),
+            ('view_quick_stats', 'عرض الإحصائيات السريعة', 'لوحة التحكم', 'عرض الأرقام والإحصائيات المختصرة على الرئيسية', 'preview'),
+            ('export_backup', 'إنشاء نسخة احتياطية', 'لوحة التحكم', 'تصدير نسخة احتياطية كاملة من قاعدة البيانات', 'admin'),
+
+            # ===== الطلاب =====
+            ('view_students_list', 'عرض قائمة الطلاب', 'الطلاب', 'عرض أسماء الطلاب في القائمة فقط بدون تفاصيل', 'view'),
+            ('preview_students', 'معاينة بيانات الطالب', 'الطلاب', 'عرض ملف الطالب الكامل والتفاصيل والأرصدة', 'preview'),
+            ('add_students', 'إضافة طالب جديد', 'الطلاب', 'إنشاء سجل طالب جديد في النظام', 'edit'),
+            ('edit_students', 'تعديل بيانات الطالب', 'الطلاب', 'تعديل الاسم ونوع الدراسة والملاحظات', 'edit'),
+            ('delete_students', 'حذف طالب', 'الطلاب', 'حذف طالب نهائياً من النظام (لا يمكن حذف طالب مرتبط بمدرسين)', 'admin'),
+            ('link_students', 'ربط الطلاب بالمدرسين', 'الطلاب', 'ربط أو إلغاء ربط طالب بمدرس', 'edit'),
+            ('edit_student_status', 'تغيير حالة الطالب', 'الطلاب', 'تغيير حالة الطالب (مستمر/منسحب/غير مربوط)', 'edit'),
+
+            # ===== المدرسين =====
+            ('view_teachers_list', 'عرض قائمة المدرسين', 'المدرسين', 'عرض أسماء المدرسين في القائمة فقط', 'view'),
+            ('preview_teachers', 'معاينة بيانات المدرس', 'المدرسين', 'عرض ملف المدرس الكامل والتفاصيل المالية والطلاب', 'preview'),
+            ('add_teachers', 'إضافة مدرس جديد', 'المدرسين', 'إنشاء سجل مدرس جديد مع تحديد الأجور والنسب', 'edit'),
+            ('edit_teachers', 'تعديل بيانات المدرس', 'المدرسين', 'تعديل البيانات الشخصية والأجور ونسب المعهد', 'edit'),
+            ('delete_teachers', 'حذف مدرس', 'المدرسين', 'حذف مدرس نهائياً من النظام (لا يمكن حذف مدرس لديه طلاب)', 'admin'),
+            ('view_teacher_balance', 'عرض رصيد المدرس', 'المدرسين', 'عرض الرصيد المتاح والتفاصيل المالية للمدرس', 'preview'),
+
+            # ===== المواد الدراسية =====
+            ('view_subjects', 'عرض المواد', 'المواد', 'عرض قائمة المواد الدراسية', 'view'),
+            ('add_subjects', 'إضافة مادة', 'المواد', 'إضافة مادة دراسية جديدة', 'edit'),
+            ('edit_subjects', 'تعديل المادة', 'المواد', 'تعديل اسم المادة الدراسية', 'edit'),
+            ('delete_subjects', 'حذف مادة', 'المواد', 'حذف مادة دراسية من النظام', 'admin'),
+
+            # ===== الأقساط والمدفوعات =====
+            ('view_payments_list', 'عرض سجل الأقساط', 'الأقساط', 'عرض قائمة الأقساط المسجلة في النظام', 'view'),
+            ('add_payments', 'تسجيل قسط جديد', 'الأقساط', 'تسجيل دفعة أو قسط لطالب عند مدرس', 'edit'),
+            ('delete_payments', 'حذف قسط', 'الأقساط', 'حذف قسط من السجل نهائياً', 'admin'),
+            ('pay_installment', 'دفع قسط من ملف الطالب', 'الأقساط', 'زر دفع القسط من داخل ملف الطالب', 'edit'),
+            ('print_receipt', 'طباعة سند قبض', 'الأقساط', 'طباعة أو معاينة سند القبض بعد الدفع', 'preview'),
+
+            # ===== المحاسبة =====
+            ('view_accounting', 'عرض صفحة المحاسبة', 'المحاسبة', 'عرض لوحة المحاسبة وملخص الأرصدة', 'view'),
+            ('preview_accounting_details', 'معاينة تفاصيل المحاسبة', 'المحاسبة', 'عرض التفاصيل المالية الكاملة لكل مدرس', 'preview'),
+            ('manage_commission', 'إدارة نسبة المعهد', 'المحاسبة', 'تعديل نسبة أو مبلغ خصم المعهد من المدرسين', 'admin'),
+
+            # ===== السحوبات =====
+            ('view_withdrawals_list', 'عرض سجل السحوبات', 'السحوبات', 'عرض قائمة السحوبات المسجلة', 'view'),
+            ('add_withdrawals', 'تسجيل سحب جديد', 'السحوبات', 'تسجيل سحب مبلغ من رصيد المدرس', 'edit'),
+            ('delete_withdrawals', 'حذف سحب', 'السحوبات', 'حذف سجل سحب من النظام', 'admin'),
+
+            # ===== التقارير =====
+            ('view_reports', 'عرض التقارير', 'التقارير', 'عرض ومعاينة التقارير المختلفة', 'preview'),
+            ('print_reports', 'طباعة التقارير', 'التقارير', 'طباعة أو تصدير التقارير', 'edit'),
+            ('view_student_reports', 'تقارير الطلاب', 'التقارير', 'تقارير خاصة بالطلاب ومبالغهم المدفوعة والمتبقية', 'preview'),
+            ('view_teacher_reports', 'تقارير المدرسين', 'التقارير', 'تقارير خاصة بالمدرسين وأرصدتهم وسحوباتهم', 'preview'),
+
+            # ===== الإحصائيات =====
+            ('view_stats', 'عرض الإحصائيات', 'الإحصائيات', 'عرض لوحة الإحصائيات والرسوم البيانية', 'view'),
+
+            # ===== الصلاحيات وإدارة النظام =====
+            ('view_permissions', 'عرض الصلاحيات', 'الصلاحيات', 'عرض صفحة الصلاحيات والمستخدمين والأدوار', 'preview'),
+            ('manage_users', 'إدارة المستخدمين', 'الصلاحيات', 'إضافة وتعديل وحذف وتفعيل المستخدمين', 'admin'),
+            ('manage_roles', 'إدارة الأدوار', 'الصلاحيات', 'إنشاء أدوار جديدة وتعديل صلاحياتها', 'admin'),
+            ('system_settings', 'إعدادات النظام', 'الصلاحيات', 'تغيير إعدادات النظام وكلمة المرور العامة', 'admin'),
         ]
         
         for perm in default_permissions:
             try:
                 cursor.execute(
-                    'INSERT INTO permissions (code, name, category, description) VALUES (%s, %s, %s, %s) ON CONFLICT (code) DO NOTHING',
+                    'INSERT INTO permissions (code, name, category, description, level) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (code) DO NOTHING',
                     perm
                 )
             except Exception:
@@ -227,9 +258,10 @@ def init_db():
         now = dt.now().strftime('%Y-%m-%d %H:%M')
         
         default_roles = [
-            ('مدير عام', 'التحكم الكامل بجميع أقسام النظام', 1),
-            ('محاسب', 'إدارة العمليات المالية والأقساط والسحوبات', 0),
-            ('مشاهد', 'عرض البيانات فقط بدون إضافة أو تعديل أو حذف', 0),
+            ('مدير عام', 'التحكم الكامل بجميع أقسام النظام - جميع الصلاحيات', 1),
+            ('محاسب', 'إدارة العمليات المالية - أقساط، سحوبات، محاسبة، تقارير', 0),
+            ('مدخل بيانات', 'إضافة وتعديل البيانات الأساسية - طلاب ومدرسين', 0),
+            ('مشاهد', 'عرض البيانات فقط - بدون إضافة أو تعديل أو حذف', 0),
         ]
         
         for role_name, role_desc, is_default in default_roles:
@@ -257,12 +289,14 @@ def init_db():
         
         # ===== إعطاء صلاحيات المحاسب =====
         accountant_perms = [
-            'view_students', 'add_students', 'edit_students',
-            'view_teachers',
+            'view_dashboard', 'view_quick_stats',
+            'view_students_list', 'preview_students', 'add_students', 'edit_students', 'link_students', 'edit_student_status',
+            'view_teachers_list', 'preview_teachers', 'view_teacher_balance',
             'view_subjects',
-            'view_payments', 'add_payments',
-            'view_accounting',
-            'view_withdrawals', 'add_withdrawals',
+            'view_payments_list', 'add_payments', 'pay_installment', 'print_receipt',
+            'view_accounting', 'preview_accounting_details',
+            'view_withdrawals_list', 'add_withdrawals',
+            'view_reports', 'print_reports', 'view_student_reports', 'view_teacher_reports',
             'view_stats',
         ]
         try:
@@ -277,10 +311,38 @@ def init_db():
         except Exception:
             conn.rollback()
         
+        # ===== إعطاء صلاحيات مدخل البيانات =====
+        data_entry_perms = [
+            'view_dashboard', 'view_quick_stats',
+            'view_students_list', 'preview_students', 'add_students', 'edit_students', 'link_students', 'edit_student_status',
+            'view_teachers_list', 'preview_teachers', 'add_teachers', 'edit_teachers',
+            'view_subjects', 'add_subjects',
+            'view_payments_list', 'add_payments', 'pay_installment',
+            'view_reports',
+        ]
+        try:
+            for perm_code in data_entry_perms:
+                cursor.execute('''
+                    INSERT INTO role_permissions (role_id, permission_id)
+                    SELECT r.id, p.id FROM roles r, permissions p
+                    WHERE r.name = 'مدخل بيانات' AND p.code = %s
+                    ON CONFLICT (role_id, permission_id) DO NOTHING
+                ''', (perm_code,))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
         # ===== إعطاء صلاحيات المشاهد =====
         viewer_perms = [
-            'view_students', 'view_teachers', 'view_subjects',
-            'view_payments', 'view_accounting', 'view_withdrawals', 'view_stats',
+            'view_dashboard', 'view_quick_stats',
+            'view_students_list', 'preview_students',
+            'view_teachers_list', 'preview_teachers', 'view_teacher_balance',
+            'view_subjects',
+            'view_payments_list',
+            'view_accounting',
+            'view_withdrawals_list',
+            'view_reports', 'view_student_reports', 'view_teacher_reports',
+            'view_stats',
         ]
         try:
             for perm_code in viewer_perms:
@@ -310,6 +372,8 @@ def init_db():
         
         # ===== ALTER TABLE - إضافة أعمدة جديدة للجداول الموجودة =====
         alter_statements = [
+            # إضافة عمود level لجدول الصلاحيات
+            "ALTER TABLE permissions ADD COLUMN IF NOT EXISTS level VARCHAR(20) DEFAULT 'view'",
             # إصلاح CHECK constraint لجدول الطلاب - إضافة 'مدمج' و 'غير مربوط'
             "ALTER TABLE students DROP CONSTRAINT IF EXISTS students_study_type_check",
             "ALTER TABLE students ADD CONSTRAINT students_study_type_check CHECK(study_type IN ('حضوري', 'الكتروني', 'مدمج'))",

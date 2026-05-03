@@ -3,6 +3,23 @@
 {% block title %}إدارة الصلاحيات - نظام إدارة المعهد{% endblock %}
 
 {% block content %}
+<style>
+    .level-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; letter-spacing: 0.3px; }
+    .level-view { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .level-preview { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .level-edit { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .level-admin { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .category-card { border-radius: 12px; border: 1px solid #e5e7eb; transition: all 0.2s; }
+    .category-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .category-header { padding: 10px 16px; border-bottom: 1px solid #e5e7eb; border-radius: 12px 12px 0 0; }
+    .perm-item { padding: 8px 12px; border-radius: 8px; transition: background 0.15s; }
+    .perm-item:hover { background: #f8fafc; }
+    .role-level-summary { display: flex; gap: 4px; flex-wrap: wrap; }
+    .role-level-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .user-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
+    .tab-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; }
+</style>
+
 <div class="page-transition">
 <div class="container-fluid">
 
@@ -12,7 +29,83 @@
             <h4 class="fw-bold mb-1" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
                 <i class="fas fa-user-shield me-2" style="-webkit-text-fill-color: #6366f1;"></i>إدارة الصلاحيات
             </h4>
-            <p class="text-muted mb-0 small">إدارة المستخدمين والأدوار والصلاحيات</p>
+            <p class="text-muted mb-0 small">إدارة المستخدمين والأدوار والصلاحيات والتحكم في مستويات الوصول</p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="d-flex align-items-center gap-1 small text-muted">
+                <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض</span>
+                <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
+                <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
+                <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== بطاقات ملخص سريع ===== -->
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid #6366f1 !important;">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-users text-white" style="font-size:0.75rem;"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size:1.1rem;">{{ users|length }}</div>
+                            <div class="text-muted" style="font-size:0.7rem;">مستخدم</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid #10b981 !important;">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-user-tag text-white" style="font-size:0.75rem;"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size:1.1rem;">{{ roles|length }}</div>
+                            <div class="text-muted" style="font-size:0.7rem;">دور</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid #f59e0b !important;">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-key text-white" style="font-size:0.75rem;"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="font-size:1.1rem;">{{ permissions_by_category|length }}</div>
+                            <div class="text-muted" style="font-size:0.7rem;">فئة صلاحيات</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid #ef4444 !important;">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-shield-alt text-white" style="font-size:0.75rem;"></i>
+                        </div>
+                        <div>
+                            {% set total_perms = [] %}
+                            {% for cat, perms in permissions_by_category.items() %}
+                                {% set _ = total_perms.append(perms|length) %}
+                            {% endfor %}
+                            <div class="fw-bold" style="font-size:1.1rem;">{{ total_perms|sum }}</div>
+                            <div class="text-muted" style="font-size:0.7rem;">صلاحية إجمالية</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -22,14 +115,20 @@
             <button class="nav-link active d-flex align-items-center gap-2" id="users-tab" data-bs-toggle="tab" data-bs-target="#usersPanel" type="button" role="tab">
                 <i class="fas fa-users"></i>
                 <span>المستخدمون</span>
-                <span class="badge bg-primary rounded-pill">{{ users|length }}</span>
+                <span class="tab-badge bg-primary text-white">{{ users|length }}</span>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link d-flex align-items-center gap-2" id="roles-tab" data-bs-toggle="tab" data-bs-target="#rolesPanel" type="button" role="tab">
                 <i class="fas fa-user-tag"></i>
                 <span>الأدوار</span>
-                <span class="badge bg-success rounded-pill">{{ roles|length }}</span>
+                <span class="tab-badge bg-success text-white">{{ roles|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link d-flex align-items-center gap-2" id="matrix-tab" data-bs-toggle="tab" data-bs-target="#matrixPanel" type="button" role="tab">
+                <i class="fas fa-th"></i>
+                <span>مصفوفة الصلاحيات</span>
             </button>
         </li>
     </ul>
@@ -38,7 +137,11 @@
 
         <!-- ===== تبويب المستخدمين ===== -->
         <div class="tab-pane fade show active" id="usersPanel" role="tabpanel">
-            <div class="d-flex justify-content-end mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="alert alert-light border py-2 px-3 mb-0" style="font-size:0.8rem;">
+                    <i class="fas fa-info-circle text-primary me-1"></i>
+                    المستخدمون هم الأشخاص الذين يصلون للنظام. كل مستخدم يرتبط بدور يحدد صلاحياته.
+                </div>
                 <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">
                     <i class="fas fa-plus me-1"></i> إضافة مستخدم
                 </button>
@@ -51,9 +154,9 @@
                             <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
                                 <tr>
                                     <th class="text-center" style="width:50px">#</th>
-                                    <th>اسم المستخدم</th>
-                                    <th>الاسم الكامل</th>
+                                    <th>المستخدم</th>
                                     <th>الدور</th>
+                                    <th>مستوى الصلاحية</th>
                                     <th class="text-center">الحالة</th>
                                     <th>تاريخ الإنشاء</th>
                                     <th class="text-center" style="width:160px">الإجراءات</th>
@@ -65,35 +168,49 @@
                                     <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
-                                                <i class="fas fa-user text-white" style="font-size:0.8rem;"></i>
+                                            {% set initials = user.full_name[:1] %}
+                                            <div class="user-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                                {{ initials }}
                                             </div>
-                                            <span class="fw-bold">{{ user.username }}</span>
-                                            {% if user.username == 'admin' %}
-                                            <span class="badge bg-warning text-dark" style="font-size:0.65rem;">افتراضي</span>
-                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold" style="font-size:0.9rem;">{{ user.full_name }}</div>
+                                                <small class="text-muted">@{{ user.username }}</small>
+                                                {% if user.username == 'admin' %}
+                                                <span class="badge bg-warning text-dark ms-1" style="font-size:0.55rem;">افتراضي</span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td>{{ user.full_name }}</td>
                                     <td>
-                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;">
+                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-size:0.75rem;">
                                             {{ user.role_name }}
                                         </span>
                                     </td>
+                                    <td>
+                                        {% if user.role_name == 'مدير عام' %}
+                                        <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة كاملة</span>
+                                        {% elif user.role_name == 'محاسب' %}
+                                        <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل + إضافة</span>
+                                        {% elif user.role_name == 'مدخل بيانات' %}
+                                        <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>إدخال بيانات</span>
+                                        {% elif user.role_name == 'مشاهد' %}
+                                        <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض فقط</span>
+                                        {% else %}
+                                        <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>مخصص</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="text-center">
                                         {% if user.is_active == 1 %}
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:0.75rem;">
                                             <i class="fas fa-check-circle me-1"></i>نشط
                                         </span>
                                         {% else %}
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size:0.75rem;">
                                             <i class="fas fa-times-circle me-1"></i>معطل
                                         </span>
                                         {% endif %}
                                     </td>
-                                    <td>
-                                        <small class="text-muted">{{ user.created_at }}</small>
-                                    </td>
+                                    <td><small class="text-muted">{{ user.created_at }}</small></td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm">
                                             <button class="btn btn-outline-warning btn-sm" onclick="openEditUserModal({{ user.id }}, '{{ user.full_name }}', {{ user.role_id }}, {{ user.is_active }})" title="تعديل">
@@ -114,7 +231,7 @@
                                 {% endfor %}
                                 {% if not users %}
                                 <tr>
-                                    <td colspan="6" class="text-center py-4">
+                                    <td colspan="7" class="text-center py-4">
                                         <i class="fas fa-users fa-2x text-muted d-block mb-2"></i>
                                         <p class="text-muted mb-0">لا يوجد مستخدمون</p>
                                     </td>
@@ -129,7 +246,11 @@
 
         <!-- ===== تبويب الأدوار ===== -->
         <div class="tab-pane fade" id="rolesPanel" role="tabpanel">
-            <div class="d-flex justify-content-end mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="alert alert-light border py-2 px-3 mb-0" style="font-size:0.8rem;">
+                    <i class="fas fa-info-circle text-success me-1"></i>
+                    الأدوار تحدد مجموعة الصلاحيات الممنوحة للمستخدم. يمكنك إنشاء أدوار مخصصة حسب الحاجة.
+                </div>
                 <button class="btn btn-success btn-sm" onclick="openAddRoleModal()">
                     <i class="fas fa-plus me-1"></i> إضافة دور
                 </button>
@@ -137,43 +258,133 @@
 
             <div class="row g-3">
                 {% for role in roles %}
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100" style="border-right: 4px solid {% if role.is_default == 1 %}#f59e0b{% else %}#6366f1{% endif %} !important;">
-                        <div class="card-body">
-                            <div class="d-flex align-items-start justify-content-between mb-2">
-                                <div>
-                                    <h6 class="fw-bold mb-1">
-                                        <i class="fas fa-user-tag me-1" style="color:#6366f1;"></i>
-                                        {{ role.name }}
-                                        {% if role.is_default == 1 %}
-                                        <span class="badge bg-warning text-dark" style="font-size:0.6rem;">افتراضي</span>
-                                        {% endif %}
-                                    </h6>
-                                    <small class="text-muted">{{ role.description }}</small>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card border-0 shadow-sm h-100 category-card">
+                        <div class="category-header d-flex align-items-center justify-content-between"
+                             style="background: {% if role.is_default == 1 %}linear-gradient(135deg, #fef3c7, #fde68a){% else %}linear-gradient(135deg, #eff6ff, #dbeafe){% endif %};">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:36px;height:36px;border-radius:10px;background:{% if role.is_default == 1 %}#f59e0b{% else %}#6366f1{% endif %};display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-user-tag text-white" style="font-size:0.85rem;"></i>
                                 </div>
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary btn-sm" onclick="openPermissionsModal({{ role.id }}, '{{ role.name }}')" title="إدارة الصلاحيات">
-                                        <i class="fas fa-key"></i>
-                                    </button>
-                                    {% if role.is_default != 1 %}
-                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteRole({{ role.id }}, '{{ role.name }}')" title="حذف الدور">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                <div>
+                                    <h6 class="fw-bold mb-0">{{ role.name }}</h6>
+                                    {% if role.is_default == 1 %}
+                                    <span class="badge bg-warning text-dark" style="font-size:0.55rem;">دور افتراضي</span>
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="d-flex gap-2 mt-2">
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" onclick="openPermissionsModal({{ role.id }}, '{{ role.name }}')" title="إدارة الصلاحيات">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                {% if role.is_default != 1 %}
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteRole({{ role.id }}, '{{ role.name }}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body py-3 px-3">
+                            <p class="text-muted mb-2" style="font-size:0.8rem;">{{ role.description }}</p>
+                            <div class="d-flex gap-2 mb-2">
+                                <span class="badge bg-primary-subtle text-primary" style="font-size:0.7rem;">
                                     <i class="fas fa-users me-1"></i>{{ role.users_count }} مستخدم
                                 </span>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <span class="badge bg-success-subtle text-success" style="font-size:0.7rem;">
                                     <i class="fas fa-key me-1"></i>{{ role.permissions_count }} صلاحية
                                 </span>
+                            </div>
+                            <!-- شريط نسبة الصلاحيات -->
+                            {% set total_perms = [] %}
+                            {% for cat, perms in permissions_by_category.items() %}
+                                {% set _ = total_perms.append(perms|length) %}
+                            {% endfor %}
+                            {% set perm_pct = (role.permissions_count / total_perms|sum * 100)|round|int if total_perms|sum > 0 else 0 %}
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <div class="progress flex-grow-1" style="height:6px;">
+                                    <div class="progress-bar" role="progressbar" style="width:{{ perm_pct }}%;background:linear-gradient(90deg,#6366f1,#8b5cf6);" aria-valuenow="{{ perm_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <span class="fw-bold" style="font-size:0.75rem;color:#6366f1;">{{ perm_pct }}%</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
+            </div>
+        </div>
+
+        <!-- ===== تبويب مصفوفة الصلاحيات ===== -->
+        <div class="tab-pane fade" id="matrixPanel" role="tabpanel">
+            <div class="alert alert-light border py-2 px-3 mb-3" style="font-size:0.8rem;">
+                <i class="fas fa-info-circle text-primary me-1"></i>
+                مصفوفة الصلاحيات تعرض مقارنة بين الأدوار والصلاحيات المتاحة لكل دور. الأيقونات تمثل مستوى الصلاحية.
+            </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0 align-middle" style="font-size:0.78rem;">
+                            <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                                <tr>
+                                    <th style="min-width:180px;">الصلاحية</th>
+                                    {% for role in roles %}
+                                    <th class="text-center" style="min-width:100px;">{{ role.name }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category, perms in permissions_by_category.items() %}
+                                <tr style="background:#f8fafc;">
+                                    <td colspan="{{ roles|length + 1 }}" class="fw-bold py-2 px-3" style="font-size:0.82rem;color:#6366f1;">
+                                        {% if category == 'لوحة التحكم' %}<i class="fas fa-home me-1"></i>
+                                        {% elif category == 'الطلاب' %}<i class="fas fa-user-graduate me-1"></i>
+                                        {% elif category == 'المدرسين' %}<i class="fas fa-chalkboard-teacher me-1"></i>
+                                        {% elif category == 'المواد' %}<i class="fas fa-book-open me-1"></i>
+                                        {% elif category == 'الأقساط' %}<i class="fas fa-money-check-alt me-1"></i>
+                                        {% elif category == 'المحاسبة' %}<i class="fas fa-calculator me-1"></i>
+                                        {% elif category == 'السحوبات' %}<i class="fas fa-hand-holding-usd me-1"></i>
+                                        {% elif category == 'التقارير' %}<i class="fas fa-file-alt me-1"></i>
+                                        {% elif category == 'الإحصائيات' %}<i class="fas fa-chart-pie me-1"></i>
+                                        {% elif category == 'الصلاحيات' %}<i class="fas fa-user-shield me-1"></i>
+                                        {% endif %}
+                                        {{ category }}
+                                    </td>
+                                </tr>
+                                {% for perm in perms %}
+                                <tr>
+                                    <td class="px-3">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span>{{ perm.name }}</span>
+                                            {% if perm.level == 'view' %}
+                                            <span class="level-badge level-view"><i class="fas fa-eye"></i></span>
+                                            {% elif perm.level == 'preview' %}
+                                            <span class="level-badge level-preview"><i class="fas fa-search"></i></span>
+                                            {% elif perm.level == 'edit' %}
+                                            <span class="level-badge level-edit"><i class="fas fa-pen"></i></span>
+                                            {% elif perm.level == 'admin' %}
+                                            <span class="level-badge level-admin"><i class="fas fa-crown"></i></span>
+                                            {% endif %}
+                                        </div>
+                                        <small class="text-muted d-block" style="font-size:0.68rem;">{{ perm.description }}</small>
+                                    </td>
+                                    {% for role in roles %}
+                                    {% set perm_id_str = perm.id|string %}
+                                    {% if role_permissions_map.get(role.id) and perm_id_str in role_permissions_map[role.id] %}
+                                    <td class="text-center">
+                                        <i class="fas fa-check-circle text-success" style="font-size:1rem;"></i>
+                                    </td>
+                                    {% else %}
+                                    <td class="text-center">
+                                        <i class="fas fa-minus-circle text-muted" style="font-size:0.85rem;opacity:0.3;"></i>
+                                    </td>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -194,6 +405,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold"><i class="fas fa-at me-1 text-primary"></i>اسم المستخدم</label>
                         <input type="text" class="form-control" id="add_username" required minlength="3" maxlength="50" placeholder="مثال: ahmed, sara...">
+                        <small class="text-muted">يُستخدم لتسجيل الدخول ولا يمكن تغييره لاحقاً</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold"><i class="fas fa-user me-1 text-primary"></i>الاسم الكامل</label>
@@ -207,16 +419,14 @@
                         <label class="form-label fw-bold"><i class="fas fa-user-tag me-1 text-primary"></i>الدور</label>
                         <select class="form-select" id="add_role_id" required>
                             {% for role in roles %}
-                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description[:50] }}{% if role.description|length > 50 %}...{% endif %}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>إنشاء المستخدم
-                    </button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>إنشاء المستخدم</button>
                 </div>
             </form>
         </div>
@@ -227,7 +437,7 @@
 <div class="modal fade" id="editUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-gradient-warning text-white border-0">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
                 <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>تعديل المستخدم</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -246,16 +456,14 @@
                         <label class="form-label fw-bold"><i class="fas fa-user-tag me-1 text-warning"></i>الدور</label>
                         <select class="form-select" id="edit_role_id" required>
                             {% for role in roles %}
-                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description }}</option>
+                            <option value="{{ role.id }}">{{ role.name }} - {{ role.description[:50] }}{% if role.description|length > 50 %}...{% endif %}</option>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-save me-1"></i>تحديث المستخدم
-                    </button>
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>تحديث المستخدم</button>
                 </div>
             </form>
         </div>
@@ -278,14 +486,16 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold"><i class="fas fa-align-right me-1 text-success"></i>الوصف</label>
-                        <textarea class="form-control" id="add_role_desc" rows="2" placeholder="وصف مختصر للدور..."></textarea>
+                        <textarea class="form-control" id="add_role_desc" rows="2" placeholder="وصف مختصر للدور ومسؤولياته..."></textarea>
+                    </div>
+                    <div class="alert alert-light border py-2" style="font-size:0.78rem;">
+                        <i class="fas fa-info-circle text-success me-1"></i>
+                        بعد إنشاء الدور، يمكنك تعيين الصلاحيات من خلال زر <i class="fas fa-key"></i> في بطاقة الدور.
                     </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save me-1"></i>إنشاء الدور
-                    </button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save me-1"></i>إنشاء الدور</button>
                 </div>
             </form>
         </div>
@@ -304,7 +514,13 @@
                 <input type="hidden" id="perm_role_id">
                 <div class="modal-body p-3 p-md-4" style="max-height: 65vh; overflow-y: auto;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted small">اختر الصلاحيات المطلوبة لهذا الدور</span>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="text-muted small">مستويات الصلاحية:</span>
+                            <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض</span>
+                            <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
+                            <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
+                            <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
+                        </div>
                         <div class="btn-group btn-group-sm">
                             <button type="button" class="btn btn-outline-primary" onclick="toggleAllPermissions(true)">تحديد الكل</button>
                             <button type="button" class="btn btn-outline-secondary" onclick="toggleAllPermissions(false)">إلغاء الكل</button>
@@ -312,32 +528,43 @@
                     </div>
 
                     {% for category, perms in permissions_by_category.items() %}
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center gap-2 mb-2 pb-1" style="border-bottom: 2px solid #e5e7eb;">
-                            <span class="fw-bold" style="color:#6366f1; font-size:0.9rem;">
-                                {% if category == 'الطلاب' %}<i class="fas fa-user-graduate me-1"></i>
-                                {% elif category == 'المدرسين' %}<i class="fas fa-chalkboard-teacher me-1"></i>
-                                {% elif category == 'المواد' %}<i class="fas fa-book-open me-1"></i>
-                                {% elif category == 'الأقساط' %}<i class="fas fa-money-check-alt me-1"></i>
-                                {% elif category == 'المحاسبة' %}<i class="fas fa-calculator me-1"></i>
-                                {% elif category == 'السحوبات' %}<i class="fas fa-hand-holding-usd me-1"></i>
-                                {% elif category == 'الإحصائيات' %}<i class="fas fa-chart-pie me-1"></i>
-                                {% elif category == 'الصلاحيات' %}<i class="fas fa-user-shield me-1"></i>
-                                {% elif category == 'التصدير' %}<i class="fas fa-download me-1"></i>
+                    <div class="category-card mb-3">
+                        <div class="category-header d-flex align-items-center justify-content-between" style="background:#f8fafc;">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if category == 'لوحة التحكم' %}<i class="fas fa-home text-primary"></i>
+                                {% elif category == 'الطلاب' %}<i class="fas fa-user-graduate text-primary"></i>
+                                {% elif category == 'المدرسين' %}<i class="fas fa-chalkboard-teacher text-primary"></i>
+                                {% elif category == 'المواد' %}<i class="fas fa-book-open text-primary"></i>
+                                {% elif category == 'الأقساط' %}<i class="fas fa-money-check-alt text-primary"></i>
+                                {% elif category == 'المحاسبة' %}<i class="fas fa-calculator text-primary"></i>
+                                {% elif category == 'السحوبات' %}<i class="fas fa-hand-holding-usd text-primary"></i>
+                                {% elif category == 'التقارير' %}<i class="fas fa-file-alt text-primary"></i>
+                                {% elif category == 'الإحصائيات' %}<i class="fas fa-chart-pie text-primary"></i>
+                                {% elif category == 'الصلاحيات' %}<i class="fas fa-user-shield text-primary"></i>
                                 {% endif %}
-                                {{ category }}
-                            </span>
+                                <span class="fw-bold" style="font-size:0.85rem;">{{ category }}</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleCategoryPermissions('{{ category }}', true)" style="font-size:0.7rem;">تحديد الكل</button>
                         </div>
-                        <div class="row g-2">
+                        <div class="p-2">
                             {% for perm in perms %}
-                            <div class="col-12 col-sm-6">
-                                <div class="form-check">
+                            <div class="perm-item d-flex align-items-center justify-content-between" data-category="{{ category }}">
+                                <div class="d-flex align-items-center gap-2">
                                     <input class="form-check-input perm-checkbox" type="checkbox" value="{{ perm.id }}" id="perm_{{ perm.id }}" data-category="{{ category }}">
-                                    <label class="form-check-label small" for="perm_{{ perm.id }}" style="cursor:pointer;">
-                                        <span class="fw-bold">{{ perm.name }}</span>
+                                    <label class="form-check-label" for="perm_{{ perm.id }}" style="cursor:pointer;">
+                                        <span class="fw-bold" style="font-size:0.82rem;">{{ perm.name }}</span>
                                         <span class="d-block text-muted" style="font-size:0.7rem;">{{ perm.description }}</span>
                                     </label>
                                 </div>
+                                {% if perm.level == 'view' %}
+                                <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض</span>
+                                {% elif perm.level == 'preview' %}
+                                <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
+                                {% elif perm.level == 'edit' %}
+                                <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
+                                {% elif perm.level == 'admin' %}
+                                <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
+                                {% endif %}
                             </div>
                             {% endfor %}
                         </div>
@@ -346,9 +573,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>حفظ الصلاحيات
-                    </button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>حفظ الصلاحيات</button>
                 </div>
             </form>
         </div>
@@ -356,9 +581,7 @@
 </div>
 
 <script>
-// ===== بيانات الصلاحيات الحالية لكل دور =====
 const rolePermissionsMap = {{ role_permissions_map | tojson }};
-const rolesData = {{ roles | tojson }};
 
 // ===== المستخدمون =====
 function openAddUserModal() {
@@ -375,19 +598,10 @@ document.getElementById('addUserForm').addEventListener('submit', async function
         role_id: parseInt(document.getElementById('add_role_id').value)
     };
     try {
-        const result = await apiRequest('/permissions/api/users', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest('/permissions/api/users', { method: 'POST', body: JSON.stringify(data) });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 });
 
 function openEditUserModal(id, fullName, roleId, isActive) {
@@ -401,61 +615,33 @@ function openEditUserModal(id, fullName, roleId, isActive) {
 document.getElementById('editUserForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const id = document.getElementById('edit_user_id').value;
-    const data = {
-        full_name: document.getElementById('edit_fullname').value.trim()
-    };
+    const data = { full_name: document.getElementById('edit_fullname').value.trim() };
     const password = document.getElementById('edit_password').value;
     if (password) data.password = password;
     const roleId = document.getElementById('edit_role_id').value;
     if (roleId) data.role_id = parseInt(roleId);
-
     try {
-        const result = await apiRequest(`/permissions/api/users/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data)
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest(`/permissions/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 });
 
 async function toggleUserActive(id) {
     try {
-        const result = await apiRequest(`/permissions/api/users/${id}/toggle-active`, {
-            method: 'POST'
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest(`/permissions/api/users/${id}/toggle-active`, { method: 'POST' });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 }
 
 async function deleteUser(id, username) {
     if (!confirm(`هل أنت متأكد من حذف المستخدم "${username}"؟`)) return;
     try {
-        const result = await apiRequest(`/permissions/api/users/${id}`, {
-            method: 'DELETE'
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest(`/permissions/api/users/${id}`, { method: 'DELETE' });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 }
 
 // ===== الأدوار =====
@@ -466,86 +652,50 @@ function openAddRoleModal() {
 
 document.getElementById('addRoleForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const data = {
-        name: document.getElementById('add_role_name').value.trim(),
-        description: document.getElementById('add_role_desc').value.trim()
-    };
+    const data = { name: document.getElementById('add_role_name').value.trim(), description: document.getElementById('add_role_desc').value.trim() };
     try {
-        const result = await apiRequest('/permissions/api/roles', {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest('/permissions/api/roles', { method: 'POST', body: JSON.stringify(data) });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 });
 
 async function deleteRole(id, name) {
     if (!confirm(`هل أنت متأكد من حذف الدور "${name}"؟`)) return;
     try {
-        const result = await apiRequest(`/permissions/api/roles/${id}`, {
-            method: 'DELETE'
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest(`/permissions/api/roles/${id}`, { method: 'DELETE' });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 }
 
 // ===== صلاحيات الأدوار =====
 function openPermissionsModal(roleId, roleName) {
     document.getElementById('perm_role_id').value = roleId;
     document.getElementById('permRoleName').textContent = roleName;
-    
-    // تحديد الصلاحيات الحالية
     const currentPerms = rolePermissionsMap[roleId] || [];
-    document.querySelectorAll('.perm-checkbox').forEach(cb => {
-        cb.checked = currentPerms.includes(cb.value);
-    });
-    
+    document.querySelectorAll('.perm-checkbox').forEach(cb => { cb.checked = currentPerms.includes(cb.value); });
     new bootstrap.Modal(document.getElementById('permissionsModal')).show();
 }
 
 function toggleAllPermissions(checked) {
-    document.querySelectorAll('.perm-checkbox').forEach(cb => {
-        cb.checked = checked;
-    });
+    document.querySelectorAll('.perm-checkbox').forEach(cb => { cb.checked = checked; });
+}
+
+function toggleCategoryPermissions(category, checked) {
+    document.querySelectorAll(`.perm-checkbox[data-category="${category}"]`).forEach(cb => { cb.checked = checked; });
 }
 
 document.getElementById('permissionsForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const roleId = document.getElementById('perm_role_id').value;
     const permissionIds = [];
-    document.querySelectorAll('.perm-checkbox:checked').forEach(cb => {
-        permissionIds.push(parseInt(cb.value));
-    });
-    
+    document.querySelectorAll('.perm-checkbox:checked').forEach(cb => { permissionIds.push(parseInt(cb.value)); });
     try {
-        const result = await apiRequest(`/permissions/api/roles/${roleId}/permissions`, {
-            method: 'PUT',
-            body: JSON.stringify({ permission_ids: permissionIds })
-        });
-        if (result.success) {
-            showAlert(result.message, 'success');
-            bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide();
-            location.reload();
-        } else {
-            showAlert(result.message, 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ في الاتصال', 'error');
-    }
+        const result = await apiRequest(`/permissions/api/roles/${roleId}/permissions`, { method: 'PUT', body: JSON.stringify({ permission_ids: permissionIds }) });
+        if (result.success) { showAlert(result.message, 'success'); bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide(); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 });
 </script>
 {% endblock %}
