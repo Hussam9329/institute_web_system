@@ -10,9 +10,10 @@ from models import RoleCreate, RoleUpdate, UserCreate, UserUpdate, RolePermissio
 from config import BASE_DIR, format_date
 import hashlib
 from datetime import datetime as dt
+import os
 
 router = APIRouter(prefix="/permissions")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
 # ===== صفحة الصلاحيات الرئيسية =====
