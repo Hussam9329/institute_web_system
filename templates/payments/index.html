@@ -260,98 +260,123 @@
 
 <!-- ===== Modal إضافة قسط ===== -->
 <div class="modal fade" id="addPaymentModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-gradient-orange text-white border-0">
-                <h5 class="modal-title">
-                    <i class="fas fa-money-bill-wave me-2"></i>تسجيل قسط جديد
-                </h5>
+    <div class="modal-dialog modal-dialog-centered modal-lg pay-modal-dialog">
+        <div class="modal-content pay-modal-content">
+            <div class="modal-header pay-modal-header border-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="pay-modal-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0 text-white fw-bold">تسجيل قسط جديد</h5>
+                        <small class="text-white-50">أدخل بيانات القسط المطلوب</small>
+                    </div>
+                </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="addPaymentForm" onsubmit="submitPayment(event)">
-                <div class="modal-body p-3 p-md-4">
-                    <div class="row g-3">
-                        <!-- ===== خانة الطالب - بحث مخصص ===== -->
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-user-graduate me-1 text-orange"></i>الطالب
-                            </label>
-                            <div class="pay-search-box" id="studentSearchBox">
-                                <input type="text" class="form-control pay-search-input" id="pay_student_search"
-                                       placeholder="ابحث باسم الطالب..." autocomplete="off">
-                                <input type="hidden" id="pay_student_id" value="">
-                                <div class="pay-search-tag d-none" id="studentTag">
-                                    <span id="studentTagName"></span>
-                                    <button type="button" class="pay-search-tag-remove" id="studentTagRemove">
-                                        <i class="fas fa-times"></i>
-                                    </button>
+                <div class="modal-body pay-modal-body">
+                    <!-- ===== قسم اختيار الطالب والمدرس ===== -->
+                    <div class="pay-section">
+                        <div class="pay-section-title">
+                            <i class="fas fa-user-friends"></i>
+                            <span>اختيار الطالب والمدرس</span>
+                        </div>
+                        <div class="row g-3">
+                            <!-- خانة الطالب -->
+                            <div class="col-12 col-md-6">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-user-graduate"></i>الطالب
+                                </label>
+                                <div class="pay-search-box" id="studentSearchBox">
+                                    <input type="text" class="form-control pay-search-input" id="pay_student_search"
+                                           placeholder="ابحث باسم الطالب..." autocomplete="off">
+                                    <input type="hidden" id="pay_student_id" value="">
+                                    <div class="pay-search-tag d-none" id="studentTag">
+                                        <span id="studentTagName"></span>
+                                        <button type="button" class="pay-search-tag-remove" id="studentTagRemove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="pay-search-dropdown" id="studentDropdown"></div>
                                 </div>
-                                <div class="pay-search-dropdown" id="studentDropdown"></div>
+                            </div>
+                            <!-- خانة المدرس -->
+                            <div class="col-12 col-md-6">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-chalkboard-teacher"></i>المدرس
+                                </label>
+                                <div class="pay-search-box" id="teacherSearchBox">
+                                    <input type="text" class="form-control pay-search-input" id="pay_teacher_search"
+                                           placeholder="اختر الطالب أولاً..." autocomplete="off" disabled>
+                                    <input type="hidden" id="pay_teacher_id" value="">
+                                    <div class="pay-search-tag d-none" id="teacherTag">
+                                        <span id="teacherTagName"></span>
+                                        <button type="button" class="pay-search-tag-remove" id="teacherTagRemove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="pay-search-dropdown" id="teacherDropdown"></div>
+                                </div>
+                                <!-- رسالة الرصيد المتبقي -->
+                                <div id="teacherBalanceMsg" class="mt-2 d-none"></div>
                             </div>
                         </div>
-                        <!-- ===== خانة المدرس - بحث مخصص ===== -->
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-chalkboard-teacher me-1 text-orange"></i>المدرس
-                            </label>
-                            <div class="pay-search-box" id="teacherSearchBox">
-                                <input type="text" class="form-control pay-search-input" id="pay_teacher_search"
-                                       placeholder="اختر الطالب أولاً..." autocomplete="off" disabled>
-                                <input type="hidden" id="pay_teacher_id" value="">
-                                <div class="pay-search-tag d-none" id="teacherTag">
-                                    <span id="teacherTagName"></span>
-                                    <button type="button" class="pay-search-tag-remove" id="teacherTagRemove">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div class="pay-search-dropdown" id="teacherDropdown"></div>
+                    </div>
+
+                    <!-- ===== قسم تفاصيل الدفعة ===== -->
+                    <div class="pay-section">
+                        <div class="pay-section-title">
+                            <i class="fas fa-receipt"></i>
+                            <span>تفاصيل الدفعة</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6 col-md-4">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-coins"></i>المبلغ (بالألف د.ع)
+                                </label>
+                                <input type="number" class="form-control pay-field-input" id="pay_amount" min="1" required placeholder="150">
                             </div>
-                            <!-- رسالة الرصيد المتبقي -->
-                            <div id="teacherBalanceMsg" class="mt-2 d-none"></div>
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-coins me-1 text-orange"></i>المبلغ (بالألف د.ع)
-                            </label>
-                            <input type="number" class="form-control" id="pay_amount" min="1" required placeholder="150">
-                        </div>
-                        <div class="col-6 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-calendar me-1 text-orange"></i>التاريخ
-                            </label>
-                            <input type="date" class="form-control" id="pay_date" required>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-tag me-1 text-orange"></i>نوع القسط
-                            </label>
-                            <select class="form-select" id="pay_type">
-                                <option value="القسط الأول">القسط الأول</option>
-                                <option value="القسط الثاني">القسط الثاني</option>
-                                <option value="دفع كامل">دفع كامل</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-chalkboard me-1 text-orange"></i>نوع الدراسة
-                            </label>
-                            <select class="form-select" id="pay_study_type">
-                                <option value="حضوري">حضوري</option>
-                                <option value="الكتروني">إلكتروني</option>
-                                <option value="مدمج">مدمج</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-sticky-note me-1 text-orange"></i>ملاحظات
-                            </label>
-                            <input type="text" class="form-control" id="pay_notes" placeholder="اختياري...">
+                            <div class="col-6 col-md-4">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-calendar"></i>التاريخ
+                                </label>
+                                <input type="date" class="form-control pay-field-input" id="pay_date" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-tag"></i>نوع القسط
+                                </label>
+                                <select class="form-select pay-field-input" id="pay_type">
+                                    <option value="القسط الأول">القسط الأول</option>
+                                    <option value="القسط الثاني">القسط الثاني</option>
+                                    <option value="دفع كامل">دفع كامل</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-chalkboard"></i>نوع الدراسة
+                                </label>
+                                <select class="form-select pay-field-input" id="pay_study_type">
+                                    <option value="حضوري">حضوري</option>
+                                    <option value="الكتروني">إلكتروني</option>
+                                    <option value="مدمج">مدمج</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-8">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-sticky-note"></i>ملاحظات
+                                </label>
+                                <input type="text" class="form-control pay-field-input" id="pay_notes" placeholder="اختياري...">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-warning">
+                <div class="modal-footer pay-modal-footer border-0">
+                    <button type="button" class="btn pay-btn-cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>إلغاء
+                    </button>
+                    <button type="submit" class="btn pay-btn-submit">
                         <i class="fas fa-save me-1"></i>تسجيل القسط
                     </button>
                 </div>
@@ -701,9 +726,9 @@ function showTeacherBalance(teacherId) {
     var remaining = formatCurrency(data.remaining_balance);
 
     if (data.remaining_balance <= 0) {
-        msgDiv.innerHTML = '<div class="alert alert-success py-2 px-3 mb-0" style="font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-check-double me-1"></i> تمت التسوية بالكامل</div></div>';
+        msgDiv.innerHTML = '<div class="pay-balance-msg pay-balance-complete"><div class="pay-balance-row"><i class="fas fa-check-circle"></i><span>المدفوع: <strong>' + paid + '</strong></span></div><div class="pay-balance-row"><i class="fas fa-check-double"></i><span>تمت التسوية بالكامل</span></div></div>';
     } else {
-        msgDiv.innerHTML = '<div class="alert py-2 px-3 mb-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #fef2f2 100%); border: 1px solid #e5e7eb; font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-exclamation-triangle me-1"></i> <strong class="text-danger">المتبقي: ' + remaining + '</strong></div></div>';
+        msgDiv.innerHTML = '<div class="pay-balance-msg pay-balance-partial"><div class="pay-balance-row"><i class="fas fa-check-circle text-success"></i><span>المدفوع: <strong class="text-success">' + paid + '</strong></span></div><div class="pay-balance-row"><i class="fas fa-exclamation-circle text-danger"></i><span>المتبقي: <strong class="text-danger">' + remaining + '</strong></span></div></div>';
     }
     msgDiv.classList.remove('d-none');
 }
