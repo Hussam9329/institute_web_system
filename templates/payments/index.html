@@ -684,10 +684,12 @@ function initTeacherSearch() {
         renderTeacherDropdown(filtered);
     });
 
-    // عند التركيز - لا نظهر القائمة تلقائياً، المستخدم يجب أن يكتب للبحث
+    // عند التركيز على حقل البحث - عرض كل المدرسين المرتبطين بالطالب
     input.addEventListener('focus', function() {
         if (this.disabled) return;
-        // لا نظهر شيئاً عند التركيز - المستخدم يكتب ثم تظهر النتائج
+        if (this.value.trim() === '' && currentTeachersList.length > 0) {
+            renderTeacherDropdown(currentTeachersList);
+        }
     });
 
     // منع إغلاق المودال
