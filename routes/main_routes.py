@@ -668,12 +668,20 @@ async def teacher_edit_form(request: Request, teacher_id: int, error: str = ""):
 
     subjects = db.execute_query("SELECT name FROM subjects ORDER BY name")
 
+    # فحص وجود مدفوعات - يُمنع تغيير الأقساط والنسب بعد وجود أي دفعة
+    payments_check = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM installments WHERE teacher_id = %s",
+        (teacher_id,)
+    )
+    has_payments = payments_check and payments_check[0]['cnt'] > 0
+
     return templates.TemplateResponse("teachers/form.html", {
         "request": request,
         "teacher": dict(result[0]),
         "mode": "edit",
         "subjects": subjects,
-        "error": error
+        "error": error,
+        "has_payments": has_payments
     })
 
 
@@ -701,7 +709,7 @@ async def teacher_update(
     inst_ded_manual_electronic: int = Form(0),
     inst_ded_manual_blended: int = Form(0)
 ):
-    """تحديث بيانات مدرس"""
+    """تحديث بيانات مدرس - مع منع تغيير الأقساط والنسب بعد وجود مدفوعات"""
     check_permission(request, 'edit_teachers')
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=no_teaching_type", status_code=303)
@@ -714,6 +722,44 @@ async def teacher_update(
             db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date()))
         except:
             pass
+
+    # فحص وجود مدفوعات - يُمنع تغيير الأقساط والنسب نهائياً بعد أي دفعة
+    payments_check = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM installments WHERE teacher_id = %s",
+        (teacher_id,)
+    )
+    has_payments = payments_check and payments_check[0]['cnt'] > 0
+
+    if has_payments:
+        # جلب البيانات المالية الحالية والحفاظ عليها
+        current = db.execute_query("SELECT * FROM teachers WHERE id = %s", (teacher_id,))
+        if current:
+            c = current[0]
+            total_fee = c['total_fee']
+            institute_deduction_type = c['institute_deduction_type']
+            institute_deduction_value = c['institute_deduction_value']
+            teaching_types = c['teaching_types']
+            fee_in_person = c['fee_in_person']
+            fee_electronic = c['fee_electronic']
+            fee_blended = c['fee_blended']
+            institute_pct_in_person = c['institute_pct_in_person']
+            institute_pct_electronic = c['institute_pct_electronic']
+            institute_pct_blended = c['institute_pct_blended']
+            inst_ded_type_in_person = c['inst_ded_type_in_person']
+            inst_ded_type_electronic = c['inst_ded_type_electronic']
+            inst_ded_type_blended = c['inst_ded_type_blended']
+            inst_ded_manual_in_person = c['inst_ded_manual_in_person']
+            inst_ded_manual_electronic = c['inst_ded_manual_electronic']
+            inst_ded_manual_blended = c['inst_ded_manual_blended']
+
+        # تحديث الاسم والمادة والملاحظات فقط (بدون الحقول المالية)
+        update_query = '''
+            UPDATE teachers
+            SET name=%s, subject=%s, notes=%s
+            WHERE id = %s
+        '''
+        db.execute_query(update_query, (name, subject, notes, teacher_id))
+        return RedirectResponse(url="/teachers?msg=updated_locked", status_code=303)
 
     update_query = '''
         UPDATE teachers

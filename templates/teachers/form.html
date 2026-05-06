@@ -38,6 +38,13 @@
                     </div>
                     {% endif %}
 
+                    {% if has_payments %}
+                    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-lock me-2"></i>
+                        <div><strong>لا يمكن تغيير الأقساط وخصم المعهد!</strong> يوجد طلاب دفعوا أقساطاً لهذا المدرس، وتغيير الأقساط سيؤدي لحدوث سالب في الحسابات. يمكنك تعديل الاسم والمادة والملاحظات فقط.</div>
+                    </div>
+                    {% endif %}
+
                     {% if mode == 'add' %}
                     <form method="POST" action="/teachers/add" id="teacherForm">
                     {% else %}
@@ -90,9 +97,10 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-chalkboard me-1 text-success"></i>أنواع التدريس <span class="text-danger">*</span>
+                                {% if has_payments %}<span class="badge bg-danger ms-2"><i class="fas fa-lock me-1"></i>مقفل - يوجد مدفوعات</span>{% endif %}
                             </label>
                             <div class="form-text mb-2">
-                                <i class="fas fa-info-circle me-1"></i>اختر أنواع التدريس التي يمكن للمدرس تدريسها
+                                <i class="fas fa-info-circle me-1"></i>{% if has_payments %}لا يمكن تغيير أنواع التدريس أو الأقساط بعد وجود مدفوعات{% else %}اختر أنواع التدريس التي يمكن للمدرس تدريسها{% endif %}
                             </div>
                             
                             <!-- حضوري -->
@@ -100,6 +108,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="type_in_person" name="teaching_type_in_person" value="1"
                                            onchange="toggleTypeFields('in_person', this.checked)"
+                                           {% if has_payments %}disabled{% endif %}
                                            {% if teacher and ('حضوري' in (teacher.teaching_types or '')) %}checked{% endif %}>
                                     <label class="form-check-label fw-semibold" for="type_in_person">
                                         <i class="fas fa-school me-1 text-primary"></i>حضوري
@@ -110,11 +119,12 @@
                                         <div class="col-6">
                                             <label class="form-label small">القسط (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="fee_in_person" min="0" placeholder="850"
-                                                   value="{% if teacher and teacher.fee_in_person %}{{ (teacher.fee_in_person // 1000) }}{% endif %}">
+                                                   value="{% if teacher and teacher.fee_in_person %}{{ (teacher.fee_in_person // 1000) }}{% endif %}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">نوع خصم المعهد:</label>
-                                            <select class="form-select form-select-sm" name="inst_ded_type_in_person" onchange="toggleDedField('in_person', this.value)">
+                                            <select class="form-select form-select-sm" name="inst_ded_type_in_person" onchange="toggleDedField('in_person', this.value)" {% if has_payments %}disabled{% endif %}>
                                                 <option value="percentage" {% if teacher and teacher.inst_ded_type_in_person == 'percentage' %}selected{% elif not teacher %}selected{% endif %}>نسبة مئوية %</option>
                                                 <option value="manual" {% if teacher and teacher.inst_ded_type_in_person == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
                                             </select>
@@ -124,12 +134,14 @@
                                         <div class="col-6" id="ded_pct_in_person">
                                             <label class="form-label small">النسبة %:</label>
                                             <input type="number" class="form-control form-control-sm" name="institute_pct_in_person" min="0" max="100" placeholder="15"
-                                                   value="{{ teacher.institute_pct_in_person if teacher else 0 }}">
+                                                   value="{{ teacher.institute_pct_in_person if teacher else 0 }}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6 d-none" id="ded_manual_in_person">
                                             <label class="form-label small">المبلغ (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="inst_ded_manual_in_person" min="0" placeholder="50"
-                                                   value="{% if teacher and teacher.inst_ded_manual_in_person %}{{ (teacher.inst_ded_manual_in_person // 1000) }}{% endif %}">
+                                                   value="{% if teacher and teacher.inst_ded_manual_in_person %}{{ (teacher.inst_ded_manual_in_person // 1000) }}{% endif %}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                             <div class="form-text" style="font-size:0.7rem">يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً</div>
                                         </div>
                                     </div>
@@ -141,6 +153,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="type_electronic" name="teaching_type_electronic" value="1"
                                            onchange="toggleTypeFields('electronic', this.checked)"
+                                           {% if has_payments %}disabled{% endif %}
                                            {% if teacher and ('الكتروني' in (teacher.teaching_types or '')) %}checked{% endif %}>
                                     <label class="form-check-label fw-semibold" for="type_electronic">
                                         <i class="fas fa-laptop me-1 text-info"></i>الكتروني
@@ -151,11 +164,12 @@
                                         <div class="col-6">
                                             <label class="form-label small">القسط (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="fee_electronic" min="0" placeholder="500"
-                                                   value="{% if teacher and teacher.fee_electronic %}{{ (teacher.fee_electronic // 1000) }}{% endif %}">
+                                                   value="{% if teacher and teacher.fee_electronic %}{{ (teacher.fee_electronic // 1000) }}{% endif %}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">نوع خصم المعهد:</label>
-                                            <select class="form-select form-select-sm" name="inst_ded_type_electronic" onchange="toggleDedField('electronic', this.value)">
+                                            <select class="form-select form-select-sm" name="inst_ded_type_electronic" onchange="toggleDedField('electronic', this.value)" {% if has_payments %}disabled{% endif %}>
                                                 <option value="percentage" {% if teacher and teacher.inst_ded_type_electronic == 'percentage' %}selected{% elif not teacher %}selected{% endif %}>نسبة مئوية %</option>
                                                 <option value="manual" {% if teacher and teacher.inst_ded_type_electronic == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
                                             </select>
@@ -165,12 +179,14 @@
                                         <div class="col-6" id="ded_pct_electronic">
                                             <label class="form-label small">النسبة %:</label>
                                             <input type="number" class="form-control form-control-sm" name="institute_pct_electronic" min="0" max="100" placeholder="10"
-                                                   value="{{ teacher.institute_pct_electronic if teacher else 0 }}">
+                                                   value="{{ teacher.institute_pct_electronic if teacher else 0 }}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6 d-none" id="ded_manual_electronic">
                                             <label class="form-label small">المبلغ (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="inst_ded_manual_electronic" min="0" placeholder="30"
-                                                   value="{% if teacher and teacher.inst_ded_manual_electronic %}{{ (teacher.inst_ded_manual_electronic // 1000) }}{% endif %}">
+                                                   value="{% if teacher and teacher.inst_ded_manual_electronic %}{{ (teacher.inst_ded_manual_electronic // 1000) }}{% endif %}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                             <div class="form-text" style="font-size:0.7rem">يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً</div>
                                         </div>
                                     </div>
@@ -182,6 +198,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="type_blended" name="teaching_type_blended" value="1"
                                            onchange="toggleTypeFields('blended', this.checked)"
+                                           {% if has_payments %}disabled{% endif %}
                                            {% if teacher and ('مدمج' in (teacher.teaching_types or '')) %}checked{% endif %}>
                                     <label class="form-check-label fw-semibold" for="type_blended">
                                         <i class="fas fa-blender-phone me-1 text-warning"></i>مدمج
@@ -192,11 +209,12 @@
                                         <div class="col-6">
                                             <label class="form-label small">القسط (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="fee_blended" min="0" placeholder="700"
-                                                   value="{% if teacher and teacher.fee_blended %}{{ (teacher.fee_blended // 1000) }}{% endif %}">
+                                                   value="{% if teacher and teacher.fee_blended %}{{ (teacher.fee_blended // 1000) }}{% endif %}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">نوع خصم المعهد:</label>
-                                            <select class="form-select form-select-sm" name="inst_ded_type_blended" onchange="toggleDedField('blended', this.value)">
+                                            <select class="form-select form-select-sm" name="inst_ded_type_blended" onchange="toggleDedField('blended', this.value)" {% if has_payments %}disabled{% endif %}>
                                                 <option value="percentage" {% if teacher and teacher.inst_ded_type_blended == 'percentage' %}selected{% elif not teacher %}selected{% endif %}>نسبة مئوية %</option>
                                                 <option value="manual" {% if teacher and teacher.inst_ded_type_blended == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
                                             </select>
@@ -206,12 +224,14 @@
                                         <div class="col-6" id="ded_pct_blended">
                                             <label class="form-label small">النسبة %:</label>
                                             <input type="number" class="form-control form-control-sm" name="institute_pct_blended" min="0" max="100" placeholder="12"
-                                                   value="{{ teacher.institute_pct_blended if teacher else 0 }}">
+                                                   value="{{ teacher.institute_pct_blended if teacher else 0 }}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6 d-none" id="ded_manual_blended">
                                             <label class="form-label small">المبلغ (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="inst_ded_manual_blended" min="0" placeholder="40"
-                                                   value="{% if teacher and teacher.inst_ded_manual_blended %}{{ (teacher.inst_ded_manual_blended // 1000) }}{% endif %}">
+                                                   value="{% if teacher and teacher.inst_ded_manual_blended %}{{ (teacher.inst_ded_manual_blended // 1000) }}{% endif %}"
+                                                   {% if has_payments %}readonly{% endif %}>
                                             <div class="form-text" style="font-size:0.7rem">يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً</div>
                                         </div>
                                     </div>
@@ -219,7 +239,7 @@
                             </div>
                             
                             <div class="form-text mt-2">
-                                <i class="fas fa-info-circle me-1"></i>القيمة المدخلة للأقسط بالألف (مثلاً 850 = 850,000 د.ع). النسبة المئوية من القسط تُقسم بالتساوي على القسطين الأول والثاني.
+                                <i class="fas fa-info-circle me-1"></i>{% if has_payments %}<strong class="text-danger">الأقساط وخصم المعهد مقفلة بسبب وجود مدفوعات مسجلة.</strong> لتغييرها يجب حذف جميع الأقساط أولاً.{% else %}القيمة المدخلة للأقسط بالألف (مثلاً 850 = 850,000 د.ع). النسبة المئوية من القسط تُقسم بالتساوي على القسطين الأول والثاني.{% endif %}
                             </div>
                         </div>
 
@@ -310,6 +330,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    const hasPayments = {{ 'true' if has_payments else 'false' }};
+
     document.getElementById('teacherForm').addEventListener('submit', function(e) {
         const hidden = document.getElementById('subject_hidden');
         if (!hidden.value || hidden.value.trim() === '') {
@@ -317,7 +339,18 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('يرجى اختيار أو إدخال اسم المادة', 'warning');
             return;
         }
-        
+
+        // إذا كان هناك مدفوعات - لا نحتاج لإرسال الحقول المالية
+        // الخلفية ستحافظ على القيم الحالية تلقائياً
+        if (hasPayments) {
+            // فقط نضمن أن teaching_types يُرسل بشكل صحيح
+            // الحقول المعطلة (disabled) لا تُرسل مع النموذج، لذا نعيد تفعيلها قبل الإرسال
+            document.querySelectorAll('#teacherForm input[disabled], #teacherForm select[disabled]').forEach(el => {
+                el.removeAttribute('disabled');
+            });
+            return;
+        }
+
         // التحقق من اختيار نوع تدريس واحد على الأقل
         const types = [];
         if (document.getElementById('type_in_person').checked) types.push('حضوري');
@@ -328,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('يجب اختيار نوع تدريس واحد على الأقل (حضوري / الكتروني / مدمج)', 'warning');
             return;
         }
-        
+
         // ضرب الأقساط بـ 1000
         ['fee_in_person', 'fee_electronic', 'fee_blended', 'inst_ded_manual_in_person', 'inst_ded_manual_electronic', 'inst_ded_manual_blended'].forEach(name => {
             const input = document.querySelector(`input[name="${name}"]`);
@@ -336,15 +369,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.value = parseInt(input.value) * 1000;
             }
         });
-        
-        
+
+
         // إضافة حقل مخفي لأنواع التدريس
         let typesInput = document.createElement('input');
         typesInput.type = 'hidden';
         typesInput.name = 'teaching_types';
         typesInput.value = types.join(',');
         this.appendChild(typesInput);
-        
+
         // حساب الأجر الكلي كأعلى قسط
         const fees = [];
         if (document.getElementById('type_in_person').checked) {
@@ -359,12 +392,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const v = document.querySelector('input[name="fee_blended"]');
             if (v && v.value) fees.push(parseInt(v.value));
         }
-        
+
         const feeInput = document.getElementById('total_fee');
         if (fees.length > 0) {
             feeInput.value = Math.max(...fees);
         }
-        
+
         // حساب نسبة المعهد - أخير قيمة من الحقول المفعلة
         const pcts = [];
         const types_map = {in_person: 'حضوري', electronic: 'الكتروني', blended: 'مدمج'};
@@ -377,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-        
+
         // تحديد نوع الخصم الأساسي: إذا كانت كل الأنواع يدوية → manual، وإلا → percentage
         const manualTypes = [];
         const types_map2 = {in_person: 'حضوري', electronic: 'الكتروني', blended: 'مدمج'};
@@ -388,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (v && parseInt(v.value) > 0) manualTypes.push(parseInt(v.value));
             }
         }
-        
+
         const dedTypeInput = document.getElementById('institute_deduction_type');
         const dedValueInput = document.getElementById('institute_deduction_value');
         if (pcts.length > 0) {

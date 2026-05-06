@@ -53,6 +53,8 @@ function checkUrlMessages() {
         showAlert('تم التحديث بنجاح', 'success');
     } else if (msg === 'deleted') {
         showAlert('تم الحذف بنجاح', 'success');
+    } else if (msg === 'updated_locked') {
+        showAlert('تم تحديث الاسم والمادة فقط. لا يمكن تغيير الأقساط والنسب لوجود مدفوعات مسجلة.', 'warning');
     } else if (error === 'not_found') {
         showAlert('العنصر المطلوب غير موجود', 'error');
     } else if (error === 'exists') {
