@@ -4,15 +4,13 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request as StarletteRequest
 
 # ===== توافقية Flask: جعل request.args يعمل في FastAPI =====
-# في Starlette/FastAPI query parameters تُ accessed عبر request.query_params
-# بينما في Flask تُ accessed عبر request.args
-# نضيف خاصية args كـ alias لـ query_params
 if not hasattr(StarletteRequest, 'args'):
     @property
     def _request_args(self):
@@ -26,6 +24,7 @@ from config import (
     BASE_DIR
 )
 from database import init_db
+from auth import auth_middleware, login_user, create_session_token, SESSION_COOKIE
 
 # استيراد المسارات
 from routes.main_routes import router as main_router
@@ -74,6 +73,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# ===== وسيط المصادقة =====
+app.middleware("http")(auth_middleware)
+
 # ===== تسجيل المسارات =====
 app.include_router(main_router)
 app.include_router(api_router)
@@ -88,6 +90,59 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 static_dir = os.path.join(BASE_DIR, "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# ===== مسارات تسجيل الدخول والخروج =====
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, error: str = ""):
+    """صفحة تسجيل الدخول"""
+    # إذا كان المستخدم مسجل الدخول بالفعل، وجّهه للرئيسية
+    from auth import get_current_user
+    user = get_current_user(request)
+    if user:
+        return RedirectResponse(url='/', status_code=303)
+
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "error": error,
+        "app_title": APP_TITLE,
+    })
+
+
+@app.post("/api/login")
+async def api_login(request: Request, username: str = Form(...), password: str = Form("")):
+    """تسجيل الدخول - API"""
+    user = login_user(username, password)
+    if not user:
+        # تحقق هل كان الطلب من نموذج HTML
+        content_type = request.headers.get('content-type', '')
+        if 'application/json' in content_type:
+            return JSONResponse(
+                status_code=401,
+                content={"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة"}
+            )
+        return RedirectResponse(url='/login?error=invalid', status_code=303)
+
+    # إنشاء جلسة
+    token = create_session_token(user['id'])
+    response = RedirectResponse(url='/', status_code=303)
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        max_age=86400 * 7,  # 7 أيام
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
+@app.get("/api/logout")
+async def api_logout(request: Request):
+    """تسجيل الخروج"""
+    response = RedirectResponse(url='/login', status_code=303)
+    response.delete_cookie(SESSION_COOKIE)
+    return response
+
 
 # ===== الصفحة الرئيسية للـ API =====
 @app.get("/health")

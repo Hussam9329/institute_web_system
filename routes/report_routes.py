@@ -12,6 +12,7 @@ import os
 from config import APP_TITLE, BASE_DIR, format_currency, format_date, format_report_datetime, format_report_date, format_report_time
 from services.finance_service import finance_service
 from database import Database
+from auth import check_permission
 
 router = APIRouter(prefix="/reports")
 
@@ -26,6 +27,7 @@ templates.env.globals['app_title'] = APP_TITLE
 @router.get("/student/{student_id}")
 async def student_report(request: Request, student_id: int):
     """تقرير الطالب المالي الشامل - HTML مع زر طباعة"""
+    check_permission(request, 'view_student_reports')
     db = Database()
 
     student_result = db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))
@@ -72,6 +74,7 @@ async def student_report(request: Request, student_id: int):
 @router.get("/teacher/{teacher_id}")
 async def teacher_report(request: Request, teacher_id: int):
     """تقرير المدرس المالي الشامل - HTML مع زر طباعة"""
+    check_permission(request, 'view_teacher_reports')
     db = Database()
 
     teacher_result = db.execute_query("SELECT * FROM teachers WHERE id = %s", (teacher_id,))
@@ -96,6 +99,7 @@ async def teacher_report(request: Request, teacher_id: int):
 @router.get("/receipt/{installment_id}")
 async def receipt_report(request: Request, installment_id: int):
     """وصل دفع - HTML مع زر طباعة"""
+    check_permission(request, 'print_receipt')
     db = Database()
 
     installment_query = '''
@@ -155,6 +159,7 @@ async def receipt_report(request: Request, installment_id: int):
 @router.get("/subject/{subject_name}")
 async def subject_report(request: Request, subject_name: str):
     """تقرير مادة - HTML مع زر طباعة"""
+    check_permission(request, 'view_reports')
     db = Database()
 
     teachers = db.execute_query(
@@ -193,6 +198,7 @@ async def subject_report(request: Request, subject_name: str):
 @router.get("/subjects/all")
 async def all_subjects_report(request: Request):
     """تقرير شامل لجميع المواد - HTML مع زر طباعة"""
+    check_permission(request, 'view_reports')
     db = Database()
 
     subjects = db.execute_query("SELECT name FROM subjects ORDER BY name")

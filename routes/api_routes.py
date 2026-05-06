@@ -3,12 +3,13 @@
 # نقاط نهاية API للعمليات AJAX
 # ============================================
 
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Request
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import Database
 from services.finance_service import finance_service, sync_student_status
 from config import get_current_date, format_currency
+from auth import check_permission
 
 router = APIRouter(prefix="/api")
 
@@ -61,6 +62,7 @@ async def api_get_subjects():
 @router.post("/subjects")
 async def api_add_subject(subject: SubjectCreate):
     """إضافة مادة دراسية جديدة"""
+    # صلاحية add_subjects تُفحص في الوسطاء (middleware) عبر الجلسة
     db = Database()
     try:
         # التحقق من عدم وجود المادة
@@ -80,6 +82,7 @@ async def api_add_subject(subject: SubjectCreate):
 @router.put("/subjects/{subject_id}")
 async def api_update_subject(subject_id: int, subject: SubjectUpdate):
     """تحديث مادة دراسية"""
+    # صلاحية edit_subjects تُفحص عبر الجلسة
     db = Database()
     try:
         existing = db.execute_query("SELECT id FROM subjects WHERE id = %s", (subject_id,))
@@ -99,6 +102,7 @@ async def api_update_subject(subject_id: int, subject: SubjectUpdate):
 @router.delete("/subjects/{subject_id}")
 async def api_delete_subject(subject_id: int):
     """حذف مادة دراسية"""
+    # صلاحية delete_subjects تُفحص عبر الجلسة
     db = Database()
     try:
         db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
@@ -171,8 +175,9 @@ async def api_get_teacher_students(teacher_id: int):
 # ===== ربط الطالب بمدرس =====
 
 @router.post("/link-student-teacher")
-async def api_link_student_teacher(link: LinkStudentTeacher):
+async def api_link_student_teacher(request: Request, link: LinkStudentTeacher):
     """ربط طالب بمدرس"""
+    check_permission(request, 'link_students')
     db = Database()
     
     try:
@@ -228,8 +233,9 @@ async def api_link_student_teacher(link: LinkStudentTeacher):
 
 
 @router.post("/link-student-teachers")
-async def api_link_student_teachers(data: dict):
+async def api_link_student_teachers(request: Request, data: dict):
     """ربط طالب بعدة مدرسين"""
+    check_permission(request, 'link_students')
     db = Database()
     student_id = data.get("student_id")
     teacher_ids = data.get("teacher_ids", [])
@@ -282,8 +288,9 @@ async def api_link_student_teachers(data: dict):
 
 
 @router.put("/update-student-teacher-link/{student_id}/{teacher_id}")
-async def api_update_student_teacher_link(student_id: int, teacher_id: int, data: dict):
+async def api_update_student_teacher_link(request: Request, student_id: int, teacher_id: int, data: dict):
     """تحديث نوع الدراسة والحالة لربط طالب بمدرس"""
+    check_permission(request, 'link_students')
     db = Database()
     
     try:
@@ -303,8 +310,9 @@ async def api_update_student_teacher_link(student_id: int, teacher_id: int, data
 
 
 @router.delete("/unlink-student-teacher/{student_id}/{teacher_id}")
-async def api_unlink_student_teacher(student_id: int, teacher_id: int):
+async def api_unlink_student_teacher(request: Request, student_id: int, teacher_id: int):
     """إلغاء ربط طالب بمدرس (مع حذف الأقساط) - مع فحص عدد الأقساط"""
+    check_permission(request, 'link_students')
     db = Database()
     
     try:
@@ -343,8 +351,9 @@ async def api_unlink_student_teacher(student_id: int, teacher_id: int):
 # ===== عمليات الأقساط =====
 
 @router.post("/installments")
-async def api_add_installment(installment: AddInstallment):
+async def api_add_installment(request: Request, installment: AddInstallment):
     """إضافة قسط جديد"""
+    check_permission(request, 'add_payments')
     db = Database()
     
     try:
@@ -476,8 +485,9 @@ async def api_get_recent_installments(limit: int = 20):
 
 
 @router.delete("/installments/{installment_id}")
-async def api_delete_installment(installment_id: int):
+async def api_delete_installment(request: Request, installment_id: int):
     """حذف قسط - مع إرجاع تفاصيل القسط المحذوف"""
+    check_permission(request, 'delete_payments')
     db = Database()
     
     try:
@@ -502,8 +512,9 @@ async def api_delete_installment(installment_id: int):
 # ===== عمليات السحوبات =====
 
 @router.post("/withdrawals")
-async def api_add_withdrawal(withdrawal: AddWithdrawal):
+async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
     """تسجيل سحب جديد للمدرس"""
+    check_permission(request, 'add_withdrawals')
     db = Database()
     
     try:
@@ -562,8 +573,9 @@ async def api_get_withdrawals(teacher_id: int, limit: int = 10):
 
 
 @router.delete("/withdrawals/{withdrawal_id}")
-async def api_delete_withdrawal(withdrawal_id: int):
+async def api_delete_withdrawal(request: Request, withdrawal_id: int):
     """حذف سحب"""
+    check_permission(request, 'delete_withdrawals')
     db = Database()
     
     try:
@@ -574,8 +586,9 @@ async def api_delete_withdrawal(withdrawal_id: int):
 
 
 @router.put("/withdrawals/{withdrawal_id}")
-async def api_edit_withdrawal(withdrawal_id: int, data: dict = Body(...)):
+async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict = Body(...)):
     """تعديل سحب"""
+    check_permission(request, 'add_withdrawals')
     db = Database()
     
     try:

@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from database import Database
 from models import RoleCreate, RoleUpdate, UserCreate, UserUpdate, RolePermissionsUpdate
 from config import BASE_DIR, format_date
-import hashlib
+from auth import hash_password, check_permission
 from datetime import datetime as dt
 import os
 
@@ -21,6 +21,7 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 @router.get("/", response_class=HTMLResponse)
 async def permissions_page(request: Request):
     """صفحة إدارة الصلاحيات"""
+    check_permission(request, 'view_permissions')
     db = Database()
     
     # جلب المستخدمين مع أسماء الأدوار
@@ -76,8 +77,9 @@ async def permissions_page(request: Request):
 # ===== API الأدوار =====
 
 @router.post("/api/roles")
-async def create_role(role: RoleCreate):
+async def create_role(request: Request, role: RoleCreate):
     """إنشاء دور جديد"""
+    check_permission(request, 'manage_roles')
     db = Database()
     now = dt.now().strftime('%Y-%m-%d %H:%M')
     try:
@@ -96,8 +98,9 @@ async def create_role(role: RoleCreate):
 
 
 @router.put("/api/roles/{role_id}")
-async def update_role(role_id: int, role: RoleUpdate):
+async def update_role(request: Request, role_id: int, role: RoleUpdate):
     """تحديث بيانات دور"""
+    check_permission(request, 'manage_roles')
     db = Database()
     try:
         updates = []
@@ -125,8 +128,9 @@ async def update_role(role_id: int, role: RoleUpdate):
 
 
 @router.delete("/api/roles/{role_id}")
-async def delete_role(role_id: int):
+async def delete_role(request: Request, role_id: int):
     """حذف دور"""
+    check_permission(request, 'manage_roles')
     db = Database()
     try:
         # التحقق من عدم وجود مستخدمين مرتبطين
@@ -146,8 +150,9 @@ async def delete_role(role_id: int):
 
 
 @router.put("/api/roles/{role_id}/permissions")
-async def update_role_permissions(role_id: int, data: RolePermissionsUpdate):
+async def update_role_permissions(request: Request, role_id: int, data: RolePermissionsUpdate):
     """تحديث صلاحيات دور"""
+    check_permission(request, 'manage_roles')
     db = Database()
     conn = db.get_connection()
     cursor = conn.cursor()
@@ -175,12 +180,13 @@ async def update_role_permissions(role_id: int, data: RolePermissionsUpdate):
 # ===== API المستخدمين =====
 
 @router.post("/api/users")
-async def create_user(user: UserCreate):
+async def create_user(request: Request, user: UserCreate):
     """إنشاء مستخدم جديد"""
+    check_permission(request, 'manage_users')
     db = Database()
     now = dt.now().strftime('%Y-%m-%d %H:%M')
     try:
-        password_hash = hashlib.sha256(user.password.encode()).hexdigest()
+        password_hash = hash_password(user.password)
         result = db.execute_query('''
             INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
             VALUES (%s, %s, %s, %s, 1, %s)
@@ -196,8 +202,9 @@ async def create_user(user: UserCreate):
 
 
 @router.put("/api/users/{user_id}")
-async def update_user(user_id: int, user: UserUpdate):
+async def update_user(request: Request, user_id: int, user: UserUpdate):
     """تحديث بيانات مستخدم"""
+    check_permission(request, 'manage_users')
     db = Database()
     try:
         updates = []
@@ -206,7 +213,7 @@ async def update_user(user_id: int, user: UserUpdate):
             updates.append("full_name = %s")
             params.append(user.full_name)
         if user.password is not None:
-            password_hash = hashlib.sha256(user.password.encode()).hexdigest()
+            password_hash = hash_password(user.password)
             updates.append("password_hash = %s")
             params.append(password_hash)
         if user.role_id is not None:
@@ -230,8 +237,9 @@ async def update_user(user_id: int, user: UserUpdate):
 
 
 @router.delete("/api/users/{user_id}")
-async def delete_user(user_id: int):
+async def delete_user(request: Request, user_id: int):
     """حذف مستخدم"""
+    check_permission(request, 'manage_users')
     db = Database()
     try:
         # لا يمكن حذف المستخدم الافتراضي (admin)
@@ -246,8 +254,9 @@ async def delete_user(user_id: int):
 
 
 @router.post("/api/users/{user_id}/toggle-active")
-async def toggle_user_active(user_id: int):
+async def toggle_user_active(request: Request, user_id: int):
     """تبديل حالة تفعيل المستخدم"""
+    check_permission(request, 'manage_users')
     db = Database()
     try:
         user = db.execute_query('SELECT username, is_active FROM users WHERE id = %s', (user_id,))

@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from database import Database
 from services.finance_service import finance_service, sync_student_status
 from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
+from auth import check_permission
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -49,6 +50,7 @@ async def index(request: Request):
 @router.get("/subjects", response_class=HTMLResponse)
 async def subjects_list(request: Request):
     """صفحة إدارة المواد الدراسية"""
+    check_permission(request, 'view_subjects')
     db = Database()
     error_msg = ""
     error_detail = ""
@@ -74,6 +76,7 @@ async def subjects_list(request: Request):
 @router.post("/subjects/add")
 async def subject_add(request: Request, name: str = Form(...)):
     """إضافة مادة جديدة"""
+    check_permission(request, 'add_subjects')
     db = Database()
     try:
         existing = db.execute_query("SELECT id FROM subjects WHERE name = %s", (name,))
@@ -88,6 +91,7 @@ async def subject_add(request: Request, name: str = Form(...)):
 @router.post("/subjects/{subject_id}/delete")
 async def subject_delete(request: Request, subject_id: int):
     """حذف مادة - مع حماية إذا كان فيها أساتذة"""
+    check_permission(request, 'delete_subjects')
     db = Database()
     teachers_count = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = (SELECT name FROM subjects WHERE id = %s)", (subject_id,))
     if teachers_count and teachers_count[0]['cnt'] > 0:
@@ -102,6 +106,7 @@ async def subject_delete(request: Request, subject_id: int):
 @router.get("/students", response_class=HTMLResponse)
 async def students_list(request: Request, search: str = "", msg: str = "", error: str = ""):
     """صفحة قائمة الطلاب"""
+    check_permission(request, 'view_students_list')
     db = Database()
 
     try:
@@ -165,6 +170,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
 @router.get("/students/add", response_class=HTMLResponse)
 async def student_form(request: Request):
     """نموذج إضافة طالب جديد"""
+    check_permission(request, 'add_students')
     db = Database()
     teachers = db.execute_query("SELECT id, name, subject, teaching_types FROM teachers ORDER BY name")
     return templates.TemplateResponse("students/form.html", {
@@ -182,6 +188,7 @@ async def student_add(
     notes: str = Form("")
 ):
     """حفظ طالب جديد"""
+    check_permission(request, 'add_students')
     db = Database()
 
     # توليد باركود حقيقي مباشرة باستخدام RETURNING
@@ -225,6 +232,7 @@ async def student_add(
 @router.get("/students/{student_id}/edit", response_class=HTMLResponse)
 async def student_edit_form(request: Request, student_id: int):
     """نموذج تعديل طالب"""
+    check_permission(request, 'edit_students')
     db = Database()
 
     query = "SELECT * FROM students WHERE id = %s"
@@ -262,6 +270,7 @@ async def student_update(
     notes: str = Form("")
 ):
     """تحديث بيانات طالب"""
+    check_permission(request, 'edit_students')
     db = Database()
 
     update_query = '''
@@ -321,6 +330,7 @@ async def student_update(
 @router.get("/students/{student_id}", response_class=HTMLResponse)
 async def student_profile(request: Request, student_id: int):
     """بروفايل الطالب"""
+    check_permission(request, 'preview_students')
     db = Database()
 
     student_query = "SELECT * FROM students WHERE id = %s"
@@ -356,6 +366,7 @@ async def student_profile(request: Request, student_id: int):
 @router.post("/students/{student_id}/delete")
 async def student_delete(request: Request, student_id: int):
     """حذف طالب - مع حماية إذا كان مرتبط بمدرسين"""
+    check_permission(request, 'delete_students')
     db = Database()
     
     # فحص إذا كان الطالب مرتبط بمدرسين
@@ -424,6 +435,7 @@ def _build_institute_rate_display(teacher: dict) -> str:
 @router.get("/teachers", response_class=HTMLResponse)
 async def teachers_list(request: Request, subject: str = "", search: str = ""):
     """صفحة قائمة المدرسين"""
+    check_permission(request, 'view_teachers_list')
     db = Database()
 
     try:
@@ -508,6 +520,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
 @router.get("/teachers/add", response_class=HTMLResponse)
 async def teacher_form(request: Request, error: str = ""):
     """نموذج إضافة مدرس جديد"""
+    check_permission(request, 'add_teachers')
     db = Database()
     subjects = db.execute_query("SELECT name FROM subjects ORDER BY name")
     return templates.TemplateResponse("teachers/form.html", {
@@ -543,6 +556,7 @@ async def teacher_add(
     inst_ded_manual_blended: int = Form(0)
 ):
     """حفظ مدرس جديد"""
+    check_permission(request, 'add_teachers')
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url="/teachers/add?error=no_teaching_type", status_code=303)
 
@@ -576,6 +590,7 @@ async def teacher_add(
 @router.get("/teachers/{teacher_id}/edit", response_class=HTMLResponse)
 async def teacher_edit_form(request: Request, teacher_id: int, error: str = ""):
     """نموذج تعديل مدرس"""
+    check_permission(request, 'edit_teachers')
     db = Database()
 
     query = "SELECT * FROM teachers WHERE id = %s"
@@ -620,6 +635,7 @@ async def teacher_update(
     inst_ded_manual_blended: int = Form(0)
 ):
     """تحديث بيانات مدرس"""
+    check_permission(request, 'edit_teachers')
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=no_teaching_type", status_code=303)
 
@@ -655,6 +671,7 @@ async def teacher_update(
 @router.get("/teachers/{teacher_id}", response_class=HTMLResponse)
 async def teacher_detail(request: Request, teacher_id: int):
     """تفاصيل المدرس"""
+    check_permission(request, 'preview_teachers')
     db = Database()
 
     teacher_query = "SELECT * FROM teachers WHERE id = %s"
@@ -691,6 +708,7 @@ async def teacher_detail(request: Request, teacher_id: int):
 @router.post("/teachers/{teacher_id}/delete")
 async def teacher_delete(request: Request, teacher_id: int):
     """حذف مدرس - مع حماية إذا كان مرتبط بطلاب"""
+    check_permission(request, 'delete_teachers')
     db = Database()
     students_count = db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
     if students_count and students_count[0]['cnt'] > 0:
@@ -710,6 +728,7 @@ async def teacher_delete(request: Request, teacher_id: int):
 @router.get("/accounting", response_class=HTMLResponse)
 async def accounting_page(request: Request, search: str = "", date_from: str = "", date_to: str = ""):
     """صفحة محاسبة المدرسين"""
+    check_permission(request, 'view_accounting')
     db = Database()
 
     try:
@@ -773,6 +792,7 @@ async def accounting_page(request: Request, search: str = "", date_from: str = "
 @router.get("/withdrawals", response_class=HTMLResponse)
 async def withdrawals_page(request: Request, date_from: str = "", date_to: str = ""):
     """صفحة إدارة السحوبات"""
+    check_permission(request, 'view_withdrawals_list')
     db = Database()
 
     try:
@@ -807,6 +827,7 @@ async def withdrawals_page(request: Request, date_from: str = "", date_to: str =
 @router.get("/payments", response_class=HTMLResponse)
 async def payments_page(request: Request, search: str = "", date_from: str = "", date_to: str = ""):
     """صفحة إدارة الأقساط والمدفوعات"""
+    check_permission(request, 'view_payments_list')
     db = Database()
 
     try:
@@ -874,6 +895,7 @@ async def payments_page(request: Request, search: str = "", date_from: str = "",
 @router.get("/stats", response_class=HTMLResponse)
 async def stats_page(request: Request):
     """صفحة الإحصائيات التفصيلية"""
+    check_permission(request, 'view_stats')
     db = Database()
     stats = finance_service.get_system_statistics()
 

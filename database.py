@@ -357,9 +357,16 @@ def init_db():
             conn.rollback()
         
         # ===== إنشاء مستخدم مدير افتراضي =====
-        import hashlib
+        # استخدام bcrypt لتشفير كلمة المرور
         try:
+            import bcrypt
+            admin_pass_hash = bcrypt.hashpw('1111'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        except ImportError:
+            # إذا لم تكن bcrypt متوفرة، نستخدم SHA-256 كاحتياط
+            import hashlib
             admin_pass_hash = hashlib.sha256('1111'.encode()).hexdigest()
+
+        try:
             cursor.execute('''
                 INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
                 SELECT 'admin', 'المدير العام', %s, r.id, 1, %s

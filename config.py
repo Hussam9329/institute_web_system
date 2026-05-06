@@ -15,10 +15,18 @@ PORT = 8000
 DEBUG = True
 
 # ===== إعدادات قاعدة البيانات =====
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://neondb_owner:npg_3fTtMYrvCw9m@ep-muddy-boat-anvp37bx-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-)
+# يجب تعيين متغير البيئة DATABASE_URL قبل تشغيل التطبيق
+# مثال: export DATABASE_URL="postgresql://user:pass@host/db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError(
+        "متغير البيئة DATABASE_URL غير معين! "
+        "يرجى تعيينه قبل تشغيل التطبيق. "
+        "مثال: export DATABASE_URL=\"postgresql://user:pass@host/db\""
+    )
+
+# ===== مفتاح التشفير للجلسات =====
+SECRET_KEY = os.environ.get("SECRET_KEY", "institute-system-change-in-production-2024")
 
 # ===== كلمة مرور النظام =====
 SYSTEM_PIN = "1111"
