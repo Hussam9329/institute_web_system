@@ -271,27 +271,41 @@
             <form id="addPaymentForm" onsubmit="submitPayment(event)">
                 <div class="modal-body p-3 p-md-4">
                     <div class="row g-3">
+                        <!-- ===== خانة الطالب - بحث مخصص ===== -->
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-user-graduate me-1 text-orange"></i>الطالب
                             </label>
-                            <select class="form-select" id="pay_student_id" required>
-                                <option value="">-- اختر الطالب --</option>
-                                {% for student in students %}
-                                <option value="{{ student.id }}">{{ student.name }}</option>
-                                {% endfor %}
-                            </select>
+                            <div class="pay-search-box" id="studentSearchBox">
+                                <input type="text" class="form-control pay-search-input" id="pay_student_search"
+                                       placeholder="ابحث باسم الطالب..." autocomplete="off">
+                                <input type="hidden" id="pay_student_id" value="">
+                                <div class="pay-search-tag d-none" id="studentTag">
+                                    <span id="studentTagName"></span>
+                                    <button type="button" class="pay-search-tag-remove" id="studentTagRemove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="pay-search-dropdown" id="studentDropdown"></div>
+                            </div>
                         </div>
+                        <!-- ===== خانة المدرس - بحث مخصص ===== -->
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-chalkboard-teacher me-1 text-orange"></i>المدرس
                             </label>
-                            <select class="form-select" id="pay_teacher_id" required>
-                                <option value="">-- اختر المدرس أولاً --</option>
-                                {% for teacher in teachers %}
-                                <option value="{{ teacher.id }}" data-fee="{{ teacher.total_fee }}">{{ teacher.name }} - {{ teacher.subject }}</option>
-                                {% endfor %}
-                            </select>
+                            <div class="pay-search-box" id="teacherSearchBox">
+                                <input type="text" class="form-control pay-search-input" id="pay_teacher_search"
+                                       placeholder="اختر الطالب أولاً..." autocomplete="off" disabled>
+                                <input type="hidden" id="pay_teacher_id" value="">
+                                <div class="pay-search-tag d-none" id="teacherTag">
+                                    <span id="teacherTagName"></span>
+                                    <button type="button" class="pay-search-tag-remove" id="teacherTagRemove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="pay-search-dropdown" id="teacherDropdown"></div>
+                            </div>
                             <!-- رسالة الرصيد المتبقي -->
                             <div id="teacherBalanceMsg" class="mt-2 d-none"></div>
                         </div>
@@ -349,52 +363,401 @@
 
 {% block extra_js %}
 <script>
+// ===== بيانات الطلاب والمدرسين من السيرفر =====
+var allStudents = [
+    {% for student in students %}
+    { id: {{ student.id }}, name: "{{ student.name }}" }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+
 var teachersBalanceData = {};
+var currentTeachersList = []; // قائمة المدرسين المرتبطين بالطالب المختار
 
-// تهيئة البحث المباشر في خانات الطالب والمدرس
-var payStudentSS = null;
-var payTeacherSS = null;
-
+// ===== تهيئة =====
 document.addEventListener('DOMContentLoaded', function() {
     // تعيين تاريخ اليوم
     var payDateEl = document.getElementById('pay_date');
     if (payDateEl) payDateEl.value = getTodayDate();
 
-    payStudentSS = makeSearchableSelect('pay_student_id', {
-        placeholder: '-- اختر الطالب --',
-        searchPlaceholder: 'ابحث باسم الطالب...',
-        onChange: function(val) {
-            loadStudentTeachers(val);
-        }
-    });
+    // تهيئة بحث الطالب
+    initStudentSearch();
+    // تهيئة بحث المدرس
+    initTeacherSearch();
 
-    payTeacherSS = makeSearchableSelect('pay_teacher_id', {
-        placeholder: '-- اختر المدرس أولاً --',
-        searchPlaceholder: 'ابحث باسم المدرس أو المادة...',
-        onChange: function(val) {
-            showTeacherBalance(val);
-        }
-    });
+    // عند إغلاق المودال، إعادة تعيين الحقول
+    var modalEl = document.getElementById('addPaymentModal');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            resetStudentSearch();
+            resetTeacherSearch();
+            document.getElementById('pay_amount').value = '';
+            document.getElementById('pay_notes').value = '';
+            if (payDateEl) payDateEl.value = getTodayDate();
+        });
+    }
 });
 
+// ============================================
+// بحث الطالب - مخصص من الصفر
+// ============================================
+function initStudentSearch() {
+    var input = document.getElementById('pay_student_search');
+    var dropdown = document.getElementById('studentDropdown');
+    var tag = document.getElementById('studentTag');
+    var tagName = document.getElementById('studentTagName');
+    var tagRemove = document.getElementById('studentTagRemove');
+    var hiddenInput = document.getElementById('pay_student_id');
+
+    // عند الكتابة في حقل البحث
+    input.addEventListener('input', function() {
+        var query = this.value.trim().toLowerCase();
+        if (!query) {
+            dropdown.classList.remove('show');
+            dropdown.innerHTML = '';
+            return;
+        }
+        // تصفية الطلاب
+        var filtered = allStudents.filter(function(s) {
+            return s.name.toLowerCase().includes(query);
+        });
+        renderStudentDropdown(filtered);
+    });
+
+    // عند التركيز على حقل البحث - عرض الكل إذا كان فارغاً
+    input.addEventListener('focus', function() {
+        if (this.value.trim() === '') {
+            renderStudentDropdown(allStudents);
+        }
+    });
+
+    // منع إغلاق المودال عند التفاعل مع القائمة
+    input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+    input.addEventListener('focusin', function(e) { e.stopPropagation(); });
+    dropdown.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+    dropdown.addEventListener('focusin', function(e) { e.stopPropagation(); });
+
+    // زر إزالة الاختيار
+    tagRemove.addEventListener('click', function(e) {
+        e.stopPropagation();
+        resetStudentSearch();
+    });
+
+    // إغلاق القائمة عند النقر خارجها
+    document.addEventListener('click', function(e) {
+        var box = document.getElementById('studentSearchBox');
+        if (box && !box.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+function renderStudentDropdown(students) {
+    var dropdown = document.getElementById('studentDropdown');
+    dropdown.innerHTML = '';
+
+    if (students.length === 0) {
+        dropdown.innerHTML = '<div class="pay-search-empty">لا توجد نتائج</div>';
+        positionFixedDropdown('studentSearchBox', 'studentDropdown');
+        dropdown.classList.add('show');
+        return;
+    }
+
+    students.forEach(function(s) {
+        var item = document.createElement('div');
+        item.className = 'pay-search-item';
+        item.innerHTML = '<i class="fas fa-user-graduate pay-search-item-icon"></i><span>' + escapeHtml(s.name) + '</span>';
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectStudent(s.id, s.name);
+        });
+        item.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+        dropdown.appendChild(item);
+    });
+
+    // عداد النتائج
+    var countDiv = document.createElement('div');
+    countDiv.className = 'pay-search-count';
+    countDiv.textContent = students.length + ' طالب';
+    dropdown.appendChild(countDiv);
+
+    positionFixedDropdown('studentSearchBox', 'studentDropdown');
+    dropdown.classList.add('show');
+}
+
+function selectStudent(id, name) {
+    var input = document.getElementById('pay_student_search');
+    var hiddenInput = document.getElementById('pay_student_id');
+    var tag = document.getElementById('studentTag');
+    var tagName = document.getElementById('studentTagName');
+    var dropdown = document.getElementById('studentDropdown');
+
+    hiddenInput.value = id;
+    tagName.textContent = name;
+    input.classList.add('d-none');
+    tag.classList.remove('d-none');
+    dropdown.classList.remove('show');
+
+    // تحميل مدرسين الطالب المختار
+    loadStudentTeachers(id);
+}
+
+function resetStudentSearch() {
+    var input = document.getElementById('pay_student_search');
+    var hiddenInput = document.getElementById('pay_student_id');
+    var tag = document.getElementById('studentTag');
+    var dropdown = document.getElementById('studentDropdown');
+
+    input.value = '';
+    input.classList.remove('d-none');
+    hiddenInput.value = '';
+    tag.classList.add('d-none');
+    dropdown.classList.remove('show');
+
+    // إعادة تعيين المدرس أيضاً
+    resetTeacherSearch();
+    var teacherInput = document.getElementById('pay_teacher_search');
+    teacherInput.placeholder = 'اختر الطالب أولاً...';
+    teacherInput.disabled = true;
+}
+
+// ============================================
+// بحث المدرس - مخصص من الصفر
+// ============================================
+function initTeacherSearch() {
+    var input = document.getElementById('pay_teacher_search');
+    var dropdown = document.getElementById('teacherDropdown');
+    var tagRemove = document.getElementById('teacherTagRemove');
+
+    // عند الكتابة في حقل البحث
+    input.addEventListener('input', function() {
+        var query = this.value.trim().toLowerCase();
+        if (!query) {
+            dropdown.classList.remove('show');
+            dropdown.innerHTML = '';
+            return;
+        }
+        // تصفية المدرسين المرتبطين بالطالب فقط
+        var filtered = currentTeachersList.filter(function(t) {
+            return t.teacher_name.toLowerCase().includes(query) ||
+                   t.subject.toLowerCase().includes(query);
+        });
+        renderTeacherDropdown(filtered);
+    });
+
+    // عند التركيز
+    input.addEventListener('focus', function() {
+        if (this.disabled) return;
+        if (this.value.trim() === '' && currentTeachersList.length > 0) {
+            renderTeacherDropdown(currentTeachersList);
+        }
+    });
+
+    // منع إغلاق المودال
+    input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+    input.addEventListener('focusin', function(e) { e.stopPropagation(); });
+    dropdown.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+    dropdown.addEventListener('focusin', function(e) { e.stopPropagation(); });
+
+    // زر إزالة الاختيار
+    tagRemove.addEventListener('click', function(e) {
+        e.stopPropagation();
+        resetTeacherSearch();
+    });
+
+    // إغلاق القائمة عند النقر خارجها
+    document.addEventListener('click', function(e) {
+        var box = document.getElementById('teacherSearchBox');
+        if (box && !box.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+function renderTeacherDropdown(teachers) {
+    var dropdown = document.getElementById('teacherDropdown');
+    dropdown.innerHTML = '';
+
+    if (teachers.length === 0) {
+        dropdown.innerHTML = '<div class="pay-search-empty">لا توجد نتائج</div>';
+        positionFixedDropdown('teacherSearchBox', 'teacherDropdown');
+        dropdown.classList.add('show');
+        return;
+    }
+
+    teachers.forEach(function(t) {
+        var item = document.createElement('div');
+        item.className = 'pay-search-item';
+        var remainBadge = '';
+        if (t.remaining_balance > 0) {
+            remainBadge = ' <span class="badge bg-danger-subtle text-danger" style="font-size:0.72rem;">متبقي ' + formatCurrency(t.remaining_balance) + '</span>';
+        } else {
+            remainBadge = ' <span class="badge bg-success-subtle text-success" style="font-size:0.72rem;">مكتمل</span>';
+        }
+        item.innerHTML = '<i class="fas fa-chalkboard-teacher pay-search-item-icon"></i>' +
+            '<div class="pay-search-item-text">' +
+                '<span class="pay-search-item-name">' + escapeHtml(t.teacher_name) + '</span>' +
+                '<span class="pay-search-item-sub">' + escapeHtml(t.subject) + remainBadge + '</span>' +
+            '</div>';
+        item.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectTeacher(t.teacher_id, t.teacher_name + ' - ' + t.subject);
+        });
+        item.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+        dropdown.appendChild(item);
+    });
+
+    var countDiv = document.createElement('div');
+    countDiv.className = 'pay-search-count';
+    countDiv.textContent = teachers.length + ' مدرس';
+    dropdown.appendChild(countDiv);
+
+    positionFixedDropdown('teacherSearchBox', 'teacherDropdown');
+    dropdown.classList.add('show');
+}
+
+function selectTeacher(id, name) {
+    var input = document.getElementById('pay_teacher_search');
+    var hiddenInput = document.getElementById('pay_teacher_id');
+    var tag = document.getElementById('teacherTag');
+    var tagName = document.getElementById('teacherTagName');
+    var dropdown = document.getElementById('teacherDropdown');
+
+    hiddenInput.value = id;
+    tagName.textContent = name;
+    input.classList.add('d-none');
+    tag.classList.remove('d-none');
+    dropdown.classList.remove('show');
+
+    // عرض رصيد المدرس
+    showTeacherBalance(id);
+}
+
+function resetTeacherSearch() {
+    var input = document.getElementById('pay_teacher_search');
+    var hiddenInput = document.getElementById('pay_teacher_id');
+    var tag = document.getElementById('teacherTag');
+    var dropdown = document.getElementById('teacherDropdown');
+
+    if (input) {
+        input.value = '';
+        input.classList.remove('d-none');
+    }
+    hiddenInput.value = '';
+    tag.classList.add('d-none');
+    dropdown.classList.remove('show');
+
+    // إخفاء رسالة الرصيد
+    var msgDiv = document.getElementById('teacherBalanceMsg');
+    if (msgDiv) msgDiv.classList.add('d-none');
+}
+
+// ============================================
+// تحميل مدرسين الطالب من API
+// ============================================
+function loadStudentTeachers(studentId) {
+    if (!studentId) return;
+
+    teachersBalanceData = {};
+    currentTeachersList = [];
+    resetTeacherSearch();
+
+    var teacherInput = document.getElementById('pay_teacher_search');
+    teacherInput.placeholder = 'جاري التحميل...';
+    teacherInput.disabled = true;
+
+    apiRequest('/api/students/' + studentId + '/teachers').then(function(result) {
+        if (result.data && result.data.length > 0) {
+            currentTeachersList = result.data;
+            for (var i = 0; i < result.data.length; i++) {
+                var t = result.data[i];
+                teachersBalanceData[String(t.teacher_id)] = t;
+            }
+            teacherInput.placeholder = 'ابحث باسم المدرس أو المادة...';
+            teacherInput.disabled = false;
+        } else {
+            teacherInput.placeholder = 'لا يوجد مدرسين مرتبطين بهذا الطالب';
+            teacherInput.disabled = true;
+        }
+    }).catch(function(err) {
+        console.error(err);
+        teacherInput.placeholder = 'حدث خطأ في التحميل';
+        teacherInput.disabled = true;
+    });
+}
+
+// ============================================
+// عرض رصيد المدرس
+// ============================================
 function showTeacherBalance(teacherId) {
     var msgDiv = document.getElementById('teacherBalanceMsg');
-    
+
     if (!teacherId || !teachersBalanceData[String(teacherId)]) {
         msgDiv.classList.add('d-none');
         return;
     }
-    
+
     var data = teachersBalanceData[String(teacherId)];
     var paid = formatCurrency(data.paid_total);
     var remaining = formatCurrency(data.remaining_balance);
-    
+
     if (data.remaining_balance <= 0) {
         msgDiv.innerHTML = '<div class="alert alert-success py-2 px-3 mb-0" style="font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-check-double me-1"></i> تمت التسوية بالكامل</div></div>';
     } else {
         msgDiv.innerHTML = '<div class="alert py-2 px-3 mb-0" style="background: linear-gradient(135deg, #f0fdf4 0%, #fef2f2 100%); border: 1px solid #e5e7eb; font-size:0.88rem;"><div class="mb-1"><i class="fas fa-check-circle me-1"></i> <strong class="text-success">المدفوع: ' + paid + '</strong></div><div><i class="fas fa-exclamation-triangle me-1"></i> <strong class="text-danger">المتبقي: ' + remaining + '</strong></div></div>';
     }
     msgDiv.classList.remove('d-none');
+}
+
+// ============================================
+// موضع القائمة المنسدلة (position: fixed) داخل المودال
+// ============================================
+function positionFixedDropdown(boxId, dropdownId) {
+    var box = document.getElementById(boxId);
+    var dropdown = document.getElementById(dropdownId);
+    if (!box || !dropdown) return;
+
+    var rect = box.getBoundingClientRect();
+    var spaceBelow = window.innerHeight - rect.bottom;
+
+    dropdown.style.position = 'fixed';
+    dropdown.style.width = rect.width + 'px';
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.right = 'auto';
+
+    if (spaceBelow < 250 && rect.top > spaceBelow) {
+        dropdown.style.top = 'auto';
+        dropdown.style.bottom = (window.innerHeight - rect.top + 2) + 'px';
+    } else {
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        dropdown.style.bottom = 'auto';
+    }
+}
+
+// تحديث الموضع عند تغيير حجم النافذة أو تمرير المودال
+document.addEventListener('DOMContentLoaded', function() {
+    var modalEl = document.getElementById('addPaymentModal');
+    if (modalEl) {
+        modalEl.addEventListener('scroll', function() {
+            closeAllDropdowns();
+        }, true);
+    }
+    window.addEventListener('resize', function() {
+        closeAllDropdowns();
+    });
+});
+
+function closeAllDropdowns() {
+    document.getElementById('studentDropdown')?.classList.remove('show');
+    document.getElementById('teacherDropdown')?.classList.remove('show');
+}
+
+// ============================================
+// دوال مساعدة
+// ============================================
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function switchView(view, btn) {
@@ -404,83 +767,63 @@ function switchView(view, btn) {
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
 
-function loadStudentTeachers(studentId) {
-    if (!studentId) return;
-    
-    teachersBalanceData = {};
-    document.getElementById('teacherBalanceMsg').classList.add('d-none');
-    var teacherSelect = document.getElementById('pay_teacher_id');
-    teacherSelect.innerHTML = '<option value="">-- اختر المدرس --</option>';
-    
-    apiRequest('/api/students/' + studentId + '/teachers').then(function(result) {
-        if (result.data && result.data.length > 0) {
-            for (var i = 0; i < result.data.length; i++) {
-                var t = result.data[i];
-                var opt = document.createElement('option');
-                opt.value = t.teacher_id;
-                opt.textContent = t.teacher_name + ' - ' + t.subject;
-                teacherSelect.appendChild(opt);
-                teachersBalanceData[String(t.teacher_id)] = t;
-            }
-        }
-        // تحديث مكوّن البحث المباشر للمدرسين
-        if (payTeacherSS) {
-            payTeacherSS.refresh();
-            payTeacherSS.clear();
-        }
-    }).catch(function(err) {
-        console.error(err);
-    });
-}
-
 async function submitPayment(event) {
     event.preventDefault();
-    
+
+    var studentId = parseInt(document.getElementById('pay_student_id').value);
+    var teacherId = parseInt(document.getElementById('pay_teacher_id').value);
+    var amount = toFullAmount(document.getElementById('pay_amount').value);
+
+    if (!studentId) {
+        showAlert('يرجى اختيار الطالب', 'warning');
+        return;
+    }
+    if (!teacherId) {
+        showAlert('يرجى اختيار المدرس', 'warning');
+        return;
+    }
+    if (!amount) {
+        showAlert('يرجى إدخال المبلغ', 'warning');
+        return;
+    }
+
     const data = {
-        student_id: parseInt(document.getElementById('pay_student_id').value),
-        teacher_id: parseInt(document.getElementById('pay_teacher_id').value),
-        amount: toFullAmount(document.getElementById('pay_amount').value),
+        student_id: studentId,
+        teacher_id: teacherId,
+        amount: amount,
         payment_date: document.getElementById('pay_date').value,
         installment_type: document.getElementById('pay_type').value,
         study_type: document.getElementById('pay_study_type')?.value || 'حضوري',
         notes: document.getElementById('pay_notes').value
     };
-    
-    if (!data.student_id || !data.teacher_id || !data.amount) {
-        showAlert('يرجى ملء جميع الحقول المطلوبة', 'warning');
-        return;
-    }
-    
+
     try {
         const result = await apiRequest('/api/installments', {
             method: 'POST',
             body: JSON.stringify(data)
         });
-        
+
         if (result.success) {
             showAlert(result.message, 'success');
             if (result.installment_id) {
-                const receiptUrl = `/reports/receipt/${result.installment_id}`;
+                const receiptUrl = '/reports/receipt/' + result.installment_id;
                 const receiptId = 'receipt-' + Date.now();
                 const receiptAlert = document.createElement('div');
                 receiptAlert.id = receiptId;
                 receiptAlert.className = 'custom-alert success';
                 receiptAlert.setAttribute('role', 'alert');
-                receiptAlert.innerHTML = `
-                    <div class="d-flex align-items-center gap-3 p-3">
-                        <div class="alert-icon-wrap">
-                            <i class="fas fa-print"></i>
-                        </div>
-                        <div class="alert-text">تم تسجيل القسط - يمكنك تحميل الوصل</div>
-                        <a href="${receiptUrl}" target="_blank" class="alert-close-btn" style="background:rgba(255,255,255,0.35); font-size:12px; width:auto; padding:4px 10px; border-radius:8px; text-decoration:none;">
-                            <i class="fas fa-print me-1"></i>طباعة
-                        </a>
-                        <button type="button" class="alert-close-btn" onclick="dismissAlert('${receiptId}')">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="alert-progress" style="animation-duration: 8000ms;"></div>
-                `;
+                receiptAlert.innerHTML =
+                    '<div class="d-flex align-items-center gap-3 p-3">' +
+                        '<div class="alert-icon-wrap"><i class="fas fa-print"></i></div>' +
+                        '<div class="alert-text">تم تسجيل القسط - يمكنك تحميل الوصل</div>' +
+                        '<a href="' + receiptUrl + '" target="_blank" class="alert-close-btn" style="background:rgba(255,255,255,0.35);font-size:12px;width:auto;padding:4px 10px;border-radius:8px;text-decoration:none;">' +
+                            '<i class="fas fa-print me-1"></i>طباعة' +
+                        '</a>' +
+                        '<button type="button" class="alert-close-btn" onclick="dismissAlert(\'' + receiptId + '\')">' +
+                            '<i class="fas fa-times"></i>' +
+                        '</button>' +
+                    '</div>' +
+                    '<div class="alert-progress" style="animation-duration: 8000ms;"></div>';
                 document.getElementById('alert-container').prepend(receiptAlert);
             }
             location.reload();
@@ -494,9 +837,9 @@ async function submitPayment(event) {
 
 async function deletePayment(installmentId) {
     if (!confirmAction('هل أنت متأكد من حذف هذا القسط؟')) return;
-    
+
     try {
-        const result = await apiRequest(`/api/installments/${installmentId}`, { method: 'DELETE' });
+        const result = await apiRequest('/api/installments/' + installmentId, { method: 'DELETE' });
         if (result.success) {
             showAlert(result.message, 'success');
             location.reload();
@@ -508,12 +851,11 @@ async function deletePayment(installmentId) {
     }
 }
 
-// بحث مباشر
+// ===== بحث مباشر في صفحة الأقساط =====
 document.getElementById('paymentSearch')?.addEventListener('input', function() {
     const query = this.value.toLowerCase();
     const dateFrom = document.getElementById('filter_date_from')?.value || '';
     const dateTo = document.getElementById('filter_date_to')?.value || '';
-    // Filter table rows
     document.querySelectorAll('.payment-row').forEach(row => {
         const name = row.dataset.name || '';
         const teacher = row.dataset.teacher || '';
@@ -524,7 +866,6 @@ document.getElementById('paymentSearch')?.addEventListener('input', function() {
         const matchDateTo = !dateTo || rowDate <= dateTo;
         row.style.display = (matchText && matchDateFrom && matchDateTo) ? '' : 'none';
     });
-    // Filter cards
     let cardVisible = 0;
     document.querySelectorAll('.payment-card').forEach(card => {
         const name = card.dataset.name || '';
@@ -541,7 +882,7 @@ document.getElementById('paymentSearch')?.addEventListener('input', function() {
     }
 });
 
-// فلترة التاريخ من جانب العميل
+// فلترة التاريخ
 document.getElementById('filter_date_from')?.addEventListener('change', function() {
     filterPaymentsByDate();
 });

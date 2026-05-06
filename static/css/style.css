@@ -2748,3 +2748,186 @@ textarea:focus-visible {
         max-height: 180px;
     }
 }
+
+/* ===== Payment Modal Search Box ===== */
+.pay-search-box {
+    position: relative;
+}
+
+.pay-search-input {
+    direction: rtl;
+    padding-left: 2.5rem !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 0.875rem center;
+    background-size: 16px;
+}
+
+.pay-search-input:disabled {
+    background-color: var(--light-bg);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Tag - الاختيار المعروض */
+.pay-search-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--primary-glow) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border: 1.5px solid var(--primary);
+    border-radius: var(--radius-lg);
+    min-height: 48px;
+    direction: rtl;
+}
+
+.pay-search-tag span {
+    flex: 1;
+    font-weight: 600;
+    color: var(--primary-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pay-search-tag-remove {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.65rem;
+    transition: background 0.15s ease;
+}
+
+.pay-search-tag-remove:hover {
+    background: var(--danger);
+}
+
+/* Dropdown - القائمة المنسدلة */
+.pay-search-dropdown {
+    display: none;
+    position: fixed;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    z-index: 100000;
+    max-height: 300px;
+    overflow-y: auto;
+    animation: paySearchDropIn 0.15s ease;
+}
+
+.pay-search-dropdown.show {
+    display: block;
+}
+
+@keyframes paySearchDropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Item - عنصر في القائمة */
+.pay-search-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    margin: 2px 4px;
+    direction: rtl;
+    transition: background 0.1s ease;
+}
+
+.pay-search-item:hover {
+    background: var(--primary-glow);
+}
+
+.pay-search-item-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--primary-glow), rgba(139, 92, 246, 0.08));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 0.8rem;
+}
+
+.pay-search-item-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pay-search-item-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pay-search-item-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Empty state */
+.pay-search-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+/* Count */
+.pay-search-count {
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--light-bg);
+    border-top: 1px solid var(--border-light);
+    text-align: center;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    position: sticky;
+    bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .pay-search-dropdown {
+        max-height: 220px;
+    }
+    .pay-search-item {
+        padding: 8px 10px;
+    }
+    .pay-search-item-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+}
