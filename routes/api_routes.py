@@ -1096,7 +1096,7 @@ async def api_get_weekly_schedule(room_id: int = None):
 
 @router.post("/weekly-schedule")
 async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
-    """إضافة محاضرة للجدول الأسبوعي مع فحص التعارضات"""
+    """إضافة محاضرة أو امتحان للجدول الأسبوعي مع فحص التعارضات"""
     check_permission(request, 'add_subjects')
     db = Database()
     try:
@@ -1106,19 +1106,40 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         day_of_week = data.get('day_of_week', '').strip()
         start_time = data.get('start_time', '').strip()
         end_time = data.get('end_time', '').strip()
+        event_type = data.get('event_type', 'محاضرة').strip()
         notes = data.get('notes', '')
+        duration = data.get('duration', None)
         
-        if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
-            return {"success": False, "message": "جميع الحقول مطلوبة (القاعة، المدرس، اليوم، وقت البداية، وقت النهاية)"}
+        if not all([room_id, teacher_id, day_of_week, start_time]):
+            return {"success": False, "message": "جميع الحقول مطلوبة (القاعة، المدرس، اليوم، وقت البداية)"}
         
         valid_days = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
         if day_of_week not in valid_days:
             return {"success": False, "message": f"اليوم يجب أن يكون من: {', '.join(valid_days)}"}
         
+        # حساب وقت النهاية من المدة إذا تم تحديدها
+        if duration and not end_time:
+            try:
+                duration_minutes = int(duration)
+                sh, sm = map(int, start_time.split(':'))
+                total_minutes = sh * 60 + sm + duration_minutes
+                eh = total_minutes // 60
+                em = total_minutes % 60
+                end_time = f"{eh:02d}:{em:02d}"
+            except (ValueError, TypeError):
+                return {"success": False, "message": "قيمة المدة غير صالحة"}
+        
+        if not end_time:
+            return {"success": False, "message": "يرجى تحديد المدة أو وقت النهاية"}
+        
         if start_time >= end_time:
             return {"success": False, "message": "وقت البداية يجب أن يكون قبل وقت النهاية"}
         
-        # فحص تعارض القاعة: لا يمكن إضافة محاضرتين في نفس القاعة بنفس اليوم والوقت المتداخل
+        # التحقق من نوع الحدث
+        if event_type not in ('محاضرة', 'امتحان'):
+            event_type = 'محاضرة'
+        
+        # فحص تعارض القاعة: لا يمكن إضافة حدثين في نفس القاعة بنفس اليوم والوقت المتداخل
         room_conflict = db.execute_query('''
             SELECT ws.*, t.name as teacher_name, t.subject as teacher_subject
             FROM weekly_schedule ws
@@ -1129,9 +1150,11 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         
         if room_conflict:
             conflict = room_conflict[0]
+            conflict_type = conflict.get('event_type', 'محاضرة')
+            conflict_label = 'امتحان' if conflict_type == 'امتحان' else 'محاضرة'
             return {
                 "success": False,
-                "message": f"تعارض في القاعة! يوجد محاضرة للمدرس {conflict['teacher_name']} ({conflict['teacher_subject']}) من {conflict['start_time']} إلى {conflict['end_time']}"
+                "message": f"تعارض في القاعة! يوجد {conflict_label} للمدرس {conflict['teacher_name']} ({conflict['teacher_subject']}) من {conflict['start_time']} إلى {conflict['end_time']}"
             }
         
         # فحص تعارض المدرس: لا يمكن للمدرس التدريس في مكانين بنفس الوقت
@@ -1155,20 +1178,21 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
             subject = teacher_info[0]['subject'] if teacher_info else ''
         
         result = db.execute_query(
-            '''INSERT INTO weekly_schedule (room_id, teacher_id, subject, day_of_week, start_time, end_time, notes)
-               VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id''',
-            (room_id, teacher_id, subject, day_of_week, start_time, end_time, notes)
+            '''INSERT INTO weekly_schedule (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id''',
+            (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes)
         )
         new_id = result[0]['id'] if result else None
         
-        return {"success": True, "message": "تم إضافة المحاضرة بنجاح", "id": new_id}
+        event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
+        return {"success": True, "message": f"تم إضافة {event_label} بنجاح", "id": new_id}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 
 
 @router.put("/weekly-schedule/{lecture_id}")
 async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dict = Body(...)):
-    """تحديث محاضرة في الجدول الأسبوعي مع فحص التعارضات"""
+    """تحديث محاضرة أو امتحان في الجدول الأسبوعي مع فحص التعارضات"""
     check_permission(request, 'edit_subjects')
     db = Database()
     try:
@@ -1178,13 +1202,34 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         day_of_week = data.get('day_of_week', '').strip()
         start_time = data.get('start_time', '').strip()
         end_time = data.get('end_time', '').strip()
+        event_type = data.get('event_type', 'محاضرة').strip()
         notes = data.get('notes', '')
+        duration = data.get('duration', None)
         
-        if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
+        if not all([room_id, teacher_id, day_of_week, start_time]):
             return {"success": False, "message": "جميع الحقول مطلوبة"}
+        
+        # حساب وقت النهاية من المدة إذا تم تحديدها
+        if duration and not end_time:
+            try:
+                duration_minutes = int(duration)
+                sh, sm = map(int, start_time.split(':'))
+                total_minutes = sh * 60 + sm + duration_minutes
+                eh = total_minutes // 60
+                em = total_minutes % 60
+                end_time = f"{eh:02d}:{em:02d}"
+            except (ValueError, TypeError):
+                return {"success": False, "message": "قيمة المدة غير صالحة"}
+        
+        if not end_time:
+            return {"success": False, "message": "يرجى تحديد المدة أو وقت النهاية"}
         
         if start_time >= end_time:
             return {"success": False, "message": "وقت البداية يجب أن يكون قبل وقت النهاية"}
+        
+        # التحقق من نوع الحدث
+        if event_type not in ('محاضرة', 'امتحان'):
+            event_type = 'محاضرة'
         
         # فحص تعارض القاعة (باستثناء المحاضرة الحالية)
         room_conflict = db.execute_query('''
@@ -1197,9 +1242,11 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         
         if room_conflict:
             conflict = room_conflict[0]
+            conflict_type = conflict.get('event_type', 'محاضرة')
+            conflict_label = 'امتحان' if conflict_type == 'امتحان' else 'محاضرة'
             return {
                 "success": False,
-                "message": f"تعارض في القاعة! يوجد محاضرة للمدرس {conflict['teacher_name']} ({conflict['teacher_subject']}) من {conflict['start_time']} إلى {conflict['end_time']}"
+                "message": f"تعارض في القاعة! يوجد {conflict_label} للمدرس {conflict['teacher_name']} ({conflict['teacher_subject']}) من {conflict['start_time']} إلى {conflict['end_time']}"
             }
         
         # فحص تعارض المدرس (باستثناء المحاضرة الحالية)
@@ -1224,11 +1271,12 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         
         db.execute_query(
             '''UPDATE weekly_schedule SET room_id=%s, teacher_id=%s, subject=%s, day_of_week=%s, 
-               start_time=%s, end_time=%s, notes=%s WHERE id=%s''',
-            (room_id, teacher_id, subject, day_of_week, start_time, end_time, notes, lecture_id)
+               start_time=%s, end_time=%s, event_type=%s, notes=%s WHERE id=%s''',
+            (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes, lecture_id)
         )
         
-        return {"success": True, "message": "تم تحديث المحاضرة بنجاح"}
+        event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
+        return {"success": True, "message": f"تم تحديث {event_label} بنجاح"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 

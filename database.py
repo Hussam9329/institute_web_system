@@ -420,6 +420,8 @@ def init_db():
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS discount_type VARCHAR(20) DEFAULT 'none'",
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS discount_value INTEGER DEFAULT 0",
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS institute_waiver INTEGER DEFAULT 0",
+            # عمود نوع الحدث للجدول الأسبوعي (محاضرة / امتحان)
+            "ALTER TABLE weekly_schedule ADD COLUMN IF NOT EXISTS event_type VARCHAR(20) DEFAULT 'محاضرة'",
         ]
         
         # ===== جداول الجدول الأسبوعي =====
@@ -445,6 +447,7 @@ def init_db():
                 day_of_week VARCHAR(20) NOT NULL,
                 start_time VARCHAR(5) NOT NULL,
                 end_time VARCHAR(5) NOT NULL,
+                event_type VARCHAR(20) NOT NULL DEFAULT 'محاضرة',
                 notes TEXT DEFAULT '',
                 FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
                 FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE

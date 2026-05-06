@@ -1164,7 +1164,7 @@ async def weekly_schedule_page(request: Request):
     
     return templates.TemplateResponse("weekly_schedule/index.html", {
         "request": request,
-        "rooms": rooms,
-        "teachers": teachers,
-        "schedule": schedule
+        "rooms": [dict(r) for r in rooms] if rooms else [],
+        "teachers": [dict(t) for t in teachers] if teachers else [],
+        "schedule": [dict(s) for s in schedule] if schedule else []
     })

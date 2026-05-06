@@ -25,6 +25,35 @@
     font-size: 13px;
 }
 
+/* Legend */
+.schedule-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+    align-items: center;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+.legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+}
+.legend-dot.lecture { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.legend-dot.exam { background: linear-gradient(135deg, #f97316, #ea580c); }
+.legend-dot.blocked { background: repeating-linear-gradient(45deg, #fee2e2, #fee2e2 3px, #fecaca 3px, #fecaca 6px); border: 1px solid #fca5a5; }
+
 /* Room tabs */
 .room-tabs {
     display: flex;
@@ -101,52 +130,95 @@
     vertical-align: middle;
     border-right: 2px solid #e2e8f0;
 }
+.schedule-grid td.blocked-cell {
+    background: repeating-linear-gradient(45deg, #fef2f2, #fef2f2 4px, #fee2e2 4px, #fee2e2 8px);
+    position: relative;
+}
+.schedule-grid td.blocked-cell::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border: 1px dashed #fca5a5;
+    border-radius: 4px;
+    pointer-events: none;
+}
 
-/* Lecture Card */
-.lecture-card {
-    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+/* Event Card - Lecture */
+.event-card {
     border-radius: 8px;
     padding: 6px 8px;
     font-size: 11.5px;
-    border-right: 3px solid #4f46e5;
     position: relative;
     cursor: pointer;
     transition: all 0.2s;
 }
-.lecture-card:hover {
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+.event-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     transform: translateY(-1px);
 }
-.lecture-card .lec-subject {
+.event-card.lecture-card {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-right: 3px solid #3b82f6;
+}
+.event-card.lecture-card:hover {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+.event-card.exam-card {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border-right: 3px solid #f97316;
+}
+.event-card.exam-card:hover {
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+}
+.event-card .ev-type-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9.5px;
     font-weight: 700;
-    color: #312e81;
+    margin-bottom: 2px;
+}
+.lecture-card .ev-type-badge {
+    background: #3b82f6;
+    color: white;
+}
+.exam-card .ev-type-badge {
+    background: #f97316;
+    color: white;
+}
+.event-card .ev-subject {
+    font-weight: 700;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.lecture-card .lec-teacher {
-    color: #4f46e5;
+.lecture-card .ev-subject { color: #1e40af; }
+.exam-card .ev-subject { color: #9a3412; }
+.event-card .ev-teacher {
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.lecture-card .lec-time {
-    color: #6366f1;
+.lecture-card .ev-teacher { color: #3b82f6; }
+.exam-card .ev-teacher { color: #ea580c; }
+.event-card .ev-time {
     font-size: 10.5px;
 }
-.lecture-card .lec-actions {
+.lecture-card .ev-time { color: #6366f1; }
+.exam-card .ev-time { color: #c2410c; }
+.event-card .ev-actions {
     position: absolute;
     top: 2px;
     left: 2px;
     display: none;
 }
-.lecture-card:hover .lec-actions {
+.event-card:hover .ev-actions {
     display: flex;
     gap: 2px;
 }
-.lecture-card .lec-actions button {
+.event-card .ev-actions button {
     width: 20px;
     height: 20px;
     border-radius: 4px;
@@ -158,17 +230,17 @@
     justify-content: center;
     padding: 0;
 }
-.lec-btn-edit {
+.ev-btn-edit {
     background: #fbbf24;
     color: #78350f;
 }
-.lec-btn-delete {
+.ev-btn-delete {
     background: #fca5a5;
     color: #991b1b;
 }
 
 /* Empty cell add button */
-.add-lecture-btn {
+.add-event-btn {
     width: 100%;
     height: 100%;
     min-height: 52px;
@@ -183,7 +255,7 @@
     font-size: 16px;
     transition: all 0.2s;
 }
-.add-lecture-btn:hover {
+.add-event-btn:hover {
     border-color: #6366f1;
     color: #6366f1;
     background: #f5f3ff;
@@ -271,7 +343,7 @@
 
 /* Modal */
 .modal-schedule .modal-dialog {
-    max-width: 520px;
+    max-width: 560px;
 }
 .modal-schedule .modal-header {
     background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
@@ -288,21 +360,52 @@
     margin-bottom: 4px;
 }
 
-/* Color variations for lecture cards */
-.lecture-card.color-1 { background: linear-gradient(135deg, #eef2ff, #e0e7ff); border-right-color: #4f46e5; }
-.lecture-card.color-2 { background: linear-gradient(135deg, #fef3c7, #fde68a); border-right-color: #d97706; }
-.lecture-card.color-1 .lec-subject { color: #312e81; }
-.lecture-card.color-1 .lec-teacher { color: #4f46e5; }
-.lecture-card.color-1 .lec-time { color: #6366f1; }
-.lecture-card.color-2 .lec-subject { color: #78350f; }
-.lecture-card.color-2 .lec-teacher { color: #b45309; }
-.lecture-card.color-2 .lec-time { color: #d97706; }
+/* Duration selector highlight */
+.duration-option {
+    transition: all 0.15s;
+}
+.duration-option.active {
+    background: #4f46e5 !important;
+    color: white !important;
+    border-color: #4f46e5 !important;
+}
+
+/* Conflict warning */
+.conflict-warning {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #991b1b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Auto-sort button */
+.auto-sort-btn {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.auto-sort-btn:hover {
+    background: linear-gradient(135deg, #047857, #065f46);
+    transform: translateY(-1px);
+}
 
 @media (max-width: 768px) {
     .schedule-header { padding: 16px; }
     .schedule-header h4 { font-size: 16px; }
     .room-tabs { padding: 8px; }
     .room-tab { padding: 6px 12px; font-size: 12px; }
+    .schedule-legend { gap: 10px; padding: 8px 12px; }
 }
 </style>
 {% endblock %}
@@ -313,16 +416,36 @@
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
             <h4><i class="fas fa-calendar-alt me-2"></i>الجدول الأسبوعي</h4>
-            <small style="opacity: 0.85;">تنظيم المحاضرات على مدار الأسبوع حسب القاعات</small>
+            <small style="opacity: 0.85;">تنظيم المحاضرات والامتحانات على مدار الأسبوع حسب القاعات</small>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-light btn-sm" onclick="openRoomPanel()" title="إدارة القاعات">
                 <i class="fas fa-door-open me-1"></i>القاعات
             </button>
-            <button class="btn btn-warning btn-sm text-dark" onclick="openAddLectureModal()" title="إضافة محاضرة">
-                <i class="fas fa-plus me-1"></i>محاضرة جديدة
+            <button class="auto-sort-btn" onclick="autoSortSchedule()" title="ترتيب تلقائي">
+                <i class="fas fa-sort-amount-down me-1"></i>ترتيب تلقائي
+            </button>
+            <button class="btn btn-warning btn-sm text-dark" onclick="openAddEventModal()" title="إضافة حدث جديد">
+                <i class="fas fa-plus me-1"></i>حدث جديد
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="schedule-legend">
+    <span style="font-weight:700; color:#1e1b4b; font-size:13px;"><i class="fas fa-palette me-1"></i>دليل الألوان:</span>
+    <div class="legend-item">
+        <div class="legend-dot lecture"></div>
+        محاضرة
+    </div>
+    <div class="legend-item">
+        <div class="legend-dot exam"></div>
+        امتحان
+    </div>
+    <div class="legend-item">
+        <div class="legend-dot blocked"></div>
+        محجوز (تعارض)
     </div>
 </div>
 
@@ -380,17 +503,32 @@
     </table>
 </div>
 
-<!-- Add/Edit Lecture Modal -->
-<div class="modal fade modal-schedule" id="lectureModal" tabindex="-1">
+<!-- Add/Edit Event Modal -->
+<div class="modal fade modal-schedule" id="eventModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h6 class="modal-title" id="lectureModalTitle">إضافة محاضرة</h6>
+                <h6 class="modal-title" id="eventModalTitle">إضافة حدث</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editLectureId" value="">
+                <input type="hidden" id="editEventId" value="">
                 <div class="row g-3">
+                    <!-- Event Type -->
+                    <div class="col-12">
+                        <label class="form-label-sm">نوع الحدث</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm flex-fill event-type-btn active" id="btnTypeLecture" 
+                                onclick="setEventType('محاضرة')" style="background:#3b82f6;color:white;border:2px solid #3b82f6;">
+                                <i class="fas fa-chalkboard-teacher me-1"></i>محاضرة
+                            </button>
+                            <button type="button" class="btn btn-sm flex-fill event-type-btn" id="btnTypeExam" 
+                                onclick="setEventType('امتحان')" style="background:white;color:#ea580c;border:2px solid #f97316;">
+                                <i class="fas fa-file-alt me-1"></i>امتحان
+                            </button>
+                        </div>
+                        <input type="hidden" id="lecEventType" value="محاضرة">
+                    </div>
                     <div class="col-6">
                         <label class="form-label-sm">القاعة</label>
                         <select id="lecRoom" class="form-select form-select-sm" required></select>
@@ -417,22 +555,48 @@
                     </div>
                     <div class="col-6">
                         <label class="form-label-sm">من الساعة</label>
-                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required>
+                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required onchange="updateEndTime()">
                     </div>
                     <div class="col-6">
-                        <label class="form-label-sm">إلى الساعة</label>
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required>
+                        <label class="form-label-sm">المدة</label>
+                        <select id="lecDuration" class="form-select form-select-sm" onchange="updateEndTime()">
+                            <!-- Lecture durations -->
+                            <optgroup label="محاضرة" id="lectureDurations">
+                                <option value="60">1 ساعة</option>
+                                <option value="90" selected>ساعة ونصف</option>
+                                <option value="120">ساعتين</option>
+                            </optgroup>
+                            <!-- Exam durations -->
+                            <optgroup label="امتحان" id="examDurations">
+                                <option value="120">ساعتين</option>
+                                <option value="180">3 ساعات</option>
+                                <option value="240">4 ساعات</option>
+                                <option value="300">5 ساعات</option>
+                                <option value="360">6 ساعات</option>
+                                <option value="420">7 ساعات</option>
+                                <option value="480">8 ساعات</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-sm">إلى الساعة <small class="text-muted">(تُحسب تلقائياً)</small></label>
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" readonly style="background:#f8fafc;">
                     </div>
                     <div class="col-12">
                         <label class="form-label-sm">ملاحظات</label>
                         <input type="text" id="lecNotes" class="form-control form-control-sm" placeholder="ملاحظات اختيارية">
                     </div>
                 </div>
+                <!-- Conflict Warning -->
+                <div id="lecConflictWarning" class="conflict-warning mt-3" style="display:none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="lecConflictText"></span>
+                </div>
                 <div id="lecError" class="alert alert-danger mt-3" style="display:none; font-size: 13px;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="saveLecture()">
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveEvent()">
                     <i class="fas fa-save me-1"></i>حفظ
                 </button>
             </div>
@@ -477,6 +641,7 @@ let allRooms = {{ rooms | tojson }};
 let allTeachers = {{ teachers | tojson }};
 let allSchedule = {{ schedule | tojson }};
 let currentRoomFilter = 'all';
+let currentEventType = 'محاضرة';
 
 const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 const TIME_SLOTS = [];
@@ -484,6 +649,21 @@ for (let h = 7; h <= 21; h++) {
     TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
     TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
 }
+
+const LECTURE_DURATIONS = [
+    { value: 60, label: '1 ساعة' },
+    { value: 90, label: 'ساعة ونصف' },
+    { value: 120, label: 'ساعتين' }
+];
+const EXAM_DURATIONS = [
+    { value: 120, label: 'ساعتين' },
+    { value: 180, label: '3 ساعات' },
+    { value: 240, label: '4 ساعات' },
+    { value: 300, label: '5 ساعات' },
+    { value: 360, label: '6 ساعات' },
+    { value: 420, label: '7 ساعات' },
+    { value: 480, label: '8 ساعات' }
+];
 
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -498,7 +678,7 @@ function renderRoomTabs() {
     const tabsEl = document.getElementById('roomTabs');
     let html = '<div class="room-tab ' + (currentRoomFilter === 'all' ? 'active' : '') + '" data-room="all" onclick="filterByRoom(\'all\')"><i class="fas fa-th me-1"></i>الكل</div>';
     allRooms.forEach(room => {
-        html += '<div class="room-tab ' + (currentRoomFilter === room.id ? 'active' : '') + '" data-room="' + room.id + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open me-1"></i>' + room.name + '</div>';
+        html += '<div class="room-tab ' + (currentRoomFilter === room.id ? 'active' : '') + '" data-room="' + room.id + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open me-1"></i>' + escapeHtml(room.name) + '</div>';
     });
     tabsEl.innerHTML = html;
 }
@@ -509,9 +689,36 @@ function filterByRoom(roomId) {
     renderScheduleGrid();
 }
 
+// ===== Helper: Check if a time slot is blocked =====
+function isSlotBlocked(roomId, day, time) {
+    if (currentRoomFilter === 'all') {
+        // When viewing all rooms, check if ANY room has an event at this time for the day
+        // We don't show blocked cells in "all" view since rooms are mixed
+        return false;
+    }
+    const roomEvents = allSchedule.filter(ev => ev.room_id === roomId && ev.day_of_week === day);
+    for (const ev of roomEvents) {
+        if (time >= ev.start_time && time < ev.end_time) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ===== Helper: Get events at a specific slot =====
+function getEventsAt(day, time) {
+    return allSchedule.filter(ev => {
+        const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
+        const dayMatch = ev.day_of_week === day;
+        const isStart = ev.start_time === time;
+        return roomMatch && dayMatch && isStart;
+    });
+}
+
 // ===== Schedule Grid =====
 function renderScheduleGrid() {
     const tbody = document.getElementById('scheduleBody');
+    const activeRoom = currentRoomFilter !== 'all' ? allRooms.find(r => r.id === currentRoomFilter) : null;
     let html = '';
     
     TIME_SLOTS.forEach(time => {
@@ -519,31 +726,44 @@ function renderScheduleGrid() {
         html += '<td class="time-cell">' + time + '</td>';
         
         DAYS.forEach(day => {
-            const lectures = getLecturesAt(day, time);
-            if (lectures.length > 0) {
+            const events = getEventsAt(day, time);
+            if (events.length > 0) {
                 html += '<td>';
-                lectures.forEach(lec => {
-                    const colorClass = lec.teacher_id % 2 === 0 ? 'color-2' : 'color-1';
-                    html += '<div class="lecture-card ' + colorClass + '" title="' + lec.room_name + ' | ' + lec.teacher_name + ' | ' + lec.start_time + '-' + lec.end_time + '">';
-                    html += '<div class="lec-actions">';
-                    html += '<button class="lec-btn-edit" onclick="editLecture(' + lec.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
-                    html += '<button class="lec-btn-delete" onclick="deleteLecture(' + lec.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+                events.forEach(ev => {
+                    const isExam = (ev.event_type === 'امتحان');
+                    const cardClass = isExam ? 'exam-card' : 'lecture-card';
+                    const evTypeLabel = isExam ? 'امتحان' : 'محاضرة';
+                    
+                    // Calculate row span based on duration
+                    const startMin = timeToMinutes(ev.start_time);
+                    const endMin = timeToMinutes(ev.end_time);
+                    const durationMin = endMin - startMin;
+                    const slots = Math.max(1, Math.round(durationMin / 30));
+                    
+                    html += '<div class="event-card ' + cardClass + '" title="' + escapeHtml(ev.room_name) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time + '" data-slots="' + slots + '">';
+                    html += '<div class="ev-actions">';
+                    html += '<button class="ev-btn-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+                    html += '<button class="ev-btn-delete" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
                     html += '</div>';
+                    html += '<div class="ev-type-badge">' + evTypeLabel + '</div>';
+                    html += '<div class="ev-subject">' + escapeHtml(ev.subject) + '</div>';
                     if (currentRoomFilter === 'all') {
-                        html += '<div class="lec-subject">' + lec.subject + '</div>';
-                        html += '<div class="lec-teacher">' + lec.teacher_name + ' | ' + lec.room_name + '</div>';
+                        html += '<div class="ev-teacher">' + escapeHtml(ev.teacher_name) + ' | ' + escapeHtml(ev.room_name) + '</div>';
                     } else {
-                        html += '<div class="lec-subject">' + lec.subject + '</div>';
-                        html += '<div class="lec-teacher">' + lec.teacher_name + '</div>';
+                        html += '<div class="ev-teacher">' + escapeHtml(ev.teacher_name) + '</div>';
                     }
-                    html += '<div class="lec-time">' + lec.start_time + ' - ' + lec.end_time + '</div>';
+                    html += '<div class="ev-time">' + ev.start_time + ' - ' + ev.end_time + '</div>';
                     html += '</div>';
                 });
                 html += '</td>';
             } else {
-                // Check if this is a top-of-hour slot (e.g. 08:00, 09:00) for the add button
-                if (time.endsWith(':00')) {
-                    html += '<td><button class="add-lecture-btn" onclick="openAddLectureModal(\'' + day + '\', \'' + time + '\')" title="إضافة محاضرة"><i class="fas fa-plus"></i></button></td>';
+                // Check if this time slot is blocked (occupied by an ongoing event from a previous row)
+                const isBlocked = activeRoom ? isSlotOccupied(activeRoom.id, day, time) : false;
+                
+                if (isBlocked) {
+                    html += '<td class="blocked-cell" title="هذا الوقت محجوز"></td>';
+                } else if (time.endsWith(':00')) {
+                    html += '<td><button class="add-event-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\')" title="إضافة حدث"><i class="fas fa-plus"></i></button></td>';
                 } else {
                     html += '<td></td>';
                 }
@@ -556,14 +776,10 @@ function renderScheduleGrid() {
     tbody.innerHTML = html;
 }
 
-function getLecturesAt(day, time) {
-    return allSchedule.filter(lec => {
-        const roomMatch = currentRoomFilter === 'all' || lec.room_id === currentRoomFilter;
-        const dayMatch = lec.day_of_week === day;
-        const timeMatch = lec.start_time <= time && lec.end_time > time;
-        // Only show at the start time to avoid duplicates
-        const isStart = lec.start_time === time;
-        return roomMatch && dayMatch && timeMatch && isStart;
+// Check if a time slot is occupied by an event that started earlier
+function isSlotOccupied(roomId, day, time) {
+    return allSchedule.some(ev => {
+        return ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
     });
 }
 
@@ -581,8 +797,8 @@ function renderRoomsList() {
         html += '<div class="room-info">';
         html += '<div class="room-icon"><i class="fas fa-door-open"></i></div>';
         html += '<div>';
-        html += '<div class="room-name">' + room.name + '</div>';
-        html += '<div class="room-capacity">السعة: ' + (room.capacity || '-') + ' | محاضرات: ' + lecCount + '</div>';
+        html += '<div class="room-name">' + escapeHtml(room.name) + '</div>';
+        html += '<div class="room-capacity">السعة: ' + (room.capacity || '-') + ' | فعاليات: ' + lecCount + '</div>';
         html += '</div>';
         html += '</div>';
         html += '<div class="room-actions">';
@@ -660,7 +876,7 @@ async function updateRoom() {
 }
 
 async function deleteRoom(roomId) {
-    if (!confirm('هل أنت متأكد من حذف القاعة؟ سيتم حذف جميع المحاضرات المرتبطة بها.')) return;
+    if (!confirm('هل أنت متأكد من حذف القاعة؟ سيتم حذف جميع الفعاليات المرتبطة بها.')) return;
     try {
         const res = await apiRequest('/api/rooms/' + roomId, {method: 'DELETE'});
         if (res.success) {
@@ -674,16 +890,113 @@ async function deleteRoom(roomId) {
     }
 }
 
-// ===== Lecture CRUD =====
+// ===== Event Type Switching =====
+function setEventType(type) {
+    currentEventType = type;
+    document.getElementById('lecEventType').value = type;
+    
+    const btnLecture = document.getElementById('btnTypeLecture');
+    const btnExam = document.getElementById('btnTypeExam');
+    
+    if (type === 'محاضرة') {
+        btnLecture.style.background = '#3b82f6';
+        btnLecture.style.color = 'white';
+        btnLecture.style.borderColor = '#3b82f6';
+        btnExam.style.background = 'white';
+        btnExam.style.color = '#ea580c';
+        btnExam.style.borderColor = '#f97316';
+    } else {
+        btnExam.style.background = '#f97316';
+        btnExam.style.color = 'white';
+        btnExam.style.borderColor = '#f97316';
+        btnLecture.style.background = 'white';
+        btnLecture.style.color = '#3b82f6';
+        btnLecture.style.borderColor = '#3b82f6';
+    }
+    
+    updateDurationOptions();
+    updateEndTime();
+}
+
+function updateDurationOptions() {
+    const select = document.getElementById('lecDuration');
+    const isExam = currentEventType === 'امتحان';
+    const durations = isExam ? EXAM_DURATIONS : LECTURE_DURATIONS;
+    
+    // Clear and rebuild
+    select.innerHTML = '';
+    durations.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.value;
+        opt.textContent = d.label;
+        select.appendChild(opt);
+    });
+    
+    // Default: 90 for lecture, 120 for exam
+    if (!isExam) {
+        select.value = '90';
+    } else {
+        select.value = '120';
+    }
+}
+
+// ===== Time Calculation =====
+function updateEndTime() {
+    const startTime = document.getElementById('lecStartTime').value;
+    const duration = parseInt(document.getElementById('lecDuration').value) || 0;
+    
+    if (startTime && duration) {
+        const end = incrementTime(startTime, duration);
+        document.getElementById('lecEndTime').value = end;
+        
+        // Check for conflicts in real-time
+        checkConflictPreview();
+    }
+}
+
+async function checkConflictPreview() {
+    const roomId = parseInt(document.getElementById('lecRoom').value);
+    const day = document.getElementById('lecDay').value;
+    const startTime = document.getElementById('lecStartTime').value;
+    const endTime = document.getElementById('lecEndTime').value;
+    const editId = document.getElementById('editEventId').value;
+    
+    const warningEl = document.getElementById('lecConflictWarning');
+    const warningText = document.getElementById('lecConflictText');
+    
+    if (!roomId || !day || !startTime || !endTime) {
+        warningEl.style.display = 'none';
+        return;
+    }
+    
+    // Check locally first
+    const conflicts = allSchedule.filter(ev => {
+        if (editId && ev.id === parseInt(editId)) return false;
+        if (ev.room_id !== roomId || ev.day_of_week !== day) return false;
+        // Overlap check: startA < endB AND startB < endA
+        return startTime < ev.end_time && ev.start_time < endTime;
+    });
+    
+    if (conflicts.length > 0) {
+        const c = conflicts[0];
+        const cType = c.event_type === 'امتحان' ? 'امتحان' : 'محاضرة';
+        warningText.textContent = 'تعارض! يوجد ' + cType + ' للمدرس ' + c.teacher_name + ' (' + c.teacher_subject + ') من ' + c.start_time + ' إلى ' + c.end_time;
+        warningEl.style.display = 'flex';
+    } else {
+        warningEl.style.display = 'none';
+    }
+}
+
+// ===== Event CRUD =====
 function populateModalSelects() {
     const roomSelect = document.getElementById('lecRoom');
     let roomHtml = '<option value="">اختر القاعة</option>';
-    allRooms.forEach(r => { roomHtml += '<option value="' + r.id + '">' + r.name + '</option>'; });
+    allRooms.forEach(r => { roomHtml += '<option value="' + r.id + '">' + escapeHtml(r.name) + '</option>'; });
     roomSelect.innerHTML = roomHtml;
     
     const teacherSelect = document.getElementById('lecTeacher');
     let teacherHtml = '<option value="">اختر المدرس</option>';
-    allTeachers.forEach(t => { teacherHtml += '<option value="' + t.id + '" data-subject="' + t.subject + '">' + t.name + ' (' + t.subject + ')</option>'; });
+    allTeachers.forEach(t => { teacherHtml += '<option value="' + t.id + '" data-subject="' + escapeHtml(t.subject) + '">' + escapeHtml(t.name) + ' (' + escapeHtml(t.subject) + ')</option>'; });
     teacherSelect.innerHTML = teacherHtml;
     
     // Auto-fill subject when teacher is selected
@@ -693,45 +1006,92 @@ function populateModalSelects() {
             document.getElementById('lecSubject').value = opt.dataset.subject;
         }
     });
+    
+    // Check conflict when room/day/time changes
+    ['lecRoom', 'lecDay', 'lecStartTime'].forEach(id => {
+        document.getElementById(id).addEventListener('change', function() {
+            updateEndTime();
+        });
+    });
 }
 
-function openAddLectureModal(day, time) {
-    document.getElementById('editLectureId').value = '';
-    document.getElementById('lectureModalTitle').textContent = 'إضافة محاضرة';
+function openAddEventModal(day, time) {
+    document.getElementById('editEventId').value = '';
+    document.getElementById('eventModalTitle').textContent = 'إضافة حدث جديد';
     document.getElementById('lecRoom').value = currentRoomFilter !== 'all' ? currentRoomFilter : '';
     document.getElementById('lecTeacher').value = '';
     document.getElementById('lecSubject').value = '';
     document.getElementById('lecDay').value = day || 'الإثنين';
     document.getElementById('lecStartTime').value = time || '08:00';
-    document.getElementById('lecEndTime').value = time ? incrementTime(time, 90) : '09:30';
     document.getElementById('lecNotes').value = '';
     document.getElementById('lecError').style.display = 'none';
+    document.getElementById('lecConflictWarning').style.display = 'none';
+    
+    // Reset event type to lecture
+    setEventType('محاضرة');
+    
     populateModalSelects();
     if (currentRoomFilter !== 'all') {
         document.getElementById('lecRoom').value = currentRoomFilter;
     }
-    new bootstrap.Modal(document.getElementById('lectureModal')).show();
+    
+    updateEndTime();
+    new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
-function editLecture(lectureId) {
-    const lec = allSchedule.find(l => l.id === lectureId);
-    if (!lec) return;
+function editEvent(eventId) {
+    const ev = allSchedule.find(e => e.id === eventId);
+    if (!ev) return;
     populateModalSelects();
-    document.getElementById('editLectureId').value = lec.id;
-    document.getElementById('lectureModalTitle').textContent = 'تعديل المحاضرة';
-    document.getElementById('lecRoom').value = lec.room_id;
-    document.getElementById('lecTeacher').value = lec.teacher_id;
-    document.getElementById('lecSubject').value = lec.subject;
-    document.getElementById('lecDay').value = lec.day_of_week;
-    document.getElementById('lecStartTime').value = lec.start_time;
-    document.getElementById('lecEndTime').value = lec.end_time;
-    document.getElementById('lecNotes').value = lec.notes || '';
+    
+    document.getElementById('editEventId').value = ev.id;
+    document.getElementById('lecRoom').value = ev.room_id;
+    document.getElementById('lecTeacher').value = ev.teacher_id;
+    document.getElementById('lecSubject').value = ev.subject;
+    document.getElementById('lecDay').value = ev.day_of_week;
+    document.getElementById('lecStartTime').value = ev.start_time;
+    document.getElementById('lecNotes').value = ev.notes || '';
     document.getElementById('lecError').style.display = 'none';
-    new bootstrap.Modal(document.getElementById('lectureModal')).show();
+    document.getElementById('lecConflictWarning').style.display = 'none';
+    
+    // Set event type
+    const evType = ev.event_type || 'محاضرة';
+    setEventType(evType);
+    
+    // Calculate duration and set the dropdown
+    const startMin = timeToMinutes(ev.start_time);
+    const endMin = timeToMinutes(ev.end_time);
+    const durationMin = endMin - startMin;
+    
+    // Try to match exact duration in dropdown
+    const durationSelect = document.getElementById('lecDuration');
+    let matched = false;
+    for (let i = 0; i < durationSelect.options.length; i++) {
+        if (parseInt(durationSelect.options[i].value) === durationMin) {
+            durationSelect.selectedIndex = i;
+            matched = true;
+            break;
+        }
+    }
+    if (!matched) {
+        // Add custom duration option
+        const customOpt = document.createElement('option');
+        customOpt.value = durationMin;
+        customOpt.textContent = formatDuration(durationMin);
+        durationSelect.appendChild(customOpt);
+        durationSelect.value = durationMin;
+    }
+    
+    document.getElementById('lecEndTime').value = ev.end_time;
+    
+    const modalTitle = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
+    document.getElementById('eventModalTitle').textContent = modalTitle;
+    
+    new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
-async function saveLecture() {
-    const editId = document.getElementById('editLectureId').value;
+async function saveEvent() {
+    const editId = document.getElementById('editEventId').value;
     const data = {
         room_id: parseInt(document.getElementById('lecRoom').value),
         teacher_id: parseInt(document.getElementById('lecTeacher').value),
@@ -739,6 +1099,8 @@ async function saveLecture() {
         day_of_week: document.getElementById('lecDay').value,
         start_time: document.getElementById('lecStartTime').value,
         end_time: document.getElementById('lecEndTime').value,
+        event_type: document.getElementById('lecEventType').value,
+        duration: parseInt(document.getElementById('lecDuration').value) || null,
         notes: document.getElementById('lecNotes').value.trim()
     };
     
@@ -767,7 +1129,7 @@ async function saveLecture() {
         }
         
         if (res.success) {
-            bootstrap.Modal.getInstance(document.getElementById('lectureModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
             await refreshData();
             showAlert(res.message || 'تم الحفظ بنجاح', 'success');
         } else {
@@ -780,13 +1142,15 @@ async function saveLecture() {
     }
 }
 
-async function deleteLecture(lectureId) {
-    if (!confirm('هل أنت متأكد من حذف هذه المحاضرة؟')) return;
+async function deleteEvent(eventId) {
+    const ev = allSchedule.find(e => e.id === eventId);
+    const evLabel = ev && ev.event_type === 'امتحان' ? 'الامتحان' : 'المحاضرة';
+    if (!confirm('هل أنت متأكد من حذف ' + evLabel + '؟')) return;
     try {
-        const res = await apiRequest('/api/weekly-schedule/' + lectureId, {method: 'DELETE'});
+        const res = await apiRequest('/api/weekly-schedule/' + eventId, {method: 'DELETE'});
         if (res.success) {
             await refreshData();
-            showAlert('تم حذف المحاضرة', 'success');
+            showAlert('تم حذف ' + evLabel, 'success');
         } else {
             showAlert(res.message || 'خطأ في الحذف');
         }
@@ -795,13 +1159,56 @@ async function deleteLecture(lectureId) {
     }
 }
 
+// ===== Auto Sort =====
+async function autoSortSchedule() {
+    if (allRooms.length === 0) {
+        showAlert('لا توجد قاعات بعد', 'warning');
+        return;
+    }
+    
+    // Sort the schedule data by room, then day, then start time
+    const dayOrder = {'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4, 'الجمعة': 5, 'السبت': 6, 'الأحد': 7};
+    
+    // Group by room
+    const sortedSchedule = [...allSchedule].sort((a, b) => {
+        if (a.room_id !== b.room_id) return a.room_id - b.room_id;
+        const dayA = dayOrder[a.day_of_week] || 99;
+        const dayB = dayOrder[b.day_of_week] || 99;
+        if (dayA !== dayB) return dayA - dayB;
+        return a.start_time.localeCompare(b.start_time);
+    });
+    
+    // Update local data and re-render
+    allSchedule = sortedSchedule;
+    renderScheduleGrid();
+    showAlert('تم ترتيب الجدول بنجاح حسب القاعة واليوم والوقت', 'success');
+}
+
 // ===== Utilities =====
-function incrementTime(time, minutes) {
+function timeToMinutes(time) {
     const [h, m] = time.split(':').map(Number);
-    const totalMin = h * 60 + m + minutes;
+    return h * 60 + m;
+}
+
+function incrementTime(time, minutes) {
+    const totalMin = timeToMinutes(time) + minutes;
     const newH = Math.floor(totalMin / 60);
     const newM = totalMin % 60;
     return String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
+}
+
+function formatDuration(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (mins === 0) return hours + ' ساعة';
+    if (mins === 30) return hours + ' ساعة ونصف';
+    return hours + ' ساعة و ' + mins + ' دقيقة';
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 async function refreshData() {
