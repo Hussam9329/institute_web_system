@@ -592,7 +592,7 @@ function initTeacherSearch() {
             dropdown.innerHTML = '';
             return;
         }
-        // تصفية المدرسين المرتبطين بالطالب فقط
+        // تصفية المدرسين المرتبطين بالطالب فقط - دائماً من القائمة الكاملة
         var filtered = currentTeachersList.filter(function(t) {
             return t.teacher_name.toLowerCase().includes(query) ||
                    t.subject.toLowerCase().includes(query);
@@ -600,12 +600,10 @@ function initTeacherSearch() {
         renderTeacherDropdown(filtered);
     });
 
-    // عند التركيز
+    // عند التركيز - لا نظهر القائمة تلقائياً، المستخدم يجب أن يكتب للبحث
     input.addEventListener('focus', function() {
         if (this.disabled) return;
-        if (this.value.trim() === '' && currentTeachersList.length > 0) {
-            renderTeacherDropdown(currentTeachersList);
-        }
+        // لا نظهر شيئاً عند التركيز - المستخدم يكتب ثم تظهر النتائج
     });
 
     // منع إغلاق المودال
@@ -1018,7 +1016,8 @@ async function deletePayment(installmentId) {
         const result = await apiRequest('/api/installments/' + installmentId, { method: 'DELETE' });
         if (result.success) {
             showAlert(result.message, 'success');
-            location.reload();
+            // التنقل بدون معامل البحث لضمان إعادة تحميل كل البيانات
+            window.location.href = '/payments';
         } else {
             showAlert(result.message, 'error');
         }
@@ -1027,11 +1026,15 @@ async function deletePayment(installmentId) {
     }
 }
 
-// ===== بحث مباشر في صفحة الأقساط =====
-document.getElementById('paymentSearch')?.addEventListener('input', function() {
-    const query = this.value.toLowerCase();
+// ===== بحث وفلترة موحد في صفحة الأقساط =====
+function filterPayments() {
+    const searchInput = document.getElementById('paymentSearch');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const dateFrom = document.getElementById('filter_date_from')?.value || '';
     const dateTo = document.getElementById('filter_date_to')?.value || '';
+
+    // فلترة صفوف الجدول
+    let tableVisible = 0;
     document.querySelectorAll('.payment-row').forEach(row => {
         const name = row.dataset.name || '';
         const teacher = row.dataset.teacher || '';
@@ -1040,44 +1043,44 @@ document.getElementById('paymentSearch')?.addEventListener('input', function() {
         const matchText = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
         const matchDateFrom = !dateFrom || rowDate >= dateFrom;
         const matchDateTo = !dateTo || rowDate <= dateTo;
-        row.style.display = (matchText && matchDateFrom && matchDateTo) ? '' : 'none';
+        const show = matchText && matchDateFrom && matchDateTo;
+        row.style.display = show ? '' : 'none';
+        if (show) tableVisible++;
     });
+
+    // فلترة الكارتات
     let cardVisible = 0;
     document.querySelectorAll('.payment-card').forEach(card => {
         const name = card.dataset.name || '';
         const teacher = card.dataset.teacher || '';
         const subject = card.dataset.subject || '';
-        const visible = name.includes(query) || teacher.includes(query) || subject.includes(query);
-        card.style.display = visible ? '' : 'none';
-        if (visible) cardVisible++;
+        const matchText = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
+        card.style.display = matchText ? '' : 'none';
+        if (matchText) cardVisible++;
     });
+
+    // رسالة لا توجد نتائج للكارتات
     const noCards = document.getElementById('noCardsResults');
     if (noCards) {
         const cards = document.querySelectorAll('.payment-card');
         noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
     }
-});
-
-// فلترة التاريخ
-document.getElementById('filter_date_from')?.addEventListener('change', function() {
-    filterPaymentsByDate();
-});
-document.getElementById('filter_date_to')?.addEventListener('change', function() {
-    filterPaymentsByDate();
-});
-
-function filterPaymentsByDate() {
-    const dateFrom = document.getElementById('filter_date_from')?.value || '';
-    const dateTo = document.getElementById('filter_date_to')?.value || '';
-    document.querySelectorAll('.payment-row').forEach(row => {
-        const rowDate = row.dataset.date || '';
-        const matchDateFrom = !dateFrom || rowDate >= dateFrom;
-        const matchDateTo = !dateTo || rowDate <= dateTo;
-        const currentlyHiddenByText = row.style.display === 'none' && (dateFrom || dateTo);
-        if (!currentlyHiddenByText) {
-            row.style.display = (matchDateFrom && matchDateTo) ? '' : 'none';
-        }
-    });
 }
+
+// ربط أحداث البحث النصي
+document.getElementById('paymentSearch')?.addEventListener('input', function() {
+    // تنظيف URL من معامل البحث عند استخدام البحث المباشر
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('search')) {
+        urlParams.delete('search');
+        var newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+    filterPayments();
+});
+
+// ربط أحداث فلتر التاريخ
+document.getElementById('filter_date_from')?.addEventListener('change', filterPayments);
+document.getElementById('filter_date_to')?.addEventListener('change', filterPayments);
 </script>
 {% endblock %}
