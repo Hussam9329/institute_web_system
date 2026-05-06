@@ -48,8 +48,37 @@ class FinanceService:
             return result[0]['total'] if result[0]['total'] else 0
         return 0
     
+    def _get_discount_info(self, student_id: int, teacher_id: int) -> Dict[str, Any]:
+        """الحصول على معلومات الخصم لربط طالب-مدرس"""
+        db = self.db
+        query = '''
+            SELECT discount_type, discount_value, institute_waiver
+            FROM student_teacher 
+            WHERE student_id = %s AND teacher_id = %s
+        '''
+        result = db.execute_query(query, (student_id, teacher_id))
+        if result:
+            return {
+                'discount_type': result[0].get('discount_type', 'none'),
+                'discount_value': result[0].get('discount_value', 0) or 0,
+                'institute_waiver': result[0].get('institute_waiver', 0) or 0,
+            }
+        return {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0}
+    
+    def _apply_discount_to_fee(self, total_fee: int, discount_info: Dict) -> int:
+        """تطبيق الخصم على القسط الكلي وإرجاع القسط الفعلي"""
+        discount_type = discount_info.get('discount_type', 'none')
+        discount_value = discount_info.get('discount_value', 0)
+        
+        if discount_type == 'free':
+            return 0
+        elif discount_type == 'percentage' and discount_value > 0:
+            discount_amount = int(total_fee * discount_value / 100)
+            return max(0, total_fee - discount_amount)
+        return total_fee
+    
     def calculate_student_teacher_balance(self, student_id: int, teacher_id: int) -> Dict[str, Any]:
-        """حساب الرصيد المتبقي - يستخدم القسط حسب نوع الدراسة"""
+        """حساب الرصيد المتبقي - يستخدم القسط حسب نوع الدراسة مع الخصم"""
         db = self.db
         
         # الحصول على معلومات المدرس
@@ -60,37 +89,49 @@ class FinanceService:
         result = db.execute_query(query, (teacher_id,))
         
         if not result:
-            return {'total_fee': 0, 'paid_total': 0, 'remaining_balance': 0}
+            return {'total_fee': 0, 'paid_total': 0, 'remaining_balance': 0, 'original_fee': 0, 'discount_info': {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0}}
         
         t = result[0]
         
-        # الحصول على نوع الدراسة من جدول الربط
+        # الحصول على نوع الدراسة والخصم من جدول الربط
         link_query = '''
-            SELECT study_type FROM student_teacher 
+            SELECT study_type, discount_type, discount_value, institute_waiver
+            FROM student_teacher 
             WHERE student_id = %s AND teacher_id = %s
         '''
         link_result = db.execute_query(link_query, (student_id, teacher_id))
         study_type = 'حضوري'
+        discount_info = {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0}
         if link_result:
             study_type = link_result[0].get('study_type', 'حضوري')
+            discount_info = {
+                'discount_type': link_result[0].get('discount_type', 'none') or 'none',
+                'discount_value': link_result[0].get('discount_value', 0) or 0,
+                'institute_waiver': link_result[0].get('institute_waiver', 0) or 0,
+            }
         
-        # تحديد القسط حسب نوع الدراسة
+        # تحديد القسط حسب نوع الدراسة (القسط الأصلي قبل الخصم)
         if study_type == 'الكتروني' and t.get('fee_electronic', 0) > 0:
-            total_fee = t['fee_electronic']
+            original_fee = t['fee_electronic']
         elif study_type == 'مدمج' and t.get('fee_blended', 0) > 0:
-            total_fee = t['fee_blended']
+            original_fee = t['fee_blended']
         elif study_type == 'حضوري' and t.get('fee_in_person', 0) > 0:
-            total_fee = t['fee_in_person']
+            original_fee = t['fee_in_person']
         else:
-            total_fee = t['total_fee']
+            original_fee = t['total_fee']
+        
+        # تطبيق الخصم على القسط
+        effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
         
         paid_total = self.get_student_paid_total(student_id, teacher_id)
-        remaining_balance = total_fee - paid_total
+        remaining_balance = effective_fee - paid_total
         
         return {
-            'total_fee': total_fee,
+            'total_fee': effective_fee,
+            'original_fee': original_fee,
             'paid_total': paid_total,
-            'remaining_balance': remaining_balance
+            'remaining_balance': remaining_balance,
+            'discount_info': discount_info
         }
     
     def get_student_all_teachers_summary(self, student_id: int) -> List[Dict[str, Any]]:
@@ -118,10 +159,12 @@ class FinanceService:
                 'teacher_name': teacher['name'],
                 'subject': teacher['subject'],
                 'total_fee': balance['total_fee'],
+                'original_fee': balance.get('original_fee', balance['total_fee']),
                 'paid_total': balance['paid_total'],
                 'remaining_balance': balance['remaining_balance'],
                 'study_type': teacher.get('study_type', 'حضوري'),
-                'status': teacher.get('link_status', 'مستمر')
+                'status': teacher.get('link_status', 'مستمر'),
+                'discount_info': balance.get('discount_info', {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0})
             })
         
         return summary
@@ -210,25 +253,37 @@ class FinanceService:
         
         t = result[0]
         
-        # Get all installments with study type for this teacher
+        # Get all installments with study type and discount info for this teacher
         query = '''
             SELECT i.student_id, i.installment_type, i.amount,
-                   COALESCE(st.study_type, 'حضوري') as study_type
+                   COALESCE(st.study_type, 'حضوري') as study_type,
+                   COALESCE(st.discount_type, 'none') as discount_type,
+                   COALESCE(st.discount_value, 0) as discount_value,
+                   COALESCE(st.institute_waiver, 0) as institute_waiver
             FROM installments i
             LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
             WHERE i.teacher_id = %s
         '''
         installments = db.execute_query(query, (teacher_id,))
-        if not installments:
+        
+        # Also get "free with waiver" students who haven't paid but teacher still owes institute
+        free_waiver_query = '''
+            SELECT st.student_id, st.study_type, st.discount_type, st.discount_value, st.institute_waiver
+            FROM student_teacher st
+            WHERE st.teacher_id = %s AND st.discount_type = 'free' AND st.institute_waiver = 1
+        '''
+        free_waiver_students = db.execute_query(free_waiver_query, (teacher_id,))
+        if not installments and not free_waiver_students:
             return 0
         
         # Group installments by student
         student_payments = {}
-        for inst in installments:
-            sid = inst['student_id']
-            if sid not in student_payments:
-                student_payments[sid] = []
-            student_payments[sid].append(inst)
+        if installments:
+            for inst in installments:
+                sid = inst['student_id']
+                if sid not in student_payments:
+                    student_payments[sid] = []
+                student_payments[sid].append(inst)
         
         total_deduction = 0
         
@@ -241,9 +296,13 @@ class FinanceService:
             second_amount = 0
             full_amount = 0
             study_type = 'حضوري'
+            discount_type = 'none'
+            institute_waiver = 0
             
             for p in payments:
                 study_type = p.get('study_type', 'حضوري') or 'حضوري'
+                discount_type = p.get('discount_type', 'none') or 'none'
+                institute_waiver = p.get('institute_waiver', 0) or 0
                 itype = p['installment_type']
                 amt = p['amount'] or 0
                 if itype == 'القسط الأول':
@@ -259,7 +318,23 @@ class FinanceService:
             # Determine deduction type and value based on study type
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
             
-            # إذا كان مبلغ القسط الأول يساوي القسط الكلي → اعتبره دفع كامل
+            # إذا كان الطالب "مجاني بدون تنازل المعهد" - لا يحتسب أي خصم للمعهد
+            if discount_type == 'free' and not institute_waiver:
+                continue
+            
+            # إذا كان الطالب "مجاني مع تنازل المعهد" - يُحسب الخصم على القسط الأصلي الكامل
+            # كأن الطالب دفع كامل المبلغ (لأن المدرس سيدفع نسبته)
+            if discount_type == 'free' and institute_waiver:
+                student_total_fee = self._get_fee_for_study_type(t, study_type)
+                if student_total_fee > 0 and ded_value > 0:
+                    # حسبة كأنه دفع كامل - الخصم الكامل مرة واحدة
+                    if ded_type == 'manual':
+                        total_deduction += ded_value
+                    else:
+                        total_deduction += int((student_total_fee * ded_value) / 100)
+                continue
+            
+            # إذا كان القسط الأول يساوي القسط الكلي → اعتبره دفع كامل
             student_total_fee = self._get_fee_for_study_type(t, study_type)
             if first_count > 0 and full_count == 0 and second_count == 0 and first_amount >= student_total_fee and student_total_fee > 0:
                 full_count = first_count
@@ -283,6 +358,28 @@ class FinanceService:
                 
                 # كل قسط أول أو ثاني يحسب نصف الخصم، كل دفع كامل يحسب الخصم كاملاً
                 total_deduction += (full_count * full_deduction) + (first_count * deduction_per_installment) + (second_count * deduction_per_installment)
+        
+        # معالجة الطلاب "مجاني مع تنازل المعهد" الذين ليس لديهم أقساط مدفوعة
+        # هؤلاء الطلاب مجانيين لكن المدرس لا يزال يدفع نسبته للمعهد
+        if free_waiver_students:
+            # بناء قائمة الطلاب الذين لديهم أقساط بالفعل (تمت معالجتهم أعلاه)
+            students_with_payments = set(student_payments.keys()) if student_payments else set()
+            
+            for fw_student in free_waiver_students:
+                fw_sid = fw_student['student_id']
+                # تخطي الطلاب الذين تمت معالجتهم (لديهم أقساط مدفوعة)
+                if fw_sid in students_with_payments:
+                    continue
+                
+                fw_study_type = fw_student.get('study_type', 'حضوري') or 'حضوري'
+                ded_type, ded_value = self._get_deduction_for_study_type(t, fw_study_type)
+                student_total_fee = self._get_fee_for_study_type(t, fw_study_type)
+                
+                if student_total_fee > 0 and ded_value > 0:
+                    if ded_type == 'manual':
+                        total_deduction += ded_value
+                    else:
+                        total_deduction += int((student_total_fee * ded_value) / 100)
         
         return total_deduction
     
@@ -454,7 +551,7 @@ class FinanceService:
         return [dict(row) for row in results] if results else []
     
     def get_teacher_students_list(self, teacher_id: int) -> List[Dict]:
-        """قائمة طلاب المدرس مع القسط حسب نوع الدراسة"""
+        """قائمة طلاب المدرس مع القسط حسب نوع الدراسة والخصم"""
         db = self.db
         
         # الحصول على معلومات المدرس
@@ -463,7 +560,8 @@ class FinanceService:
         teacher_data = teacher_result[0] if teacher_result else {}
         
         query = '''
-            SELECT s.id, s.name, st.study_type as study_type, st.status as status, s.barcode
+            SELECT s.id, s.name, st.study_type as study_type, st.status as status, s.barcode,
+                   st.discount_type, st.discount_value, st.institute_waiver
             FROM students s
             INNER JOIN student_teacher st ON s.id = st.student_id
             WHERE st.teacher_id = %s
@@ -474,25 +572,35 @@ class FinanceService:
         result = []
         for student in students:
             study_type = student.get('study_type', 'حضوري')
+            discount_info = {
+                'discount_type': student.get('discount_type', 'none') or 'none',
+                'discount_value': student.get('discount_value', 0) or 0,
+                'institute_waiver': student.get('institute_waiver', 0) or 0,
+            }
             
-            # تحديد القسط حسب نوع الدراسة
+            # تحديد القسط حسب نوع الدراسة (القسط الأصلي قبل الخصم)
             if study_type == 'الكتروني' and teacher_data.get('fee_electronic', 0) > 0:
-                total_fee = teacher_data['fee_electronic']
+                original_fee = teacher_data['fee_electronic']
             elif study_type == 'مدمج' and teacher_data.get('fee_blended', 0) > 0:
-                total_fee = teacher_data['fee_blended']
+                original_fee = teacher_data['fee_blended']
             elif study_type == 'حضوري' and teacher_data.get('fee_in_person', 0) > 0:
-                total_fee = teacher_data['fee_in_person']
+                original_fee = teacher_data['fee_in_person']
             else:
-                total_fee = teacher_data.get('total_fee', 0)
+                original_fee = teacher_data.get('total_fee', 0)
+            
+            # تطبيق الخصم
+            effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
             
             paid = self.get_student_paid_total(student['id'], teacher_id)
-            remaining = total_fee - paid
+            remaining = effective_fee - paid
             result.append({
                 **student,
-                'total_fee': total_fee,
+                'total_fee': effective_fee,
+                'original_fee': original_fee,
                 'paid_total': paid,
                 'remaining_balance': remaining,
-                'is_paying': paid > 0
+                'is_paying': paid > 0,
+                'discount_info': discount_info
             })
         
         return result

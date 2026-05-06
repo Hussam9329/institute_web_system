@@ -287,6 +287,79 @@ async def api_link_student_teachers(request: Request, data: dict):
         return {"success": False, "message": f"خطأ: {str(e)}"}
 
 
+@router.put("/update-student-discount/{student_id}/{teacher_id}")
+async def api_update_student_discount(request: Request, student_id: int, teacher_id: int, data: dict):
+    """تحديث خصم الطالب عند مدرس معين"""
+    check_permission(request, 'add_payments')
+    db = Database()
+    
+    try:
+        discount_type = data.get('discount_type', 'none')
+        discount_value = int(data.get('discount_value', 0))
+        institute_waiver = int(data.get('institute_waiver', 0))
+        
+        # التحقق من صحة القيم
+        if discount_type not in ('none', 'percentage', 'free'):
+            return {"success": False, "message": "نوع الخصم غير صالح"}
+        
+        if discount_type == 'percentage' and (discount_value < 0 or discount_value > 100):
+            return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 0 و 100"}
+        
+        if discount_type == 'free' and institute_waiver not in (0, 1):
+            return {"success": False, "message": "قيمة تنازل المعهد غير صالحة"}
+        
+        # التحقق من وجود الربط
+        link = db.execute_query(
+            "SELECT status, discount_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
+        )
+        
+        if not link:
+            return {"success": False, "message": "الربط غير موجود"}
+        
+        # التحقق: لا يمكن تطبيق خصم نسبة إذا كان الطالب قد دفع بالفعل
+        if discount_type == 'percentage' and discount_value > 0:
+            current_balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
+            if current_balance['paid_total'] > 0:
+                # التحقق من أن الخصم لا يجعل المبلغ المدفوع أكبر من القسط الجديد
+                original_fee = current_balance.get('original_fee', current_balance['total_fee'])
+                new_fee = original_fee - int(original_fee * discount_value / 100)
+                if current_balance['paid_total'] > new_fee:
+                    return {
+                        "success": False, 
+                        "message": f"لا يمكن تطبيق هذا الخصم! المبلغ المدفوع ({format_currency(current_balance['paid_total'])}) يتجاوز القسط بعد الخصم ({format_currency(new_fee)})"
+                    }
+        
+        # إذا كان الطالب "مجاني" - لا يمكن تسجيل أقساط مستقبلاً
+        # لكن الأقساط السابقة تبقى محفوظة
+        
+        db.execute_query(
+            """UPDATE student_teacher 
+               SET discount_type = %s, discount_value = %s, institute_waiver = %s 
+               WHERE student_id = %s AND teacher_id = %s""",
+            (discount_type, discount_value, institute_waiver, student_id, teacher_id)
+        )
+        
+        # حساب الرصيد الجديد
+        new_balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
+        
+        return {
+            "success": True, 
+            "message": "تم تحديث الخصم بنجاح",
+            "new_balance": new_balance
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.get("/student-discount/{student_id}/{teacher_id}")
+async def api_get_student_discount(student_id: int, teacher_id: int):
+    """الحصول على معلومات خصم الطالب عند مدرس"""
+    discount_info = finance_service._get_discount_info(student_id, teacher_id)
+    return {"success": True, "data": discount_info}
+
+
 @router.put("/update-student-teacher-link/{student_id}/{teacher_id}")
 async def api_update_student_teacher_link(request: Request, student_id: int, teacher_id: int, data: dict):
     """تحديث نوع الدراسة والحالة لربط طالب بمدرس - مع منع تغيير نوع الدراسة إذا وُجدت مدفوعات"""
@@ -430,6 +503,14 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                 (installment.student_id, installment.teacher_id, auto_study_type)
             )
         
+        # التحقق: هل الطالب مجاني؟
+        discount_info = finance_service._get_discount_info(installment.student_id, installment.teacher_id)
+        if discount_info.get('discount_type') == 'free':
+            return {
+                "success": False,
+                "message": "الطالب مجاني - لا يمكن تسجيل أقساط له"
+            }
+
         # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
         current_balance = finance_service.calculate_student_teacher_balance(
             installment.student_id, installment.teacher_id

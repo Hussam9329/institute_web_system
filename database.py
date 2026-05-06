@@ -416,6 +416,10 @@ def init_db():
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_manual_in_person INTEGER DEFAULT 0",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_manual_electronic INTEGER DEFAULT 0",
             "ALTER TABLE teachers ADD COLUMN IF NOT EXISTS inst_ded_manual_blended INTEGER DEFAULT 0",
+            # أعمدة الخصم لجدول student_teacher
+            "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS discount_type VARCHAR(20) DEFAULT 'none'",
+            "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS discount_value INTEGER DEFAULT 0",
+            "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS institute_waiver INTEGER DEFAULT 0",
         ]
         
         for stmt in alter_statements:

@@ -1261,6 +1261,54 @@ footer::before {
     background: linear-gradient(135deg, var(--danger-light) 0%, var(--danger) 100%) !important; 
 }
 
+/* ===== Discount Panel ===== */
+.discount-panel .card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    transition: all 0.2s ease;
+}
+
+.discount-panel .transition-icon {
+    transition: transform 0.3s ease;
+}
+
+.discount-panel .form-check-input:checked + .form-check-label {
+    color: var(--warning-dark);
+}
+
+.discount-panel .form-check {
+    padding: 0.5rem;
+    border: 2px solid var(--border-light);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.discount-panel .form-check:hover {
+    border-color: var(--warning-light);
+    background: var(--warning-glow);
+}
+
+.discount-panel .form-check-input:checked ~ .form-check {
+    border-color: var(--warning);
+    background: var(--warning-glow);
+}
+
+.discount-panel .input-group-text {
+    background: var(--warning-glow);
+    border-color: var(--warning-light);
+    color: var(--warning-dark);
+    font-weight: 700;
+}
+
+.discount-panel #discount_value {
+    border-color: var(--warning-light);
+}
+
+.discount-panel #discount_value:focus {
+    border-color: var(--warning);
+    box-shadow: 0 0 0 0.2rem var(--warning-glow);
+}
+
 /* ===== Custom Tabs ===== */
 .nav-tabs-custom {
     border-bottom: 2px solid var(--border-light);
