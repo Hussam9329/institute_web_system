@@ -318,8 +318,8 @@
                                     </div>
                                     <div class="pay-search-dropdown" id="teacherDropdown"></div>
                                 </div>
-                                <!-- رسالة الرصيد المتبقي -->
-                                <div id="teacherBalanceMsg" class="mt-2 d-none"></div>
+                                <!-- رسالة الرصيد المتبقي - مساحة محجوزة دائماً -->
+                                <div id="teacherBalanceMsg" class="mt-2 pay-balance-placeholder"></div>
                             </div>
                         </div>
                     </div>
@@ -718,13 +718,19 @@ function resetTeacherSearch() {
     dropdown.classList.remove('show');
     removeDropdownSpacing();
 
-    // إخفاء رسالة الرصيد
+    // إخفاء رسالة الرصيد بدون تحريك المودال
     var msgDiv = document.getElementById('teacherBalanceMsg');
-    if (msgDiv) msgDiv.classList.add('d-none');
+    if (msgDiv) {
+        msgDiv.classList.remove('has-content');
+        msgDiv.innerHTML = '';
+    }
 
-    // إخفاء تلميح المتبقي
+    // إخفاء تلميح المتبقي بدون تحريك المودال
     var remainHint = document.getElementById('pay_remaining_hint');
-    if (remainHint) remainHint.classList.add('d-none');
+    if (remainHint) {
+        remainHint.classList.add('d-none');
+        remainHint.innerHTML = '';
+    }
 
     // إعادة تعيين نوع الدراسة
     var studyTypeHint = document.getElementById('pay_study_type_hint');
@@ -772,7 +778,8 @@ function showTeacherBalance(teacherId) {
     var msgDiv = document.getElementById('teacherBalanceMsg');
 
     if (!teacherId || !teachersBalanceData[String(teacherId)]) {
-        msgDiv.classList.add('d-none');
+        msgDiv.classList.remove('has-content');
+        msgDiv.innerHTML = '';
         return;
     }
 
@@ -785,7 +792,7 @@ function showTeacherBalance(teacherId) {
     } else {
         msgDiv.innerHTML = '<div class="pay-balance-msg pay-balance-partial"><div class="pay-balance-row"><i class="fas fa-check-circle text-success"></i><span>المدفوع: <strong class="text-success">' + paid + '</strong></span></div><div class="pay-balance-row"><i class="fas fa-exclamation-circle text-danger"></i><span>المتبقي: <strong class="text-danger">' + remaining + '</strong></span></div></div>';
     }
-    msgDiv.classList.remove('d-none');
+    msgDiv.classList.add('has-content');
 }
 
 // ============================================
@@ -829,7 +836,7 @@ function positionFixedDropdown(boxId, dropdownId) {
 
     // حساب الارتفاع المناسب
     var calculatedHeight = Math.min(dropdownMaxH, availableBelow);
-    if (calculatedHeight < 80) calculatedHeight = dropdownMaxH; // إذا ضيق جداً، استخدم الارتفاع الكامل
+    if (calculatedHeight < 80) calculatedHeight = dropdownMaxH;
 
     dropdown.style.position = 'fixed';
     dropdown.style.width = rect.width + 'px';
@@ -851,14 +858,7 @@ function positionFixedDropdown(boxId, dropdownId) {
         dropdown.style.bottom = 'auto';
     }
 
-    // إضافة مساحة ديناميكية أسفل حقل البحث لمنع التداخل
-    var colEl = box.closest('.col-12, .col-md-6');
-    if (colEl) {
-        // حساب ارتفاع القائمة الفعلي
-        var dropdownHeight = Math.min(dropdown.scrollHeight || calculatedHeight, calculatedHeight);
-        colEl.style.marginBottom = dropdownHeight + 12 + 'px';
-        colEl.setAttribute('data-dropdown-open', 'true');
-    }
+    // لا نضيف مساحة ديناميكية - القائمة ثابتة بـ position: fixed ولا تؤثر على تدفق الصفحة
 }
 
 // إزالة المسافة الإضافية عند إغلاق القائمة
