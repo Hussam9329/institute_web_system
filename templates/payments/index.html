@@ -350,6 +350,28 @@
 var teachersBalanceData = {};
 document.getElementById('pay_date').value = getTodayDate();
 
+// تهيئة البحث المباشر في خانات الطالب والمدرس
+var payStudentSS = null;
+var payTeacherSS = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    payStudentSS = makeSearchableSelect('pay_student_id', {
+        placeholder: '-- اختر الطالب --',
+        searchPlaceholder: 'ابحث باسم الطالب...',
+        onChange: function(val) {
+            loadStudentTeachers(val);
+        }
+    });
+
+    payTeacherSS = makeSearchableSelect('pay_teacher_id', {
+        placeholder: '-- اختر المدرس أولاً --',
+        searchPlaceholder: 'ابحث باسم المدرس أو المادة...',
+        onChange: function(val) {
+            showTeacherBalance(val);
+        }
+    });
+});
+
 function showTeacherBalance(teacherId) {
     var msgDiv = document.getElementById('teacherBalanceMsg');
     
@@ -395,6 +417,11 @@ function loadStudentTeachers(studentId) {
                 teacherSelect.appendChild(opt);
                 teachersBalanceData[String(t.teacher_id)] = t;
             }
+        }
+        // تحديث مكوّن البحث المباشر للمدرسين
+        if (payTeacherSS) {
+            payTeacherSS.refresh();
+            payTeacherSS.clear();
         }
     }).catch(function(err) {
         console.error(err);

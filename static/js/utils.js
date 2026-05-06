@@ -307,3 +307,265 @@ window.copyToClipboard = copyToClipboard;
 window.printElement = printElement;
 window.toFullAmount = toFullAmount;
 window.exportTableToCSV = exportTableToCSV;
+
+// ============================================
+// Searchable Select Component
+// ============================================
+
+/**
+ * تحويل عنصر select إلى قائمة منسدلة مع بحث مباشر
+ * @param {string} selectId - معرف عنصر select الأصلي
+ * @param {object} options - خيارات إضافية { placeholder, searchPlaceholder, onChange }
+ * @returns {object} - واجهة التحكم بالمكوّن { setValue, refresh, destroy }
+ */
+function makeSearchableSelect(selectId, options = {}) {
+    const originalSelect = document.getElementById(selectId);
+    if (!originalSelect) return null;
+
+    const placeholder = options.placeholder || originalSelect.querySelector('option[value=""]')?.textContent || '-- اختر --';
+    const searchPlaceholder = options.searchPlaceholder || 'بحث...';
+    const onChangeCallback = options.onChange || null;
+
+    // إخفاء الـ select الأصلي
+    originalSelect.style.display = 'none';
+
+    // إنشاء الحاوي
+    const container = document.createElement('div');
+    container.className = 'searchable-select';
+    container.id = selectId + '_ss';
+
+    // إنشاء العرض
+    const display = document.createElement('div');
+    display.className = 'ss-display';
+    display.innerHTML = '<span class="ss-placeholder">' + placeholder + '</span><i class="fas fa-chevron-down ss-arrow"></i>';
+
+    // إنشاء القائمة المنسدلة
+    const dropdown = document.createElement('div');
+    dropdown.className = 'ss-dropdown';
+
+    // إنشاء خانة البحث
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'ss-search-wrap';
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'ss-search-input';
+    searchInput.placeholder = searchPlaceholder;
+    searchInput.autocomplete = 'off';
+    searchWrap.appendChild(searchInput);
+
+    // إنشاء قائمة الخيارات
+    const optionsList = document.createElement('div');
+    optionsList.className = 'ss-options';
+
+    // عداد النتائج
+    const countDiv = document.createElement('div');
+    countDiv.className = 'ss-count';
+
+    dropdown.appendChild(searchWrap);
+    dropdown.appendChild(optionsList);
+    dropdown.appendChild(countDiv);
+
+    container.appendChild(display);
+    container.appendChild(dropdown);
+
+    // إدراج بعد الـ select الأصلي
+    originalSelect.parentNode.insertBefore(container, originalSelect.nextSibling);
+
+    // ===== وظائف =====
+
+    function getOptions() {
+        const opts = [];
+        originalSelect.querySelectorAll('option').forEach(function(opt) {
+            opts.push({
+                value: opt.value,
+                text: opt.textContent,
+                dataFee: opt.dataset.fee || ''
+            });
+        });
+        return opts;
+    }
+
+    function renderOptions(filter) {
+        const allOpts = getOptions();
+        const query = (filter || '').toLowerCase().trim();
+        optionsList.innerHTML = '';
+        let visibleCount = 0;
+
+        allOpts.forEach(function(opt) {
+            if (!opt.value) return; // تخطي الخيار الفارغ
+            if (query && !opt.text.toLowerCase().includes(query)) return;
+
+            const item = document.createElement('div');
+            item.className = 'ss-option';
+            if (opt.value === originalSelect.value) item.classList.add('selected');
+            item.textContent = opt.text;
+            item.dataset.value = opt.value;
+            if (opt.dataFee) item.dataset.fee = opt.dataFee;
+
+            item.addEventListener('click', function() {
+                selectOption(opt.value, opt.text);
+            });
+
+            optionsList.appendChild(item);
+            visibleCount++;
+        });
+
+        if (visibleCount === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'ss-no-results';
+            noResults.textContent = 'لا توجد نتائج';
+            optionsList.appendChild(noResults);
+        }
+
+        const totalOptions = allOpts.filter(function(o) { return o.value; }).length;
+        if (query) {
+            countDiv.textContent = visibleCount + ' من ' + totalOptions;
+        } else {
+            countDiv.textContent = totalOptions + ' عنصر';
+        }
+    }
+
+    function selectOption(value, text) {
+        originalSelect.value = value;
+        const selectedSpan = display.querySelector('.ss-selected-text') || display.querySelector('.ss-placeholder');
+        if (selectedSpan) {
+            if (value) {
+                selectedSpan.className = 'ss-selected-text';
+                selectedSpan.textContent = text;
+            } else {
+                selectedSpan.className = 'ss-placeholder';
+                selectedSpan.textContent = placeholder;
+            }
+        } else {
+            // أول مرة
+            display.innerHTML = '<span class="ss-selected-text">' + text + '</span><i class="fas fa-chevron-down ss-arrow"></i>';
+        }
+
+        closeDropdown();
+
+        // تشغيل حدث change على الـ select الأصلي
+        const event = new Event('change', { bubbles: true });
+        originalSelect.dispatchEvent(event);
+
+        // استدعاء callback مخصص
+        if (onChangeCallback) onChangeCallback(value);
+    }
+
+    function openDropdown() {
+        dropdown.classList.add('show');
+        display.classList.add('active');
+        searchInput.value = '';
+        renderOptions('');
+        setTimeout(function() { searchInput.focus(); }, 50);
+    }
+
+    function closeDropdown() {
+        dropdown.classList.remove('show');
+        display.classList.remove('active');
+    }
+
+    function toggleDropdown() {
+        if (dropdown.classList.contains('show')) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+    }
+
+    // ===== الأحداث =====
+
+    display.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleDropdown();
+    });
+
+    searchInput.addEventListener('input', function() {
+        renderOptions(this.value);
+    });
+
+    searchInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // إغلاق عند النقر خارج القائمة
+    document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    // إغلاق بـ Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && dropdown.classList.contains('show')) {
+            closeDropdown();
+        }
+    });
+
+    // مراقبة تغييرات الـ select الأصلي (مثلاً عند إعادة تحميل الخيارات)
+    const observer = new MutationObserver(function() {
+        const currentVal = originalSelect.value;
+        const currentOpt = originalSelect.querySelector('option[value="' + currentVal + '"]');
+        if (currentVal && currentOpt) {
+            const selectedSpan = display.querySelector('.ss-selected-text') || display.querySelector('.ss-placeholder');
+            if (selectedSpan) {
+                selectedSpan.className = 'ss-selected-text';
+                selectedSpan.textContent = currentOpt.textContent;
+            }
+        } else {
+            const placeholderEl = display.querySelector('.ss-placeholder') || display.querySelector('.ss-selected-text');
+            if (placeholderEl) {
+                placeholderEl.className = 'ss-placeholder';
+                placeholderEl.textContent = placeholder;
+            }
+        }
+        if (dropdown.classList.contains('show')) {
+            renderOptions(searchInput.value);
+        }
+    });
+    observer.observe(originalSelect, { childList: true, subtree: true, attributes: true });
+
+    // ===== واجهة التحكم =====
+
+    return {
+        setValue: function(value) {
+            originalSelect.value = value;
+            const opt = originalSelect.querySelector('option[value="' + value + '"]');
+            if (opt) {
+                selectOption(value, opt.textContent);
+            }
+        },
+        refresh: function() {
+            const currentVal = originalSelect.value;
+            const currentOpt = originalSelect.querySelector('option[value="' + currentVal + '"]');
+            if (currentVal && currentOpt) {
+                const selectedSpan = display.querySelector('.ss-selected-text') || display.querySelector('.ss-placeholder');
+                if (selectedSpan) {
+                    selectedSpan.className = 'ss-selected-text';
+                    selectedSpan.textContent = currentOpt.textContent;
+                }
+            } else {
+                const placeholderEl = display.querySelector('.ss-placeholder') || display.querySelector('.ss-selected-text');
+                if (placeholderEl) {
+                    placeholderEl.className = 'ss-placeholder';
+                    placeholderEl.textContent = placeholder;
+                }
+            }
+        },
+        clear: function() {
+            originalSelect.value = '';
+            const placeholderEl = display.querySelector('.ss-placeholder') || display.querySelector('.ss-selected-text');
+            if (placeholderEl) {
+                placeholderEl.className = 'ss-placeholder';
+                placeholderEl.textContent = placeholder;
+            }
+        },
+        destroy: function() {
+            observer.disconnect();
+            container.remove();
+            originalSelect.style.display = '';
+        }
+    };
+}
+
+window.makeSearchableSelect = makeSearchableSelect;

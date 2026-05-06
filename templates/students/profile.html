@@ -384,6 +384,19 @@
 
 <script src="/static/js/students.js"></script>
 <script>
+// تهيئة البحث المباشر في خانة المدرس
+var linkTeacherSS = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // تأخير بسيط حتى يتم تحميل قائمة المدرسين
+    setTimeout(function() {
+        linkTeacherSS = makeSearchableSelect('link_teacher_id', {
+            placeholder: '-- اختر مدرس --',
+            searchPlaceholder: 'ابحث باسم المدرس أو المادة...'
+        });
+    }, 500);
+});
+
 function printAllReceipts(studentId) {
     // فتح تقرير الطالب الشامل بنظام التقارير الموحد
     window.open('/reports/student/' + studentId, '_blank');

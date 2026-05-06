@@ -68,6 +68,10 @@ async function loadTeachersList() {
     try {
         const response = await apiRequest('/api/teachers');
         populateSelect('link_teacher_id', response.data, 'id', 'name');
+        // تحديث مكوّن البحث المباشر
+        if (window.linkTeacherSS) {
+            window.linkTeacherSS.refresh();
+        }
     } catch (error) {
         showAlert('خطأ في تحميل قائمة المدرسين', 'error');
     }

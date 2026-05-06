@@ -2573,3 +2573,172 @@ textarea:focus-visible {
 .empty-state { text-align: center; padding: 3rem 1rem; direction: rtl; }
 .empty-state i { font-size: 3rem; color: var(--border); margin-bottom: 0.75rem; display: block; }
 .empty-state p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0; }
+
+/* ===== Searchable Select Component ===== */
+.searchable-select {
+    position: relative;
+}
+
+.searchable-select .ss-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.125rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--white);
+    cursor: pointer;
+    font-family: var(--font-family);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    min-height: 48px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    gap: 8px;
+    user-select: none;
+}
+
+.searchable-select .ss-display:hover {
+    border-color: var(--primary-light);
+}
+
+.searchable-select .ss-display.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.searchable-select .ss-display .ss-selected-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.searchable-select .ss-display .ss-placeholder {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+}
+
+.searchable-select .ss-display .ss-arrow {
+    flex-shrink: 0;
+    color: var(--muted-light);
+    transition: transform 0.2s ease;
+    font-size: 0.75rem;
+}
+
+.searchable-select .ss-display.active .ss-arrow {
+    transform: rotate(180deg);
+}
+
+.searchable-select .ss-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 1060;
+    display: none;
+    overflow: hidden;
+    animation: ssDropIn 0.15s ease;
+}
+
+.searchable-select .ss-dropdown.show {
+    display: block;
+}
+
+@keyframes ssDropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.searchable-select .ss-search-wrap {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--light-bg);
+}
+
+.searchable-select .ss-search-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-family: var(--font-family);
+    font-size: 0.88rem;
+    outline: none;
+    background: var(--white);
+    direction: rtl;
+}
+
+.searchable-select .ss-search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.searchable-select .ss-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.searchable-select .ss-options {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.searchable-select .ss-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: background 0.1s ease;
+    direction: rtl;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.searchable-select .ss-option:hover {
+    background: var(--primary-glow);
+    color: var(--primary);
+}
+
+.searchable-select .ss-option.selected {
+    background: var(--primary-glow);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.searchable-select .ss-no-results {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+
+.searchable-select .ss-count {
+    padding: 6px 14px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--light-bg);
+    border-top: 1px solid var(--border-light);
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .searchable-select .ss-options {
+        max-height: 180px;
+    }
+}
