@@ -15,15 +15,12 @@ PORT = 8000
 DEBUG = True
 
 # ===== إعدادات قاعدة البيانات =====
-# يجب تعيين متغير البيئة DATABASE_URL قبل تشغيل التطبيق
+# يمكن تعيين متغير البيئة DATABASE_URL أو سيتم استخدام القيمة الافتراضية
 # مثال: export DATABASE_URL="postgresql://user:pass@host/db"
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError(
-        "متغير البيئة DATABASE_URL غير معين! "
-        "يرجى تعيينه قبل تشغيل التطبيق. "
-        "مثال: export DATABASE_URL=\"postgresql://user:pass@host/db\""
-    )
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+# فحص توفر رابط قاعدة البيانات
+DB_AVAILABLE = bool(DATABASE_URL)
 
 # ===== مفتاح التشفير للجلسات =====
 SECRET_KEY = os.environ.get("SECRET_KEY", "institute-system-change-in-production-2024")

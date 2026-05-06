@@ -5,7 +5,7 @@
 import psycopg2
 import psycopg2.extras
 import os
-from config import DATABASE_URL
+from config import DATABASE_URL, DB_AVAILABLE
 
 class Database:
     """إدارة اتصال وقاعدة البيانات PostgreSQL"""
@@ -19,6 +19,12 @@ class Database:
     
     def get_connection(self):
         """الحصول على اتصال بقاعدة البيانات PostgreSQL"""
+        if not DATABASE_URL:
+            raise ConnectionError(
+                "رابط قاعدة البيانات (DATABASE_URL) غير معين! "
+                "يرجى تعيينه كمتغير بيئة. "
+                "مثال: export DATABASE_URL=\"postgresql://user:pass@host/db\""
+            )
         connection = psycopg2.connect(DATABASE_URL)
         connection.autocommit = False
         return connection
@@ -55,6 +61,10 @@ class Database:
 
 def init_db():
     """تهيئة قاعدة البيانات - إنشاء الجداول إذا لم تكن موجودة"""
+    if not DATABASE_URL:
+        print("تحذير: DATABASE_URL غير معين - لم يتم تهيئة قاعدة البيانات")
+        return
+    
     db = Database()
     conn = db.get_connection()
     cursor = conn.cursor()
