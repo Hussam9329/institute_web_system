@@ -248,10 +248,10 @@ function toggleTeacherRow(teacherId) {
     const row = document.getElementById('teacher_row_' + teacherId);
     const cb = document.getElementById('teacher_' + teacherId);
     if (row && cb) {
-        // تحذير عند إلغاء تحديد مدرس كان مربوطاً (سيتم حذف أقساطه)
+        // تحذير عند إلغاء تحديد مدرس كان مربوطاً (سيتم تغيير الحالة إلى منسحب)
         if (!cb.checked && originallyLinked.includes(teacherId)) {
             const teacherName = row.querySelector('.fw-semibold')?.textContent || 'هذا المدرس';
-            if (!confirmAction('⚠️ تحذير: إلغاء ربط المدرس "' + teacherName + '" سيؤدي إلى حذف جميع الأقساط المسجلة له! هل أنت متأكد؟')) {
+            if (!confirmAction('هل أنت متأكد من إلغاء ربط المدرس "' + teacherName + '"؟ سيتم تغيير حالة الطالب إلى منسحب مع الحفاظ على السجلات المالية.')) {
                 cb.checked = true;
                 return;
             }
@@ -299,7 +299,7 @@ document.getElementById('studentForm')?.addEventListener('submit', function(e) {
         return cb && !cb.checked;
     });
     if (unchecked.length > 0) {
-        if (!confirmAction('⚠️ تحذير: تم إلغاء ربط ' + unchecked.length + ' مدرس. سيتم حذف جميع الأقساط المسجلة لهم نهائياً! هل تريد المتابعة؟')) {
+        if (!confirmAction('تم إلغاء ربط ' + unchecked.length + ' مدرس. سيتم تغيير حالة الطالب إلى منسحب مع الحفاظ على السجلات المالية. هل تريد المتابعة؟')) {
             e.preventDefault();
         }
     }

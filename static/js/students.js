@@ -122,7 +122,7 @@ async function linkStudentTeacher(event) {
  * إلغاء ربط طالب بمدرس
  */
 async function unlinkTeacher(studentId, teacherId, teacherName) {
-    const message = `هل أنت متأكد من إلغاء ربط المدرس "${teacherName}"؟\n\n⚠️ سيتم حذف جميع الأقساط المسجلة لهذا المدرس!`;
+    const message = `هل أنت متأكد من إلغاء ربط المدرس "${teacherName}"؟\n\nسيتم تغيير حالة الطالب إلى "منسحب" مع الحفاظ على السجلات المالية.`;
     
     if (!confirmAction(message)) return;
 

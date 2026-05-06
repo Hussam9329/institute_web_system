@@ -333,38 +333,45 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
 
 @router.delete("/unlink-student-teacher/{student_id}/{teacher_id}")
 async def api_unlink_student_teacher(request: Request, student_id: int, teacher_id: int):
-    """إلغاء ربط طالب بمدرس (مع حذف الأقساط) - مع فحص عدد الأقساط"""
+    """إلغاء ربط طالب بمدرس - تغيير الحالة إلى منسحب مع الحفاظ على السجلات المالية"""
     check_permission(request, 'link_students')
     db = Database()
     
     try:
-        # فحص عدد الأقساط المرتبطة قبل الحذف
+        # التحقق من وجود الربط
+        link = db.execute_query(
+            "SELECT status FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
+        )
+        
+        if not link:
+            return {"success": False, "message": "الربط غير موجود"}
+        
+        current_status = link[0].get('status', 'مستمر')
+        if current_status == 'منسحب':
+            return {"success": False, "message": "الطالب بالفعل منسحب من هذا المدرس"}
+        
+        # تغيير حالة الربط إلى "منسحب" بدلاً من حذفه
+        # هذا يحافظ على السجلات المالية (الأقساط) ويسمح بتتبع تاريخ الطالب
+        db.execute_query(
+            "UPDATE student_teacher SET status = 'منسحب' WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
+        )
+        
+        sync_student_status(student_id)
+        
+        # فحص عدد الأقساط المحفوظة للإبلاغ
         installment_count = db.execute_query(
             "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
         )
         count = installment_count[0]['cnt'] if installment_count else 0
         
-        # إذا كان الطلب يحتوي على confirm=false، أرجع عدد الأقساط دون حذف
-        # هذا يسمح للعميل بعرض تحذير قبل التأكيد
-        
-        db.execute_query(
-            "DELETE FROM installments WHERE student_id = %s AND teacher_id = %s",
-            (student_id, teacher_id)
-        )
-        
-        db.execute_query(
-            "DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-            (student_id, teacher_id)
-        )
-        
-        sync_student_status(student_id)
-        
-        msg = "تم إلغاء الربط وحذف الأقساط"
+        msg = "تم إلغاء الربط وتغيير حالة الطالب إلى منسحب"
         if count > 0:
-            msg = f"تم إلغاء الربط وحذف {count} قسط مرتبط"
+            msg = f"تم إلغاء الربط مع الحفاظ على {count} سجل مالي (قسط)"
         
-        return {"success": True, "message": msg, "deleted_installments": count}
+        return {"success": True, "message": msg, "preserved_installments": count}
         
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -544,14 +551,9 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
     db = Database()
     
     try:
-        # احتياط: إذا كان المبلغ صغير جداً (أقل من 1000) يُحتمل أنه مدخل بالألف
-        # تحويله تلقائياً × 1000
         amount = withdrawal.amount
         balance_info = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
         available = balance_info['remaining_balance']
-        
-        if amount > 0 and amount < 1000 and available >= amount * 1000:
-            amount = amount * 1000
 
         can_withdraw, message, balance = finance_service.can_teacher_withdraw(
             withdrawal.teacher_id, 
@@ -622,7 +624,6 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
         withdrawal_date = data.get('withdrawal_date', '')
         notes = data.get('notes', '')
         
-        # احتياط: تحويل المبلغ الصغير
         old = db.execute_query("SELECT teacher_id, amount FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         if not old:
             return {"success": False, "message": "السحب غير موجود"}
@@ -631,9 +632,6 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
         balance_info = finance_service.calculate_teacher_balance(teacher_id)
         other_withdrawn = balance_info['withdrawn_total'] - old[0]['amount']
         max_allowed = balance_info['teacher_due'] - other_withdrawn
-        
-        if amount > 0 and amount < 1000 and max_allowed >= amount * 1000:
-            amount = amount * 1000
         
         if amount > max_allowed:
             return {"success": False, "message": f"المبلغ يتجاوز الرصيد المتاح ({format_currency(max_allowed)})"}

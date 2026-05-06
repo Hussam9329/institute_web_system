@@ -389,10 +389,9 @@ async def student_update(
             except:
                 pass
 
-    # حذف الروابط التي أزيلت (مع حذف الأقساط المرتبطة)
+    # تغيير حالة الروابط التي أزيلت إلى "منسحب" مع الحفاظ على السجلات المالية
     for tid in old_teacher_ids - new_teacher_ids:
-        db.execute_query("DELETE FROM installments WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
-        db.execute_query("DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
+        db.execute_query("UPDATE student_teacher SET status = 'منسحب' WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
 
     sync_student_status(student_id)
 
