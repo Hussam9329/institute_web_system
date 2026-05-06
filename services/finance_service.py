@@ -700,25 +700,21 @@ class FinanceService:
         
         stats['total_institute_deduction'] = total_institute_deduction
         
-        # عدد الطلاب غير المسددين (للتقارير السريعة)
+        # عدد الطلاب غير المسددين (للتقارير السريعة) - مع تطبيق الخصم
         try:
-            unpaid_result = self.db.execute_query('''
-                SELECT COUNT(DISTINCT s.id) as count
-                FROM students s
-                INNER JOIN student_teacher st ON st.student_id = s.id AND st.status = 'مستمر'
-                INNER JOIN teachers t ON st.teacher_id = t.id
-                WHERE (
-                    COALESCE(
-                        CASE 
-                            WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN t.fee_electronic
-                            WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN t.fee_blended
-                            WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN t.fee_in_person
-                            ELSE t.total_fee
-                        END, 0
-                    ) - COALESCE((SELECT SUM(i.amount) FROM installments i WHERE i.student_id = s.id AND i.teacher_id = t.id), 0)
-                ) > 0
+            # الحصول على جميع الروابط النشطة
+            active_links = self.db.execute_query('''
+                SELECT DISTINCT st.student_id, st.teacher_id
+                FROM student_teacher st
+                WHERE st.status = 'مستمر'
             ''')
-            stats['unpaid_students'] = unpaid_result[0]['count'] if unpaid_result else 0
+            unpaid_count = 0
+            if active_links:
+                for link in active_links:
+                    balance = self.calculate_student_teacher_balance(link['student_id'], link['teacher_id'])
+                    if balance['remaining_balance'] > 0:
+                        unpaid_count += 1
+            stats['unpaid_students'] = unpaid_count
         except:
             stats['unpaid_students'] = 0
         

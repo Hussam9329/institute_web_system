@@ -114,15 +114,6 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
             query = '''
                 SELECT s.*,
                     (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
-                    (SELECT COALESCE(SUM(i.amount), 0) FROM installments i WHERE i.student_id = s.id) as total_paid,
-                    (SELECT COALESCE(SUM(
-                        CASE 
-                            WHEN st2.study_type = 'الكتروني' AND t2.fee_electronic > 0 THEN t2.fee_electronic
-                            WHEN st2.study_type = 'مدمج' AND t2.fee_blended > 0 THEN t2.fee_blended
-                            WHEN st2.study_type = 'حضوري' AND t2.fee_in_person > 0 THEN t2.fee_in_person
-                            ELSE t2.total_fee
-                        END
-                    ), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
                     (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
                 FROM students s
                 WHERE s.name LIKE %s OR s.barcode LIKE %s
@@ -133,15 +124,6 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
             query = '''
                 SELECT s.*,
                     (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
-                    (SELECT COALESCE(SUM(i.amount), 0) FROM installments i WHERE i.student_id = s.id) as total_paid,
-                    (SELECT COALESCE(SUM(
-                        CASE 
-                            WHEN st2.study_type = 'الكتروني' AND t2.fee_electronic > 0 THEN t2.fee_electronic
-                            WHEN st2.study_type = 'مدمج' AND t2.fee_blended > 0 THEN t2.fee_blended
-                            WHEN st2.study_type = 'حضوري' AND t2.fee_in_person > 0 THEN t2.fee_in_person
-                            ELSE t2.total_fee
-                        END
-                    ), 0) FROM student_teacher st2 JOIN teachers t2 ON st2.teacher_id = t2.id WHERE st2.student_id = s.id) as total_fees,
                     (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
                 FROM students s
                 ORDER BY s.name
@@ -151,11 +133,12 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         students = []
         print(f"Error loading students: {e}")
 
-    # حساب المتبقي لكل طالب
+    # حساب المتبقي لكل طالب باستخدام finance_service (يدعم الخصم)
     for s in students:
-        fees = s.get('total_fees', 0) or 0
-        paid = s.get('total_paid', 0) or 0
-        s['total_remaining'] = fees - paid
+        summary = finance_service.get_student_all_teachers_summary(s['id'])
+        s['total_fees'] = sum(ts['total_fee'] for ts in summary) if summary else 0
+        s['total_paid'] = sum(ts['paid_total'] for ts in summary) if summary else 0
+        s['total_remaining'] = sum(ts['remaining_balance'] for ts in summary) if summary else 0
 
     return templates.TemplateResponse("students/list.html", {
         "request": request,
@@ -559,24 +542,10 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 t['teacher_due'] = balance_info.get('teacher_due', 0)
                 t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
                 t['remaining_balance'] = balance_info.get('remaining_balance', 0)
-                # حساب المطلوب الكلي - مجموع أقساط المدرس حسب نوع الدراسة لكل طالب (مستمر فقط)
+                # حساب المطلوب الكلي - مجموع أقساط المدرس مع تطبيق الخصم (مستمر فقط)
                 try:
-                    all_fees = db.execute_query(
-                        '''SELECT COALESCE(SUM(
-                               CASE 
-                                   WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN t.fee_electronic
-                                   WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN t.fee_blended
-                                   WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN t.fee_in_person
-                                   ELSE t.total_fee
-                               END
-                           ), 0) as total 
-                           FROM student_teacher st 
-                           JOIN teachers t ON st.teacher_id = t.id
-                           WHERE st.teacher_id = %s AND st.status = 'مستمر' ''',
-                        (t['id'],)
-                    )
-                    total_fees = all_fees[0]['total'] if all_fees else 0
-                    t['total_fees'] = total_fees
+                    students_list = finance_service.get_teacher_students_list(t['id'])
+                    t['total_fees'] = sum(s['total_fee'] for s in students_list if s.get('status') == 'مستمر')
                 except:
                     t['total_fees'] = 0
                 # حساب عرض نسبة المعهد حسب أنواع التدريس

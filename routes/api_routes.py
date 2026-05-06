@@ -862,30 +862,21 @@ async def api_smart_alerts(request: Request):
     alerts = []
     
     try:
-        # 1. الطلاب الذين لم يسددوا بالكامل (لديهم رصيد متبقي > 0)
-        students_with_balance = db.execute_query('''
-            SELECT s.id, s.name,
-                   COALESCE(SUM(
-                       CASE 
-                           WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN t.fee_electronic
-                           WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN t.fee_blended
-                           WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN t.fee_in_person
-                           ELSE t.total_fee
-                       END
-                   ), 0) as total_fees,
-                   COALESCE((SELECT SUM(i.amount) FROM installments i WHERE i.student_id = s.id), 0) as total_paid
-            FROM students s
-            INNER JOIN student_teacher st ON st.student_id = s.id AND st.status = 'مستمر'
-            INNER JOIN teachers t ON st.teacher_id = t.id
-            GROUP BY s.id, s.name
+        # 1. الطلاب الذين لم يسددوا بالكامل (لديهم رصيد متبقي > 0) - مع تطبيق الخصم
+        active_links = db.execute_query('''
+            SELECT DISTINCT st.student_id, s.name
+            FROM student_teacher st
+            INNER JOIN students s ON st.student_id = s.id
+            WHERE st.status = 'مستمر'
         ''')
         
         unpaid_students = []
-        if students_with_balance:
-            for s in students_with_balance:
-                remaining = (s.get('total_fees', 0) or 0) - (s.get('total_paid', 0) or 0)
-                if remaining > 0:
-                    unpaid_students.append({'id': s['id'], 'name': s['name'], 'remaining': remaining})
+        if active_links:
+            for link in active_links:
+                summary = finance_service.get_student_all_teachers_summary(link['student_id'])
+                total_remaining = sum(ts['remaining_balance'] for ts in summary) if summary else 0
+                if total_remaining > 0:
+                    unpaid_students.append({'id': link['student_id'], 'name': link['name'], 'remaining': total_remaining})
         
         if unpaid_students:
             alerts.append({
