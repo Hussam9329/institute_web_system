@@ -480,6 +480,20 @@ function makeSearchableSelect(selectId, options = {}) {
         toggleDropdown();
     });
 
+    // منع Bootstrap modal من سرقة الأحداث
+    display.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
+    });
+
+    // منع إغلاق المودال عند التفاعل مع القائمة المنسدلة
+    searchInput.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
+    });
+
+    optionsList.addEventListener('mousedown', function(e) {
+        e.stopPropagation();
+    });
+
     searchInput.addEventListener('input', function() {
         renderOptions(this.value);
     });

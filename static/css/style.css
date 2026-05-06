@@ -2642,7 +2642,7 @@ textarea:focus-visible {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    z-index: 9999;
+    z-index: 99999;  /* بدل 9999 - لازم يكون أعلى من Bootstrap modal */
     display: none;
     overflow: hidden;
     animation: ssDropIn 0.15s ease;
