@@ -184,6 +184,105 @@
         font-size: 0.68rem;
         min-width: 18px;
     }
+    /* أزرار المدرسين */
+    .pay-teacher-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        min-height: 38px;
+        padding: 6px;
+        border: 1.5px dashed #e0e0e0;
+        border-radius: 8px;
+        background: #fafafa;
+        transition: border-color 0.2s;
+    }
+    .pay-teacher-buttons:has(.pay-teacher-btn) {
+        border-color: #f0a500;
+        background: #fffdf7;
+    }
+    .pay-teacher-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1.5px solid #e5e7eb;
+        background: #fff;
+        font-size: 0.78rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+    }
+    .pay-teacher-btn:hover {
+        border-color: #f0a500;
+        background: #fff8ed;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(240,165,0,0.15);
+    }
+    .pay-teacher-btn.selected {
+        border-color: #f0a500;
+        background: linear-gradient(135deg, #f0a500, #e6960a);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(240,165,0,0.3);
+    }
+    .pay-teacher-btn.selected .t-subj { color: #fff; opacity: 0.85; }
+    .pay-teacher-btn.selected .t-badge { background: rgba(255,255,255,0.25); color: #fff; }
+    .pay-teacher-btn .t-icon { font-size: 0.85rem; color: #f0a500; }
+    .pay-teacher-btn.selected .t-icon { color: #fff; }
+    .pay-teacher-btn .t-name { font-weight: 600; }
+    .pay-teacher-btn .t-subj { color: #888; font-size: 0.72rem; }
+    .pay-teacher-btn .t-badge {
+        font-size: 0.65rem;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+    .pay-teacher-btn .t-badge.badge-remain { background: #fde8e8; color: #dc2626; }
+    .pay-teacher-btn .t-badge.badge-done { background: #e8fde8; color: #16a34a; }
+    .pay-teacher-btn.selected .t-badge.badge-remain { background: rgba(255,255,255,0.25); color: #fff; }
+    .pay-teacher-btn.selected .t-badge.badge-done { background: rgba(255,255,255,0.25); color: #fff; }
+    .pay-teacher-tag {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #f0a500, #e6960a);
+        color: #fff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .pay-teacher-tag-remove {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        padding: 0 2px;
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
+    .pay-teacher-tag-remove:hover { opacity: 1; }
+    .pay-teacher-placeholder {
+        font-size: 0.78rem;
+        padding: 4px 2px;
+        width: 100%;
+        text-align: center;
+    }
+    .pay-teacher-loading {
+        font-size: 0.78rem;
+        color: #f0a500;
+        padding: 4px 2px;
+        width: 100%;
+        text-align: center;
+    }
+    .pay-teacher-empty {
+        font-size: 0.78rem;
+        color: #999;
+        padding: 4px 2px;
+        width: 100%;
+        text-align: center;
+    }
     </style>
 
     {% if installments %}
@@ -390,17 +489,19 @@
                                 <label class="pay-field-label">
                                     <i class="fas fa-chalkboard-teacher"></i>المدرس
                                 </label>
-                                <div class="pay-search-box" id="teacherSearchBox">
-                                    <input type="text" class="form-control pay-search-input" id="pay_teacher_search"
-                                           placeholder="اختر الطالب أولاً..." autocomplete="off" disabled>
-                                    <input type="hidden" id="pay_teacher_id" value="">
-                                    <div class="pay-search-tag d-none" id="teacherTag">
-                                        <span id="teacherTagName"></span>
-                                        <button type="button" class="pay-search-tag-remove" id="teacherTagRemove">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                <!-- التاج عند الاختيار -->
+                                <div class="pay-teacher-tag d-none" id="teacherTag">
+                                    <span id="teacherTagName"></span>
+                                    <button type="button" class="pay-teacher-tag-remove" id="teacherTagRemove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="pay_teacher_id" value="">
+                                <!-- أزرار المدرسين -->
+                                <div id="teacherButtonsContainer" class="pay-teacher-buttons">
+                                    <div class="pay-teacher-placeholder text-muted">
+                                        <i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً
                                     </div>
-                                    <div class="pay-search-dropdown" id="teacherDropdown"></div>
                                 </div>
                                 <!-- رسالة الرصيد المتبقي - مساحة محجوزة دائماً -->
                                 <div id="teacherBalanceMsg" class="mt-2 pay-balance-placeholder"></div>
@@ -524,8 +625,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // إعادة تعيين نوع القسط
             document.getElementById('pay_type').value = 'القسط الأول';
             // إعادة تعيين نوع الدراسة
-            document.getElementById('pay_study_type').value = 'حضوري';
+            var studyTypeSelect = document.getElementById('pay_study_type');
+            studyTypeSelect.value = 'حضوري';
+            studyTypeSelect.disabled = false;
+            studyTypeSelect.style.opacity = '';
             document.getElementById('pay_study_type_hint').classList.add('d-none');
+            // إعادة تعيين أزرار المدرسين
+            var container = document.getElementById('teacherButtonsContainer');
+            if (container) {
+                container.innerHTML = '<div class="pay-teacher-placeholder text-muted"><i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً</div>';
+            }
             // إخفاء معاينة المبلغ
             document.getElementById('pay_amount_preview')?.classList.add('d-none');
             document.getElementById('pay_remaining_hint')?.classList.add('d-none');
@@ -658,139 +767,102 @@ function resetStudentSearch() {
 
     // إعادة تعيين المدرس أيضاً
     resetTeacherSearch();
-    var teacherInput = document.getElementById('pay_teacher_search');
-    teacherInput.placeholder = 'اختر الطالب أولاً...';
-    teacherInput.disabled = true;
+    var container = document.getElementById('teacherButtonsContainer');
+    if (container) {
+        container.innerHTML = '<div class="pay-teacher-placeholder text-muted"><i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً</div>';
+    }
 }
 
 // ============================================
-// بحث المدرس - مخصص من الصفر
+// اختيار المدرس - أزرار مضغوطة
 // ============================================
 function initTeacherSearch() {
-    var input = document.getElementById('pay_teacher_search');
-    var dropdown = document.getElementById('teacherDropdown');
     var tagRemove = document.getElementById('teacherTagRemove');
-
-    // عند الكتابة في حقل البحث
-    input.addEventListener('input', function() {
-        var query = this.value.trim().toLowerCase();
-        if (!query) {
-            // عند مسح النص، عرض كل المدرسين بدل إخفاء القائمة
-            if (currentTeachersList.length > 0) {
-                renderTeacherDropdown(currentTeachersList);
-            } else {
-                dropdown.classList.remove('show');
-                dropdown.innerHTML = '';
-            }
-            return;
-        }
-        // تصفية المدرسين المرتبطين بالطالب فقط - دائماً من القائمة الكاملة
-        var filtered = currentTeachersList.filter(function(t) {
-            return t.teacher_name.toLowerCase().includes(query) ||
-                   t.subject.toLowerCase().includes(query);
-        });
-        renderTeacherDropdown(filtered);
-    });
-
-    // عند التركيز على حقل البحث - عرض كل المدرسين المرتبطين بالطالب
-    input.addEventListener('focus', function() {
-        if (this.disabled) return;
-        if (currentTeachersList.length > 0) {
-            renderTeacherDropdown(currentTeachersList);
-        }
-    });
-
-    // منع إغلاق المودال ومنع انتقال التمرير للمودال
-    input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-    input.addEventListener('focusin', function(e) { e.stopPropagation(); });
-    dropdown.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-    dropdown.addEventListener('focusin', function(e) { e.stopPropagation(); });
-    // منع انتقال التمرير من القائمة إلى المودال (يمنع إغلاق القائمة عند استخدام عجلة الماوس)
-    dropdown.addEventListener('scroll', function(e) { e.stopPropagation(); });
-    dropdown.addEventListener('wheel', function(e) { e.stopPropagation(); });
-
     // زر إزالة الاختيار
     tagRemove.addEventListener('click', function(e) {
         e.stopPropagation();
         resetTeacherSearch();
     });
-
-    // إغلاق القائمة عند النقر خارجها
-    document.addEventListener('click', function(e) {
-        var box = document.getElementById('teacherSearchBox');
-        if (box && !box.contains(e.target)) {
-            dropdown.classList.remove('show');
-            removeDropdownSpacing();
-        }
-    });
 }
 
-function renderTeacherDropdown(teachers) {
-    var dropdown = document.getElementById('teacherDropdown');
-    dropdown.innerHTML = '';
+function renderTeacherButtons() {
+    var container = document.getElementById('teacherButtonsContainer');
+    var tag = document.getElementById('teacherTag');
+    if (!container) return;
 
-    if (teachers.length === 0) {
-        dropdown.innerHTML = '<div class="pay-search-empty">لا توجد نتائج</div>';
-        positionFixedDropdown('teacherSearchBox', 'teacherDropdown');
-        dropdown.classList.add('show');
+    container.innerHTML = '';
+
+    if (currentTeachersList.length === 0) {
+        container.innerHTML = '<div class="pay-teacher-placeholder text-muted"><i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً</div>';
+        tag.classList.add('d-none');
         return;
     }
 
-    teachers.forEach(function(t) {
-        var item = document.createElement('div');
-        item.className = 'pay-search-item';
+    var selectedId = document.getElementById('pay_teacher_id')?.value || '';
+
+    currentTeachersList.forEach(function(t) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pay-teacher-btn' + (String(t.teacher_id) === selectedId ? ' selected' : '');
+        btn.setAttribute('data-teacher-id', t.teacher_id);
+
         var remainBadge = '';
         if (t.remaining_balance > 0) {
-            remainBadge = ' <span class="badge bg-danger-subtle text-danger" style="font-size:0.72rem;">متبقي ' + formatCurrency(t.remaining_balance) + '</span>';
+            remainBadge = '<span class="t-badge badge-remain">متبقي ' + formatCurrency(t.remaining_balance) + '</span>';
         } else {
-            remainBadge = ' <span class="badge bg-success-subtle text-success" style="font-size:0.72rem;">مكتمل</span>';
+            remainBadge = '<span class="t-badge badge-done">مكتمل</span>';
         }
-        item.innerHTML = '<i class="fas fa-chalkboard-teacher pay-search-item-icon"></i>' +
-            '<div class="pay-search-item-text">' +
-                '<span class="pay-search-item-name">' + escapeHtml(t.teacher_name) + '</span>' +
-                '<span class="pay-search-item-sub">' + escapeHtml(t.subject) + remainBadge + '</span>' +
-            '</div>';
-        item.addEventListener('click', function(e) {
+
+        // نوع الدراسة من الربط
+        var studyType = t.study_type || 'حضوري';
+        var studyBadge = '<span class="t-badge" style="background:#eef2ff;color:#4f46e5;">' + escapeHtml(studyType) + '</span>';
+
+        btn.innerHTML = '<i class="fas fa-chalkboard-teacher t-icon"></i>' +
+            '<span class="t-name">' + escapeHtml(t.teacher_name) + '</span>' +
+            '<span class="t-subj">' + escapeHtml(t.subject) + '</span>' +
+            studyBadge + remainBadge;
+
+        btn.addEventListener('click', function(e) {
             e.stopPropagation();
             selectTeacher(t.teacher_id, t.teacher_name + ' - ' + t.subject);
         });
-        item.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-        dropdown.appendChild(item);
+
+        container.appendChild(btn);
     });
-
-    var countDiv = document.createElement('div');
-    countDiv.className = 'pay-search-count';
-    countDiv.textContent = teachers.length + ' مدرس';
-    dropdown.appendChild(countDiv);
-
-    positionFixedDropdown('teacherSearchBox', 'teacherDropdown');
-    dropdown.classList.add('show');
 }
 
 function selectTeacher(id, name) {
-    var input = document.getElementById('pay_teacher_search');
     var hiddenInput = document.getElementById('pay_teacher_id');
     var tag = document.getElementById('teacherTag');
     var tagName = document.getElementById('teacherTagName');
-    var dropdown = document.getElementById('teacherDropdown');
+    var container = document.getElementById('teacherButtonsContainer');
 
     hiddenInput.value = id;
     tagName.textContent = name;
-    input.classList.add('d-none');
     tag.classList.remove('d-none');
-    dropdown.classList.remove('show');
-    removeDropdownSpacing();
+
+    // تحديث حالة الأزرار (تحديد المختار)
+    container.querySelectorAll('.pay-teacher-btn').forEach(function(btn) {
+        if (btn.getAttribute('data-teacher-id') === String(id)) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
 
     // عرض رصيد المدرس
     showTeacherBalance(id);
 
-    // تحديث نوع الدراسة من ربط الطالب بالمدرس
+    // تحديث نوع الدراسة من ربط الطالب بالمدرس تلقائياً
     var teacherData = teachersBalanceData[String(id)];
     if (teacherData) {
         var studyTypeSelect = document.getElementById('pay_study_type');
         var studyTypeHint = document.getElementById('pay_study_type_hint');
         var linkedStudyType = teacherData.study_type || 'حضوري';
         studyTypeSelect.value = linkedStudyType;
+        // تعطيل تغيير نوع الدراسة لأنه محدد من ربط الطالب بالمدرس
+        studyTypeSelect.disabled = true;
+        studyTypeSelect.style.opacity = '0.6';
         studyTypeHint.classList.remove('d-none');
     }
 
@@ -799,36 +871,42 @@ function selectTeacher(id, name) {
 }
 
 function resetTeacherSearch() {
-    var input = document.getElementById('pay_teacher_search');
     var hiddenInput = document.getElementById('pay_teacher_id');
     var tag = document.getElementById('teacherTag');
-    var dropdown = document.getElementById('teacherDropdown');
+    var container = document.getElementById('teacherButtonsContainer');
 
-    if (input) {
-        input.value = '';
-        input.classList.remove('d-none');
-    }
     hiddenInput.value = '';
     tag.classList.add('d-none');
-    dropdown.classList.remove('show');
-    removeDropdownSpacing();
 
-    // إخفاء رسالة الرصيد بدون تحريك المودال
+    // إزالة التحديد من الأزرار
+    if (container) {
+        container.querySelectorAll('.pay-teacher-btn.selected').forEach(function(btn) {
+            btn.classList.remove('selected');
+        });
+    }
+
+    // إخفاء رسالة الرصيد
     var msgDiv = document.getElementById('teacherBalanceMsg');
     if (msgDiv) {
         msgDiv.classList.remove('has-content');
         msgDiv.innerHTML = '';
     }
 
-    // إخفاء تلميح المتبقي بدون تحريك المودال
+    // إخفاء تلميح المتبقي
     var remainHint = document.getElementById('pay_remaining_hint');
     if (remainHint) {
         remainHint.classList.add('d-none');
         remainHint.innerHTML = '';
     }
 
-    // إعادة تعيين نوع الدراسة
+    // إعادة تفعيل نوع الدراسة
+    var studyTypeSelect = document.getElementById('pay_study_type');
     var studyTypeHint = document.getElementById('pay_study_type_hint');
+    if (studyTypeSelect) {
+        studyTypeSelect.disabled = false;
+        studyTypeSelect.style.opacity = '';
+        studyTypeSelect.value = 'حضوري';
+    }
     if (studyTypeHint) studyTypeHint.classList.add('d-none');
 }
 
@@ -842,9 +920,8 @@ function loadStudentTeachers(studentId) {
     currentTeachersList = [];
     resetTeacherSearch();
 
-    var teacherInput = document.getElementById('pay_teacher_search');
-    teacherInput.placeholder = 'جاري التحميل...';
-    teacherInput.disabled = true;
+    var container = document.getElementById('teacherButtonsContainer');
+    container.innerHTML = '<div class="pay-teacher-loading"><i class="fas fa-spinner fa-spin me-1"></i>جاري التحميل...</div>';
 
     apiRequest('/api/students/' + studentId + '/teachers').then(function(result) {
         if (result.data && result.data.length > 0) {
@@ -853,16 +930,13 @@ function loadStudentTeachers(studentId) {
                 var t = result.data[i];
                 teachersBalanceData[String(t.teacher_id)] = t;
             }
-            teacherInput.placeholder = 'ابحث باسم المدرس أو المادة...';
-            teacherInput.disabled = false;
+            renderTeacherButtons();
         } else {
-            teacherInput.placeholder = 'لا يوجد مدرسين مرتبطين بهذا الطالب';
-            teacherInput.disabled = true;
+            container.innerHTML = '<div class="pay-teacher-empty"><i class="fas fa-unlink me-1"></i>لا يوجد مدرسين مرتبطين بهذا الطالب</div>';
         }
     }).catch(function(err) {
         console.error(err);
-        teacherInput.placeholder = 'حدث خطأ في التحميل';
-        teacherInput.disabled = true;
+        container.innerHTML = '<div class="pay-teacher-empty text-danger"><i class="fas fa-exclamation-circle me-1"></i>حدث خطأ في التحميل</div>';
     });
 }
 
@@ -987,7 +1061,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function closeAllDropdowns() {
     document.getElementById('studentDropdown')?.classList.remove('show');
-    document.getElementById('teacherDropdown')?.classList.remove('show');
     removeDropdownSpacing();
 }
 
