@@ -66,14 +66,14 @@ class FinanceService:
         return {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0}
     
     def _apply_discount_to_fee(self, total_fee: int, discount_info: Dict) -> int:
-        """تطبيق الخصم على القسط الكلي وإرجاع القسط الفعلي"""
+        """تطبيق الخصم على القسط الكلي وإرجاء القسط الفعلي (بتقريب عادل)"""
         discount_type = discount_info.get('discount_type', 'none')
         discount_value = discount_info.get('discount_value', 0)
         
         if discount_type == 'free':
             return 0
         elif discount_type == 'percentage' and discount_value > 0:
-            discount_amount = int(total_fee * discount_value / 100)
+            discount_amount = round(total_fee * discount_value / 100)
             return max(0, total_fee - discount_amount)
         return total_fee
     
@@ -327,11 +327,11 @@ class FinanceService:
             if discount_type == 'free' and institute_waiver:
                 student_total_fee = self._get_fee_for_study_type(t, study_type)
                 if student_total_fee > 0 and ded_value > 0:
-                    # حسبة كأنه دفع كامل - الخصم الكامل مرة واحدة
+                    # حسبة كأنه دفع كامل - الخصم الكامل مرة واحدة (بتقريب عادل)
                     if ded_type == 'manual':
                         total_deduction += ded_value
                     else:
-                        total_deduction += int((student_total_fee * ded_value) / 100)
+                        total_deduction += round((student_total_fee * ded_value) / 100)
                 continue
             
             # إذا كان القسط الأول يساوي القسط الكلي → اعتبره دفع كامل
@@ -345,16 +345,23 @@ class FinanceService:
             if ded_value <= 0:
                 continue
             
+            # حساب القسط الفعلي (بعد الخصم) للاستقطاع
+            # نسبة المعهد تُحسب من القسط الأصلي (قبل الخصم) لأن الخصم خصم للطالب وليس للمعهد
+            fee_for_deduction = student_total_fee  # القسط الأصلي بدون خصم
+            
             if ded_type == 'manual':
                 # مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً
                 total_installments = first_count + second_count + (full_count * 2)
                 if total_installments > 0:
-                    # كل قسط أول أو ثاني = نصف المبلغ، كل دفع كامل = المبلغ كاملاً
-                    total_deduction += (full_count * ded_value) + (first_count * (ded_value // 2)) + (second_count * (ded_value // 2))
+                    # كل قسط أول أو ثاني = نصف المبلغ (بتقريب عادل)، كل دفع كامل = المبلغ كاملاً
+                    half_ded = round(ded_value / 2)
+                    # التحقق: مجموع النصفين يجب أن يساوي الكامل
+                    total_deduction += (full_count * ded_value) + (first_count * half_ded) + (second_count * half_ded)
             else:
                 # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
-                deduction_per_installment = int((student_total_fee * ded_value) / 100) // 2
-                full_deduction = int((student_total_fee * ded_value) / 100)
+                full_deduction = round((fee_for_deduction * ded_value) / 100)
+                # نصف الخصم لكل قسط (بتقريب عادل)
+                deduction_per_installment = round(full_deduction / 2)
                 
                 # كل قسط أول أو ثاني يحسب نصف الخصم، كل دفع كامل يحسب الخصم كاملاً
                 total_deduction += (full_count * full_deduction) + (first_count * deduction_per_installment) + (second_count * deduction_per_installment)
@@ -379,7 +386,7 @@ class FinanceService:
                     if ded_type == 'manual':
                         total_deduction += ded_value
                     else:
-                        total_deduction += int((student_total_fee * ded_value) / 100)
+                        total_deduction += round((student_total_fee * ded_value) / 100)
         
         return total_deduction
     
