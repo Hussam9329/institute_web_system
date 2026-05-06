@@ -55,6 +55,10 @@ function checkUrlMessages() {
         showAlert('تم الحذف بنجاح', 'success');
     } else if (msg === 'updated_locked') {
         showAlert('تم تحديث الاسم والمادة فقط. لا يمكن تغيير الأقساط والنسب لوجود مدفوعات مسجلة.', 'warning');
+    } else if (msg === 'updated_new_type_added') {
+        showAlert('تم إضافة نوع التدريس الجديد بنجاح. لا يمكن تغيير البيانات الأخرى لوجود طلاب مرتبطين.', 'success');
+    } else if (msg === 'updated_no_change') {
+        showAlert('لم يتم تغيير أي بيانات. لا يمكن التعديل بعد ارتباط الطلاب - يمكنك فقط إضافة نوع تدريسي جديد.', 'info');
     } else if (error === 'not_found') {
         showAlert('العنصر المطلوب غير موجود', 'error');
     } else if (error === 'exists') {
@@ -68,6 +72,8 @@ function checkUrlMessages() {
         showAlert('لا يمكن حذف المدرس "' + name + '" - يوجد ' + count + ' طالب مرتبط به', 'error');
     } else if (error === 'no_teaching_type') {
         showAlert('يجب اختيار نوع تدريس واحد على الأقل', 'warning');
+    } else if (error === 'cannot_remove_type') {
+        showAlert('لا يمكن حذف نوع تدريس مرتبط بطلاب! يمكنك فقط إضافة أنواع تدريس جديدة.', 'error');
     }
 
     // تنظيف URL - فقط إزالة msg و error مع الحفاظ على باقي المعاملات

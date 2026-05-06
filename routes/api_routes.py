@@ -967,12 +967,7 @@ async def api_smart_alerts(request: Request):
     
     except Exception as e:
         print(f"Smart alerts error: {e}")
-    
-    return {"success": True, "data": alerts}
 
-    except Exception as e:
-        print(f"Smart alerts error: {e}")
-    
     return {"success": True, "data": alerts}
 
 

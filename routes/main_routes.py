@@ -668,7 +668,14 @@ async def teacher_edit_form(request: Request, teacher_id: int, error: str = ""):
 
     subjects = db.execute_query("SELECT name FROM subjects ORDER BY name")
 
-    # فحص وجود مدفوعات - يُمنع تغيير الأقساط والنسب بعد وجود أي دفعة
+    # فحص وجود طلاب مرتبطين - يُمنع تغيير أي شيء بعد ارتباط أي طالب
+    students_check = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s",
+        (teacher_id,)
+    )
+    has_linked_students = students_check and students_check[0]['cnt'] > 0
+
+    # فحص وجود مدفوعات (للعرض فقط)
     payments_check = db.execute_query(
         "SELECT COUNT(*) as cnt FROM installments WHERE teacher_id = %s",
         (teacher_id,)
@@ -681,7 +688,8 @@ async def teacher_edit_form(request: Request, teacher_id: int, error: str = ""):
         "mode": "edit",
         "subjects": subjects,
         "error": error,
-        "has_payments": has_payments
+        "has_payments": has_payments,
+        "has_linked_students": has_linked_students
     })
 
 
@@ -709,7 +717,7 @@ async def teacher_update(
     inst_ded_manual_electronic: int = Form(0),
     inst_ded_manual_blended: int = Form(0)
 ):
-    """تحديث بيانات مدرس - مع منع تغيير الأقساط والنسب بعد وجود مدفوعات"""
+    """تحديث بيانات مدرس - مع منع تغيير أي شيء بعد ارتباط الطالب به (فقط إضافة نوع تدريسي جديد)"""
     check_permission(request, 'edit_teachers')
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=no_teaching_type", status_code=303)
@@ -723,43 +731,94 @@ async def teacher_update(
         except:
             pass
 
-    # فحص وجود مدفوعات - يُمنع تغيير الأقساط والنسب نهائياً بعد أي دفعة
-    payments_check = db.execute_query(
-        "SELECT COUNT(*) as cnt FROM installments WHERE teacher_id = %s",
+    # فحص وجود طلاب مرتبطين - يُمنع تغيير أي شيء بعد ارتباط أي طالب
+    students_check = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s",
         (teacher_id,)
     )
-    has_payments = payments_check and payments_check[0]['cnt'] > 0
+    has_linked_students = students_check and students_check[0]['cnt'] > 0
 
-    if has_payments:
-        # جلب البيانات المالية الحالية والحفاظ عليها
+    if has_linked_students:
+        # جلب البيانات الحالية
         current = db.execute_query("SELECT * FROM teachers WHERE id = %s", (teacher_id,))
-        if current:
-            c = current[0]
-            total_fee = c['total_fee']
-            institute_deduction_type = c['institute_deduction_type']
-            institute_deduction_value = c['institute_deduction_value']
-            teaching_types = c['teaching_types']
-            fee_in_person = c['fee_in_person']
-            fee_electronic = c['fee_electronic']
-            fee_blended = c['fee_blended']
-            institute_pct_in_person = c['institute_pct_in_person']
-            institute_pct_electronic = c['institute_pct_electronic']
-            institute_pct_blended = c['institute_pct_blended']
-            inst_ded_type_in_person = c['inst_ded_type_in_person']
-            inst_ded_type_electronic = c['inst_ded_type_electronic']
-            inst_ded_type_blended = c['inst_ded_type_blended']
-            inst_ded_manual_in_person = c['inst_ded_manual_in_person']
-            inst_ded_manual_electronic = c['inst_ded_manual_electronic']
-            inst_ded_manual_blended = c['inst_ded_manual_blended']
+        if not current:
+            return RedirectResponse(url="/teachers?error=not_found", status_code=303)
+        c = current[0]
+        current_teaching_types = [t.strip() for t in (c['teaching_types'] or 'حضوري').split(',') if t.strip()]
+        new_teaching_types = [t.strip() for t in teaching_types.split(',') if t.strip()]
 
-        # تحديث الاسم والمادة والملاحظات فقط (بدون الحقول المالية)
+        # تحديد الأنواع الجديدة المضافة فقط
+        added_types = [t for t in new_teaching_types if t not in current_teaching_types]
+        removed_types = [t for t in current_teaching_types if t not in new_teaching_types]
+
+        # لا يمكن حذف نوع تدريس مرتبط بطلاب
+        if removed_types:
+            return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=cannot_remove_type", status_code=303)
+
+        # الحفاظ على جميع البيانات القديمة
+        name = c['name']
+        subject = c['subject']
+        total_fee = c['total_fee']
+        institute_deduction_type = c['institute_deduction_type']
+        institute_deduction_value = c['institute_deduction_value']
+        notes = c['notes']
+        fee_in_person = c['fee_in_person']
+        fee_electronic = c['fee_electronic']
+        fee_blended = c['fee_blended']
+        institute_pct_in_person = c['institute_pct_in_person']
+        institute_pct_electronic = c['institute_pct_electronic']
+        institute_pct_blended = c['institute_pct_blended']
+        inst_ded_type_in_person = c['inst_ded_type_in_person']
+        inst_ded_type_electronic = c['inst_ded_type_electronic']
+        inst_ded_type_blended = c['inst_ded_type_blended']
+        inst_ded_manual_in_person = c['inst_ded_manual_in_person']
+        inst_ded_manual_electronic = c['inst_ded_manual_electronic']
+        inst_ded_manual_blended = c['inst_ded_manual_blended']
+
+        # السماح بإضافة أنواع تدريس جديدة فقط مع أقساطها ونسبها
+        if added_types:
+            # دمج الأنواع القديمة مع الجديدة
+            merged_types = current_teaching_types + added_types
+            teaching_types = ','.join(merged_types)
+
+            # إضافة أقساط ونسب الأنواع الجديدة من النموذج
+            form_data = await request.form()
+            if 'الكتروني' in added_types:
+                fee_electronic = int(form_data.get('fee_electronic', 0) or 0)
+                institute_pct_electronic = int(form_data.get('institute_pct_electronic', 0) or 0)
+                inst_ded_type_electronic = form_data.get('inst_ded_type_electronic', 'percentage')
+                inst_ded_manual_electronic = int(form_data.get('inst_ded_manual_electronic', 0) or 0)
+            if 'مدمج' in added_types:
+                fee_blended = int(form_data.get('fee_blended', 0) or 0)
+                institute_pct_blended = int(form_data.get('institute_pct_blended', 0) or 0)
+                inst_ded_type_blended = form_data.get('inst_ded_type_blended', 'percentage')
+                inst_ded_manual_blended = int(form_data.get('inst_ded_manual_blended', 0) or 0)
+            if 'حضوري' in added_types:
+                fee_in_person = int(form_data.get('fee_in_person', 0) or 0)
+                institute_pct_in_person = int(form_data.get('institute_pct_in_person', 0) or 0)
+                inst_ded_type_in_person = form_data.get('inst_ded_type_in_person', 'percentage')
+                inst_ded_manual_in_person = int(form_data.get('inst_ded_manual_in_person', 0) or 0)
+        else:
+            teaching_types = c['teaching_types']
+
         update_query = '''
             UPDATE teachers
-            SET name=%s, subject=%s, notes=%s
+            SET teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
+                institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s,
+                inst_ded_type_in_person=%s, inst_ded_type_electronic=%s, inst_ded_type_blended=%s,
+                inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s
             WHERE id = %s
         '''
-        db.execute_query(update_query, (name, subject, notes, teacher_id))
-        return RedirectResponse(url="/teachers?msg=updated_locked", status_code=303)
+        db.execute_query(update_query, (
+            teaching_types, fee_in_person, fee_electronic, fee_blended,
+            institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+            inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+            inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
+            teacher_id))
+
+        if added_types:
+            return RedirectResponse(url="/teachers?msg=updated_new_type_added", status_code=303)
+        return RedirectResponse(url="/teachers?msg=updated_no_change", status_code=303)
 
     update_query = '''
         UPDATE teachers
