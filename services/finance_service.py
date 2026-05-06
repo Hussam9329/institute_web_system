@@ -266,14 +266,14 @@ class FinanceService:
         '''
         installments = db.execute_query(query, (teacher_id,))
         
-        # Also get "free with waiver" students who haven't paid but teacher still owes institute
-        free_waiver_query = '''
+        # Also get "free without waiver" students who haven't paid but teacher still owes institute
+        free_no_waiver_query = '''
             SELECT st.student_id, st.study_type, st.discount_type, st.discount_value, st.institute_waiver
             FROM student_teacher st
-            WHERE st.teacher_id = %s AND st.discount_type = 'free' AND st.institute_waiver = 1
+            WHERE st.teacher_id = %s AND st.discount_type = 'free' AND (st.institute_waiver = 0 OR st.institute_waiver IS NULL)
         '''
-        free_waiver_students = db.execute_query(free_waiver_query, (teacher_id,))
-        if not installments and not free_waiver_students:
+        free_no_waiver_students = db.execute_query(free_no_waiver_query, (teacher_id,))
+        if not installments and not free_no_waiver_students:
             return 0
         
         # Group installments by student
@@ -318,13 +318,13 @@ class FinanceService:
             # Determine deduction type and value based on study type
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
             
-            # إذا كان الطالب "مجاني بدون تنازل المعهد" - لا يحتسب أي خصم للمعهد
-            if discount_type == 'free' and not institute_waiver:
+            # إذا كان الطالب "مجاني مع تنازل المعهد" - المعهد تنازل عن نسبته فلا يُحسب شيء
+            if discount_type == 'free' and institute_waiver:
                 continue
             
-            # إذا كان الطالب "مجاني مع تنازل المعهد" - يُحسب الخصم على القسط الأصلي الكامل
-            # كأن الطالب دفع كامل المبلغ (لأن المدرس سيدفع نسبته)
-            if discount_type == 'free' and institute_waiver:
+            # إذا كان الطالب "مجاني بدون تنازل المعهد" - المدرس لا يزال ملزماً بدفع نسبته للمعهد
+            # يُحسب الخصم على القسط الأصلي الكامل كأن الطالب دفع كامل المبلغ
+            if discount_type == 'free' and not institute_waiver:
                 student_total_fee = self._get_fee_for_study_type(t, study_type)
                 if student_total_fee > 0 and ded_value > 0:
                     # حسبة كأنه دفع كامل - الخصم الكامل مرة واحدة (بتقريب عادل)
@@ -366,13 +366,13 @@ class FinanceService:
                 # كل قسط أول أو ثاني يحسب نصف الخصم، كل دفع كامل يحسب الخصم كاملاً
                 total_deduction += (full_count * full_deduction) + (first_count * deduction_per_installment) + (second_count * deduction_per_installment)
         
-        # معالجة الطلاب "مجاني مع تنازل المعهد" الذين ليس لديهم أقساط مدفوعة
-        # هؤلاء الطلاب مجانيين لكن المدرس لا يزال يدفع نسبته للمعهد
-        if free_waiver_students:
+        # معالجة الطلاب "مجاني بدون تنازل المعهد" الذين ليس لديهم أقساط مدفوعة
+        # هؤلاء الطلاب مجانيين لكن المدرس لا يزال ملزماً بدفع نسبته للمعهد
+        if free_no_waiver_students:
             # بناء قائمة الطلاب الذين لديهم أقساط بالفعل (تمت معالجتهم أعلاه)
             students_with_payments = set(student_payments.keys()) if student_payments else set()
             
-            for fw_student in free_waiver_students:
+            for fw_student in free_no_waiver_students:
                 fw_sid = fw_student['student_id']
                 # تخطي الطلاب الذين تمت معالجتهم (لديهم أقساط مدفوعة)
                 if fw_sid in students_with_payments:
