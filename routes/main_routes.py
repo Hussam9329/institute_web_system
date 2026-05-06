@@ -253,10 +253,13 @@ async def student_add(
             tid = t['id']
             study_type = form_data.get(f"study_type_{tid}", "حضوري")
             status = form_data.get(f"status_{tid}", "مستمر")
+            discount_type = form_data.get(f"discount_type_{tid}", "none")
+            discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+            institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
             try:
                 db.execute_query(
-                    "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
-                    (student_id, tid, study_type, status)
+                    "INSERT INTO student_teacher (student_id, teacher_id, study_type, status, discount_type, discount_value, institute_waiver) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (student_id, tid, study_type, status, discount_type, discount_value, institute_waiver)
                 )
             except:
                 pass
@@ -283,7 +286,7 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
 
     # المدرسين المرتبطين بالطالب مع بيانات الربط
     linked = db.execute_query(
-        "SELECT teacher_id, study_type, status FROM student_teacher WHERE student_id = %s",
+        "SELECT teacher_id, study_type, status, discount_type, discount_value, institute_waiver FROM student_teacher WHERE student_id = %s",
         (student_id,)
     )
     linked_ids = [r['teacher_id'] for r in linked] if linked else []
@@ -348,10 +351,13 @@ async def student_update(
     for tid in new_teacher_ids & old_teacher_ids:
         study_type = form_data.get(f"study_type_{tid}", "حضوري")
         status = form_data.get(f"status_{tid}", "مستمر")
+        discount_type = form_data.get(f"discount_type_{tid}", "none")
+        discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+        institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
         try:
             db.execute_query(
-                "UPDATE student_teacher SET study_type=%s, status=%s WHERE student_id=%s AND teacher_id=%s",
-                (study_type, status, student_id, tid)
+                "UPDATE student_teacher SET study_type=%s, status=%s, discount_type=%s, discount_value=%s, institute_waiver=%s WHERE student_id=%s AND teacher_id=%s",
+                (study_type, status, discount_type, discount_value, institute_waiver, student_id, tid)
             )
         except:
             pass
@@ -384,10 +390,13 @@ async def student_update(
                             )
             study_type = form_data.get(f"study_type_{tid}", "حضوري")
             status = form_data.get(f"status_{tid}", "مستمر")
+            discount_type = form_data.get(f"discount_type_{tid}", "none")
+            discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+            institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
             try:
                 db.execute_query(
-                    "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
-                    (student_id, tid, study_type, status)
+                    "INSERT INTO student_teacher (student_id, teacher_id, study_type, status, discount_type, discount_value, institute_waiver) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (student_id, tid, study_type, status, discount_type, discount_value, institute_waiver)
                 )
             except:
                 pass

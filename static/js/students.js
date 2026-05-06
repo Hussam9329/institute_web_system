@@ -4,11 +4,10 @@
 
 // ===== متغيرات عامة =====
 let linkTeacherModal, installmentModal, installmentsListModal;
-// متغيرات الخصم
+// متغيرات الخصم (قراءة فقط - يُعدّل من صفحة إضافة/تعديل الطالب)
 let currentDiscountType = 'none';
 let currentDiscountValue = 0;
 let currentInstituteWaiver = 0;
-let discountApplied = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     // تهيئة Modals
@@ -212,7 +211,7 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
 }
 
 /**
- * تحميل الخصم الحالي من الخادم
+ * تحميل الخصم الحالي من الخادم (قراءة فقط)
  */
 async function loadCurrentDiscount(studentId, teacherId) {
     try {
@@ -223,17 +222,8 @@ async function loadCurrentDiscount(studentId, teacherId) {
             currentDiscountValue = data.discount_value || 0;
             currentInstituteWaiver = data.institute_waiver || 0;
             
-            // تحديث الواجهة حسب الخصم الحالي
-            if (currentDiscountType === 'percentage') {
-                document.getElementById('discount_percentage').checked = true;
-                document.getElementById('discount_value').value = currentDiscountValue;
-            } else if (currentDiscountType === 'free') {
-                document.getElementById('discount_free').checked = true;
-                document.getElementById('institute_waiver').checked = currentInstituteWaiver === 1;
-            } else {
-                document.getElementById('discount_none').checked = true;
-            }
-            onDiscountTypeChange();
+            // عرض معلومات الخصم
+            updateDiscountDisplay();
             
             // إذا كان مجاني - تعطيل حقل المبلغ
             if (currentDiscountType === 'free') {
@@ -250,24 +240,49 @@ async function loadCurrentDiscount(studentId, teacherId) {
 }
 
 /**
- * إعادة تعيين نموذج الخصم
+ * تحديث عرض معلومات الخصم في مودال الأقساط
+ */
+function updateDiscountDisplay() {
+    const noneInfo = document.getElementById('discountNoneInfo');
+    const pctInfo = document.getElementById('discountPctInfo');
+    const freeInfo = document.getElementById('discountFreeInfo');
+    const waiverInfo = document.getElementById('discountWaiverInfo');
+
+    if (noneInfo) noneInfo.classList.add('d-none');
+    if (pctInfo) pctInfo.classList.add('d-none');
+    if (freeInfo) freeInfo.classList.add('d-none');
+    if (waiverInfo) waiverInfo.classList.add('d-none');
+
+    if (currentDiscountType === 'percentage' && currentDiscountValue > 0) {
+        if (pctInfo) {
+            const totalFee = parseInt(document.querySelector('[data-total-fee]')?.dataset?.totalFee) || 0;
+            const discountAmount = Math.round(totalFee * currentDiscountValue / 100);
+            const newFee = totalFee - discountAmount;
+            const pctValEl = document.getElementById('discountPctValue');
+            const origFeeEl = document.getElementById('discountOrigFee');
+            const newFeeEl = document.getElementById('discountNewFee');
+            const savedEl = document.getElementById('discountSaved');
+            if (pctValEl) pctValEl.textContent = currentDiscountValue;
+            if (origFeeEl) origFeeEl.textContent = formatCurrency(totalFee);
+            if (newFeeEl) newFeeEl.textContent = formatCurrency(newFee);
+            if (savedEl) savedEl.textContent = formatCurrency(discountAmount);
+            pctInfo.classList.remove('d-none');
+        }
+    } else if (currentDiscountType === 'free') {
+        if (freeInfo) freeInfo.classList.remove('d-none');
+        if (currentInstituteWaiver === 1 && waiverInfo) waiverInfo.classList.remove('d-none');
+    } else {
+        if (noneInfo) noneInfo.classList.remove('d-none');
+    }
+}
+
+/**
+ * إعادة تعيين نموذج الخصم (قراءة فقط)
  */
 function resetDiscountForm() {
     currentDiscountType = 'none';
     currentDiscountValue = 0;
     currentInstituteWaiver = 0;
-    discountApplied = false;
-    
-    document.getElementById('discount_none').checked = true;
-    document.getElementById('discount_value').value = '';
-    document.getElementById('institute_waiver').checked = false;
-    
-    // إخفاء الأقسام
-    document.getElementById('discountPercentageSection').classList.add('d-none');
-    document.getElementById('discountFreeSection').classList.add('d-none');
-    document.getElementById('discountPreview').classList.add('d-none');
-    document.getElementById('waiverInfoAlert').classList.add('d-none');
-    document.getElementById('noWaiverInfoAlert').classList.add('d-none');
     
     // تفعيل حقل المبلغ
     const amountEl = document.getElementById('inst_amount');
@@ -275,178 +290,6 @@ function resetDiscountForm() {
         amountEl.disabled = false;
         amountEl.value = '';
         amountEl.min = 1;
-    }
-}
-
-/**
- * تبديل عرض لوحة الخصم
- */
-function toggleDiscountPanel() {
-    const body = document.getElementById('discountPanelBody');
-    const icon = document.getElementById('discountPanelIcon');
-    
-    if (body.style.display === 'none') {
-        body.style.display = '';
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-    } else {
-        body.style.display = 'none';
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-    }
-}
-
-/**
- * عند تغيير نوع الخصم
- */
-function onDiscountTypeChange() {
-    const selectedType = document.querySelector('input[name="discount_type"]:checked');
-    if (!selectedType) return;
-    
-    const discountType = selectedType.value;
-    const percentageSection = document.getElementById('discountPercentageSection');
-    const freeSection = document.getElementById('discountFreeSection');
-    const waiverAlert = document.getElementById('waiverInfoAlert');
-    const noWaiverAlert = document.getElementById('noWaiverInfoAlert');
-    const amountEl = document.getElementById('inst_amount');
-    
-    // إخفاء الكل أولاً
-    percentageSection.classList.add('d-none');
-    freeSection.classList.add('d-none');
-    waiverAlert.classList.add('d-none');
-    noWaiverAlert.classList.add('d-none');
-    document.getElementById('discountPreview').classList.add('d-none');
-    
-    if (discountType === 'percentage') {
-        percentageSection.classList.remove('d-none');
-        if (amountEl) {
-            amountEl.disabled = false;
-            amountEl.min = 1;
-        }
-    } else if (discountType === 'free') {
-        freeSection.classList.remove('d-none');
-        const waiverChecked = document.getElementById('institute_waiver').checked;
-        if (waiverChecked) {
-            waiverAlert.classList.remove('d-none');
-        } else {
-            noWaiverAlert.classList.remove('d-none');
-        }
-        // تعطيل حقل المبلغ - الطالب مجاني
-        if (amountEl) {
-            amountEl.value = 0;
-            amountEl.disabled = true;
-        }
-    } else {
-        // بدون خصم
-        if (amountEl) {
-            amountEl.disabled = false;
-            amountEl.min = 1;
-        }
-    }
-}
-
-/**
- * عند تغيير قيمة نسبة الخصم - عرض معاينة
- */
-function onDiscountValueChange() {
-    const discountValue = parseInt(document.getElementById('discount_value').value) || 0;
-    const previewEl = document.getElementById('discountPreview');
-    const previewText = document.getElementById('discountPreviewText');
-    
-    if (discountValue <= 0 || discountValue > 100) {
-        previewEl.classList.add('d-none');
-        return;
-    }
-    
-    // حساب القسط بعد الخصم
-    const totalFee = parseInt(document.querySelector('[data-total-fee]')?.dataset?.totalFee) || 0;
-    if (totalFee > 0) {
-        const discountAmount = Math.round(totalFee * discountValue / 100);
-        const newFee = totalFee - discountAmount;
-        previewText.textContent = `القسط الأصلي: ${formatCurrency(totalFee)} ← بعد الخصم ${discountValue}%: ${formatCurrency(newFee)} (توفير ${formatCurrency(discountAmount)})`;
-        previewEl.classList.remove('d-none');
-    } else {
-        previewEl.classList.add('d-none');
-    }
-}
-
-/**
- * تطبيق الخصم - إرسال للخادم
- */
-async function applyDiscount() {
-    const studentId = parseInt(document.getElementById('inst_student_id').value);
-    const teacherId = parseInt(document.getElementById('inst_teacher_id').value);
-    const selectedType = document.querySelector('input[name="discount_type"]:checked');
-    
-    if (!studentId || !teacherId || !selectedType) {
-        showAlert('بيانات ناقصة', 'warning');
-        return;
-    }
-    
-    const discountType = selectedType.value;
-    let discountValue = 0;
-    let instituteWaiver = 0;
-    
-    if (discountType === 'percentage') {
-        discountValue = parseInt(document.getElementById('discount_value').value) || 0;
-        if (discountValue <= 0 || discountValue > 100) {
-            showAlert('يرجى إدخال نسبة خصم صحيحة (1-100)', 'warning');
-            return;
-        }
-    } else if (discountType === 'free') {
-        instituteWaiver = document.getElementById('institute_waiver').checked ? 1 : 0;
-    }
-    
-    try {
-        const result = await apiRequest(`/api/update-student-discount/${studentId}/${teacherId}`, {
-            method: 'PUT',
-            body: JSON.stringify({
-                discount_type: discountType,
-                discount_value: discountValue,
-                institute_waiver: instituteWaiver
-            })
-        });
-        
-        if (result.success) {
-            currentDiscountType = discountType;
-            currentDiscountValue = discountValue;
-            currentInstituteWaiver = instituteWaiver;
-            discountApplied = true;
-            
-            let msg = 'تم إزالة الخصم';
-            if (discountType === 'percentage') {
-                msg = `تم تطبيق خصم ${discountValue}% بنجاح`;
-            } else if (discountType === 'free') {
-                msg = instituteWaiver ? 'تم تعيين الطالب كمجاني (مع تنازل المعهد)' : 'تم تعيين الطالب كمجاني بالكامل';
-            }
-            showAlert(msg, 'success');
-            
-            // تحديث hint المبلغ
-            if (result.new_balance) {
-                const hintEl = document.getElementById('inst_fee_hint');
-                const hintText = document.getElementById('inst_fee_hint_text');
-                const teacherName = document.getElementById('inst_teacher_name').textContent;
-                if (hintEl && hintText) {
-                    const balance = result.new_balance;
-                    const originalFee = balance.original_fee || balance.total_fee;
-                    let text = `قسط الاستاد ${teacherName}`;
-                    if (discountType === 'percentage' && originalFee !== balance.total_fee) {
-                        text += ` = ${formatCurrency(originalFee)} ← بعد الخصم: ${formatCurrency(balance.total_fee)}`;
-                    } else if (discountType === 'free') {
-                        text += ` = مجاني`;
-                    } else {
-                        text += ` = ${formatCurrency(balance.total_fee)}`;
-                    }
-                    text += ` | المتبقي: ${formatCurrency(balance.remaining_balance)}`;
-                    hintText.textContent = text;
-                    hintEl.classList.remove('d-none');
-                }
-            }
-        } else {
-            showAlert(result.message || 'خطأ في تطبيق الخصم', 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ: ' + (error.message || 'فشل الاتصال بالخادم'), 'error');
     }
 }
 

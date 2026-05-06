@@ -536,81 +536,38 @@
                         </div>
                     </div>
 
-                    <!-- ===== لوحة الخصم الاحترافية ===== -->
+                    <!-- ===== معلومات الخصم (للقراءة فقط - يُعدّل من صفحة الطالب) ===== -->
                     <div class="pay-section" id="payDiscountSection" style="display:none;">
                         <div class="pay-section-title" style="cursor:pointer;" onclick="payToggleDiscountPanel()">
                             <i class="fas fa-percent"></i>
                             <span>الخصم</span>
+                            <span class="badge bg-warning text-dark me-2 d-none" id="payDiscountBadge" style="font-size:0.7rem;"></span>
                             <i class="fas fa-chevron-down transition-icon me-auto" id="payDiscountPanelIcon" style="font-size:0.75rem;margin-right:auto;"></i>
                         </div>
                         <div class="pay-discount-body" id="payDiscountPanelBody">
-                            <!-- نوع الخصم -->
-                            <div class="mb-3">
-                                <label class="pay-field-label small">نوع الخصم:</label>
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <div class="form-check flex-fill">
-                                        <input class="form-check-input" type="radio" name="pay_discount_type" id="pay_discount_none" value="none" checked onchange="payOnDiscountTypeChange()">
-                                        <label class="form-check-label small fw-semibold" for="pay_discount_none">
-                                            <i class="fas fa-ban text-muted me-1"></i>بدون خصم
-                                        </label>
-                                    </div>
-                                    <div class="form-check flex-fill">
-                                        <input class="form-check-input" type="radio" name="pay_discount_type" id="pay_discount_percentage" value="percentage" onchange="payOnDiscountTypeChange()">
-                                        <label class="form-check-label small fw-semibold" for="pay_discount_percentage">
-                                            <i class="fas fa-percent text-warning me-1"></i>نسبة خصم
-                                        </label>
-                                    </div>
-                                    <div class="form-check flex-fill">
-                                        <input class="form-check-input" type="radio" name="pay_discount_type" id="pay_discount_free" value="free" onchange="payOnDiscountTypeChange()">
-                                        <label class="form-check-label small fw-semibold" for="pay_discount_free">
-                                            <i class="fas fa-gift text-success me-1"></i>مجاني
-                                        </label>
+                            <!-- عرض معلومات الخصم الحالي -->
+                            <div id="payDiscountInfo">
+                                <div class="alert alert-light py-2 px-3 mb-2 small" id="payDiscountNoneInfo">
+                                    <i class="fas fa-ban text-muted me-1"></i>
+                                    لا يوجد خصم مسجل لهذا الطالب
+                                </div>
+                                <div class="alert alert-warning py-2 px-3 mb-2 small d-none" id="payDiscountPctInfo">
+                                    <i class="fas fa-percent text-warning me-1"></i>
+                                    خصم <strong id="payDiscountPctValue"></strong>% — القسط الأصلي: <span id="payDiscountOrigFee"></span> ← بعد الخصم: <strong id="payDiscountNewFee"></strong> (توفير <span id="payDiscountSaved"></span>)
+                                </div>
+                                <div class="alert alert-success py-2 px-3 mb-2 small d-none" id="payDiscountFreeInfo">
+                                    <i class="fas fa-gift text-success me-1"></i>
+                                    الطالب <strong>مجاني</strong> — لا يدفع أي مبلغ
+                                    <div class="mt-1 d-none" id="payDiscountWaiverInfo">
+                                        <i class="fas fa-building text-primary me-1"></i>تنازل المعهد عن نسبة الطالب — المدرس سيدفع نسبته
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- نسبة الخصم (تظهر عند اختيار نسبة خصم) -->
-                            <div class="mb-3 d-none" id="payDiscountPercentageSection">
-                                <label class="pay-field-label small">نسبة الخصم (%):</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="pay_discount_value" min="1" max="100" placeholder="أدخل نسبة الخصم" onchange="payOnDiscountValueChange()" oninput="payOnDiscountValueChange()">
-                                    <span class="input-group-text fw-bold">%</span>
-                                </div>
-                                <div class="mt-2 d-none" id="payDiscountPreview">
-                                    <div class="alert alert-success py-2 px-3 mb-0 small">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        <span id="payDiscountPreviewText"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- خيار مجاني (يظهر عند اختيار مجاني) -->
-                            <div class="d-none" id="payDiscountFreeSection">
-                                <div class="alert alert-success py-2 px-3 mb-2 small">
-                                    <i class="fas fa-gift me-1"></i>
-                                    الطالب <strong>مجاني</strong> - لا يدفع أي مبلغ
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="pay_institute_waiver" value="1" onchange="payOnDiscountTypeChange()">
-                                    <label class="form-check-label small fw-semibold" for="pay_institute_waiver">
-                                        <i class="fas fa-building text-primary me-1"></i>تنازل المعهد عن نسبة الطالب
-                                    </label>
-                                </div>
-                                <div class="alert alert-warning py-2 px-3 mb-0 small d-none" id="payWaiverInfoAlert">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <strong>مجاني مع تنازل المعهد:</strong> الطالب لا يدفع شيء، ولكن المدرس <strong>سيدفع نسبته</strong> للمعهد
-                                </div>
-                                <div class="alert alert-secondary py-2 px-3 mb-0 small d-none" id="payNoWaiverInfoAlert">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <strong>مجاني بالكامل:</strong> الطالب لا يدفع والمدرس لا يدفع أي مبلغ للمعهد
-                                </div>
-                            </div>
-
-                            <!-- زر تطبيق الخصم -->
-                            <div class="mt-3 text-start">
-                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="payApplyDiscount()">
-                                    <i class="fas fa-check me-1"></i>تطبيق الخصم
-                                </button>
+                            <!-- رابط لتعديل الخصم -->
+                            <div class="mt-2">
+                                <a href="#" id="payEditDiscountLink" class="small text-decoration-none" onclick="payGoToEditDiscount(event)" style="color:#f0a500;">
+                                    <i class="fas fa-external-link-alt me-1"></i>تعديل الخصم من صفحة الطالب
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -629,6 +586,7 @@
                                 <input type="number" class="form-control pay-field-input" id="pay_amount" min="1" required placeholder="150">
                                 <small id="pay_amount_preview" class="text-muted mt-1 d-none"></small>
                                 <small id="pay_remaining_hint" class="text-danger mt-1 d-none"></small>
+                                <small id="pay_discount_hint" class="text-warning mt-1 d-none" style="display:none;"><i class="fas fa-percent me-1"></i><span id="pay_discount_hint_text"></span></small>
                             </div>
                             <div class="col-6 col-md-4">
                                 <label class="pay-field-label">
@@ -750,6 +708,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // إخفاء معاينة المبلغ
             document.getElementById('pay_amount_preview')?.classList.add('d-none');
             document.getElementById('pay_remaining_hint')?.classList.add('d-none');
+            var _dh = document.getElementById('pay_discount_hint');
+            if (_dh) _dh.style.display = 'none';
             if (payDateEl) payDateEl.value = getTodayDate();
             // إعادة تعيين الخصم
             payResetDiscountForm();
@@ -1032,6 +992,10 @@ function resetTeacherSearch() {
         remainHint.innerHTML = '';
     }
 
+    // إخفاء تلميح الخصم
+    var discountHint = document.getElementById('pay_discount_hint');
+    if (discountHint) discountHint.style.display = 'none';
+
     // إعادة تفعيل نوع الدراسة
     var studyTypeSelect = document.getElementById('pay_study_type');
     var studyTypeHint = document.getElementById('pay_study_type_hint');
@@ -1103,23 +1067,49 @@ function showTeacherBalance(teacherId) {
 }
 
 // ============================================
-// عرض تلميح المبلغ المتبقي للمدرس
+// عرض تلميح المبلغ المتبقي للمدرس + معلومات الخصم
 // ============================================
 function showRemainingHint(teacherId) {
     var hintEl = document.getElementById('pay_remaining_hint');
+    var discountHintEl = document.getElementById('pay_discount_hint');
+    var discountHintText = document.getElementById('pay_discount_hint_text');
+
     if (!hintEl) return;
 
     if (!teacherId || !teachersBalanceData[String(teacherId)]) {
         hintEl.classList.add('d-none');
+        if (discountHintEl) discountHintEl.style.display = 'none';
         return;
     }
 
     var data = teachersBalanceData[String(teacherId)];
     var remaining = data.remaining_balance;
+
+    // عرض معلومات الخصم
+    if (discountHintEl && discountHintText) {
+        var discountInfo = data.discount_info;
+        var originalFee = data.original_fee || data.total_fee;
+        var effectiveFee = data.total_fee;
+
+        if (discountInfo && discountInfo.discount_type === 'percentage' && discountInfo.discount_value > 0) {
+            var discountAmt = originalFee - effectiveFee;
+            discountHintText.innerHTML = 'خصم ' + discountInfo.discount_value + '% — القسط الأصلي: ' + formatCurrency(originalFee) + ' ← بعد الخصم: ' + formatCurrency(effectiveFee) + ' (توفير ' + formatCurrency(discountAmt) + ')';
+            discountHintEl.style.display = '';
+            discountHintEl.classList.remove('d-none');
+        } else if (discountInfo && discountInfo.discount_type === 'free') {
+            discountHintText.innerHTML = 'الطالب مجاني — لا يدفع أي مبلغ' + (discountInfo.institute_waiver === 1 ? ' (المدرس سيدفع نسبته)' : '');
+            discountHintEl.style.display = '';
+            discountHintEl.classList.remove('d-none');
+        } else {
+            discountHintEl.style.display = 'none';
+        }
+    }
+
     if (remaining > 0) {
         var remainingInThousands = Math.ceil(remaining / 1000);
         hintEl.innerHTML = '<i class="fas fa-info-circle me-1"></i>المتبقي: ' + formatCurrency(remaining) + ' (أدخل ' + remainingInThousands + ' بالألف)';
         hintEl.classList.remove('d-none');
+        hintEl.className = 'text-danger mt-1';
     } else {
         hintEl.innerHTML = '<i class="fas fa-check-circle me-1"></i>تمت التسوية بالكامل';
         hintEl.classList.remove('d-none');
@@ -1203,11 +1193,11 @@ function closeAllDropdowns() {
 }
 
 // ============================================
-// دوال الخصم في صفحة المدفوعات
+// دوال الخصم في صفحة المدفوعات (قراءة فقط — يُعدّل من صفحة الطالب)
 // ============================================
 
 /**
- * تحميل الخصم الحالي من الخادم
+ * تحميل الخصم الحالي من الخادم وعرضه
  */
 async function payLoadCurrentDiscount(studentId, teacherId) {
     try {
@@ -1218,18 +1208,8 @@ async function payLoadCurrentDiscount(studentId, teacherId) {
             payCurrentDiscountValue = data.discount_value || 0;
             payCurrentInstituteWaiver = data.institute_waiver || 0;
             
-            // تحديث الواجهة حسب الخصم الحالي
-            if (payCurrentDiscountType === 'percentage') {
-                document.getElementById('pay_discount_percentage').checked = true;
-                document.getElementById('pay_discount_value').value = payCurrentDiscountValue;
-            } else if (payCurrentDiscountType === 'free') {
-                document.getElementById('pay_discount_free').checked = true;
-                document.getElementById('pay_institute_waiver').checked = payCurrentInstituteWaiver === 1;
-            } else {
-                document.getElementById('pay_discount_none').checked = true;
-            }
-            payOnDiscountTypeChange();
-            
+            payUpdateDiscountDisplay();
+
             // إذا كان مجاني - تعطيل حقل المبلغ
             if (payCurrentDiscountType === 'free') {
                 var amountEl = document.getElementById('pay_amount');
@@ -1245,28 +1225,66 @@ async function payLoadCurrentDiscount(studentId, teacherId) {
 }
 
 /**
+ * تحديث عرض معلومات الخصم في لوحة الدفع
+ */
+function payUpdateDiscountDisplay() {
+    // إخفاء الكل أولاً
+    var noneInfo = document.getElementById('payDiscountNoneInfo');
+    var pctInfo = document.getElementById('payDiscountPctInfo');
+    var freeInfo = document.getElementById('payDiscountFreeInfo');
+    var waiverInfo = document.getElementById('payDiscountWaiverInfo');
+    var badge = document.getElementById('payDiscountBadge');
+
+    if (noneInfo) noneInfo.classList.add('d-none');
+    if (pctInfo) pctInfo.classList.add('d-none');
+    if (freeInfo) freeInfo.classList.add('d-none');
+    if (waiverInfo) waiverInfo.classList.add('d-none');
+    if (badge) badge.classList.add('d-none');
+
+    if (payCurrentDiscountType === 'percentage' && payCurrentDiscountValue > 0) {
+        if (pctInfo) {
+            var teacherId = document.getElementById('pay_teacher_id')?.value;
+            var teacherData = teachersBalanceData[String(teacherId)];
+            var originalFee = (teacherData && teacherData.original_fee) ? teacherData.original_fee : (teacherData ? teacherData.total_fee : 0);
+            var effectiveFee = teacherData ? teacherData.total_fee : 0;
+            var savedAmount = originalFee - effectiveFee;
+
+            var pctValEl = document.getElementById('payDiscountPctValue');
+            var origFeeEl = document.getElementById('payDiscountOrigFee');
+            var newFeeEl = document.getElementById('payDiscountNewFee');
+            var savedEl = document.getElementById('payDiscountSaved');
+
+            if (pctValEl) pctValEl.textContent = payCurrentDiscountValue;
+            if (origFeeEl) origFeeEl.textContent = formatCurrency(originalFee);
+            if (newFeeEl) newFeeEl.textContent = formatCurrency(effectiveFee);
+            if (savedEl) savedEl.textContent = formatCurrency(savedAmount);
+
+            pctInfo.classList.remove('d-none');
+        }
+        if (badge) {
+            badge.textContent = payCurrentDiscountValue + '%';
+            badge.classList.remove('d-none');
+        }
+    } else if (payCurrentDiscountType === 'free') {
+        if (freeInfo) freeInfo.classList.remove('d-none');
+        if (payCurrentInstituteWaiver === 1 && waiverInfo) waiverInfo.classList.remove('d-none');
+        if (badge) {
+            badge.textContent = 'مجاني';
+            badge.classList.remove('d-none');
+        }
+    } else {
+        if (noneInfo) noneInfo.classList.remove('d-none');
+    }
+}
+
+/**
  * إعادة تعيين نموذج الخصم
  */
 function payResetDiscountForm() {
     payCurrentDiscountType = 'none';
     payCurrentDiscountValue = 0;
     payCurrentInstituteWaiver = 0;
-    payDiscountApplied = false;
-    
-    var noneRadio = document.getElementById('pay_discount_none');
-    var valueInput = document.getElementById('pay_discount_value');
-    var waiverCheck = document.getElementById('pay_institute_waiver');
-    if (noneRadio) noneRadio.checked = true;
-    if (valueInput) valueInput.value = '';
-    if (waiverCheck) waiverCheck.checked = false;
-    
-    // إخفاء الأقسام
-    var sections = ['payDiscountPercentageSection', 'payDiscountFreeSection', 
-                    'payDiscountPreview', 'payWaiverInfoAlert', 'payNoWaiverInfoAlert'];
-    sections.forEach(function(id) {
-        var el = document.getElementById(id);
-        if (el) el.classList.add('d-none');
-    });
+    payDiscountApplied = true; // لا حاجة للتطبيق لأنه يُدار من صفحة الطالب
     
     // تفعيل حقل المبلغ
     var amountEl = document.getElementById('pay_amount');
@@ -1296,166 +1314,13 @@ function payToggleDiscountPanel() {
 }
 
 /**
- * عند تغيير نوع الخصم
+ * الذهاب لصفحة تعديل الطالب لتعديل الخصم
  */
-function payOnDiscountTypeChange() {
-    var selectedType = document.querySelector('input[name="pay_discount_type"]:checked');
-    if (!selectedType) return;
-    
-    var discountType = selectedType.value;
-    var percentageSection = document.getElementById('payDiscountPercentageSection');
-    var freeSection = document.getElementById('payDiscountFreeSection');
-    var waiverAlert = document.getElementById('payWaiverInfoAlert');
-    var noWaiverAlert = document.getElementById('payNoWaiverInfoAlert');
-    var amountEl = document.getElementById('pay_amount');
-    
-    // إخفاء الكل أولاً
-    if (percentageSection) percentageSection.classList.add('d-none');
-    if (freeSection) freeSection.classList.add('d-none');
-    if (waiverAlert) waiverAlert.classList.add('d-none');
-    if (noWaiverAlert) noWaiverAlert.classList.add('d-none');
-    var previewEl = document.getElementById('payDiscountPreview');
-    if (previewEl) previewEl.classList.add('d-none');
-    
-    if (discountType === 'percentage') {
-        if (percentageSection) percentageSection.classList.remove('d-none');
-        if (amountEl) {
-            amountEl.disabled = false;
-            amountEl.min = 1;
-        }
-    } else if (discountType === 'free') {
-        if (freeSection) freeSection.classList.remove('d-none');
-        var waiverChecked = document.getElementById('pay_institute_waiver');
-        if (waiverChecked && waiverChecked.checked) {
-            if (waiverAlert) waiverAlert.classList.remove('d-none');
-        } else {
-            if (noWaiverAlert) noWaiverAlert.classList.remove('d-none');
-        }
-        // تعطيل حقل المبلغ - الطالب مجاني
-        if (amountEl) {
-            amountEl.value = 0;
-            amountEl.disabled = true;
-        }
-    } else {
-        // بدون خصم
-        if (amountEl) {
-            amountEl.disabled = false;
-            amountEl.min = 1;
-        }
-    }
-}
-
-/**
- * عند تغيير قيمة نسبة الخصم - عرض معاينة
- */
-function payOnDiscountValueChange() {
-    var discountValue = parseInt(document.getElementById('pay_discount_value').value) || 0;
-    var previewEl = document.getElementById('payDiscountPreview');
-    var previewText = document.getElementById('payDiscountPreviewText');
-    
-    if (discountValue <= 0 || discountValue > 100) {
-        if (previewEl) previewEl.classList.add('d-none');
-        return;
-    }
-    
-    // حساب القسط بعد الخصم من بيانات المدرس المختار
-    var teacherId = document.getElementById('pay_teacher_id')?.value;
-    var teacherData = teachersBalanceData[String(teacherId)];
-    if (teacherData && teacherData.total_fee > 0) {
-        var totalFee = teacherData.original_fee || teacherData.total_fee;
-        var discountAmount = Math.round(totalFee * discountValue / 100);
-        var newFee = totalFee - discountAmount;
-        if (previewText) {
-            previewText.textContent = 'القسط الأصلي: ' + formatCurrency(totalFee) + ' ← بعد الخصم ' + discountValue + '%: ' + formatCurrency(newFee) + ' (توفير ' + formatCurrency(discountAmount) + ')';
-        }
-        if (previewEl) previewEl.classList.remove('d-none');
-    } else {
-        if (previewEl) previewEl.classList.add('d-none');
-    }
-}
-
-/**
- * تطبيق الخصم - إرسال للخادم
- */
-async function payApplyDiscount() {
-    var studentId = parseInt(document.getElementById('pay_student_id').value);
-    var teacherId = parseInt(document.getElementById('pay_teacher_id').value);
-    var selectedType = document.querySelector('input[name="pay_discount_type"]:checked');
-    
-    if (!studentId || !teacherId || !selectedType) {
-        showAlert('بيانات ناقصة', 'warning');
-        return;
-    }
-    
-    var discountType = selectedType.value;
-    var discountValue = 0;
-    var instituteWaiver = 0;
-    
-    if (discountType === 'percentage') {
-        discountValue = parseInt(document.getElementById('pay_discount_value').value) || 0;
-        if (discountValue <= 0 || discountValue > 100) {
-            showAlert('يرجى إدخال نسبة خصم صحيحة (1-100)', 'warning');
-            return;
-        }
-    } else if (discountType === 'free') {
-        instituteWaiver = document.getElementById('pay_institute_waiver').checked ? 1 : 0;
-    }
-    
-    try {
-        var result = await apiRequest('/api/update-student-discount/' + studentId + '/' + teacherId, {
-            method: 'PUT',
-            body: JSON.stringify({
-                discount_type: discountType,
-                discount_value: discountValue,
-                institute_waiver: instituteWaiver
-            })
-        });
-        
-        if (result.success) {
-            payCurrentDiscountType = discountType;
-            payCurrentDiscountValue = discountValue;
-            payCurrentInstituteWaiver = instituteWaiver;
-            payDiscountApplied = true;
-            
-            var msg = 'تم إزالة الخصم';
-            if (discountType === 'percentage') {
-                msg = 'تم تطبيق خصم ' + discountValue + '% بنجاح';
-            } else if (discountType === 'free') {
-                msg = instituteWaiver ? 'تم تعيين الطالب كمجاني (مع تنازل المعهد)' : 'تم تعيين الطالب كمجاني بالكامل';
-            }
-            showAlert(msg, 'success');
-            
-            // تحديث بيانات الرصيد المتبقي
-            if (result.new_balance) {
-                var balance = result.new_balance;
-                // تحديث البيانات المحلية
-                var teacherData = teachersBalanceData[String(teacherId)];
-                if (teacherData) {
-                    teacherData.total_fee = balance.total_fee;
-                    teacherData.original_fee = balance.original_fee || balance.total_fee;
-                    teacherData.remaining_balance = balance.remaining_balance;
-                    teacherData.paid_total = balance.paid_total;
-                }
-                
-                // تحديث عرض الرصيد
-                showTeacherBalance(teacherId);
-                showRemainingHint(teacherId);
-                
-                // تحديث أزرار المدرسين
-                currentTeachersList.forEach(function(t) {
-                    if (String(t.teacher_id) === String(teacherId)) {
-                        t.total_fee = balance.total_fee;
-                        t.remaining_balance = balance.remaining_balance;
-                        t.paid_total = balance.paid_total;
-                    }
-                });
-                renderTeacherButtons();
-            }
-        } else {
-            showAlert(result.message || 'خطأ في تطبيق الخصم', 'error');
-        }
-    } catch (error) {
-        showAlert('خطأ: ' + (error.message || 'فشل الاتصال بالخادم'), 'error');
+function payGoToEditDiscount(event) {
+    event.preventDefault();
+    var studentId = document.getElementById('pay_student_id')?.value;
+    if (studentId) {
+        window.open('/students/' + studentId + '/edit', '_blank');
     }
 }
 

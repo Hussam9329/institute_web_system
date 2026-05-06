@@ -79,10 +79,42 @@
     <div class="amount-value">{{ format_currency(installment.amount) }}</div>
 </div>
 
+<!-- معلومات الخصم -->
+{% if discount_type != 'none' %}
+<div class="receipt-discount-info" style="margin:8px 24px;padding:10px 14px;background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;">
+    {% if discount_type == 'percentage' %}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <i class="fas fa-percent" style="color:#d97706;font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:#92400e;">خصم {{ discount_value }}%</span>
+    </div>
+    <div style="font-size:11px;color:#78350f;">
+        القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
+    </div>
+    {% elif discount_type == 'free' %}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <i class="fas fa-gift" style="color:#16a34a;font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:#166534;">طالب مجاني</span>
+        {% if discount_info.institute_waiver == 1 %}
+        <span style="font-size:10px;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px;">تنازل المعهد عن نسبة الطالب</span>
+        {% endif %}
+    </div>
+    <div style="font-size:11px;color:#166534;">
+        الطالب معفي من الدفع بالكامل
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- الملخص المالي -->
 <div class="receipt-summary">
+    {% if discount_type != 'none' and original_fee != total_fee %}
     <div class="info-card">
-        <div class="info-label">القسط الكلي</div>
+        <div class="info-label">القسط الأصلي</div>
+        <div class="info-value" style="text-decoration:line-through;opacity:0.6;">{{ format_currency(original_fee) }}</div>
+    </div>
+    {% endif %}
+    <div class="info-card">
+        <div class="info-label">{% if discount_type != 'none' and original_fee != total_fee %}القسط بعد الخصم{% else %}القسط الكلي{% endif %}</div>
         <div class="info-value">{{ format_currency(total_fee) }}</div>
     </div>
     <div class="info-card">

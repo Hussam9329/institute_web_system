@@ -114,42 +114,32 @@ async def receipt_report(request: Request, installment_id: int):
         raise HTTPException(status_code=404, detail="القسط غير موجود")
     installment = dict(installment_result[0])
 
-    # حساب القسط الكلي والمدفوع والمتبقي
-    teacher_info_query = '''
-        SELECT t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, st.study_type
-        FROM installments i
-        JOIN students s ON i.student_id = s.id
-        JOIN teachers t ON i.teacher_id = t.id
-        LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
-        WHERE i.id = %s
-    '''
-    teacher_info_result = db.execute_query(teacher_info_query, (installment_id,))
-    teacher_info = teacher_info_result[0] if teacher_info_result else {}
-    study_type = teacher_info.get('study_type', 'حضوري')
+    # استخدام finance_service لحساب القسط مع تطبيق الخصم
+    balance = finance_service.calculate_student_teacher_balance(
+        installment['student_id'], installment['teacher_id']
+    )
+    total_fee = balance['total_fee']           # القسط بعد الخصم
+    original_fee = balance.get('original_fee', total_fee)  # القسط الأصلي قبل الخصم
+    total_paid = balance['paid_total']
+    remaining_balance = balance['remaining_balance']
+    discount_info = balance.get('discount_info', {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0})
 
-    if study_type == 'الكتروني' and teacher_info.get('fee_electronic', 0) > 0:
-        total_fee = teacher_info['fee_electronic']
-    elif study_type == 'مدمج' and teacher_info.get('fee_blended', 0) > 0:
-        total_fee = teacher_info['fee_blended']
-    elif study_type == 'حضوري' and teacher_info.get('fee_in_person', 0) > 0:
-        total_fee = teacher_info['fee_in_person']
-    else:
-        total_fee = teacher_info.get('total_fee', 0)
-
-    paid_result = db.execute_query('''
-        SELECT COALESCE(SUM(amount), 0) as total
-        FROM installments
-        WHERE student_id = %s AND teacher_id = %s
-    ''', (installment['student_id'], installment['teacher_id']))
-    total_paid = paid_result[0]['total'] if paid_result else 0
-    remaining_balance = total_fee - total_paid
+    # حساب مبلغ الخصم
+    discount_amount = original_fee - total_fee if original_fee > total_fee else 0
+    discount_type = discount_info.get('discount_type', 'none')
+    discount_value = discount_info.get('discount_value', 0)
 
     return templates.TemplateResponse("reports/receipt.html", {
         "request": request,
         "installment": installment,
         "total_fee": total_fee,
+        "original_fee": original_fee,
         "total_paid": total_paid,
         "remaining_balance": remaining_balance,
+        "discount_type": discount_type,
+        "discount_value": discount_value,
+        "discount_amount": discount_amount,
+        "discount_info": discount_info,
         "report_date": format_report_datetime(),
         "report_date_only": format_report_date(),
         "report_time": format_report_time(),

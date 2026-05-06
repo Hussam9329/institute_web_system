@@ -817,36 +817,19 @@ class PDFService:
             raise Exception("القسط غير موجود")
         installment = dict(installment_result[0])
 
-        teacher_info_query = '''
-            SELECT t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
-                   st.study_type
-            FROM installments i
-            JOIN students s ON i.student_id = s.id
-            JOIN teachers t ON i.teacher_id = t.id
-            LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
-            WHERE i.id = %s
-        '''
-        teacher_info_result = self.db.execute_query(teacher_info_query, (installment_id,))
-        teacher_info = teacher_info_result[0] if teacher_info_result else {}
-        study_type = teacher_info.get('study_type', 'حضوري')
-
-        if study_type == 'الكتروني' and teacher_info.get('fee_electronic', 0) > 0:
-            total_fee = teacher_info['fee_electronic']
-        elif study_type == 'مدمج' and teacher_info.get('fee_blended', 0) > 0:
-            total_fee = teacher_info['fee_blended']
-        elif study_type == 'حضوري' and teacher_info.get('fee_in_person', 0) > 0:
-            total_fee = teacher_info['fee_in_person']
-        else:
-            total_fee = teacher_info.get('total_fee', 0)
-
-        paid_query = '''
-            SELECT COALESCE(SUM(amount), 0) as total
-            FROM installments
-            WHERE student_id = %s AND teacher_id = %s
-        '''
-        paid_result = self.db.execute_query(paid_query, (installment['student_id'], installment['teacher_id']))
-        total_paid = paid_result[0]['total'] if paid_result else 0
-        remaining_balance = total_fee - total_paid
+        # استخدام finance_service لحساب القسط مع تطبيق الخصم
+        from services.finance_service import finance_service
+        balance = finance_service.calculate_student_teacher_balance(
+            installment['student_id'], installment['teacher_id']
+        )
+        total_fee = balance['total_fee']           # القسط بعد الخصم
+        original_fee = balance.get('original_fee', total_fee)  # القسط الأصلي قبل الخصم
+        total_paid = balance['paid_total']
+        remaining_balance = balance['remaining_balance']
+        discount_info = balance.get('discount_info', {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0})
+        discount_amount = original_fee - total_fee if original_fee > total_fee else 0
+        discount_type = discount_info.get('discount_type', 'none')
+        discount_value = discount_info.get('discount_value', 0)
 
         filename = f"receipt_{installment_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         filepath = os.path.join(RECEIPTS_DIR, filename)
@@ -960,6 +943,31 @@ class PDFService:
         # الملخص المالي
         elements.append(Spacer(1, SP_SM))
 
+        # معلومات الخصم إذا وُجد
+        if discount_type != 'none' and discount_amount > 0:
+            disc_lbl_s = ParagraphStyle('dl', fontName='Calibri-Bold', fontSize=8, alignment=CENTER, textColor=colors.HexColor('#92400e'), leading=12)
+            disc_val_s = ParagraphStyle('dv', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=colors.HexColor('#78350f'), leading=10)
+            disc_text = ""
+            if discount_type == 'percentage':
+                disc_text = f"خصم {discount_value}% — القسط الأصلي: {format_currency(original_fee)} ← بعد الخصم: {format_currency(total_fee)} (توفير {format_currency(discount_amount)})"
+            elif discount_type == 'free':
+                disc_text = "الطالب مجاني — معفي من الدفع بالكامل"
+            disc_cell = Table(
+                [[ar_para("معلومات الخصم", disc_lbl_s)], [ar_para(disc_text, disc_val_s)]],
+                colWidths=[usable_w]
+            )
+            disc_cell.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fffbeb')),
+                ('BOX', (0, 0), (-1, -1), 0.8, colors.HexColor('#fbbf24')),
+                ('TOPPADDING', (0, 0), (0, 0), 4),
+                ('BOTTOMPADDING', (0, -1), (0, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ]))
+            elements.append(disc_cell)
+            elements.append(Spacer(1, SP_XS))
+
         if remaining_balance > 0:
             bal_color, bal_bg, bal_border = C.DANGER, C.DANGER_BG, C.DANGER
         elif remaining_balance == 0:
@@ -967,8 +975,9 @@ class PDFService:
         else:
             bal_color, bal_bg, bal_border = C.WARNING, C.WARNING_BG, C.WARNING
 
+        fee_label = "القسط بعد الخصم" if (discount_type != 'none' and discount_amount > 0) else "القسط الكلي"
         summary_cards = [
-            _make_card("القسط الكلي", format_currency(total_fee), C.LIGHT_BG, C.BORDER),
+            _make_card(fee_label, format_currency(total_fee), C.LIGHT_BG, C.BORDER),
             _make_card("إجمالي المدفوع", format_currency(total_paid), C.LIGHT_BG, C.BORDER),
         ]
 

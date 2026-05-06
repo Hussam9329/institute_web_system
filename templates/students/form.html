@@ -95,7 +95,8 @@
                                         <div style="width:2.5rem;flex-shrink:0"></div>
                                         <div class="flex-grow-1 fw-bold text-muted small">المدرس</div>
                                         <div class="fw-bold text-muted small me-2" style="width:7.5rem;flex-shrink:0">نوع الدراسة</div>
-                                        <div class="fw-bold text-muted small" style="width:6.5rem;flex-shrink:0">الحالة</div>
+                                        <div class="fw-bold text-muted small me-2" style="width:6.5rem;flex-shrink:0">الحالة</div>
+                                        <div class="fw-bold text-muted small" style="width:5rem;flex-shrink:0">الخصم</div>
                                     </div>
                                     <!-- قائمة المدرسين -->
                                     <div class="p-2 p-md-0">
@@ -108,6 +109,10 @@
                                         {% set has_electronic = 'الكتروني' in tt_list %}
                                         {% set has_blended = 'مدمج' in tt_list %}
                                         {% set single_type = (not has_in_person or not has_electronic or not has_blended) and ((has_in_person and not has_electronic and not has_blended) or (not has_in_person and has_electronic and not has_blended) or (not has_in_person and not has_electronic and has_blended)) %}
+                                        {% set current_discount_type = ld.get('discount_type', 'none') if ld else 'none' %}
+                                        {% set current_discount_value = ld.get('discount_value', 0) if ld else 0 %}
+                                        {% set current_institute_waiver = ld.get('institute_waiver', 0) if ld else 0 %}
+
                                         <div class="teacher-row {% if is_linked %}active{% endif %} border-bottom {% if not loop.last %}border-light{% else %}border-0{% endif %}"
                                              id="teacher_row_{{ teacher.id }}">
                                             <div class="teacher-row-inner d-flex align-items-center px-2 px-md-3 py-2">
@@ -147,13 +152,89 @@
                                                     {% endif %}
                                                 </div>
                                                 <!-- الحالة -->
-                                                <div class="teacher-field" style="width:6.5rem;flex-shrink:0">
+                                                <div class="teacher-field me-2" style="width:6.5rem;flex-shrink:0">
                                                     <select class="form-select form-select-sm teacher-opt" name="status_{{ teacher.id }}">
                                                         <option value="مستمر" {% if ld and ld.get('status') == 'مستمر' %}selected{% elif not is_linked %}selected{% endif %}>مستمر</option>
                                                         <option value="منسحب" {% if ld and ld.get('status') == 'منسحب' %}selected{% endif %}>منسحب</option>
                                                     </select>
                                                 </div>
+                                                <!-- زر الخصم -->
+                                                <div class="teacher-field" style="width:5rem;flex-shrink:0">
+                                                    <button type="button" class="btn btn-sm teacher-opt discount-toggle-btn {% if current_discount_type != 'none' %}btn-warning{% else %}btn-outline-secondary{% endif %}"
+                                                            id="discount_btn_{{ teacher.id }}"
+                                                            onclick="toggleDiscountPanel({{ teacher.id }})"
+                                                            title="إعداد الخصم">
+                                                        <i class="fas fa-percent" style="font-size:0.7rem;"></i>
+                                                        {% if current_discount_type == 'percentage' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> {{ current_discount_value }}%</span>
+                                                        {% elif current_discount_type == 'free' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>
+                                                        {% endif %}
+                                                    </button>
+                                                </div>
                                             </div>
+
+                                            <!-- ===== لوحة الخصم المخفية ===== -->
+                                            <div class="discount-panel d-none" id="discount_panel_{{ teacher.id }}">
+                                                <div class="px-3 pb-3 pt-1">
+                                                    <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fffbeb,#fff8ed);border:1px solid #fbbf24 !important;border-radius:10px;">
+                                                        <div class="card-body py-2 px-3">
+                                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                                <i class="fas fa-percent text-warning" style="font-size:0.75rem;"></i>
+                                                                <span class="fw-bold small">الخصم - {{ teacher.name }}</span>
+                                                            </div>
+                                                            <!-- نوع الخصم -->
+                                                            <div class="d-flex gap-2 flex-wrap mb-2">
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="radio" name="discount_type_{{ teacher.id }}" id="disc_none_{{ teacher.id }}" value="none"
+                                                                           onchange="onDiscountTypeChange({{ teacher.id }})"
+                                                                           {% if current_discount_type == 'none' or not current_discount_type %}checked{% endif %}>
+                                                                    <label class="form-check-label small" for="disc_none_{{ teacher.id }}">بدون</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="radio" name="discount_type_{{ teacher.id }}" id="disc_pct_{{ teacher.id }}" value="percentage"
+                                                                           onchange="onDiscountTypeChange({{ teacher.id }})"
+                                                                           {% if current_discount_type == 'percentage' %}checked{% endif %}>
+                                                                    <label class="form-check-label small" for="disc_pct_{{ teacher.id }}"><i class="fas fa-percent text-warning me-1"></i>نسبة</label>
+                                                                </div>
+                                                                <div class="form-check">
+                                                                    <input class="form-check-input" type="radio" name="discount_type_{{ teacher.id }}" id="disc_free_{{ teacher.id }}" value="free"
+                                                                           onchange="onDiscountTypeChange({{ teacher.id }})"
+                                                                           {% if current_discount_type == 'free' %}checked{% endif %}>
+                                                                    <label class="form-check-label small" for="disc_free_{{ teacher.id }}"><i class="fas fa-gift text-success me-1"></i>مجاني</label>
+                                                                </div>
+                                                            </div>
+                                                            <!-- نسبة الخصم -->
+                                                            <div class="d-none mb-2" id="disc_pct_section_{{ teacher.id }}">
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" name="discount_value_{{ teacher.id }}" id="disc_pct_val_{{ teacher.id }}"
+                                                                           min="1" max="100" placeholder="نسبة الخصم"
+                                                                           value="{{ current_discount_value if current_discount_type == 'percentage' else '' }}"
+                                                                           oninput="onDiscountValueChange({{ teacher.id }})">
+                                                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f0a500,#e6960a);color:#fff;border-color:#f0a500;">%</span>
+                                                                </div>
+                                                                <small class="text-muted d-none mt-1" id="disc_pct_preview_{{ teacher.id }}"></small>
+                                                            </div>
+                                                            <!-- خيار مجاني -->
+                                                            <div class="d-none" id="disc_free_section_{{ teacher.id }}">
+                                                                <div class="form-check mb-1">
+                                                                    <input class="form-check-input" type="checkbox" name="institute_waiver_{{ teacher.id }}" id="disc_waiver_{{ teacher.id }}" value="1"
+                                                                           onchange="onWaiverChange({{ teacher.id }})"
+                                                                           {% if current_institute_waiver == 1 %}checked{% endif %}>
+                                                                    <label class="form-check-label small fw-semibold" for="disc_waiver_{{ teacher.id }}">
+                                                                        <i class="fas fa-building text-primary me-1"></i>تنازل المعهد عن نسبة الطالب
+                                                                    </label>
+                                                                </div>
+                                                                <div class="alert alert-warning py-1 px-2 mb-0 small d-none" id="disc_waiver_info_{{ teacher.id }}">
+                                                                    <i class="fas fa-info-circle me-1"></i>الطالب لا يدفع شيء، ولكن المدرس <strong>سيدفع نسبته</strong> للمعهد
+                                                                </div>
+                                                                <div class="alert alert-secondary py-1 px-2 mb-0 small d-none" id="disc_no_waiver_info_{{ teacher.id }}">
+                                                                    <i class="fas fa-info-circle me-1"></i>مجاني بالكامل — الطالب والمدرس لا يدفعان
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                         </div>
                                         {% endfor %}
                                     </div>
@@ -166,7 +247,7 @@
                                 </div>
                                 <div class="form-text mt-2">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    حدد المدرسين المطلوبين مع نوع الدراسة والحالة لكل مدرس.
+                                    حدد المدرسين المطلوبين مع نوع الدراسة والحالة والخصم لكل مدرس. اضغط على زر النسبة % لإعداد الخصم.
                                 </div>
                             </div>
 
@@ -217,6 +298,39 @@
 .teacher-row:not(.active):hover .teacher-opt {
     opacity: 0.7;
 }
+.teacher-row:not(.active) .discount-panel {
+    display: none !important;
+}
+.teacher-row:not(.active) .discount-toggle-btn {
+    opacity: 0.4;
+    pointer-events: none;
+}
+.discount-panel {
+    animation: slideDown 0.2s ease;
+}
+@keyframes slideDown {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 300px; }
+}
+.discount-toggle-btn.btn-warning {
+    background: linear-gradient(135deg, #f0a500, #e6960a) !important;
+    border-color: #f0a500 !important;
+    color: #fff !important;
+    box-shadow: 0 1px 4px rgba(240,165,0,0.3);
+}
+.discount-toggle-btn.btn-outline-secondary {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+}
+/* أنماط الخصم */
+.discount-panel .form-check-input:checked {
+    background-color: #f0a500;
+    border-color: #f0a500;
+}
+.discount-panel .alert {
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
 /* تجاوب على الشاشات الصغيرة */
 @media (max-width: 767px) {
     .teacher-row-inner {
@@ -227,7 +341,7 @@
         width: auto;
     }
     .teacher-field {
-        width: calc(50% - 1.5rem) !important;
+        width: calc(33% - 1.5rem) !important;
         min-width: 0 !important;
     }
 }
@@ -237,10 +351,10 @@
 // قائمة المدرسين المرتبطين أصلاً (في وضع التعديل)
 const originallyLinked = [{% if mode == 'edit' and linked_teacher_ids %}{{ linked_teacher_ids | join(',') }}{% endif %}];
 
-// ===== خريطة المدرسين: {id: {name, subject}} =====
+// ===== خريطة المدرسين: {id: {name, subject, fees}} =====
 const teachersMap = {
     {% for teacher in teachers %}
-    {{ teacher.id }}: { name: "{{ teacher.name }}", subject: "{{ teacher.subject }}" },
+    {{ teacher.id }}: { name: "{{ teacher.name }}", subject: "{{ teacher.subject }}", fee_in_person: {{ teacher.fee_in_person or 0 }}, fee_electronic: {{ teacher.fee_electronic or 0 }}, fee_blended: {{ teacher.fee_blended or 0 }}, total_fee: {{ teacher.total_fee or 0 }} },
     {% endfor %}
 };
 
@@ -261,7 +375,6 @@ function toggleTeacherRow(teacherId) {
         if (cb.checked) {
             const newSubject = teachersMap[teacherId]?.subject;
             if (newSubject) {
-                // البحث عن مدرسين آخرين مختارين بنفس المادة
                 const checkboxes = document.querySelectorAll('input[name="teacher_ids"]');
                 let conflictTeacher = null;
                 for (const otherCb of checkboxes) {
@@ -269,7 +382,6 @@ function toggleTeacherRow(teacherId) {
                     if (otherId !== teacherId && otherCb.checked) {
                         const otherSubject = teachersMap[otherId]?.subject;
                         if (otherSubject === newSubject) {
-                            // فحص حالة المدرس الآخر: إذا كانت "منسحب" فلا مانع
                             const otherStatus = document.querySelector(`select[name="status_${otherId}"]`);
                             if (otherStatus && otherStatus.value !== 'منسحب') {
                                 conflictTeacher = teachersMap[otherId];
@@ -279,7 +391,7 @@ function toggleTeacherRow(teacherId) {
                     }
                 }
                 if (conflictTeacher) {
-                    showAlert(`⚠️ غير مسموح! لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة (${newSubject}). المدرس "${conflictTeacher.name}" مرتبط بالفعل بهذه المادة. يجب أن تصبح حالة الطالب "منسحب" مع المدرس الأول أولاً.`, 'warning');
+                    showAlert('غير مسموح! لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة (' + newSubject + '). المدرس "' + conflictTeacher.name + '" مرتبط بالفعل بهذه المادة.', 'warning');
                     cb.checked = false;
                     row.classList.remove('active');
                     return;
@@ -288,7 +400,136 @@ function toggleTeacherRow(teacherId) {
         }
         
         row.classList.toggle('active', cb.checked);
+
+        // إخفاء لوحة الخصم عند إلغاء التحديد
+        if (!cb.checked) {
+            const panel = document.getElementById('discount_panel_' + teacherId);
+            if (panel) panel.classList.add('d-none');
+        }
     }
+}
+
+// ===== دوال الخصم =====
+
+function toggleDiscountPanel(teacherId) {
+    const panel = document.getElementById('discount_panel_' + teacherId);
+    if (!panel) return;
+    panel.classList.toggle('d-none');
+    // تحديث حالة زر الخصم
+    if (!panel.classList.contains('d-none')) {
+        onDiscountTypeChange(teacherId);
+    }
+}
+
+function onDiscountTypeChange(teacherId) {
+    const selectedType = document.querySelector('input[name="discount_type_' + teacherId + '"]:checked');
+    if (!selectedType) return;
+
+    const discountType = selectedType.value;
+    const pctSection = document.getElementById('disc_pct_section_' + teacherId);
+    const freeSection = document.getElementById('disc_free_section_' + teacherId);
+
+    // إخفاء الكل
+    if (pctSection) pctSection.classList.add('d-none');
+    if (freeSection) freeSection.classList.add('d-none');
+
+    if (discountType === 'percentage') {
+        if (pctSection) pctSection.classList.remove('d-none');
+        onDiscountValueChange(teacherId);
+    } else if (discountType === 'free') {
+        if (freeSection) freeSection.classList.remove('d-none');
+        onWaiverChange(teacherId);
+    }
+
+    updateDiscountBtn(teacherId, discountType);
+}
+
+function onDiscountValueChange(teacherId) {
+    const valInput = document.getElementById('disc_pct_val_' + teacherId);
+    const preview = document.getElementById('disc_pct_preview_' + teacherId);
+    const discountValue = parseInt(valInput?.value) || 0;
+
+    if (!preview) return;
+
+    if (discountValue <= 0 || discountValue > 100) {
+        preview.classList.add('d-none');
+        return;
+    }
+
+    // حساب القسط بعد الخصم
+    const t = teachersMap[teacherId];
+    if (t) {
+        const studyTypeSelect = document.querySelector('select[name="study_type_' + teacherId + '"]');
+        const hiddenStudyType = document.querySelector('input[name="study_type_' + teacherId + '"]');
+        let studyType = 'حضوري';
+        if (studyTypeSelect) studyType = studyTypeSelect.value;
+        else if (hiddenStudyType) studyType = hiddenStudyType.value;
+
+        let totalFee = t.total_fee;
+        if (studyType === 'الكتروني' && t.fee_electronic > 0) totalFee = t.fee_electronic;
+        else if (studyType === 'مدمج' && t.fee_blended > 0) totalFee = t.fee_blended;
+        else if (studyType === 'حضوري' && t.fee_in_person > 0) totalFee = t.fee_in_person;
+
+        if (totalFee > 0) {
+            const discountAmount = Math.round(totalFee * discountValue / 100);
+            const newFee = totalFee - discountAmount;
+            preview.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>القسط: ' + formatCurrency(totalFee) + ' ← بعد الخصم: ' + formatCurrency(newFee) + ' (توفير ' + formatCurrency(discountAmount) + ')';
+            preview.classList.remove('d-none');
+        } else {
+            preview.classList.add('d-none');
+        }
+    }
+}
+
+function onWaiverChange(teacherId) {
+    const waiverCheck = document.getElementById('disc_waiver_' + teacherId);
+    const waiverInfo = document.getElementById('disc_waiver_info_' + teacherId);
+    const noWaiverInfo = document.getElementById('disc_no_waiver_info_' + teacherId);
+
+    if (waiverCheck && waiverCheck.checked) {
+        if (waiverInfo) waiverInfo.classList.remove('d-none');
+        if (noWaiverInfo) noWaiverInfo.classList.add('d-none');
+    } else {
+        if (waiverInfo) waiverInfo.classList.add('d-none');
+        if (noWaiverInfo) noWaiverInfo.classList.remove('d-none');
+    }
+}
+
+function updateDiscountBtn(teacherId, discountType) {
+    const btn = document.getElementById('discount_btn_' + teacherId);
+    if (!btn) return;
+
+    // إزالة الأنماط السابقة
+    btn.classList.remove('btn-warning', 'btn-outline-secondary');
+
+    if (discountType === 'none') {
+        btn.classList.add('btn-outline-secondary');
+        btn.innerHTML = '<i class="fas fa-percent" style="font-size:0.7rem;"></i>';
+    } else if (discountType === 'percentage') {
+        const val = document.getElementById('disc_pct_val_' + teacherId)?.value || '';
+        btn.classList.add('btn-warning');
+        btn.innerHTML = '<i class="fas fa-percent" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> ' + val + '%</span>';
+    } else if (discountType === 'free') {
+        btn.classList.add('btn-warning');
+        btn.innerHTML = '<i class="fas fa-gift" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>';
+    }
+}
+
+// تحديث زر الخصم عند تغيير قيمة النسبة
+document.addEventListener('input', function(e) {
+    if (e.target.name && e.target.name.startsWith('discount_value_')) {
+        const teacherId = e.target.name.replace('discount_value_', '');
+        const selectedType = document.querySelector('input[name="discount_type_' + teacherId + '"]:checked');
+        if (selectedType && selectedType.value === 'percentage') {
+            updateDiscountBtn(teacherId, 'percentage');
+        }
+    }
+});
+
+// تنسيق العملة
+function formatCurrency(amount) {
+    if (!amount && amount !== 0) return '0 د.ع';
+    return Number(amount).toLocaleString('ar-IQ') + ' د.ع';
 }
 
 // تحذير إضافي عند إرسال النموذج إذا تم إلغاء تحديد مدرسين
@@ -304,6 +545,17 @@ document.getElementById('studentForm')?.addEventListener('submit', function(e) {
         }
     }
     {% endif %}
+
+    // تعيين القيم الافتراضية للخصم للحقول المخفية
+    document.querySelectorAll('.discount-panel').forEach(function(panel) {
+        const teacherId = panel.id.replace('discount_panel_', '');
+        const selectedType = document.querySelector('input[name="discount_type_' + teacherId + '"]:checked');
+        if (!selectedType) {
+            // إذا لم يتم اختيار نوع خصم، تعيين "بدون" كافتراضي
+            const noneRadio = document.getElementById('disc_none_' + teacherId);
+            if (noneRadio) noneRadio.checked = true;
+        }
+    });
 });
 </script>
 {% endblock %}

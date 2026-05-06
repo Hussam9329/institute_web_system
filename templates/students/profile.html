@@ -340,7 +340,7 @@
                         <small class="text-muted mb-0"><i class="fas fa-calculator me-1"></i><span id="inst_fee_hint_text"></span></small>
                     </div>
 
-                    <!-- ===== لوحة الخصم الاحترافية ===== -->
+                    <!-- ===== معلومات الخصم (للقراءة فقط - يُعدّل من صفحة إضافة/تعديل الطالب) ===== -->
                     <div class="card border-0 shadow-sm mb-3 discount-panel">
                         <div class="card-header bg-gradient-orange text-white border-0 py-2 d-flex align-items-center justify-content-between" style="cursor:pointer" onclick="toggleDiscountPanel()">
                             <h6 class="mb-0 fw-bold">
@@ -349,73 +349,29 @@
                             <i class="fas fa-chevron-down transition-icon" id="discountPanelIcon"></i>
                         </div>
                         <div class="card-body p-3" id="discountPanelBody">
-                            <!-- نوع الخصم -->
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small">نوع الخصم:</label>
-                                <div class="d-flex gap-2">
-                                    <div class="form-check flex-fill">
-                                        <input class="form-check-input" type="radio" name="discount_type" id="discount_none" value="none" checked onchange="onDiscountTypeChange()">
-                                        <label class="form-check-label small fw-semibold" for="discount_none">
-                                            <i class="fas fa-ban text-muted me-1"></i>بدون خصم
-                                        </label>
-                                    </div>
-                                    <div class="form-check flex-fill">
-                                        <input class="form-check-input" type="radio" name="discount_type" id="discount_percentage" value="percentage" onchange="onDiscountTypeChange()">
-                                        <label class="form-check-label small fw-semibold" for="discount_percentage">
-                                            <i class="fas fa-percent text-warning me-1"></i>نسبة خصم
-                                        </label>
-                                    </div>
-                                    <div class="form-check flex-fill">
-                                        <input class="form-check-input" type="radio" name="discount_type" id="discount_free" value="free" onchange="onDiscountTypeChange()">
-                                        <label class="form-check-label small fw-semibold" for="discount_free">
-                                            <i class="fas fa-gift text-success me-1"></i>مجاني
-                                        </label>
+                            <!-- عرض معلومات الخصم الحالي -->
+                            <div id="discountInfoDisplay">
+                                <div class="alert alert-light py-2 px-3 mb-2 small" id="discountNoneInfo">
+                                    <i class="fas fa-ban text-muted me-1"></i>
+                                    لا يوجد خصم مسجل لهذا الطالب
+                                </div>
+                                <div class="alert alert-warning py-2 px-3 mb-2 small d-none" id="discountPctInfo">
+                                    <i class="fas fa-percent text-warning me-1"></i>
+                                    خصم <strong id="discountPctValue"></strong>% — القسط الأصلي: <span id="discountOrigFee"></span> ← بعد الخصم: <strong id="discountNewFee"></strong> (توفير <span id="discountSaved"></span>)
+                                </div>
+                                <div class="alert alert-success py-2 px-3 mb-2 small d-none" id="discountFreeInfo">
+                                    <i class="fas fa-gift text-success me-1"></i>
+                                    الطالب <strong>مجاني</strong> — لا يدفع أي مبلغ
+                                    <div class="mt-1 d-none" id="discountWaiverInfo">
+                                        <i class="fas fa-building text-primary me-1"></i>تنازل المعهد عن نسبة الطالب — المدرس سيدفع نسبته
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- نسبة الخصم (تظهر عند اختيار نسبة خصم) -->
-                            <div class="mb-3 d-none" id="discountPercentageSection">
-                                <label class="form-label fw-bold small">نسبة الخصم (%):</label>
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control" id="discount_value" min="1" max="100" placeholder="أدخل نسبة الخصم" onchange="onDiscountValueChange()" oninput="onDiscountValueChange()">
-                                    <span class="input-group-text fw-bold">%</span>
-                                </div>
-                                <div class="mt-2 d-none" id="discountPreview">
-                                    <div class="alert alert-success py-2 px-3 mb-0 small">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        <span id="discountPreviewText"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- خيار مجاني (يظهر عند اختيار مجاني) -->
-                            <div class="d-none" id="discountFreeSection">
-                                <div class="alert alert-success py-2 px-3 mb-2 small">
-                                    <i class="fas fa-gift me-1"></i>
-                                    الطالب <strong>مجاني</strong> - لا يدفع أي مبلغ
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="institute_waiver" value="1" onchange="onDiscountTypeChange()">
-                                    <label class="form-check-label small fw-semibold" for="institute_waiver">
-                                        <i class="fas fa-building text-primary me-1"></i>تنازل المعهد عن نسبة الطالب
-                                    </label>
-                                </div>
-                                <div class="alert alert-warning py-2 px-3 mb-0 small d-none" id="waiverInfoAlert">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <strong>مجاني مع تنازل المعهد:</strong> الطالب لا يدفع شيء، ولكن المدرس <strong>سيدفع نسبته</strong> للمعهد
-                                </div>
-                                <div class="alert alert-secondary py-2 px-3 mb-0 small d-none" id="noWaiverInfoAlert">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    <strong>مجاني بالكامل:</strong> الطالب لا يدفع والمدرس لا يدفع أي مبلغ للمعهد
-                                </div>
-                            </div>
-
-                            <!-- زر تطبيق الخصم -->
-                            <div class="mt-3 text-start">
-                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="applyDiscount()">
-                                    <i class="fas fa-check me-1"></i>تطبيق الخصم
-                                </button>
+                            <!-- رابط لتعديل الخصم -->
+                            <div class="mt-2">
+                                <a href="{{ '/students/' ~ student.id ~ '/edit' }}" class="small text-decoration-none" style="color:#f0a500;">
+                                    <i class="fas fa-external-link-alt me-1"></i>تعديل الخصم من صفحة تعديل الطالب
+                                </a>
                             </div>
                         </div>
                     </div>
