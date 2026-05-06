@@ -472,6 +472,7 @@ function initStudentSearch() {
         var box = document.getElementById('studentSearchBox');
         if (box && !box.contains(e.target)) {
             dropdown.classList.remove('show');
+            removeDropdownSpacing();
         }
     });
 }
@@ -521,6 +522,7 @@ function selectStudent(id, name) {
     input.classList.add('d-none');
     tag.classList.remove('d-none');
     dropdown.classList.remove('show');
+    removeDropdownSpacing();
 
     // تحميل مدرسين الطالب المختار
     loadStudentTeachers(id);
@@ -537,6 +539,7 @@ function resetStudentSearch() {
     hiddenInput.value = '';
     tag.classList.add('d-none');
     dropdown.classList.remove('show');
+    removeDropdownSpacing();
 
     // إعادة تعيين المدرس أيضاً
     resetTeacherSearch();
@@ -594,6 +597,7 @@ function initTeacherSearch() {
         var box = document.getElementById('teacherSearchBox');
         if (box && !box.contains(e.target)) {
             dropdown.classList.remove('show');
+            removeDropdownSpacing();
         }
     });
 }
@@ -652,6 +656,7 @@ function selectTeacher(id, name) {
     input.classList.add('d-none');
     tag.classList.remove('d-none');
     dropdown.classList.remove('show');
+    removeDropdownSpacing();
 
     // عرض رصيد المدرس
     showTeacherBalance(id);
@@ -670,6 +675,7 @@ function resetTeacherSearch() {
     hiddenInput.value = '';
     tag.classList.add('d-none');
     dropdown.classList.remove('show');
+    removeDropdownSpacing();
 
     // إخفاء رسالة الرصيد
     var msgDiv = document.getElementById('teacherBalanceMsg');
@@ -734,7 +740,7 @@ function showTeacherBalance(teacherId) {
 }
 
 // ============================================
-// موضع القائمة المنسدلة (position: fixed) داخل المودال
+// موضع القائمة المنسدلة - داخل المودال بدون تداخل
 // ============================================
 function positionFixedDropdown(boxId, dropdownId) {
     var box = document.getElementById(boxId);
@@ -742,31 +748,51 @@ function positionFixedDropdown(boxId, dropdownId) {
     if (!box || !dropdown) return;
 
     var rect = box.getBoundingClientRect();
-    var spaceBelow = window.innerHeight - rect.bottom;
-    var dropdownMaxH = 240;
+    var dropdownMaxH = 220;
+    var footerEl = document.querySelector('.pay-modal-footer');
+    var footerTop = footerEl ? footerEl.getBoundingClientRect().top : window.innerHeight;
+    var availableBelow = footerTop - rect.bottom - 8;
+
+    // حساب الارتفاع المناسب
+    var calculatedHeight = Math.min(dropdownMaxH, availableBelow);
+    if (calculatedHeight < 80) calculatedHeight = dropdownMaxH; // إذا ضيق جداً، استخدم الارتفاع الكامل
 
     dropdown.style.position = 'fixed';
     dropdown.style.width = rect.width + 'px';
     dropdown.style.left = rect.left + 'px';
     dropdown.style.right = 'auto';
+    dropdown.style.maxHeight = calculatedHeight + 'px';
 
-    // حساب الارتفاع المتاح أدناه مع مراعاة الفوتر
-    var modalContent = document.querySelector('.pay-modal-content');
-    var footerEl = document.querySelector('.pay-modal-footer');
-    var footerTop = footerEl ? footerEl.getBoundingClientRect().top : window.innerHeight;
-    var availableBelow = footerTop - rect.bottom - 4;
+    // حساب المساحة المتاحة أدناه وأعلاه
+    var spaceBelow = window.innerHeight - rect.bottom;
+    var spaceAbove = rect.top;
 
-    if (spaceBelow < dropdownMaxH && rect.top > spaceBelow) {
+    if (spaceBelow < 150 && spaceAbove > spaceBelow) {
         // عرض القائمة للأعلى
         dropdown.style.top = 'auto';
         dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
-        dropdown.style.maxHeight = Math.min(dropdownMaxH, rect.top - 10) + 'px';
     } else {
         // عرض القائمة للأسفل
         dropdown.style.top = (rect.bottom + 4) + 'px';
         dropdown.style.bottom = 'auto';
-        dropdown.style.maxHeight = Math.min(dropdownMaxH, availableBelow) + 'px';
     }
+
+    // إضافة مساحة ديناميكية أسفل حقل البحث لمنع التداخل
+    var colEl = box.closest('.col-12, .col-md-6');
+    if (colEl) {
+        // حساب ارتفاع القائمة الفعلي
+        var dropdownHeight = Math.min(dropdown.scrollHeight || calculatedHeight, calculatedHeight);
+        colEl.style.marginBottom = dropdownHeight + 12 + 'px';
+        colEl.setAttribute('data-dropdown-open', 'true');
+    }
+}
+
+// إزالة المسافة الإضافية عند إغلاق القائمة
+function removeDropdownSpacing() {
+    document.querySelectorAll('[data-dropdown-open="true"]').forEach(function(el) {
+        el.style.marginBottom = '';
+        el.removeAttribute('data-dropdown-open');
+    });
 }
 
 // تحديث الموضع عند تغيير حجم النافذة أو تمرير المودال
@@ -793,6 +819,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function closeAllDropdowns() {
     document.getElementById('studentDropdown')?.classList.remove('show');
     document.getElementById('teacherDropdown')?.classList.remove('show');
+    removeDropdownSpacing();
 }
 
 // ============================================
