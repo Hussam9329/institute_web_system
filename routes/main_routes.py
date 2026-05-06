@@ -168,7 +168,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
 
 
 @router.get("/students/add", response_class=HTMLResponse)
-async def student_form(request: Request):
+async def student_form(request: Request, error: str = "", detail: str = ""):
     """نموذج إضافة طالب جديد"""
     check_permission(request, 'add_students')
     db = Database()
@@ -177,7 +177,9 @@ async def student_form(request: Request):
         "request": request,
         "student": None,
         "mode": "add",
-        "teachers": teachers
+        "teachers": teachers,
+        "error": error,
+        "error_detail": detail
     })
 
 
@@ -212,17 +214,49 @@ async def student_add(
     teacher_ids = form_data.getlist("teacher_ids")
 
     if teacher_ids:
+        # ===== فحص تكرار المادة: لا يسمح بربط الطالب بأكثر من مدرس لنفس المادة =====
+        # (إلا إذا كانت حالة الطالب مع المدرس الأول "منسحب")
+        selected_teachers = []
         for tid in teacher_ids:
             if tid:
-                study_type = form_data.get(f"study_type_{tid}", "حضوري")
-                status = form_data.get(f"status_{tid}", "مستمر")
-                try:
-                    db.execute_query(
-                        "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
-                        (student_id, int(tid), study_type, status)
-                    )
-                except:
-                    pass
+                teacher_info = db.execute_query("SELECT id, name, subject FROM teachers WHERE id = %s", (int(tid),))
+                if teacher_info:
+                    selected_teachers.append(dict(teacher_info[0]))
+
+        # فحص تكرار المادة بين المدرسين المختارين
+        subject_teachers = {}  # {المادة: [قائمة المدرسين]}
+        for t in selected_teachers:
+            subj = t['subject']
+            if subj not in subject_teachers:
+                subject_teachers[subj] = []
+            subject_teachers[subj].append(t)
+
+        duplicate_subjects = []
+        for subj, teachers_list in subject_teachers.items():
+            if len(teachers_list) > 1:
+                teacher_names = ' و '.join([t['name'] for t in teachers_list])
+                duplicate_subjects.append(f"{subj} ({teacher_names})")
+
+        if duplicate_subjects:
+            # حذف الطالب الذي تم إنشاؤه لأن الربط غير صالح
+            db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
+            dup_str = ' - '.join(duplicate_subjects)
+            return RedirectResponse(
+                url=f"/students/add?error=duplicate_subject&detail={dup_str}",
+                status_code=303
+            )
+
+        for t in selected_teachers:
+            tid = t['id']
+            study_type = form_data.get(f"study_type_{tid}", "حضوري")
+            status = form_data.get(f"status_{tid}", "مستمر")
+            try:
+                db.execute_query(
+                    "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+                    (student_id, tid, study_type, status)
+                )
+            except:
+                pass
 
         sync_student_status(student_id)
 
@@ -230,7 +264,7 @@ async def student_add(
 
 
 @router.get("/students/{student_id}/edit", response_class=HTMLResponse)
-async def student_edit_form(request: Request, student_id: int):
+async def student_edit_form(request: Request, student_id: int, error: str = "", detail: str = ""):
     """نموذج تعديل طالب"""
     check_permission(request, 'edit_students')
     db = Database()
@@ -258,7 +292,9 @@ async def student_edit_form(request: Request, student_id: int):
         "mode": "edit",
         "teachers": teachers,
         "linked_teacher_ids": linked_ids,
-        "linked_data": linked_data
+        "linked_data": linked_data,
+        "error": error,
+        "error_detail": detail
     })
 
 
@@ -306,16 +342,40 @@ async def student_update(
             pass
 
     # إضافة روابط جديدة فقط
-    for tid in new_teacher_ids - old_teacher_ids:
-        study_type = form_data.get(f"study_type_{tid}", "حضوري")
-        status = form_data.get(f"status_{tid}", "مستمر")
-        try:
-            db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
-                (student_id, tid, study_type, status)
-            )
-        except:
-            pass
+    # ===== فحص تكرار المادة: لا يسمح بربط الطالب بأكثر من مدرس لنفس المادة =====
+    # (إلا إذا كانت حالة الطالب مع المدرس الأول "منسحب")
+    added_teacher_ids = new_teacher_ids - old_teacher_ids
+    if added_teacher_ids:
+        for tid in added_teacher_ids:
+            teacher_info = db.execute_query("SELECT id, name, subject FROM teachers WHERE id = %s", (tid,))
+            if not teacher_info:
+                continue
+            teacher_subject = teacher_info[0]['subject']
+            # فحص هل الطالب مربوط بمدرس آخر لنفس المادة وحالته ليست "منسحب"
+            same_subject_links = db.execute_query('''
+                SELECT st.teacher_id, t.name as teacher_name, st.status
+                FROM student_teacher st
+                JOIN teachers t ON st.teacher_id = t.id
+                WHERE st.student_id = %s AND t.subject = %s
+            ''', (student_id, teacher_subject))
+            if same_subject_links:
+                for link_row in same_subject_links:
+                    if link_row['teacher_id'] != tid:
+                        link_status = link_row.get('status', 'مستمر')
+                        if link_status != 'منسحب':
+                            return RedirectResponse(
+                                url=f"/students/{student_id}/edit?error=duplicate_subject&detail={teacher_subject} ({link_row['teacher_name']})",
+                                status_code=303
+                            )
+            study_type = form_data.get(f"study_type_{tid}", "حضوري")
+            status = form_data.get(f"status_{tid}", "مستمر")
+            try:
+                db.execute_query(
+                    "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+                    (student_id, tid, study_type, status)
+                )
+            except:
+                pass
 
     # حذف الروابط التي أزيلت (مع حذف الأقساط المرتبطة)
     for tid in old_teacher_ids - new_teacher_ids:

@@ -36,6 +36,19 @@
                     </div>
                     <div class="card-body">
 
+                        {% if error == 'duplicate_subject' %}
+                        <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+                            <div>
+                                <strong>غير مسموح!</strong> لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة.
+                                <br>
+                                {% if error_detail %}
+                                <span class="text-muted">المادة المتكررة: {{ error_detail }} — يجب أن تصبح حالة الطالب "منسحب" مع المدرس الأول قبل ربطه بمدرس آخر لنفس المادة.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
                         {% if mode == 'add' %}
                         <form method="POST" action="/students/add" id="studentForm">
                         {% else %}
@@ -222,6 +235,13 @@
 // قائمة المدرسين المرتبطين أصلاً (في وضع التعديل)
 const originallyLinked = [{% if mode == 'edit' and linked_teacher_ids %}{{ linked_teacher_ids | join(',') }}{% endif %}];
 
+// ===== خريطة المدرسين: {id: {name, subject}} =====
+const teachersMap = {
+    {% for teacher in teachers %}
+    {{ teacher.id }}: { name: "{{ teacher.name }}", subject: "{{ teacher.subject }}" },
+    {% endfor %}
+};
+
 function toggleTeacherRow(teacherId) {
     const row = document.getElementById('teacher_row_' + teacherId);
     const cb = document.getElementById('teacher_' + teacherId);
@@ -234,6 +254,37 @@ function toggleTeacherRow(teacherId) {
                 return;
             }
         }
+        
+        // ===== فحص تكرار المادة: لا يسمح باختيار مدرسين بنفس المادة =====
+        if (cb.checked) {
+            const newSubject = teachersMap[teacherId]?.subject;
+            if (newSubject) {
+                // البحث عن مدرسين آخرين مختارين بنفس المادة
+                const checkboxes = document.querySelectorAll('input[name="teacher_ids"]');
+                let conflictTeacher = null;
+                for (const otherCb of checkboxes) {
+                    const otherId = parseInt(otherCb.value);
+                    if (otherId !== teacherId && otherCb.checked) {
+                        const otherSubject = teachersMap[otherId]?.subject;
+                        if (otherSubject === newSubject) {
+                            // فحص حالة المدرس الآخر: إذا كانت "منسحب" فلا مانع
+                            const otherStatus = document.querySelector(`select[name="status_${otherId}"]`);
+                            if (otherStatus && otherStatus.value !== 'منسحب') {
+                                conflictTeacher = teachersMap[otherId];
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (conflictTeacher) {
+                    showAlert(`⚠️ غير مسموح! لا يمكن ربط الطالب بأكثر من مدرس لنفس المادة (${newSubject}). المدرس "${conflictTeacher.name}" مرتبط بالفعل بهذه المادة. يجب أن تصبح حالة الطالب "منسحب" مع المدرس الأول أولاً.`, 'warning');
+                    cb.checked = false;
+                    row.classList.remove('active');
+                    return;
+                }
+            }
+        }
+        
         row.classList.toggle('active', cb.checked);
     }
 }
