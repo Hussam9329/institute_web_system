@@ -61,46 +61,140 @@
         </div>
     </div>
 
-    <!-- ===== بحث ===== -->
-    <div class="mb-3">
+    <!-- ===== بحث سريع + عداد النتائج ===== -->
+    <div class="mb-2">
         <div class="input-group">
             <span class="input-group-text bg-transparent border-end-0">
                 <i class="fas fa-search text-muted"></i>
             </span>
             <input type="text" class="form-control border-start-0 ps-0" 
-                   placeholder="بحث مباشر بالاسم أو المادة أو المدرس..." id="paymentSearch"
+                   placeholder="بحث سريع بالاسم أو المادة أو المدرس..." id="paymentSearch"
                    value="{{ request.args.get('search', '') }}">
         </div>
     </div>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <small class="text-muted" id="filterResultsCounter"></small>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="resetAllFilters" style="display:none;">
+            <i class="fas fa-undo me-1"></i>إعادة تعيين الكل
+        </button>
+    </div>
 
-    <!-- ===== فلتر التاريخ ===== -->
+    <!-- ===== لوحة الفلترة المتقدمة ===== -->
     <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body py-2">
-            <form method="GET" action="/payments" class="row g-2 align-items-end">
-                {% if search %}
-                <input type="hidden" name="search" value="{{ search }}">
-                {% endif %}
-                <div class="col-12 col-sm-4 col-md-3">
-                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
-                    <input type="date" class="form-control form-control-sm" name="date_from" id="filter_date_from" value="{{ date_from }}">
+        <!-- رأس اللوحة القابل للطي -->
+        <div class="card-header bg-transparent border-0 py-2 px-3 cursor-pointer" id="filterPanelToggle"
+             style="cursor:pointer;" onclick="toggleFilterPanel()">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-sliders-h text-warning"></i>
+                    <span class="fw-bold small">فلترة متقدمة</span>
+                    <span class="badge bg-warning bg-opacity-10 text-warning" id="activeFiltersBadge" style="display:none;">0</span>
                 </div>
-                <div class="col-12 col-sm-4 col-md-3">
-                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
-                    <input type="date" class="form-control form-control-sm" name="date_to" id="filter_date_to" value="{{ date_to }}">
-                </div>
-                <div class="col-12 col-sm-4 col-md-3">
-                    <div class="d-flex gap-1">
-                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                            <i class="fas fa-filter me-1"></i>تصفية
-                        </button>
-                        <a href="/payments{% if search %}?search={{ search }}{% endif %}" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
-                            <i class="fas fa-times"></i>
-                        </a>
+                <i class="fas fa-chevron-down small text-muted transition-icon" id="filterPanelIcon"></i>
+            </div>
+        </div>
+        <!-- محتوى اللوحة -->
+        <div class="collapse" id="filterPanelContent">
+            <div class="card-body pt-0 px-3 pb-3">
+                <div class="row g-2">
+                    <!-- ☑ بحث بالطالب -->
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_student" data-target="filter_student">
+                            <label for="chk_student" class="form-check-label small fw-bold mb-0"><i class="fas fa-user-graduate me-1"></i>بحث بالطالب</label>
+                        </div>
+                        <input type="text" class="form-control form-control-sm filter-input" id="filter_student" placeholder="اسم الطالب..." disabled>
+                    </div>
+                    <!-- ☑ بحث بالمدرس -->
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_teacher" data-target="filter_teacher">
+                            <label for="chk_teacher" class="form-check-label small fw-bold mb-0"><i class="fas fa-chalkboard-teacher me-1"></i>بحث بالمدرس</label>
+                        </div>
+                        <input type="text" class="form-control form-control-sm filter-input" id="filter_teacher" placeholder="اسم المدرس..." disabled>
+                    </div>
+                    <!-- ☑ بحث بالمادة -->
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_subject" data-target="filter_subject">
+                            <label for="chk_subject" class="form-check-label small fw-bold mb-0"><i class="fas fa-book-open me-1"></i>بحث بالمادة</label>
+                        </div>
+                        <select class="form-select form-select-sm filter-input" id="filter_subject" disabled>
+                            <option value="">كل المواد</option>
+                            {% for subj in installments | map(attribute='subject') | unique | sort %}
+                            <option value="{{ subj|lower }}">{{ subj }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- ☑ فلتر التاريخ -->
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_date" data-target="filter_date_from">
+                            <label for="chk_date" class="form-check-label small fw-bold mb-0"><i class="fas fa-calendar-alt me-1"></i>فلتر التاريخ</label>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <input type="date" class="form-control form-control-sm filter-input filter-date-input" id="filter_date_from" placeholder="من" disabled>
+                            <input type="date" class="form-control form-control-sm filter-input filter-date-input" id="filter_date_to" placeholder="إلى" disabled>
+                        </div>
+                    </div>
+                    <!-- ☑ نوع القسط -->
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_type" data-target="filter_type">
+                            <label for="chk_type" class="form-check-label small fw-bold mb-0"><i class="fas fa-tag me-1"></i>نوع القسط</label>
+                        </div>
+                        <select class="form-select form-select-sm filter-input" id="filter_type" disabled>
+                            <option value="">الكل</option>
+                            <option value="القسط الأول">القسط الأول</option>
+                            <option value="القسط الثاني">القسط الثاني</option>
+                            <option value="دفع كامل">دفع كامل</option>
+                        </select>
+                    </div>
+                    <!-- ☑ حالة الدفع -->
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_status" data-target="filter_status">
+                            <label for="chk_status" class="form-check-label small fw-bold mb-0"><i class="fas fa-check-circle me-1"></i>حالة الدفع</label>
+                        </div>
+                        <select class="form-select form-select-sm filter-input" id="filter_status" disabled>
+                            <option value="">الكل</option>
+                            <option value="complete">مكتمل</option>
+                            <option value="incomplete">غير مكتمل</option>
+                        </select>
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
+
+    <style>
+    /* أنماط لوحة الفلترة */
+    .filter-input:disabled {
+        opacity: 0.45;
+        background-color: #f8f9fa;
+    }
+    .filter-input:not(:disabled) {
+        border-color: #f0a500;
+        box-shadow: 0 0 0 1px rgba(240,165,0,0.15);
+    }
+    .filter-checkbox:checked {
+        background-color: #f0a500;
+        border-color: #f0a500;
+    }
+    .filter-checkbox {
+        cursor: pointer;
+    }
+    .transition-icon {
+        transition: transform 0.25s ease;
+    }
+    .transition-icon.rotated {
+        transform: rotate(180deg);
+    }
+    #activeFiltersBadge {
+        font-size: 0.68rem;
+        min-width: 18px;
+    }
+    </style>
 
     {% if installments %}
     <!-- ===== جدول الأقساط ===== -->
@@ -124,7 +218,7 @@
                         </thead>
                         <tbody>
                             {% for inst in installments %}
-                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}">
+                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
                                 <td class="text-center text-muted fw-bold">{{ loop.index }}</td>
                                 <td>
                                     <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
@@ -182,7 +276,7 @@
     <div id="cardView" class="d-none">
         <div class="row g-3" id="paymentCards">
             {% for inst in installments %}
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 payment-card" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 payment-card" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
                 <div class="list-card list-card-accent accent-orange h-100">
                     <div class="card-body">
                         <!-- رأس الكارت -->
@@ -1027,60 +1121,228 @@ async function deletePayment(installmentId) {
 }
 
 // ===== بحث وفلترة موحد في صفحة الأقساط =====
+
+// تبديل لوحة الفلترة المتقدمة
+function toggleFilterPanel() {
+    var content = document.getElementById('filterPanelContent');
+    var icon = document.getElementById('filterPanelIcon');
+    if (content.classList.contains('show')) {
+        content.classList.remove('show');
+        icon.classList.remove('rotated');
+    } else {
+        content.classList.add('show');
+        icon.classList.add('rotated');
+    }
+}
+
+// تفعيل/تعطيل حقول الفلتر حسب التشيكبوكس
+function initFilterCheckboxes() {
+    document.querySelectorAll('.filter-checkbox').forEach(function(chk) {
+        chk.addEventListener('change', function() {
+            var targetId = this.dataset.target;
+            var target = document.getElementById(targetId);
+            if (target) {
+                target.disabled = !this.checked;
+                if (!this.checked) {
+                    // إعادة تعيين القيمة عند إلغاء التفعيل
+                    if (target.tagName === 'SELECT') {
+                        target.value = '';
+                    } else if (target.type === 'date') {
+                        target.value = '';
+                    } else {
+                        target.value = '';
+                    }
+                }
+            }
+            // التعامل مع حقلي التاريخ معاً
+            if (this.id === 'chk_date') {
+                var dateTo = document.getElementById('filter_date_to');
+                if (dateTo) {
+                    dateTo.disabled = !this.checked;
+                    if (!this.checked) dateTo.value = '';
+                }
+            }
+            filterPayments();
+        });
+    });
+}
+
+// عداد الفلاتر النشطة
+function updateActiveFiltersBadge() {
+    var count = 0;
+    // بحث سريع
+    var searchVal = document.getElementById('paymentSearch')?.value.trim() || '';
+    if (searchVal) count++;
+    // فلاتر متقدمة
+    var chkIds = ['chk_student', 'chk_teacher', 'chk_subject', 'chk_date', 'chk_type', 'chk_status'];
+    chkIds.forEach(function(id) {
+        var chk = document.getElementById(id);
+        if (chk && chk.checked) count++;
+    });
+    var badge = document.getElementById('activeFiltersBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    var resetBtn = document.getElementById('resetAllFilters');
+    if (resetBtn) {
+        resetBtn.style.display = count > 0 ? '' : 'none';
+    }
+}
+
+// تحديث عداد النتائج
+function updateResultsCounter(visible, total) {
+    var counter = document.getElementById('filterResultsCounter');
+    if (counter) {
+        if (total > 0) {
+            counter.textContent = visible + ' من ' + total + ' نتيجة';
+        } else {
+            counter.textContent = '';
+        }
+    }
+}
+
+// إعادة تعيين جميع الفلاتر
+function resetAllFilters() {
+    // إعادة تعيين البحث السريع
+    var searchInput = document.getElementById('paymentSearch');
+    if (searchInput) searchInput.value = '';
+    // إعادة تعيين التشيكبوكسات والحقول
+    document.querySelectorAll('.filter-checkbox').forEach(function(chk) {
+        chk.checked = false;
+        chk.dispatchEvent(new Event('change'));
+    });
+    // تنظيف URL
+    var urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('search') || urlParams.has('date_from') || urlParams.has('date_to')) {
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+    filterPayments();
+}
+
 function filterPayments() {
-    const searchInput = document.getElementById('paymentSearch');
-    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const dateFrom = document.getElementById('filter_date_from')?.value || '';
-    const dateTo = document.getElementById('filter_date_to')?.value || '';
+    var searchInput = document.getElementById('paymentSearch');
+    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    // جلب قيم الفلاتر المتقدمة
+    var chkStudent = document.getElementById('chk_student')?.checked || false;
+    var chkTeacher = document.getElementById('chk_teacher')?.checked || false;
+    var chkSubject = document.getElementById('chk_subject')?.checked || false;
+    var chkDate = document.getElementById('chk_date')?.checked || false;
+    var chkType = document.getElementById('chk_type')?.checked || false;
+    var chkStatus = document.getElementById('chk_status')?.checked || false;
+
+    var filterStudent = chkStudent ? (document.getElementById('filter_student')?.value.toLowerCase().trim() || '') : '';
+    var filterTeacher = chkTeacher ? (document.getElementById('filter_teacher')?.value.toLowerCase().trim() || '') : '';
+    var filterSubject = chkSubject ? (document.getElementById('filter_subject')?.value || '') : '';
+    var dateFrom = chkDate ? (document.getElementById('filter_date_from')?.value || '') : '';
+    var dateTo = chkDate ? (document.getElementById('filter_date_to')?.value || '') : '';
+    var filterType = chkType ? (document.getElementById('filter_type')?.value || '') : '';
+    var filterStatusVal = chkStatus ? (document.getElementById('filter_status')?.value || '') : '';
 
     // فلترة صفوف الجدول
-    let tableVisible = 0;
-    document.querySelectorAll('.payment-row').forEach(row => {
-        const name = row.dataset.name || '';
-        const teacher = row.dataset.teacher || '';
-        const subject = row.dataset.subject || '';
-        const rowDate = row.dataset.date || '';
-        const matchText = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
-        const matchDateFrom = !dateFrom || rowDate >= dateFrom;
-        const matchDateTo = !dateTo || rowDate <= dateTo;
-        const show = matchText && matchDateFrom && matchDateTo;
+    var tableTotal = document.querySelectorAll('.payment-row').length;
+    var tableVisible = 0;
+    document.querySelectorAll('.payment-row').forEach(function(row) {
+        var name = row.dataset.name || '';
+        var teacher = row.dataset.teacher || '';
+        var subject = row.dataset.subject || '';
+        var rowDate = row.dataset.date || '';
+        var rowType = row.dataset.type || '';
+        var rowStatus = row.dataset.status || '';
+
+        // بحث سريع: يبحث في كل الحقول النصية
+        var matchQuick = !query || name.includes(query) || teacher.includes(query) || subject.includes(query) || rowType.includes(query);
+
+        // فلاتر متقدمة
+        var matchStudent = !chkStudent || !filterStudent || name.includes(filterStudent);
+        var matchTeacher = !chkTeacher || !filterTeacher || teacher.includes(filterTeacher);
+        var matchSubject = !chkSubject || !filterSubject || subject === filterSubject;
+        var matchDateFrom = !chkDate || !dateFrom || rowDate >= dateFrom;
+        var matchDateTo = !chkDate || !dateTo || rowDate <= dateTo;
+        var matchType = !chkType || !filterType || rowType === filterType;
+        var matchStatus = !chkStatus || !filterStatusVal || rowStatus === filterStatusVal;
+
+        var show = matchQuick && matchStudent && matchTeacher && matchSubject && matchDateFrom && matchDateTo && matchType && matchStatus;
         row.style.display = show ? '' : 'none';
         if (show) tableVisible++;
     });
 
     // فلترة الكارتات
-    let cardVisible = 0;
-    document.querySelectorAll('.payment-card').forEach(card => {
-        const name = card.dataset.name || '';
-        const teacher = card.dataset.teacher || '';
-        const subject = card.dataset.subject || '';
-        const matchText = !query || name.includes(query) || teacher.includes(query) || subject.includes(query);
-        card.style.display = matchText ? '' : 'none';
-        if (matchText) cardVisible++;
+    var cardTotal = document.querySelectorAll('.payment-card').length;
+    var cardVisible = 0;
+    document.querySelectorAll('.payment-card').forEach(function(card) {
+        var name = card.dataset.name || '';
+        var teacher = card.dataset.teacher || '';
+        var subject = card.dataset.subject || '';
+        var cardDate = card.dataset.date || '';
+        var cardType = card.dataset.type || '';
+        var cardStatus = card.dataset.status || '';
+
+        // بحث سريع
+        var matchQuick = !query || name.includes(query) || teacher.includes(query) || subject.includes(query) || cardType.includes(query);
+
+        // فلاتر متقدمة
+        var matchStudent = !chkStudent || !filterStudent || name.includes(filterStudent);
+        var matchTeacher = !chkTeacher || !filterTeacher || teacher.includes(filterTeacher);
+        var matchSubject = !chkSubject || !filterSubject || subject === filterSubject;
+        var matchDateFrom = !chkDate || !dateFrom || cardDate >= dateFrom;
+        var matchDateTo = !chkDate || !dateTo || cardDate <= dateTo;
+        var matchType = !chkType || !filterType || cardType === filterType;
+        var matchStatus = !chkStatus || !filterStatusVal || cardStatus === filterStatusVal;
+
+        var show = matchQuick && matchStudent && matchTeacher && matchSubject && matchDateFrom && matchDateTo && matchType && matchStatus;
+        card.style.display = show ? '' : 'none';
+        if (show) cardVisible++;
     });
 
     // رسالة لا توجد نتائج للكارتات
-    const noCards = document.getElementById('noCardsResults');
+    var noCards = document.getElementById('noCardsResults');
     if (noCards) {
-        const cards = document.querySelectorAll('.payment-card');
-        noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
+        noCards.classList.toggle('d-none', !(cardTotal > 0 && cardVisible === 0 && (query.length > 0 || chkStudent || chkTeacher || chkSubject || chkDate || chkType || chkStatus)));
     }
+
+    // تحديث عداد النتائج
+    var totalItems = tableTotal || cardTotal;
+    var visibleItems = tableTotal > 0 ? tableVisible : cardVisible;
+    updateResultsCounter(visibleItems, totalItems);
+
+    // تحديث شارة الفلاتر النشطة
+    updateActiveFiltersBadge();
 }
 
-// ربط أحداث البحث النصي
-document.getElementById('paymentSearch')?.addEventListener('input', function() {
-    // تنظيف URL من معامل البحث عند استخدام البحث المباشر
-    var urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('search')) {
-        urlParams.delete('search');
-        var newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-        window.history.replaceState({}, '', newUrl);
-    }
+// تهيئة أحداث الفلترة
+document.addEventListener('DOMContentLoaded', function() {
+    // تهيئة تشيكبوكسات الفلاتر
+    initFilterCheckboxes();
+
+    // ربط حدث البحث السريع
+    document.getElementById('paymentSearch')?.addEventListener('input', function() {
+        // تنظيف URL من معامل البحث عند استخدام البحث المباشر
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('search')) {
+            urlParams.delete('search');
+            var newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+        filterPayments();
+    });
+
+    // ربط أحداث حقول الفلاتر المتقدمة
+    document.querySelectorAll('.filter-input').forEach(function(input) {
+        input.addEventListener('input', filterPayments);
+        input.addEventListener('change', filterPayments);
+    });
+
+    // ربط زر إعادة تعيين الكل
+    document.getElementById('resetAllFilters')?.addEventListener('click', resetAllFilters);
+
+    // تشغيل الفلترة الأولية (في حال وجود بحث من URL)
     filterPayments();
 });
-
-// ربط أحداث فلتر التاريخ
-document.getElementById('filter_date_from')?.addEventListener('change', filterPayments);
-document.getElementById('filter_date_to')?.addEventListener('change', filterPayments);
 </script>
 {% endblock %}
