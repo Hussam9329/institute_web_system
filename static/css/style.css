@@ -2750,87 +2750,76 @@ textarea:focus-visible {
 }
 
 /* ============================================
-   Payment Modal - Professional Redesign
+   Payment Modal - Complete Professional Design
+   No overlaps · Perfect spacing · All screens
    ============================================ */
 
-/* ===== Modal Container ===== */
+/* ===== Modal Dialog ===== */
 .pay-modal-dialog {
-    max-width: 720px;
+    max-width: 680px;
 }
 
+/* ===== Modal Content ===== */
 .pay-modal-content {
     border: none !important;
-    border-radius: 20px !important;
-    overflow: visible;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.08) !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12), 0 6px 16px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* ===== Modal Header ===== */
 .pay-modal-header {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
-    padding: 1.25rem 1.75rem;
-    border-radius: 20px 20px 0 0 !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    padding: 1rem 1.5rem;
+    border-radius: 0 !important;
     position: relative;
-    overflow: hidden;
-}
-
-.pay-modal-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 200px;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.pay-modal-header::after {
-    content: '';
-    position: absolute;
-    bottom: -30%;
-    left: -10%;
-    width: 120px;
-    height: 120px;
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 50%;
-    pointer-events: none;
+    flex-shrink: 0;
 }
 
 .pay-modal-icon {
-    width: 42px;
-    height: 42px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: white;
-    backdrop-filter: blur(4px);
     flex-shrink: 0;
 }
 
 /* ===== Modal Body ===== */
 .pay-modal-body {
-    padding: 1.5rem 1.75rem;
-    background: #fafbfc;
+    padding: 1.25rem 1.5rem;
+    background: #f8f9fb;
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for modal body */
+.pay-modal-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.pay-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.pay-modal-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
 }
 
 /* ===== Sections ===== */
 .pay-section {
     background: white;
-    border-radius: 14px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-    border: 1px solid #f0f1f3;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-    transition: box-shadow 0.2s ease;
-}
-
-.pay-section:hover {
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 0.85rem;
+    border: 1px solid #eef0f3;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .pay-section:last-child {
@@ -2841,25 +2830,25 @@ textarea:focus-visible {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #f0f1f3;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #f3f4f6;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     color: #374151;
     direction: rtl;
 }
 
 .pay-section-title i {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     background: linear-gradient(135deg, #fef3c7, #fde68a);
-    border-radius: 8px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #b45309;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     flex-shrink: 0;
 }
 
@@ -2867,38 +2856,39 @@ textarea:focus-visible {
 .pay-field-label {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-weight: 600;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: #4b5563;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
     direction: rtl;
 }
 
 .pay-field-label i {
     color: #f59e0b;
-    font-size: 0.72rem;
-    width: 18px;
+    font-size: 0.68rem;
+    width: 16px;
     text-align: center;
 }
 
 /* ===== Field Inputs ===== */
 .pay-field-input {
     border: 1.5px solid #e5e7eb !important;
-    border-radius: 10px !important;
-    padding: 0.55rem 0.85rem;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    background: #fafbfc;
+    border-radius: 9px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.88rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    background: #fafbfc !important;
+    height: 40px !important;
 }
 
 .pay-field-input:focus {
     border-color: #f59e0b !important;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
     background: white !important;
 }
 
-/* ===== Search Box ===== */
+/* ===== Search Box Container ===== */
 .pay-search-box {
     position: relative;
 }
@@ -2906,61 +2896,56 @@ textarea:focus-visible {
 .pay-search-input {
     direction: rtl;
     border: 1.5px solid #e5e7eb !important;
-    border-radius: 10px !important;
-    padding: 0.6rem 0.85rem;
-    padding-left: 2.5rem !important;
-    font-size: 0.9rem;
-    background: #fafbfc;
-    transition: all 0.2s ease;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: left 0.85rem center;
-    background-size: 15px;
+    border-radius: 9px !important;
+    padding: 0.5rem 0.75rem !important;
+    padding-left: 2.3rem !important;
+    font-size: 0.88rem;
+    background: #fafbfc !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: left 0.75rem center !important;
+    background-size: 14px !important;
+    height: 40px !important;
 }
 
 .pay-search-input:focus {
     border-color: #f59e0b !important;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12) !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
     background-color: white !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='%23f59e0b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23f59e0b' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") !important;
 }
 
 .pay-search-input:disabled {
     background-color: #f3f4f6 !important;
-    opacity: 0.65;
+    opacity: 0.6;
     cursor: not-allowed;
     border-color: #e5e7eb !important;
 }
 
-/* ===== Tag (Selected Item) ===== */
+/* ===== Selected Tag ===== */
 .pay-search-tag {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    gap: 8px;
+    padding: 0.4rem 0.85rem;
+    background: #fffbeb;
     border: 1.5px solid #fbbf24;
-    border-radius: 10px;
-    min-height: 44px;
+    border-radius: 9px;
+    min-height: 40px;
     direction: rtl;
-    animation: payTagIn 0.25s ease;
+    animation: payTagIn 0.2s ease;
 }
 
 @keyframes payTagIn {
-    from {
-        opacity: 0;
-        transform: scale(0.96);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .pay-search-tag span {
     flex: 1;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #92400e;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2969,8 +2954,8 @@ textarea:focus-visible {
 
 .pay-search-tag-remove {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: none;
     background: #f59e0b;
@@ -2979,13 +2964,13 @@ textarea:focus-visible {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 0.6rem;
-    transition: all 0.2s ease;
+    font-size: 0.55rem;
+    transition: all 0.15s ease;
 }
 
 .pay-search-tag-remove:hover {
     background: #ef4444;
-    transform: scale(1.1);
+    transform: scale(1.08);
 }
 
 /* ===== Dropdown ===== */
@@ -2994,12 +2979,12 @@ textarea:focus-visible {
     position: fixed;
     background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
-    z-index: 100000;
-    max-height: 280px;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
+    z-index: 1056;
+    max-height: 240px;
     overflow-y: auto;
-    animation: payDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: payDropIn 0.15s ease;
 }
 
 .pay-search-dropdown.show {
@@ -3007,19 +2992,12 @@ textarea:focus-visible {
 }
 
 @keyframes payDropIn {
-    from {
-        opacity: 0;
-        transform: translateY(-6px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Scrollbar for dropdown */
 .pay-search-dropdown::-webkit-scrollbar {
-    width: 5px;
+    width: 4px;
 }
 
 .pay-search-dropdown::-webkit-scrollbar-track {
@@ -3028,45 +3006,41 @@ textarea:focus-visible {
 
 .pay-search-dropdown::-webkit-scrollbar-thumb {
     background: #d1d5db;
-    border-radius: 10px;
-}
-
-.pay-search-dropdown::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    border-radius: 4px;
 }
 
 /* ===== Dropdown Item ===== */
 .pay-search-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
+    gap: 9px;
+    padding: 8px 10px;
     cursor: pointer;
-    border-radius: 8px;
-    margin: 2px 6px;
+    border-radius: 7px;
+    margin: 2px 5px;
     direction: rtl;
-    transition: all 0.15s ease;
+    transition: background 0.1s ease;
 }
 
 .pay-search-item:hover {
-    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    background: #fffbeb;
 }
 
 .pay-search-item-icon {
     flex-shrink: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: #fef3c7;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #b45309;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
 }
 
 .pay-search-item:hover .pay-search-item-icon {
-    background: linear-gradient(135deg, #fde68a, #fcd34d);
+    background: #fde68a;
 }
 
 .pay-search-item-text {
@@ -3079,7 +3053,7 @@ textarea:focus-visible {
 
 .pay-search-item-name {
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.83rem;
     color: #1f2937;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3087,40 +3061,41 @@ textarea:focus-visible {
 }
 
 .pay-search-item-sub {
-    font-size: 0.75rem;
+    font-size: 0.73rem;
     color: #9ca3af;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     flex-wrap: wrap;
 }
 
 /* ===== Empty State ===== */
 .pay-search-empty {
-    padding: 24px 16px;
+    padding: 20px 14px;
     text-align: center;
     color: #9ca3af;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
 /* ===== Result Count ===== */
 .pay-search-count {
-    padding: 6px 14px;
-    font-size: 0.72rem;
+    padding: 5px 12px;
+    font-size: 0.7rem;
     color: #9ca3af;
     background: #f9fafb;
     border-top: 1px solid #f3f4f6;
     text-align: center;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 10px 10px;
     position: sticky;
     bottom: 0;
 }
 
 /* ===== Modal Footer ===== */
 .pay-modal-footer {
-    padding: 1rem 1.75rem;
+    padding: 0.85rem 1.5rem;
     background: white;
-    border-radius: 0 0 20px 20px !important;
+    border-radius: 0 !important;
+    flex-shrink: 0;
 }
 
 .pay-btn-cancel {
@@ -3128,10 +3103,10 @@ textarea:focus-visible {
     border: none;
     color: #6b7280;
     font-weight: 600;
-    padding: 0.55rem 1.5rem;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 9px;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
 }
 
 .pay-btn-cancel:hover {
@@ -3144,16 +3119,16 @@ textarea:focus-visible {
     border: none;
     color: white;
     font-weight: 700;
-    padding: 0.55rem 1.75rem;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    padding: 0.5rem 1.5rem;
+    border-radius: 9px;
+    transition: all 0.15s ease;
+    font-size: 0.85rem;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.3);
 }
 
 .pay-btn-submit:hover {
     background: linear-gradient(135deg, #d97706, #b45309) !important;
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
     transform: translateY(-1px);
 }
 
@@ -3161,60 +3136,17 @@ textarea:focus-visible {
     transform: translateY(0);
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 576px) {
-    .pay-modal-dialog {
-        margin: 0.5rem;
-        max-width: calc(100% - 1rem);
-    }
-    .pay-modal-content {
-        border-radius: 16px !important;
-    }
-    .pay-modal-header {
-        padding: 1rem 1.25rem;
-        border-radius: 16px 16px 0 0 !important;
-    }
-    .pay-modal-body {
-        padding: 1rem 1.25rem;
-    }
-    .pay-section {
-        padding: 1rem;
-        border-radius: 12px;
-    }
-    .pay-search-dropdown {
-        max-height: 220px;
-        border-radius: 10px;
-    }
-    .pay-search-item {
-        padding: 8px 10px;
-    }
-    .pay-search-item-icon {
-        width: 26px;
-        height: 26px;
-        font-size: 0.65rem;
-    }
-    .pay-modal-footer {
-        padding: 0.75rem 1.25rem;
-        border-radius: 0 0 16px 16px !important;
-    }
-    .pay-btn-cancel,
-    .pay-btn-submit {
-        padding: 0.5rem 1.25rem;
-        font-size: 0.85rem;
-    }
-}
-
 /* ===== Balance Message ===== */
 .pay-balance-msg {
-    border-radius: 10px;
-    padding: 0.6rem 0.85rem;
-    font-size: 0.82rem;
+    border-radius: 9px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
     direction: rtl;
-    animation: payTagIn 0.25s ease;
+    animation: payTagIn 0.2s ease;
 }
 
 .pay-balance-complete {
-    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+    background: #f0fdf4;
     border: 1px solid #bbf7d0;
     color: #166534;
 }
@@ -3228,16 +3160,129 @@ textarea:focus-visible {
 .pay-balance-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 2px 0;
+    gap: 5px;
+    padding: 1px 0;
 }
 
 .pay-balance-row i {
-    font-size: 0.72rem;
-    width: 16px;
+    font-size: 0.68rem;
+    width: 14px;
     text-align: center;
 }
 
 .pay-balance-row span {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
+}
+
+/* ===== Responsive: Tablet ===== */
+@media (max-width: 768px) {
+    .pay-modal-dialog {
+        max-width: calc(100% - 1.5rem);
+        margin: 0.75rem auto;
+    }
+    .pay-modal-body {
+        padding: 1rem 1.15rem;
+        max-height: calc(100vh - 200px);
+    }
+    .pay-section {
+        padding: 1rem 1.1rem;
+    }
+}
+
+/* ===== Responsive: Mobile ===== */
+@media (max-width: 576px) {
+    .pay-modal-dialog {
+        max-width: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
+    .pay-modal-content {
+        border-radius: 14px !important;
+    }
+    .pay-modal-header {
+        padding: 0.85rem 1rem;
+    }
+    .pay-modal-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 0.9rem;
+    }
+    .pay-modal-body {
+        padding: 0.85rem 1rem;
+        max-height: calc(100vh - 180px);
+    }
+    .pay-section {
+        padding: 0.85rem 0.9rem;
+        margin-bottom: 0.7rem;
+        border-radius: 10px;
+    }
+    .pay-section-title {
+        font-size: 0.8rem;
+        margin-bottom: 0.7rem;
+        padding-bottom: 0.5rem;
+    }
+    .pay-section-title i {
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
+    }
+    .pay-field-label {
+        font-size: 0.76rem;
+    }
+    .pay-field-input,
+    .pay-search-input {
+        height: 38px !important;
+        font-size: 0.84rem;
+        padding: 0.45rem 0.65rem !important;
+    }
+    .pay-search-dropdown {
+        max-height: 200px;
+        border-radius: 8px;
+    }
+    .pay-search-item {
+        padding: 7px 8px;
+        gap: 7px;
+    }
+    .pay-search-item-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 0.6rem;
+    }
+    .pay-search-item-name {
+        font-size: 0.8rem;
+    }
+    .pay-search-item-sub {
+        font-size: 0.68rem;
+    }
+    .pay-modal-footer {
+        padding: 0.7rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .pay-btn-cancel,
+    .pay-btn-submit {
+        width: 100%;
+        justify-content: center;
+        padding: 0.55rem 1rem;
+        font-size: 0.84rem;
+    }
+}
+
+/* ===== Responsive: Very small phones ===== */
+@media (max-width: 360px) {
+    .pay-modal-dialog {
+        max-width: calc(100% - 0.5rem);
+        margin: 0.25rem auto;
+    }
+    .pay-modal-body {
+        padding: 0.7rem 0.75rem;
+        max-height: calc(100vh - 160px);
+    }
+    .pay-section {
+        padding: 0.7rem 0.75rem;
+    }
+    .pay-field-input,
+    .pay-search-input {
+        height: 36px !important;
+        font-size: 0.82rem;
+    }
 }

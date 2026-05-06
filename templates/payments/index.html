@@ -743,18 +743,29 @@ function positionFixedDropdown(boxId, dropdownId) {
 
     var rect = box.getBoundingClientRect();
     var spaceBelow = window.innerHeight - rect.bottom;
+    var dropdownMaxH = 240;
 
     dropdown.style.position = 'fixed';
     dropdown.style.width = rect.width + 'px';
     dropdown.style.left = rect.left + 'px';
     dropdown.style.right = 'auto';
 
-    if (spaceBelow < 250 && rect.top > spaceBelow) {
+    // حساب الارتفاع المتاح أدناه مع مراعاة الفوتر
+    var modalContent = document.querySelector('.pay-modal-content');
+    var footerEl = document.querySelector('.pay-modal-footer');
+    var footerTop = footerEl ? footerEl.getBoundingClientRect().top : window.innerHeight;
+    var availableBelow = footerTop - rect.bottom - 4;
+
+    if (spaceBelow < dropdownMaxH && rect.top > spaceBelow) {
+        // عرض القائمة للأعلى
         dropdown.style.top = 'auto';
-        dropdown.style.bottom = (window.innerHeight - rect.top + 2) + 'px';
+        dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+        dropdown.style.maxHeight = Math.min(dropdownMaxH, rect.top - 10) + 'px';
     } else {
-        dropdown.style.top = (rect.bottom + 2) + 'px';
+        // عرض القائمة للأسفل
+        dropdown.style.top = (rect.bottom + 4) + 'px';
         dropdown.style.bottom = 'auto';
+        dropdown.style.maxHeight = Math.min(dropdownMaxH, availableBelow) + 'px';
     }
 }
 
@@ -762,9 +773,17 @@ function positionFixedDropdown(boxId, dropdownId) {
 document.addEventListener('DOMContentLoaded', function() {
     var modalEl = document.getElementById('addPaymentModal');
     if (modalEl) {
+        // عند تمرير المودال نفسه
         modalEl.addEventListener('scroll', function() {
             closeAllDropdowns();
         }, true);
+        // عند تمرير محتوى المودال (modal-body)
+        var modalBody = modalEl.querySelector('.pay-modal-body');
+        if (modalBody) {
+            modalBody.addEventListener('scroll', function() {
+                closeAllDropdowns();
+            });
+        }
     }
     window.addEventListener('resize', function() {
         closeAllDropdowns();
