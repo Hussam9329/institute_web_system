@@ -362,7 +362,16 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             (installment.student_id, installment.teacher_id)
         )
         
-        if not link_check:
+        if link_check:
+            # تحديث نوع الدراسة إذا تم تغييره في النموذج
+            current_study_type = link_check[0].get('study_type', 'حضوري')
+            new_study_type = installment.study_type or current_study_type
+            if new_study_type != current_study_type:
+                db.execute_query(
+                    "UPDATE student_teacher SET study_type = %s WHERE student_id = %s AND teacher_id = %s",
+                    (new_study_type, installment.student_id, installment.teacher_id)
+                )
+        else:
             # التحقق من أن الطالب ليس مربوطاً بمدرس آخر لنفس المادة
             teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (installment.teacher_id,))
             if teacher_check:

@@ -336,6 +336,8 @@
                                     <i class="fas fa-coins"></i>المبلغ (بالألف د.ع)
                                 </label>
                                 <input type="number" class="form-control pay-field-input" id="pay_amount" min="1" required placeholder="150">
+                                <small id="pay_amount_preview" class="text-muted mt-1 d-none"></small>
+                                <small id="pay_remaining_hint" class="text-danger mt-1 d-none"></small>
                             </div>
                             <div class="col-6 col-md-4">
                                 <label class="pay-field-label">
@@ -362,6 +364,7 @@
                                     <option value="الكتروني">إلكتروني</option>
                                     <option value="مدمج">مدمج</option>
                                 </select>
+                                <small id="pay_study_type_hint" class="text-muted d-none mt-1"><i class="fas fa-link me-1"></i>من ربط الطالب بالمدرس</small>
                             </div>
                             <div class="col-12 col-md-8">
                                 <label class="pay-field-label">
@@ -409,6 +412,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // تهيئة بحث المدرس
     initTeacherSearch();
 
+    // معاينة المبلغ الفعلي أثناء الكتابة
+    var amountInput = document.getElementById('pay_amount');
+    if (amountInput) {
+        amountInput.addEventListener('input', function() {
+            var previewEl = document.getElementById('pay_amount_preview');
+            var val = parseInt(this.value);
+            if (previewEl) {
+                if (val && val > 0) {
+                    previewEl.textContent = '= ' + formatCurrency(val * 1000);
+                    previewEl.classList.remove('d-none');
+                } else {
+                    previewEl.classList.add('d-none');
+                }
+            }
+        });
+    }
+
     // عند إغلاق المودال، إعادة تعيين الحقول
     var modalEl = document.getElementById('addPaymentModal');
     if (modalEl) {
@@ -417,6 +437,14 @@ document.addEventListener('DOMContentLoaded', function() {
             resetTeacherSearch();
             document.getElementById('pay_amount').value = '';
             document.getElementById('pay_notes').value = '';
+            // إعادة تعيين نوع القسط
+            document.getElementById('pay_type').value = 'القسط الأول';
+            // إعادة تعيين نوع الدراسة
+            document.getElementById('pay_study_type').value = 'حضوري';
+            document.getElementById('pay_study_type_hint').classList.add('d-none');
+            // إخفاء معاينة المبلغ
+            document.getElementById('pay_amount_preview')?.classList.add('d-none');
+            document.getElementById('pay_remaining_hint')?.classList.add('d-none');
             if (payDateEl) payDateEl.value = getTodayDate();
         });
     }
@@ -660,6 +688,19 @@ function selectTeacher(id, name) {
 
     // عرض رصيد المدرس
     showTeacherBalance(id);
+
+    // تحديث نوع الدراسة من ربط الطالب بالمدرس
+    var teacherData = teachersBalanceData[String(id)];
+    if (teacherData) {
+        var studyTypeSelect = document.getElementById('pay_study_type');
+        var studyTypeHint = document.getElementById('pay_study_type_hint');
+        var linkedStudyType = teacherData.study_type || 'حضوري';
+        studyTypeSelect.value = linkedStudyType;
+        studyTypeHint.classList.remove('d-none');
+    }
+
+    // عرض تلميح المبلغ المتبقي
+    showRemainingHint(id);
 }
 
 function resetTeacherSearch() {
@@ -680,6 +721,14 @@ function resetTeacherSearch() {
     // إخفاء رسالة الرصيد
     var msgDiv = document.getElementById('teacherBalanceMsg');
     if (msgDiv) msgDiv.classList.add('d-none');
+
+    // إخفاء تلميح المتبقي
+    var remainHint = document.getElementById('pay_remaining_hint');
+    if (remainHint) remainHint.classList.add('d-none');
+
+    // إعادة تعيين نوع الدراسة
+    var studyTypeHint = document.getElementById('pay_study_type_hint');
+    if (studyTypeHint) studyTypeHint.classList.add('d-none');
 }
 
 // ============================================
@@ -737,6 +786,31 @@ function showTeacherBalance(teacherId) {
         msgDiv.innerHTML = '<div class="pay-balance-msg pay-balance-partial"><div class="pay-balance-row"><i class="fas fa-check-circle text-success"></i><span>المدفوع: <strong class="text-success">' + paid + '</strong></span></div><div class="pay-balance-row"><i class="fas fa-exclamation-circle text-danger"></i><span>المتبقي: <strong class="text-danger">' + remaining + '</strong></span></div></div>';
     }
     msgDiv.classList.remove('d-none');
+}
+
+// ============================================
+// عرض تلميح المبلغ المتبقي للمدرس
+// ============================================
+function showRemainingHint(teacherId) {
+    var hintEl = document.getElementById('pay_remaining_hint');
+    if (!hintEl) return;
+
+    if (!teacherId || !teachersBalanceData[String(teacherId)]) {
+        hintEl.classList.add('d-none');
+        return;
+    }
+
+    var data = teachersBalanceData[String(teacherId)];
+    var remaining = data.remaining_balance;
+    if (remaining > 0) {
+        var remainingInThousands = Math.ceil(remaining / 1000);
+        hintEl.innerHTML = '<i class="fas fa-info-circle me-1"></i>المتبقي: ' + formatCurrency(remaining) + ' (أدخل ' + remainingInThousands + ' بالألف)';
+        hintEl.classList.remove('d-none');
+    } else {
+        hintEl.innerHTML = '<i class="fas fa-check-circle me-1"></i>تمت التسوية بالكامل';
+        hintEl.classList.remove('d-none');
+        hintEl.className = 'text-success mt-1';
+    }
 }
 
 // ============================================
@@ -858,11 +932,31 @@ async function submitPayment(event) {
         return;
     }
 
+    // تحقق إضافي: هل المبلغ يتجاوز المتبقي؟
+    var teacherData = teachersBalanceData[String(teacherId)];
+    if (teacherData && teacherData.remaining_balance > 0 && amount > teacherData.remaining_balance) {
+        showAlert('المبلغ (' + formatCurrency(amount) + ') يتجاوز المتبقي (' + formatCurrency(teacherData.remaining_balance) + ')', 'warning');
+        return;
+    }
+
+    // تحقق: هل التاريخ محدد؟
+    var paymentDate = document.getElementById('pay_date').value;
+    if (!paymentDate) {
+        showAlert('يرجى تحديد التاريخ', 'warning');
+        return;
+    }
+
+    // تعطيل زر التسجيل أثناء الإرسال
+    var submitBtn = event.target.querySelector('.pay-btn-submit');
+    var originalBtnHtml = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>جاري التسجيل...';
+
     const data = {
         student_id: studentId,
         teacher_id: teacherId,
         amount: amount,
-        payment_date: document.getElementById('pay_date').value,
+        payment_date: paymentDate,
         installment_type: document.getElementById('pay_type').value,
         study_type: document.getElementById('pay_study_type')?.value || 'حضوري',
         notes: document.getElementById('pay_notes').value
@@ -875,6 +969,10 @@ async function submitPayment(event) {
         });
 
         if (result.success) {
+            // إغلاق المودال أولاً
+            var modal = bootstrap.Modal.getInstance(document.getElementById('addPaymentModal'));
+            if (modal) modal.hide();
+
             showAlert(result.message, 'success');
             if (result.installment_id) {
                 const receiptUrl = '/reports/receipt/' + result.installment_id;
@@ -897,12 +995,19 @@ async function submitPayment(event) {
                     '<div class="alert-progress" style="animation-duration: 8000ms;"></div>';
                 document.getElementById('alert-container').prepend(receiptAlert);
             }
-            location.reload();
+            // تأخير قصير ثم إعادة التحميل لتحديث البيانات
+            setTimeout(function() { location.reload(); }, 500);
         } else {
             showAlert(result.message, 'error');
+            // إعادة تفعيل الزر
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
         }
     } catch (error) {
         showAlert(error.message, 'error');
+        // إعادة تفعيل الزر
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
     }
 }
 
