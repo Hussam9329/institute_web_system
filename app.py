@@ -126,12 +126,17 @@ async def api_login(request: Request, username: str = Form(...), password: str =
     # إنشاء جلسة
     token = create_session_token(user['id'])
     response = RedirectResponse(url='/', status_code=303)
+    
+    # تحديد إذا كنا في بيئة إنتاج (HTTPS)
+    is_secure = request.url.scheme == 'https'
+    
     response.set_cookie(
         key=SESSION_COOKIE,
         value=token,
         max_age=86400 * 7,  # 7 أيام
         httponly=True,
         samesite="lax",
+        secure=is_secure,
     )
     return response
 

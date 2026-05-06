@@ -171,6 +171,7 @@ class FinanceService:
     def get_teacher_total_students_count(self, teacher_id: int) -> int:
         """
         حساب عدد كل الطلاب المرتبطين بالمدرس (دافعين وغير دافعين)
+        يستثني الطلاب المنسحبين
         
         Returns:
             int: إجمالي عدد الطلاب
@@ -178,7 +179,7 @@ class FinanceService:
         query = '''
             SELECT COUNT(*) as count
             FROM student_teacher
-            WHERE teacher_id = %s
+            WHERE teacher_id = %s AND status = 'مستمر'
         '''
         result = self.db.execute_query(query, (teacher_id,))
         

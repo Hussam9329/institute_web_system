@@ -10,12 +10,8 @@ from config import DATABASE_URL, DB_AVAILABLE
 class Database:
     """إدارة اتصال وقاعدة البيانات PostgreSQL"""
     
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    # لا نستخدم Singleton لأن serverless يحتاج اتصالات جديدة
+    # كل طلب يحصل على كائن Database خاص به
     
     def get_connection(self):
         """الحصول على اتصال بقاعدة البيانات PostgreSQL"""
@@ -25,9 +21,12 @@ class Database:
                 "يرجى تعيينه كمتغير بيئة. "
                 "مثال: export DATABASE_URL=\"postgresql://user:pass@host/db\""
             )
-        connection = psycopg2.connect(DATABASE_URL)
-        connection.autocommit = False
-        return connection
+        try:
+            connection = psycopg2.connect(DATABASE_URL, connect_timeout=10)
+            connection.autocommit = False
+            return connection
+        except psycopg2.OperationalError as e:
+            raise ConnectionError(f"فشل الاتصال بقاعدة البيانات: {e}")
     
     def execute_query(self, query: str, params: tuple = ()) -> list:
         """تنفيذ استعلام وإرجاع النتائج"""

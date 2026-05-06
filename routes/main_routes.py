@@ -194,14 +194,17 @@ async def student_add(
     db = Database()
 
     # توليد باركود حقيقي مباشرة باستخدام RETURNING
-    # أولاً ندرج بدون باركود ثم نحدثه
+    # نستخدم timestamp + random كباركود مؤقت فريد لتجنب التكرار
+    import time
+    import random
+    
     insert_query = '''
         INSERT INTO students (name, barcode, notes, created_at)
         VALUES (%s, %s, %s, %s)
         RETURNING id
     '''
     
-    temp_barcode = f"TEMP-{get_current_date()}"
+    temp_barcode = f"TEMP-{int(time.time()*1000)}-{random.randint(1000,9999)}"
     result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date()))
     student_id = result[0]['id'] if result else None
     
@@ -436,17 +439,31 @@ async def student_profile(request: Request, student_id: int):
 
 @router.post("/students/{student_id}/delete")
 async def student_delete(request: Request, student_id: int):
-    """حذف طالب - مع حماية إذا كان مرتبط بمدرسين"""
+    """حذف طالب - مع حماية إذا كان مرتبط بمدرسين أو لديه سجلات مالية"""
     check_permission(request, 'delete_students')
     db = Database()
     
-    # فحص إذا كان الطالب مرتبط بمدرسين
-    links_count = db.execute_query(
-        "SELECT COUNT(*) as cnt FROM student_teacher WHERE student_id = %s", 
+    # فحص إذا كان الطالب لديه أقساط مسجلة (سجلات مالية)
+    installments_count = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s", 
         (student_id,)
     )
-    if links_count and links_count[0]['cnt'] > 0:
-        cnt = links_count[0]['cnt']
+    if installments_count and installments_count[0]['cnt'] > 0:
+        cnt = installments_count[0]['cnt']
+        student = db.execute_query("SELECT name FROM students WHERE id = %s", (student_id,))
+        student_name = student[0]['name'] if student else ''
+        return RedirectResponse(
+            url=f"/students?error=has_financial_records&count={cnt}&name={student_name}", 
+            status_code=303
+        )
+    
+    # فحص إذا كان الطالب مرتبط بمدرسين بحالة مستمر
+    active_links = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM student_teacher WHERE student_id = %s AND status = 'مستمر'", 
+        (student_id,)
+    )
+    if active_links and active_links[0]['cnt'] > 0:
+        cnt = active_links[0]['cnt']
         student = db.execute_query("SELECT name FROM students WHERE id = %s", (student_id,))
         student_name = student[0]['name'] if student else ''
         return RedirectResponse(
@@ -454,7 +471,8 @@ async def student_delete(request: Request, student_id: int):
             status_code=303
         )
     
-    db.execute_query("DELETE FROM installments WHERE student_id = %s", (student_id,))
+    # لا توجد سجلات مالية ولا روابط نشطة - يمكن الحذف بأمان
+    # حذف الروابط المنسحبة أولاً (لا توجد أقساط مرتبطة بهم)
     db.execute_query("DELETE FROM student_teacher WHERE student_id = %s", (student_id,))
     db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
     return RedirectResponse(url="/students?msg=deleted", status_code=303)
@@ -532,7 +550,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 t['teacher_due'] = balance_info.get('teacher_due', 0)
                 t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
                 t['remaining_balance'] = balance_info.get('remaining_balance', 0)
-                # حساب المطلوب الكلي - مجموع أقساط المدرس حسب نوع الدراسة لكل طالب
+                # حساب المطلوب الكلي - مجموع أقساط المدرس حسب نوع الدراسة لكل طالب (مستمر فقط)
                 try:
                     all_fees = db.execute_query(
                         '''SELECT COALESCE(SUM(
@@ -545,7 +563,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                            ), 0) as total 
                            FROM student_teacher st 
                            JOIN teachers t ON st.teacher_id = t.id
-                           WHERE st.teacher_id = %s''',
+                           WHERE st.teacher_id = %s AND st.status = 'مستمر' ''',
                         (t['id'],)
                     )
                     total_fees = all_fees[0]['total'] if all_fees else 0
@@ -778,17 +796,37 @@ async def teacher_detail(request: Request, teacher_id: int):
 
 @router.post("/teachers/{teacher_id}/delete")
 async def teacher_delete(request: Request, teacher_id: int):
-    """حذف مدرس - مع حماية إذا كان مرتبط بطلاب"""
+    """حذف مدرس - مع حماية إذا كان مرتبط بطلاب أو لديه سجلات مالية"""
     check_permission(request, 'delete_teachers')
     db = Database()
-    students_count = db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
-    if students_count and students_count[0]['cnt'] > 0:
-        cnt = students_count[0]['cnt']
+    
+    # فحص إذا كان المدرس مرتبط بطلاب (حالة مستمر)
+    active_students = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s AND status = 'مستمر'", 
+        (teacher_id,)
+    )
+    if active_students and active_students[0]['cnt'] > 0:
+        cnt = active_students[0]['cnt']
         teacher = db.execute_query("SELECT name FROM teachers WHERE id = %s", (teacher_id,))
         teacher_name = teacher[0]['name'] if teacher else ''
         return RedirectResponse(url=f"/teachers?error=has_students&count={cnt}&name={teacher_name}", status_code=303)
+    
+    # فحص إذا كان المدرس لديه أقساط مسجلة (سجلات مالية)
+    installments_count = db.execute_query(
+        "SELECT COUNT(*) as cnt FROM installments WHERE teacher_id = %s", 
+        (teacher_id,)
+    )
+    if installments_count and installments_count[0]['cnt'] > 0:
+        cnt = installments_count[0]['cnt']
+        teacher = db.execute_query("SELECT name FROM teachers WHERE id = %s", (teacher_id,))
+        teacher_name = teacher[0]['name'] if teacher else ''
+        return RedirectResponse(
+            url=f"/teachers?error=has_financial_records&count={cnt}&name={teacher_name}", 
+            status_code=303
+        )
+    
+    # لا توجد سجلات مالية - يمكن الحذف بأمان
     db.execute_query("DELETE FROM teacher_withdrawals WHERE teacher_id = %s", (teacher_id,))
-    db.execute_query("DELETE FROM installments WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM teachers WHERE id = %s", (teacher_id,))
     return RedirectResponse(url="/teachers?msg=deleted", status_code=303)

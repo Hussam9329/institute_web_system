@@ -193,15 +193,9 @@ async def auth_middleware(request: Request, call_next):
     request.state.user = user
 
     if user:
-        # ترحيل كلمة المرور من SHA-256 إلى bcrypt عند تسجيل الدخول
-        try:
-            if needs_bcrypt_migration(user.get('password_hash', '')):
-                db = Database()
-                new_hash = hash_password('1111')  # سيتم تحديثها عند تسجيل الدخول الفعلي
-                # لا نحدّث هنا لأننا لا نعرف كلمة المرور الأصلية
-                # الترحيل يتم عند تسجيل الدخول بنجاح
-        except Exception:
-            pass
+        # ترحيل كلمة المرور من SHA-256 إلى bcrypt يتم عند تسجيل الدخول الفعلي فقط
+        # لا نهاش هنا لأننا لا نعرف كلمة المرور الأصلية
+        pass
 
         # تحميل صلاحيات المستخدم
         request.state.user_permissions = get_user_permissions(user['id'])

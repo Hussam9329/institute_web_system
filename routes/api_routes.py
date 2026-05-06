@@ -60,9 +60,9 @@ async def api_get_subjects():
 
 
 @router.post("/subjects")
-async def api_add_subject(subject: SubjectCreate):
+async def api_add_subject(request: Request, subject: SubjectCreate):
     """إضافة مادة دراسية جديدة"""
-    # صلاحية add_subjects تُفحص في الوسطاء (middleware) عبر الجلسة
+    check_permission(request, 'add_subjects')
     db = Database()
     try:
         # التحقق من عدم وجود المادة
@@ -80,9 +80,9 @@ async def api_add_subject(subject: SubjectCreate):
 
 
 @router.put("/subjects/{subject_id}")
-async def api_update_subject(subject_id: int, subject: SubjectUpdate):
+async def api_update_subject(request: Request, subject_id: int, subject: SubjectUpdate):
     """تحديث مادة دراسية"""
-    # صلاحية edit_subjects تُفحص عبر الجلسة
+    check_permission(request, 'edit_subjects')
     db = Database()
     try:
         existing = db.execute_query("SELECT id FROM subjects WHERE id = %s", (subject_id,))
@@ -100,9 +100,9 @@ async def api_update_subject(subject_id: int, subject: SubjectUpdate):
 
 
 @router.delete("/subjects/{subject_id}")
-async def api_delete_subject(subject_id: int):
+async def api_delete_subject(request: Request, subject_id: int):
     """حذف مادة دراسية"""
-    # صلاحية delete_subjects تُفحص عبر الجلسة
+    check_permission(request, 'delete_subjects')
     db = Database()
     try:
         db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
@@ -657,8 +657,9 @@ async def api_get_statistics():
 # ===== تصدير شامل =====
 
 @router.get("/export-all")
-async def api_export_all():
+async def api_export_all(request: Request):
     """تصدير شامل لجميع بيانات النظام"""
+    check_permission(request, 'system_settings')
     db = Database()
     export_data = {}
     
@@ -723,8 +724,9 @@ async def api_export_all():
 # ===== بحث شامل =====
 
 @router.get("/search")
-async def api_global_search(q: str = ""):
+async def api_global_search(request: Request, q: str = ""):
     """بحث شامل في النظام"""
+    # البحث متاح لكل مستخدم مسجل الدخول
     db = Database()
     results = {"students": [], "teachers": [], "subjects": []}
     
@@ -772,8 +774,9 @@ async def api_global_search(q: str = ""):
 # ===== التنبيهات الذكية =====
 
 @router.get("/smart-alerts")
-async def api_smart_alerts():
+async def api_smart_alerts(request: Request):
     """الحصول على التنبيهات الذكية للوحة التحكم"""
+    check_permission(request, 'view_dashboard')
     db = Database()
     alerts = []
     
