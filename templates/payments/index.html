@@ -61,17 +61,7 @@
         </div>
     </div>
 
-    <!-- ===== بحث سريع + عداد النتائج ===== -->
-    <div class="mb-2">
-        <div class="input-group">
-            <span class="input-group-text bg-transparent border-end-0">
-                <i class="fas fa-search text-muted"></i>
-            </span>
-            <input type="text" class="form-control border-start-0 ps-0" 
-                   placeholder="بحث سريع بالاسم أو المادة أو المدرس..." id="paymentSearch"
-                   value="{{ request.args.get('search', '') }}">
-        </div>
-    </div>
+    <!-- ===== عداد النتائج + إعادة تعيين ===== -->
     <div class="d-flex align-items-center justify-content-between mb-2">
         <small class="text-muted" id="filterResultsCounter"></small>
         <button type="button" class="btn btn-sm btn-outline-secondary" id="resetAllFilters" style="display:none;">
@@ -1170,9 +1160,6 @@ function initFilterCheckboxes() {
 // عداد الفلاتر النشطة
 function updateActiveFiltersBadge() {
     var count = 0;
-    // بحث سريع
-    var searchVal = document.getElementById('paymentSearch')?.value.trim() || '';
-    if (searchVal) count++;
     // فلاتر متقدمة
     var chkIds = ['chk_student', 'chk_teacher', 'chk_subject', 'chk_date', 'chk_type', 'chk_status'];
     chkIds.forEach(function(id) {
@@ -1208,9 +1195,6 @@ function updateResultsCounter(visible, total) {
 
 // إعادة تعيين جميع الفلاتر
 function resetAllFilters() {
-    // إعادة تعيين البحث السريع
-    var searchInput = document.getElementById('paymentSearch');
-    if (searchInput) searchInput.value = '';
     // إعادة تعيين التشيكبوكسات والحقول
     document.querySelectorAll('.filter-checkbox').forEach(function(chk) {
         chk.checked = false;
@@ -1225,9 +1209,6 @@ function resetAllFilters() {
 }
 
 function filterPayments() {
-    var searchInput = document.getElementById('paymentSearch');
-    var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
     // جلب قيم الفلاتر المتقدمة
     var chkStudent = document.getElementById('chk_student')?.checked || false;
     var chkTeacher = document.getElementById('chk_teacher')?.checked || false;
@@ -1255,9 +1236,6 @@ function filterPayments() {
         var rowType = row.dataset.type || '';
         var rowStatus = row.dataset.status || '';
 
-        // بحث سريع: يبحث في كل الحقول النصية
-        var matchQuick = !query || name.includes(query) || teacher.includes(query) || subject.includes(query) || rowType.includes(query);
-
         // فلاتر متقدمة
         var matchStudent = !chkStudent || !filterStudent || name.includes(filterStudent);
         var matchTeacher = !chkTeacher || !filterTeacher || teacher.includes(filterTeacher);
@@ -1267,7 +1245,7 @@ function filterPayments() {
         var matchType = !chkType || !filterType || rowType === filterType;
         var matchStatus = !chkStatus || !filterStatusVal || rowStatus === filterStatusVal;
 
-        var show = matchQuick && matchStudent && matchTeacher && matchSubject && matchDateFrom && matchDateTo && matchType && matchStatus;
+        var show = matchStudent && matchTeacher && matchSubject && matchDateFrom && matchDateTo && matchType && matchStatus;
         row.style.display = show ? '' : 'none';
         if (show) tableVisible++;
     });
@@ -1283,9 +1261,6 @@ function filterPayments() {
         var cardType = card.dataset.type || '';
         var cardStatus = card.dataset.status || '';
 
-        // بحث سريع
-        var matchQuick = !query || name.includes(query) || teacher.includes(query) || subject.includes(query) || cardType.includes(query);
-
         // فلاتر متقدمة
         var matchStudent = !chkStudent || !filterStudent || name.includes(filterStudent);
         var matchTeacher = !chkTeacher || !filterTeacher || teacher.includes(filterTeacher);
@@ -1295,7 +1270,7 @@ function filterPayments() {
         var matchType = !chkType || !filterType || cardType === filterType;
         var matchStatus = !chkStatus || !filterStatusVal || cardStatus === filterStatusVal;
 
-        var show = matchQuick && matchStudent && matchTeacher && matchSubject && matchDateFrom && matchDateTo && matchType && matchStatus;
+        var show = matchStudent && matchTeacher && matchSubject && matchDateFrom && matchDateTo && matchType && matchStatus;
         card.style.display = show ? '' : 'none';
         if (show) cardVisible++;
     });
@@ -1303,7 +1278,7 @@ function filterPayments() {
     // رسالة لا توجد نتائج للكارتات
     var noCards = document.getElementById('noCardsResults');
     if (noCards) {
-        noCards.classList.toggle('d-none', !(cardTotal > 0 && cardVisible === 0 && (query.length > 0 || chkStudent || chkTeacher || chkSubject || chkDate || chkType || chkStatus)));
+        noCards.classList.toggle('d-none', !(cardTotal > 0 && cardVisible === 0 && (chkStudent || chkTeacher || chkSubject || chkDate || chkType || chkStatus)));
     }
 
     // تحديث عداد النتائج
@@ -1319,18 +1294,6 @@ function filterPayments() {
 document.addEventListener('DOMContentLoaded', function() {
     // تهيئة تشيكبوكسات الفلاتر
     initFilterCheckboxes();
-
-    // ربط حدث البحث السريع
-    document.getElementById('paymentSearch')?.addEventListener('input', function() {
-        // تنظيف URL من معامل البحث عند استخدام البحث المباشر
-        var urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('search')) {
-            urlParams.delete('search');
-            var newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-            window.history.replaceState({}, '', newUrl);
-        }
-        filterPayments();
-    });
 
     // ربط أحداث حقول الفلاتر المتقدمة
     document.querySelectorAll('.filter-input').forEach(function(input) {
