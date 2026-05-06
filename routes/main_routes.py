@@ -1077,3 +1077,35 @@ async def stats_page(request: Request):
         "stat_rows": stat_rows,
         "format_currency": format_currency
     })
+
+
+# ===== الجدول الأسبوعي =====
+
+@router.get("/weekly-schedule", response_class=HTMLResponse)
+async def weekly_schedule_page(request: Request):
+    """صفحة الجدول الأسبوعي"""
+    check_permission(request, 'view_subjects')
+    db = Database()
+    
+    try:
+        rooms = db.execute_query("SELECT * FROM rooms ORDER BY name")
+        teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
+        schedule = db.execute_query('''
+            SELECT ws.*, r.name as room_name, t.name as teacher_name, t.subject as teacher_subject
+            FROM weekly_schedule ws
+            JOIN rooms r ON ws.room_id = r.id
+            JOIN teachers t ON ws.teacher_id = t.id
+            ORDER BY r.name, ws.day_of_week, ws.start_time
+        ''')
+    except Exception as e:
+        print(f"Error loading weekly schedule: {e}")
+        rooms = []
+        teachers = []
+        schedule = []
+    
+    return templates.TemplateResponse("weekly_schedule/index.html", {
+        "request": request,
+        "rooms": rooms,
+        "teachers": teachers,
+        "schedule": schedule
+    })

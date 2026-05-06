@@ -422,6 +422,43 @@ def init_db():
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS institute_waiver INTEGER DEFAULT 0",
         ]
         
+        # ===== جداول الجدول الأسبوعي =====
+        # جدول القاعات
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS rooms (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL UNIQUE,
+                capacity INTEGER DEFAULT 0,
+                notes TEXT DEFAULT '',
+                created_at TEXT NOT NULL
+            )
+        ''')
+        conn.commit()
+        
+        # جدول الجدول الأسبوعي
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS weekly_schedule (
+                id SERIAL PRIMARY KEY,
+                room_id INTEGER NOT NULL,
+                teacher_id INTEGER NOT NULL,
+                subject VARCHAR(100) NOT NULL DEFAULT '',
+                day_of_week VARCHAR(20) NOT NULL,
+                start_time VARCHAR(5) NOT NULL,
+                end_time VARCHAR(5) NOT NULL,
+                notes TEXT DEFAULT '',
+                FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+                FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE
+            )
+        ''')
+        conn.commit()
+        
+        # فهرس فريد لمنع تعارض المحاضرات في نفس القاعة والوقت
+        cursor.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_weekly_schedule_no_conflict
+            ON weekly_schedule (room_id, day_of_week, start_time, end_time)
+        ''')
+        conn.commit()
+        
         for stmt in alter_statements:
             try:
                 cursor.execute(stmt)

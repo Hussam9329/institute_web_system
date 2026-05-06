@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+
+{% block title %}الجدول الأسبوعي{% endblock %}
+{% block page_title %}الجدول الأسبوعي{% endblock %}
+
+{% block extra_css %}
+<style>
+.schedule-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(30, 27, 75, 0.3);
+}
+.schedule-header h4 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 20px;
+}
+.schedule-header .badge-count {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+/* Room tabs */
+.room-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.room-tab {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: all 0.2s;
+    color: #374151;
+}
+.room-tab:hover {
+    border-color: #6366f1;
+    color: #4f46e5;
+}
+.room-tab.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+
+/* Schedule Grid */
+.schedule-grid-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    background: white;
+}
+.schedule-grid {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: collapse;
+}
+.schedule-grid th {
+    background: #f8fafc;
+    padding: 12px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e1b4b;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.schedule-grid th.time-col {
+    width: 90px;
+    min-width: 90px;
+}
+.schedule-grid td {
+    border: 1px solid #f1f5f9;
+    padding: 4px;
+    vertical-align: top;
+    min-height: 60px;
+    height: 60px;
+}
+.schedule-grid td.time-cell {
+    background: #f8fafc;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-align: center;
+    vertical-align: middle;
+    border-right: 2px solid #e2e8f0;
+}
+
+/* Lecture Card */
+.lecture-card {
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    border-right: 3px solid #4f46e5;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.lecture-card:hover {
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+    transform: translateY(-1px);
+}
+.lecture-card .lec-subject {
+    font-weight: 700;
+    color: #312e81;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lecture-card .lec-teacher {
+    color: #4f46e5;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lecture-card .lec-time {
+    color: #6366f1;
+    font-size: 10.5px;
+}
+.lecture-card .lec-actions {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    display: none;
+}
+.lecture-card:hover .lec-actions {
+    display: flex;
+    gap: 2px;
+}
+.lecture-card .lec-actions button {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: none;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.lec-btn-edit {
+    background: #fbbf24;
+    color: #78350f;
+}
+.lec-btn-delete {
+    background: #fca5a5;
+    color: #991b1b;
+}
+
+/* Empty cell add button */
+.add-lecture-btn {
+    width: 100%;
+    height: 100%;
+    min-height: 52px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+.add-lecture-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f5f3ff;
+}
+
+/* Rooms Management Panel */
+.rooms-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+.rooms-panel h6 {
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-bottom: 12px;
+}
+.room-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+.room-item:hover {
+    border-color: #c7d2fe;
+    background: #fafafe;
+}
+.room-item .room-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.room-item .room-icon {
+    width: 36px;
+    height: 36px;
+    background: #eef2ff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4f46e5;
+    font-size: 14px;
+}
+.room-item .room-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+.room-item .room-capacity {
+    font-size: 12px;
+    color: #64748b;
+}
+.room-item .room-actions {
+    display: flex;
+    gap: 4px;
+}
+.room-item .room-actions button {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.room-item .room-actions .btn-edit:hover {
+    background: #fef3c7;
+    border-color: #fbbf24;
+    color: #92400e;
+}
+.room-item .room-actions .btn-delete:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+/* Modal */
+.modal-schedule .modal-dialog {
+    max-width: 520px;
+}
+.modal-schedule .modal-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
+    color: white;
+    border-radius: 0;
+}
+.modal-schedule .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.form-label-sm {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+/* Color variations for lecture cards */
+.lecture-card.color-1 { background: linear-gradient(135deg, #eef2ff, #e0e7ff); border-right-color: #4f46e5; }
+.lecture-card.color-2 { background: linear-gradient(135deg, #fef3c7, #fde68a); border-right-color: #d97706; }
+.lecture-card.color-1 .lec-subject { color: #312e81; }
+.lecture-card.color-1 .lec-teacher { color: #4f46e5; }
+.lecture-card.color-1 .lec-time { color: #6366f1; }
+.lecture-card.color-2 .lec-subject { color: #78350f; }
+.lecture-card.color-2 .lec-teacher { color: #b45309; }
+.lecture-card.color-2 .lec-time { color: #d97706; }
+
+@media (max-width: 768px) {
+    .schedule-header { padding: 16px; }
+    .schedule-header h4 { font-size: 16px; }
+    .room-tabs { padding: 8px; }
+    .room-tab { padding: 6px 12px; font-size: 12px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="schedule-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h4><i class="fas fa-calendar-alt me-2"></i>الجدول الأسبوعي</h4>
+            <small style="opacity: 0.85;">تنظيم المحاضرات على مدار الأسبوع حسب القاعات</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light btn-sm" onclick="openRoomPanel()" title="إدارة القاعات">
+                <i class="fas fa-door-open me-1"></i>القاعات
+            </button>
+            <button class="btn btn-warning btn-sm text-dark" onclick="openAddLectureModal()" title="إضافة محاضرة">
+                <i class="fas fa-plus me-1"></i>محاضرة جديدة
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Rooms Management Panel (hidden by default) -->
+<div id="roomsPanel" class="rooms-panel" style="display: none;">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="mb-0"><i class="fas fa-door-open me-2"></i>إدارة القاعات</h6>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeRoomPanel()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <!-- Add room form -->
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-md-5">
+            <input type="text" id="newRoomName" class="form-control form-control-sm" placeholder="اسم القاعة">
+        </div>
+        <div class="col-6 col-md-3">
+            <input type="number" id="newRoomCapacity" class="form-control form-control-sm" placeholder="السعة" min="0">
+        </div>
+        <div class="col-6 col-md-4">
+            <button class="btn btn-primary btn-sm w-100" onclick="addRoom()">
+                <i class="fas fa-plus me-1"></i>إضافة قاعة
+            </button>
+        </div>
+    </div>
+    
+    <!-- Rooms list -->
+    <div id="roomsList"></div>
+</div>
+
+<!-- Room Filter Tabs -->
+<div class="room-tabs" id="roomTabs">
+    <div class="room-tab active" data-room="all" onclick="filterByRoom('all')">
+        <i class="fas fa-th me-1"></i>الكل
+    </div>
+</div>
+
+<!-- Schedule Grid -->
+<div class="schedule-grid-wrapper">
+    <table class="schedule-grid" id="scheduleGrid">
+        <thead>
+            <tr>
+                <th class="time-col">الوقت</th>
+                <th>الإثنين</th>
+                <th>الثلاثاء</th>
+                <th>الأربعاء</th>
+                <th>الخميس</th>
+                <th>الجمعة</th>
+                <th>السبت</th>
+                <th>الأحد</th>
+            </tr>
+        </thead>
+        <tbody id="scheduleBody"></tbody>
+    </table>
+</div>
+
+<!-- Add/Edit Lecture Modal -->
+<div class="modal fade modal-schedule" id="lectureModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="lectureModalTitle">إضافة محاضرة</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editLectureId" value="">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label-sm">القاعة</label>
+                        <select id="lecRoom" class="form-select form-select-sm" required></select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-sm">المدرس</label>
+                        <select id="lecTeacher" class="form-select form-select-sm" required></select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-sm">المادة</label>
+                        <input type="text" id="lecSubject" class="form-control form-control-sm" placeholder="تُملأ تلقائياً من مادة المدرس">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-sm">اليوم</label>
+                        <select id="lecDay" class="form-select form-select-sm">
+                            <option value="الإثنين">الإثنين</option>
+                            <option value="الثلاثاء">الثلاثاء</option>
+                            <option value="الأربعاء">الأربعاء</option>
+                            <option value="الخميس">الخميس</option>
+                            <option value="الجمعة">الجمعة</option>
+                            <option value="السبت">السبت</option>
+                            <option value="الأحد">الأحد</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-sm">من الساعة</label>
+                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label-sm">إلى الساعة</label>
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-sm">ملاحظات</label>
+                        <input type="text" id="lecNotes" class="form-control form-control-sm" placeholder="ملاحظات اختيارية">
+                    </div>
+                </div>
+                <div id="lecError" class="alert alert-danger mt-3" style="display:none; font-size: 13px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveLecture()">
+                    <i class="fas fa-save me-1"></i>حفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Room Modal -->
+<div class="modal fade modal-schedule" id="roomEditModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">تعديل القاعة</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editRoomId" value="">
+                <div class="mb-2">
+                    <label class="form-label-sm">اسم القاعة</label>
+                    <input type="text" id="editRoomName" class="form-control form-control-sm">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label-sm">السعة</label>
+                    <input type="number" id="editRoomCapacity" class="form-control form-control-sm" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="updateRoom()">
+                    <i class="fas fa-save me-1"></i>حفظ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ===== Data =====
+let allRooms = {{ rooms | tojson }};
+let allTeachers = {{ teachers | tojson }};
+let allSchedule = {{ schedule | tojson }};
+let currentRoomFilter = 'all';
+
+const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+const TIME_SLOTS = [];
+for (let h = 7; h <= 21; h++) {
+    TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
+    TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
+}
+
+// ===== Initialize =====
+document.addEventListener('DOMContentLoaded', function() {
+    renderRoomTabs();
+    renderScheduleGrid();
+    renderRoomsList();
+    populateModalSelects();
+});
+
+// ===== Room Tabs =====
+function renderRoomTabs() {
+    const tabsEl = document.getElementById('roomTabs');
+    let html = '<div class="room-tab ' + (currentRoomFilter === 'all' ? 'active' : '') + '" data-room="all" onclick="filterByRoom(\'all\')"><i class="fas fa-th me-1"></i>الكل</div>';
+    allRooms.forEach(room => {
+        html += '<div class="room-tab ' + (currentRoomFilter === room.id ? 'active' : '') + '" data-room="' + room.id + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open me-1"></i>' + room.name + '</div>';
+    });
+    tabsEl.innerHTML = html;
+}
+
+function filterByRoom(roomId) {
+    currentRoomFilter = roomId;
+    renderRoomTabs();
+    renderScheduleGrid();
+}
+
+// ===== Schedule Grid =====
+function renderScheduleGrid() {
+    const tbody = document.getElementById('scheduleBody');
+    let html = '';
+    
+    TIME_SLOTS.forEach(time => {
+        html += '<tr>';
+        html += '<td class="time-cell">' + time + '</td>';
+        
+        DAYS.forEach(day => {
+            const lectures = getLecturesAt(day, time);
+            if (lectures.length > 0) {
+                html += '<td>';
+                lectures.forEach(lec => {
+                    const colorClass = lec.teacher_id % 2 === 0 ? 'color-2' : 'color-1';
+                    html += '<div class="lecture-card ' + colorClass + '" title="' + lec.room_name + ' | ' + lec.teacher_name + ' | ' + lec.start_time + '-' + lec.end_time + '">';
+                    html += '<div class="lec-actions">';
+                    html += '<button class="lec-btn-edit" onclick="editLecture(' + lec.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+                    html += '<button class="lec-btn-delete" onclick="deleteLecture(' + lec.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+                    html += '</div>';
+                    if (currentRoomFilter === 'all') {
+                        html += '<div class="lec-subject">' + lec.subject + '</div>';
+                        html += '<div class="lec-teacher">' + lec.teacher_name + ' | ' + lec.room_name + '</div>';
+                    } else {
+                        html += '<div class="lec-subject">' + lec.subject + '</div>';
+                        html += '<div class="lec-teacher">' + lec.teacher_name + '</div>';
+                    }
+                    html += '<div class="lec-time">' + lec.start_time + ' - ' + lec.end_time + '</div>';
+                    html += '</div>';
+                });
+                html += '</td>';
+            } else {
+                // Check if this is a top-of-hour slot (e.g. 08:00, 09:00) for the add button
+                if (time.endsWith(':00')) {
+                    html += '<td><button class="add-lecture-btn" onclick="openAddLectureModal(\'' + day + '\', \'' + time + '\')" title="إضافة محاضرة"><i class="fas fa-plus"></i></button></td>';
+                } else {
+                    html += '<td></td>';
+                }
+            }
+        });
+        
+        html += '</tr>';
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function getLecturesAt(day, time) {
+    return allSchedule.filter(lec => {
+        const roomMatch = currentRoomFilter === 'all' || lec.room_id === currentRoomFilter;
+        const dayMatch = lec.day_of_week === day;
+        const timeMatch = lec.start_time <= time && lec.end_time > time;
+        // Only show at the start time to avoid duplicates
+        const isStart = lec.start_time === time;
+        return roomMatch && dayMatch && timeMatch && isStart;
+    });
+}
+
+// ===== Rooms List =====
+function renderRoomsList() {
+    const el = document.getElementById('roomsList');
+    if (allRooms.length === 0) {
+        el.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-door-open fa-2x mb-2 d-block"></i>لا توجد قاعات بعد</div>';
+        return;
+    }
+    let html = '';
+    allRooms.forEach(room => {
+        const lecCount = allSchedule.filter(s => s.room_id === room.id).length;
+        html += '<div class="room-item">';
+        html += '<div class="room-info">';
+        html += '<div class="room-icon"><i class="fas fa-door-open"></i></div>';
+        html += '<div>';
+        html += '<div class="room-name">' + room.name + '</div>';
+        html += '<div class="room-capacity">السعة: ' + (room.capacity || '-') + ' | محاضرات: ' + lecCount + '</div>';
+        html += '</div>';
+        html += '</div>';
+        html += '<div class="room-actions">';
+        html += '<button class="btn-edit" onclick="openEditRoomModal(' + room.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+        html += '<button class="btn-delete" onclick="deleteRoom(' + room.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+        html += '</div>';
+        html += '</div>';
+    });
+    el.innerHTML = html;
+}
+
+function openRoomPanel() {
+    document.getElementById('roomsPanel').style.display = 'block';
+}
+function closeRoomPanel() {
+    document.getElementById('roomsPanel').style.display = 'none';
+}
+
+// ===== Room CRUD =====
+async function addRoom() {
+    const name = document.getElementById('newRoomName').value.trim();
+    const capacity = parseInt(document.getElementById('newRoomCapacity').value) || 0;
+    if (!name) { showAlert('يرجى إدخال اسم القاعة'); return; }
+    
+    try {
+        const res = await apiRequest('/api/rooms', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, capacity, notes: ''})
+        });
+        if (res.success) {
+            await refreshData();
+            document.getElementById('newRoomName').value = '';
+            document.getElementById('newRoomCapacity').value = '';
+            showAlert('تم إضافة القاعة بنجاح', 'success');
+        } else {
+            showAlert(res.message || 'خطأ في إضافة القاعة');
+        }
+    } catch(e) {
+        showAlert('خطأ في الاتصال');
+    }
+}
+
+function openEditRoomModal(roomId) {
+    const room = allRooms.find(r => r.id === roomId);
+    if (!room) return;
+    document.getElementById('editRoomId').value = room.id;
+    document.getElementById('editRoomName').value = room.name;
+    document.getElementById('editRoomCapacity').value = room.capacity || 0;
+    new bootstrap.Modal(document.getElementById('roomEditModal')).show();
+}
+
+async function updateRoom() {
+    const id = parseInt(document.getElementById('editRoomId').value);
+    const name = document.getElementById('editRoomName').value.trim();
+    const capacity = parseInt(document.getElementById('editRoomCapacity').value) || 0;
+    if (!name) { showAlert('يرجى إدخال اسم القاعة'); return; }
+    
+    try {
+        const res = await apiRequest('/api/rooms/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, capacity, notes: ''})
+        });
+        if (res.success) {
+            bootstrap.Modal.getInstance(document.getElementById('roomEditModal')).hide();
+            await refreshData();
+            showAlert('تم تحديث القاعة بنجاح', 'success');
+        } else {
+            showAlert(res.message || 'خطأ في التحديث');
+        }
+    } catch(e) {
+        showAlert('خطأ في الاتصال');
+    }
+}
+
+async function deleteRoom(roomId) {
+    if (!confirm('هل أنت متأكد من حذف القاعة؟ سيتم حذف جميع المحاضرات المرتبطة بها.')) return;
+    try {
+        const res = await apiRequest('/api/rooms/' + roomId, {method: 'DELETE'});
+        if (res.success) {
+            await refreshData();
+            showAlert('تم حذف القاعة', 'success');
+        } else {
+            showAlert(res.message || 'خطأ في الحذف');
+        }
+    } catch(e) {
+        showAlert('خطأ في الاتصال');
+    }
+}
+
+// ===== Lecture CRUD =====
+function populateModalSelects() {
+    const roomSelect = document.getElementById('lecRoom');
+    let roomHtml = '<option value="">اختر القاعة</option>';
+    allRooms.forEach(r => { roomHtml += '<option value="' + r.id + '">' + r.name + '</option>'; });
+    roomSelect.innerHTML = roomHtml;
+    
+    const teacherSelect = document.getElementById('lecTeacher');
+    let teacherHtml = '<option value="">اختر المدرس</option>';
+    allTeachers.forEach(t => { teacherHtml += '<option value="' + t.id + '" data-subject="' + t.subject + '">' + t.name + ' (' + t.subject + ')</option>'; });
+    teacherSelect.innerHTML = teacherHtml;
+    
+    // Auto-fill subject when teacher is selected
+    document.getElementById('lecTeacher').addEventListener('change', function() {
+        const opt = this.options[this.selectedIndex];
+        if (opt && opt.dataset.subject) {
+            document.getElementById('lecSubject').value = opt.dataset.subject;
+        }
+    });
+}
+
+function openAddLectureModal(day, time) {
+    document.getElementById('editLectureId').value = '';
+    document.getElementById('lectureModalTitle').textContent = 'إضافة محاضرة';
+    document.getElementById('lecRoom').value = currentRoomFilter !== 'all' ? currentRoomFilter : '';
+    document.getElementById('lecTeacher').value = '';
+    document.getElementById('lecSubject').value = '';
+    document.getElementById('lecDay').value = day || 'الإثنين';
+    document.getElementById('lecStartTime').value = time || '08:00';
+    document.getElementById('lecEndTime').value = time ? incrementTime(time, 90) : '09:30';
+    document.getElementById('lecNotes').value = '';
+    document.getElementById('lecError').style.display = 'none';
+    populateModalSelects();
+    if (currentRoomFilter !== 'all') {
+        document.getElementById('lecRoom').value = currentRoomFilter;
+    }
+    new bootstrap.Modal(document.getElementById('lectureModal')).show();
+}
+
+function editLecture(lectureId) {
+    const lec = allSchedule.find(l => l.id === lectureId);
+    if (!lec) return;
+    populateModalSelects();
+    document.getElementById('editLectureId').value = lec.id;
+    document.getElementById('lectureModalTitle').textContent = 'تعديل المحاضرة';
+    document.getElementById('lecRoom').value = lec.room_id;
+    document.getElementById('lecTeacher').value = lec.teacher_id;
+    document.getElementById('lecSubject').value = lec.subject;
+    document.getElementById('lecDay').value = lec.day_of_week;
+    document.getElementById('lecStartTime').value = lec.start_time;
+    document.getElementById('lecEndTime').value = lec.end_time;
+    document.getElementById('lecNotes').value = lec.notes || '';
+    document.getElementById('lecError').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('lectureModal')).show();
+}
+
+async function saveLecture() {
+    const editId = document.getElementById('editLectureId').value;
+    const data = {
+        room_id: parseInt(document.getElementById('lecRoom').value),
+        teacher_id: parseInt(document.getElementById('lecTeacher').value),
+        subject: document.getElementById('lecSubject').value.trim(),
+        day_of_week: document.getElementById('lecDay').value,
+        start_time: document.getElementById('lecStartTime').value,
+        end_time: document.getElementById('lecEndTime').value,
+        notes: document.getElementById('lecNotes').value.trim()
+    };
+    
+    const errorEl = document.getElementById('lecError');
+    
+    if (!data.room_id || !data.teacher_id || !data.day_of_week || !data.start_time || !data.end_time) {
+        errorEl.textContent = 'يرجى ملء جميع الحقول المطلوبة';
+        errorEl.style.display = 'block';
+        return;
+    }
+    
+    try {
+        let res;
+        if (editId) {
+            res = await apiRequest('/api/weekly-schedule/' + editId, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        } else {
+            res = await apiRequest('/api/weekly-schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+        
+        if (res.success) {
+            bootstrap.Modal.getInstance(document.getElementById('lectureModal')).hide();
+            await refreshData();
+            showAlert(res.message || 'تم الحفظ بنجاح', 'success');
+        } else {
+            errorEl.textContent = res.message || 'خطأ في الحفظ';
+            errorEl.style.display = 'block';
+        }
+    } catch(e) {
+        errorEl.textContent = 'خطأ في الاتصال';
+        errorEl.style.display = 'block';
+    }
+}
+
+async function deleteLecture(lectureId) {
+    if (!confirm('هل أنت متأكد من حذف هذه المحاضرة؟')) return;
+    try {
+        const res = await apiRequest('/api/weekly-schedule/' + lectureId, {method: 'DELETE'});
+        if (res.success) {
+            await refreshData();
+            showAlert('تم حذف المحاضرة', 'success');
+        } else {
+            showAlert(res.message || 'خطأ في الحذف');
+        }
+    } catch(e) {
+        showAlert('خطأ في الاتصال');
+    }
+}
+
+// ===== Utilities =====
+function incrementTime(time, minutes) {
+    const [h, m] = time.split(':').map(Number);
+    const totalMin = h * 60 + m + minutes;
+    const newH = Math.floor(totalMin / 60);
+    const newM = totalMin % 60;
+    return String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
+}
+
+async function refreshData() {
+    try {
+        const [roomsRes, scheduleRes] = await Promise.all([
+            apiRequest('/api/rooms'),
+            apiRequest('/api/weekly-schedule')
+        ]);
+        allRooms = roomsRes.data || [];
+        allSchedule = scheduleRes.data || [];
+        renderRoomTabs();
+        renderScheduleGrid();
+        renderRoomsList();
+        populateModalSelects();
+    } catch(e) {
+        console.error('Refresh error:', e);
+    }
+}
+</script>
+{% endblock %}

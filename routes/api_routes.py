@@ -969,3 +969,282 @@ async def api_smart_alerts(request: Request):
         print(f"Smart alerts error: {e}")
     
     return {"success": True, "data": alerts}
+
+    except Exception as e:
+        print(f"Smart alerts error: {e}")
+    
+    return {"success": True, "data": alerts}
+
+
+# ===== عمليات القاعات =====
+
+@router.get("/rooms")
+async def api_get_rooms():
+    """الحصول على قائمة جميع القاعات"""
+    db = Database()
+    try:
+        rooms = db.execute_query("SELECT * FROM rooms ORDER BY name")
+        return {"success": True, "data": [dict(r) for r in rooms] if rooms else []}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.post("/rooms")
+async def api_add_room(request: Request, data: dict = Body(...)):
+    """إضافة قاعة جديدة"""
+    check_permission(request, 'add_subjects')
+    db = Database()
+    try:
+        name = data.get('name', '').strip()
+        capacity = int(data.get('capacity', 0))
+        notes = data.get('notes', '')
+        
+        if not name:
+            return {"success": False, "message": "اسم القاعة مطلوب"}
+        
+        existing = db.execute_query("SELECT id FROM rooms WHERE name = %s", (name,))
+        if existing:
+            return {"success": False, "message": "اسم القاعة موجود مسبقاً"}
+        
+        result = db.execute_query(
+            "INSERT INTO rooms (name, capacity, notes, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
+            (name, capacity, notes, get_current_date())
+        )
+        new_id = result[0]['id'] if result else None
+        return {"success": True, "message": "تم إضافة القاعة بنجاح", "id": new_id}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.put("/rooms/{room_id}")
+async def api_update_room(request: Request, room_id: int, data: dict = Body(...)):
+    """تحديث قاعة"""
+    check_permission(request, 'edit_subjects')
+    db = Database()
+    try:
+        name = data.get('name', '').strip()
+        capacity = int(data.get('capacity', 0))
+        notes = data.get('notes', '')
+        
+        if not name:
+            return {"success": False, "message": "اسم القاعة مطلوب"}
+        
+        existing = db.execute_query("SELECT id FROM rooms WHERE id = %s", (room_id,))
+        if not existing:
+            return {"success": False, "message": "القاعة غير موجودة"}
+        
+        dup = db.execute_query("SELECT id FROM rooms WHERE name = %s AND id != %s", (name, room_id))
+        if dup:
+            return {"success": False, "message": "اسم القاعة موجود مسبقاً"}
+        
+        db.execute_query(
+            "UPDATE rooms SET name = %s, capacity = %s, notes = %s WHERE id = %s",
+            (name, capacity, notes, room_id)
+        )
+        return {"success": True, "message": "تم تحديث القاعة بنجاح"}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.delete("/rooms/{room_id}")
+async def api_delete_room(request: Request, room_id: int):
+    """حذف قاعة"""
+    check_permission(request, 'delete_subjects')
+    db = Database()
+    try:
+        # فحص وجود محاضرات مرتبطة
+        schedule_count = db.execute_query(
+            "SELECT COUNT(*) as cnt FROM weekly_schedule WHERE room_id = %s", (room_id,)
+        )
+        cnt = schedule_count[0]['cnt'] if schedule_count else 0
+        if cnt > 0:
+            # حذف المحاضرات المرتبطة أولاً
+            db.execute_query("DELETE FROM weekly_schedule WHERE room_id = %s", (room_id,))
+        
+        db.execute_query("DELETE FROM rooms WHERE id = %s", (room_id,))
+        return {"success": True, "message": "تم حذف القاعة وما يتعلق بها من محاضرات"}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+# ===== عمليات الجدول الأسبوعي =====
+
+@router.get("/weekly-schedule")
+async def api_get_weekly_schedule(room_id: int = None):
+    """الحصول على الجدول الأسبوعي كاملاً أو لقاعة محددة"""
+    db = Database()
+    try:
+        if room_id:
+            query = '''
+                SELECT ws.*, r.name as room_name, t.name as teacher_name, t.subject as teacher_subject
+                FROM weekly_schedule ws
+                JOIN rooms r ON ws.room_id = r.id
+                JOIN teachers t ON ws.teacher_id = t.id
+                WHERE ws.room_id = %s
+                ORDER BY ws.day_of_week, ws.start_time
+            '''
+            results = db.execute_query(query, (room_id,))
+        else:
+            query = '''
+                SELECT ws.*, r.name as room_name, t.name as teacher_name, t.subject as teacher_subject
+                FROM weekly_schedule ws
+                JOIN rooms r ON ws.room_id = r.id
+                JOIN teachers t ON ws.teacher_id = t.id
+                ORDER BY r.name, ws.day_of_week, ws.start_time
+            '''
+            results = db.execute_query(query)
+        
+        return {"success": True, "data": [dict(r) for r in results] if results else []}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.post("/weekly-schedule")
+async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
+    """إضافة محاضرة للجدول الأسبوعي مع فحص التعارضات"""
+    check_permission(request, 'add_subjects')
+    db = Database()
+    try:
+        room_id = int(data.get('room_id', 0))
+        teacher_id = int(data.get('teacher_id', 0))
+        subject = data.get('subject', '').strip()
+        day_of_week = data.get('day_of_week', '').strip()
+        start_time = data.get('start_time', '').strip()
+        end_time = data.get('end_time', '').strip()
+        notes = data.get('notes', '')
+        
+        if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
+            return {"success": False, "message": "جميع الحقول مطلوبة (القاعة، المدرس، اليوم، وقت البداية، وقت النهاية)"}
+        
+        valid_days = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+        if day_of_week not in valid_days:
+            return {"success": False, "message": f"اليوم يجب أن يكون من: {', '.join(valid_days)}"}
+        
+        if start_time >= end_time:
+            return {"success": False, "message": "وقت البداية يجب أن يكون قبل وقت النهاية"}
+        
+        # فحص تعارض القاعة: لا يمكن إضافة محاضرتين في نفس القاعة بنفس اليوم والوقت المتداخل
+        room_conflict = db.execute_query('''
+            SELECT ws.*, t.name as teacher_name, t.subject as teacher_subject
+            FROM weekly_schedule ws
+            JOIN teachers t ON ws.teacher_id = t.id
+            WHERE ws.room_id = %s AND ws.day_of_week = %s
+            AND NOT (ws.end_time <= %s OR ws.start_time >= %s)
+        ''', (room_id, day_of_week, start_time, end_time))
+        
+        if room_conflict:
+            conflict = room_conflict[0]
+            return {
+                "success": False,
+                "message": f"تعارض في القاعة! يوجد محاضرة للمدرس {conflict['teacher_name']} ({conflict['teacher_subject']}) من {conflict['start_time']} إلى {conflict['end_time']}"
+            }
+        
+        # فحص تعارض المدرس: لا يمكن للمدرس التدريس في مكانين بنفس الوقت
+        teacher_conflict = db.execute_query('''
+            SELECT ws.*, r.name as room_name
+            FROM weekly_schedule ws
+            JOIN rooms r ON ws.room_id = r.id
+            WHERE ws.teacher_id = %s AND ws.day_of_week = %s
+            AND NOT (ws.end_time <= %s OR ws.start_time >= %s)
+        ''', (teacher_id, day_of_week, start_time, end_time))
+        
+        if teacher_conflict:
+            conflict = teacher_conflict[0]
+            return {
+                "success": False,
+                "message": f"تعارض في جدول المدرس! المدرس لديه محاضرة في قاعة {conflict['room_name']} من {conflict['start_time']} إلى {conflict['end_time']}"
+            }
+        
+        if not subject:
+            teacher_info = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (teacher_id,))
+            subject = teacher_info[0]['subject'] if teacher_info else ''
+        
+        result = db.execute_query(
+            '''INSERT INTO weekly_schedule (room_id, teacher_id, subject, day_of_week, start_time, end_time, notes)
+               VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id''',
+            (room_id, teacher_id, subject, day_of_week, start_time, end_time, notes)
+        )
+        new_id = result[0]['id'] if result else None
+        
+        return {"success": True, "message": "تم إضافة المحاضرة بنجاح", "id": new_id}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.put("/weekly-schedule/{lecture_id}")
+async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dict = Body(...)):
+    """تحديث محاضرة في الجدول الأسبوعي مع فحص التعارضات"""
+    check_permission(request, 'edit_subjects')
+    db = Database()
+    try:
+        room_id = int(data.get('room_id', 0))
+        teacher_id = int(data.get('teacher_id', 0))
+        subject = data.get('subject', '').strip()
+        day_of_week = data.get('day_of_week', '').strip()
+        start_time = data.get('start_time', '').strip()
+        end_time = data.get('end_time', '').strip()
+        notes = data.get('notes', '')
+        
+        if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
+            return {"success": False, "message": "جميع الحقول مطلوبة"}
+        
+        if start_time >= end_time:
+            return {"success": False, "message": "وقت البداية يجب أن يكون قبل وقت النهاية"}
+        
+        # فحص تعارض القاعة (باستثناء المحاضرة الحالية)
+        room_conflict = db.execute_query('''
+            SELECT ws.*, t.name as teacher_name, t.subject as teacher_subject
+            FROM weekly_schedule ws
+            JOIN teachers t ON ws.teacher_id = t.id
+            WHERE ws.room_id = %s AND ws.day_of_week = %s AND ws.id != %s
+            AND NOT (ws.end_time <= %s OR ws.start_time >= %s)
+        ''', (room_id, day_of_week, lecture_id, start_time, end_time))
+        
+        if room_conflict:
+            conflict = room_conflict[0]
+            return {
+                "success": False,
+                "message": f"تعارض في القاعة! يوجد محاضرة للمدرس {conflict['teacher_name']} ({conflict['teacher_subject']}) من {conflict['start_time']} إلى {conflict['end_time']}"
+            }
+        
+        # فحص تعارض المدرس (باستثناء المحاضرة الحالية)
+        teacher_conflict = db.execute_query('''
+            SELECT ws.*, r.name as room_name
+            FROM weekly_schedule ws
+            JOIN rooms r ON ws.room_id = r.id
+            WHERE ws.teacher_id = %s AND ws.day_of_week = %s AND ws.id != %s
+            AND NOT (ws.end_time <= %s OR ws.start_time >= %s)
+        ''', (teacher_id, day_of_week, lecture_id, start_time, end_time))
+        
+        if teacher_conflict:
+            conflict = teacher_conflict[0]
+            return {
+                "success": False,
+                "message": f"تعارض في جدول المدرس! المدرس لديه محاضرة في قاعة {conflict['room_name']} من {conflict['start_time']} إلى {conflict['end_time']}"
+            }
+        
+        if not subject:
+            teacher_info = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (teacher_id,))
+            subject = teacher_info[0]['subject'] if teacher_info else ''
+        
+        db.execute_query(
+            '''UPDATE weekly_schedule SET room_id=%s, teacher_id=%s, subject=%s, day_of_week=%s, 
+               start_time=%s, end_time=%s, notes=%s WHERE id=%s''',
+            (room_id, teacher_id, subject, day_of_week, start_time, end_time, notes, lecture_id)
+        )
+        
+        return {"success": True, "message": "تم تحديث المحاضرة بنجاح"}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+@router.delete("/weekly-schedule/{lecture_id}")
+async def api_delete_weekly_lecture(request: Request, lecture_id: int):
+    """حذف محاضرة من الجدول الأسبوعي"""
+    check_permission(request, 'delete_subjects')
+    db = Database()
+    try:
+        db.execute_query("DELETE FROM weekly_schedule WHERE id = %s", (lecture_id,))
+        return {"success": True, "message": "تم حذف المحاضرة"}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}

@@ -396,9 +396,13 @@
             <i class="fas fa-chalkboard-teacher"></i>
             <span>المدرسين</span>
         </a>
-        <a class="nav-link {% if '/subjects' in request.url.path %}active{% endif %}" href="/subjects" onclick="closeSidebarMobile()">
+        <a class="nav-link {% if '/subjects' in request.url.path and '/weekly-schedule' not in request.url.path %}active{% endif %}" href="/subjects" onclick="closeSidebarMobile()">
             <i class="fas fa-book-open"></i>
             <span>المواد</span>
+        </a>
+        <a class="nav-link {% if '/weekly-schedule' in request.url.path %}active{% endif %}" href="/weekly-schedule" onclick="closeSidebarMobile()">
+            <i class="fas fa-calendar-alt"></i>
+            <span>الجدول الأسبوعي</span>
         </a>
         <a class="nav-link {% if '/payments' in request.url.path %}active{% endif %}" href="/payments" onclick="closeSidebarMobile()">
             <i class="fas fa-money-check-alt"></i>
