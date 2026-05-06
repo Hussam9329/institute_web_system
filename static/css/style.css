@@ -2442,9 +2442,9 @@ textarea:focus-visible {
     .form-label { font-size: 0.82rem; margin-bottom: 0.4rem; }
     .modal-dialog { margin: 0.5rem; max-width: calc(100% - 1rem); }
     .modal-dialog.modal-lg { max-width: 100%; margin: 0; }
-    .modal-content { border-radius: 16px; max-height: 95vh; overflow-y: auto; }
+    .modal-content { border-radius: 16px; max-height: none; overflow: visible; }
+    .modal-body { padding: 1rem; max-height: 80vh; overflow-y: auto; }
     .modal-header { padding: 1rem; }
-    .modal-body { padding: 1rem; }
     .modal-footer { padding: 0.75rem 1rem; flex-direction: column; gap: 0.5rem; }
     .modal-footer .btn { width: 100%; justify-content: center; }
     .modal-dialog-centered { min-height: auto; align-items: flex-start; margin-top: 1.5rem; }
@@ -2478,7 +2478,8 @@ textarea:focus-visible {
     .input-group-text { padding: 0.5rem 0.65rem; font-size: 0.82rem; }
     .form-control { padding: 0.6rem 0.85rem; min-height: 42px; }
     .modal-dialog { margin: 0; max-width: 100%; }
-    .modal-content { border-radius: 0; border: none; max-height: 100vh; height: 100vh; }
+    .modal-content { border-radius: 0; border: none; overflow: visible; }
+    .modal-body { max-height: calc(100vh - 120px); overflow-y: auto; }
     .modal-dialog-centered { margin-top: 0; align-items: stretch; }
     .empty-state { padding: 2rem 1rem !important; }
     .empty-state i { font-size: 2.5rem !important; }
@@ -2642,10 +2643,15 @@ textarea:focus-visible {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    z-index: 99999;  /* بدل 9999 - لازم يكون أعلى من Bootstrap modal */
+    z-index: 99999;
     display: none;
     overflow: hidden;
     animation: ssDropIn 0.15s ease;
+}
+
+/* داخل modal: القائمة المنسدلة تستخدم position: fixed من JS */
+.modal .searchable-select .ss-dropdown {
+    z-index: 1060;
 }
 
 .searchable-select .ss-dropdown.show {

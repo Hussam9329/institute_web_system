@@ -314,9 +314,10 @@ window.exportTableToCSV = exportTableToCSV;
 
 /**
  * تحويل عنصر select إلى قائمة منسدلة مع بحث مباشر
+ * يدعم العمل داخل Bootstrap modal بشكل صحيح
  * @param {string} selectId - معرف عنصر select الأصلي
  * @param {object} options - خيارات إضافية { placeholder, searchPlaceholder, onChange }
- * @returns {object} - واجهة التحكم بالمكوّن { setValue, refresh, destroy }
+ * @returns {object} - واجهة التحكم بالمكوّن { setValue, refresh, clear, destroy }
  */
 function makeSearchableSelect(selectId, options = {}) {
     const originalSelect = document.getElementById(selectId);
@@ -325,6 +326,10 @@ function makeSearchableSelect(selectId, options = {}) {
     const placeholder = options.placeholder || originalSelect.querySelector('option[value=""]')?.textContent || '-- اختر --';
     const searchPlaceholder = options.searchPlaceholder || 'بحث...';
     const onChangeCallback = options.onChange || null;
+
+    // التحقق مما إذا كنا داخل Bootstrap modal
+    const modalParent = originalSelect.closest('.modal');
+    const isInsideModal = !!modalParent;
 
     // إخفاء الـ select الأصلي
     originalSelect.style.display = 'none';
@@ -451,17 +456,68 @@ function makeSearchableSelect(selectId, options = {}) {
         if (onChangeCallback) onChangeCallback(value);
     }
 
+    /**
+     * حساب موقع القائمة المنسدلة عندما تكون داخل modal
+     * يستخدم position: fixed لتجنب القص بسبب overflow على modal-content
+     */
+    function positionDropdownInModal() {
+        var rect = display.getBoundingClientRect();
+        var spaceBelow = window.innerHeight - rect.bottom;
+        var estimatedHeight = 300;
+
+        dropdown.style.position = 'fixed';
+        dropdown.style.width = rect.width + 'px';
+
+        // تحديد الاتجاه: أسفل أو أعلى العنصر
+        if (spaceBelow < estimatedHeight && rect.top > spaceBelow) {
+            // عرض القائمة فوق العنصر
+            dropdown.style.top = 'auto';
+            dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+        } else {
+            // عرض القائمة تحت العنصر
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.bottom = 'auto';
+        }
+
+        // تحديد الموقع الأفقي (يدعم RTL و LTR)
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.right = 'auto';
+    }
+
+    /**
+     * إعادة تعيين أنماط position: fixed بعد إغلاق القائمة
+     */
+    function resetDropdownPosition() {
+        dropdown.style.position = '';
+        dropdown.style.top = '';
+        dropdown.style.bottom = '';
+        dropdown.style.left = '';
+        dropdown.style.right = '';
+        dropdown.style.width = '';
+    }
+
     function openDropdown() {
         dropdown.classList.add('show');
         display.classList.add('active');
         searchInput.value = '';
         renderOptions('');
+
+        // داخل modal: استخدام position: fixed لتجنب القص
+        if (isInsideModal) {
+            positionDropdownInModal();
+        }
+
         setTimeout(function() { searchInput.focus(); }, 50);
     }
 
     function closeDropdown() {
         dropdown.classList.remove('show');
         display.classList.remove('active');
+
+        // إعادة تعيين الأنماط عند الإغلاق
+        if (isInsideModal) {
+            resetDropdownPosition();
+        }
     }
 
     function toggleDropdown() {
@@ -494,6 +550,17 @@ function makeSearchableSelect(selectId, options = {}) {
         e.stopPropagation();
     });
 
+    // منع Bootstrap modal من سرقة الـ focus عند التفاعل مع القائمة المنسدلة
+    // هذا يحل مشكلة enforceFocus في Bootstrap 5
+    container.addEventListener('focusin', function(e) {
+        e.stopPropagation();
+    });
+
+    // منع سرقة الـ focus من القائمة المنسدلة نفسها (عند position: fixed)
+    dropdown.addEventListener('focusin', function(e) {
+        e.stopPropagation();
+    });
+
     searchInput.addEventListener('input', function() {
         renderOptions(this.value);
     });
@@ -504,7 +571,7 @@ function makeSearchableSelect(selectId, options = {}) {
 
     // إغلاق عند النقر خارج القائمة
     document.addEventListener('click', function(e) {
-        if (!container.contains(e.target)) {
+        if (!container.contains(e.target) && !dropdown.contains(e.target)) {
             closeDropdown();
         }
     });
@@ -515,6 +582,29 @@ function makeSearchableSelect(selectId, options = {}) {
             closeDropdown();
         }
     });
+
+    // داخل modal: إغلاق القائمة عند تمرير الـ modal (لأن position: fixed لا يتبع التمرير)
+    if (isInsideModal && modalParent) {
+        modalParent.addEventListener('scroll', function() {
+            if (dropdown.classList.contains('show')) {
+                closeDropdown();
+            }
+        }, true);
+
+        // إغلاق عند إغلاق الـ modal نفسه
+        modalParent.addEventListener('hidden.bs.modal', function() {
+            closeDropdown();
+        });
+    }
+
+    // إعادة حساب الموقع عند تغيير حجم النافذة
+    if (isInsideModal) {
+        window.addEventListener('resize', function() {
+            if (dropdown.classList.contains('show')) {
+                positionDropdownInModal();
+            }
+        });
+    }
 
     // مراقبة تغييرات الـ select الأصلي (مثلاً عند إعادة تحميل الخيارات)
     const observer = new MutationObserver(function() {

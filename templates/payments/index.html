@@ -275,7 +275,7 @@
                             <label class="form-label fw-bold">
                                 <i class="fas fa-user-graduate me-1 text-orange"></i>الطالب
                             </label>
-                            <select class="form-select" id="pay_student_id" required onchange="loadStudentTeachers(this.value)">
+                            <select class="form-select" id="pay_student_id" required>
                                 <option value="">-- اختر الطالب --</option>
                                 {% for student in students %}
                                 <option value="{{ student.id }}">{{ student.name }}</option>
@@ -286,7 +286,7 @@
                             <label class="form-label fw-bold">
                                 <i class="fas fa-chalkboard-teacher me-1 text-orange"></i>المدرس
                             </label>
-                            <select class="form-select" id="pay_teacher_id" required onchange="showTeacherBalance(this.value)">
+                            <select class="form-select" id="pay_teacher_id" required>
                                 <option value="">-- اختر المدرس أولاً --</option>
                                 {% for teacher in teachers %}
                                 <option value="{{ teacher.id }}" data-fee="{{ teacher.total_fee }}">{{ teacher.name }} - {{ teacher.subject }}</option>
