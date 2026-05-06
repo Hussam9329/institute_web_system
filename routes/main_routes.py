@@ -286,6 +286,17 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
     linked_ids = [r['teacher_id'] for r in linked] if linked else []
     linked_data = {r['teacher_id']: r for r in linked} if linked else {}
 
+    # عدد الأقساط المدفوعة لكل مدرس مرتبط (لمنع تغيير نوع الدراسة إذا وُجدت مدفوعات)
+    installment_counts = {}
+    if linked_ids:
+        counts = db.execute_query(
+            "SELECT teacher_id, COUNT(*) as cnt FROM installments WHERE student_id = %s GROUP BY teacher_id",
+            (student_id,)
+        )
+        if counts:
+            for c in counts:
+                installment_counts[c['teacher_id']] = c['cnt']
+
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": student,
@@ -293,6 +304,7 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
         "teachers": teachers,
         "linked_teacher_ids": linked_ids,
         "linked_data": linked_data,
+        "installment_counts": installment_counts,
         "error": error,
         "error_detail": detail
     })

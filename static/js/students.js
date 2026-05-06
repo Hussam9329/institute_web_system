@@ -170,7 +170,7 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
     if (elType) elType.selectedIndex = 0;
     if (elNotes) elNotes.value = '';
 
-    // تعيين نوع الدراسة تلقائياً
+    // تعيين نوع الدراسة تلقائياً (الحقل معطل ولا يمكن تغييره)
     if (elStudyType) {
         for (let i = 0; i < elStudyType.options.length; i++) {
             if (elStudyType.options[i].value === studyType) {
@@ -178,6 +178,8 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
                 break;
             }
         }
+        // تأكيد التعطيل - لا يمكن للمستخدم تغيير نوع الدراسة
+        elStudyType.disabled = true;
     }
 
     // عرض قسط الاستاد حسب نوع الدراسة

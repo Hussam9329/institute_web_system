@@ -102,6 +102,7 @@
                                         {% for teacher in teachers %}
                                         {% set is_linked = linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}
                                         {% set ld = linked_data[teacher.id] if linked_data and teacher.id in linked_data else None %}
+                                        {% set has_payments = (installment_counts is defined and installment_counts.get(teacher.id, 0)|int > 0) %}
                                         {% set tt_list = (teacher.teaching_types.split(',') if teacher.teaching_types else ['حضوري']) %}
                                         {% set has_in_person = 'حضوري' in tt_list %}
                                         {% set has_electronic = 'الكتروني' in tt_list %}
@@ -125,10 +126,11 @@
                                                 </div>
                                                 <!-- نوع الدراسة -->
                                                 <div class="teacher-field me-2" style="width:7.5rem;flex-shrink:0">
-                                                    {% if single_type %}
-                                                    <input type="hidden" name="study_type_{{ teacher.id }}" value="{{ tt_list[0] }}">
-                                                    <div class="form-select form-select-sm teacher-opt" style="background:#f8fafc;cursor:default;opacity:1">
-                                                        {{ tt_list[0] }}
+                                                    {% if single_type or has_payments %}
+                                                    <input type="hidden" name="study_type_{{ teacher.id }}" value="{% if ld %}{{ ld.get('study_type', tt_list[0]) }}{% else %}{{ tt_list[0] }}{% endif %}">
+                                                    <div class="form-select form-select-sm teacher-opt {% if has_payments %}border-warning{% endif %}" style="background:{% if has_payments %}#fffbeb{% else %}#f8fafc{% endif %};cursor:default;opacity:1">
+                                                        {% if ld %}{{ ld.get('study_type', tt_list[0]) }}{% else %}{{ tt_list[0] }}{% endif %}
+                                                        {% if has_payments %} <i class="fas fa-lock text-warning" style="font-size:0.65rem"></i>{% endif %}
                                                     </div>
                                                     {% else %}
                                                     <select class="form-select form-select-sm teacher-opt" name="study_type_{{ teacher.id }}">

@@ -289,18 +289,40 @@ async def api_link_student_teachers(request: Request, data: dict):
 
 @router.put("/update-student-teacher-link/{student_id}/{teacher_id}")
 async def api_update_student_teacher_link(request: Request, student_id: int, teacher_id: int, data: dict):
-    """تحديث نوع الدراسة والحالة لربط طالب بمدرس"""
+    """تحديث نوع الدراسة والحالة لربط طالب بمدرس - مع منع تغيير نوع الدراسة إذا وُجدت مدفوعات"""
     check_permission(request, 'link_students')
     db = Database()
     
     try:
-        study_type = data.get("study_type", "حضوري")
+        new_study_type = data.get("study_type", "حضوري")
         status = data.get("status", "مستمر")
         
-        db.execute_query(
-            "UPDATE student_teacher SET study_type = %s, status = %s WHERE student_id = %s AND teacher_id = %s",
-            (study_type, status, student_id, teacher_id)
+        # فحص وجود أقساط مدفوعة - يُمنع تغيير نوع الدراسة نهائياً
+        payment_check = db.execute_query(
+            "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
         )
+        has_payments = payment_check and payment_check[0]['cnt'] > 0
+        
+        if has_payments:
+            # جلب نوع الدراسة الحالي والحفاظ عليه
+            current_link = db.execute_query(
+                "SELECT study_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+                (student_id, teacher_id)
+            )
+            current_study_type = current_link[0]['study_type'] if current_link else 'حضوري'
+            # تحديث الحالة فقط مع الحفاظ على نوع الدراسة
+            db.execute_query(
+                "UPDATE student_teacher SET status = %s WHERE student_id = %s AND teacher_id = %s",
+                (status, student_id, teacher_id)
+            )
+            return {"success": True, "message": "تم تحديث الحالة فقط. لا يمكن تغيير نوع الدراسة لوجود أقساط مسجلة."}
+        else:
+            # لا توجد مدفوعات - يمكن تحديث كل شيء
+            db.execute_query(
+                "UPDATE student_teacher SET study_type = %s, status = %s WHERE student_id = %s AND teacher_id = %s",
+                (new_study_type, status, student_id, teacher_id)
+            )
         
         sync_student_status(student_id)
         
@@ -363,14 +385,9 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         )
         
         if link_check:
-            # تحديث نوع الدراسة إذا تم تغييره في النموذج
-            current_study_type = link_check[0].get('study_type', 'حضوري')
-            new_study_type = installment.study_type or current_study_type
-            if new_study_type != current_study_type:
-                db.execute_query(
-                    "UPDATE student_teacher SET study_type = %s WHERE student_id = %s AND teacher_id = %s",
-                    (new_study_type, installment.student_id, installment.teacher_id)
-                )
+            # لا نسمح بتغيير نوع الدراسة عند وجود ربط - نحافظ على النوع المحدد مسبقاً
+            # نوع الدراسة يُحدد عند الربط فقط ولا يمكن تغييره بعد ذلك
+            pass
         else:
             # التحقق من أن الطالب ليس مربوطاً بمدرس آخر لنفس المادة
             teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (installment.teacher_id,))
