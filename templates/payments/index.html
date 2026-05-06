@@ -567,11 +567,14 @@ function initStudentSearch() {
         }
     });
 
-    // منع إغلاق المودال عند التفاعل مع القائمة
+    // منع إغلاق المودال ومنع انتقال التمرير للمودال
     input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
     input.addEventListener('focusin', function(e) { e.stopPropagation(); });
     dropdown.addEventListener('mousedown', function(e) { e.stopPropagation(); });
     dropdown.addEventListener('focusin', function(e) { e.stopPropagation(); });
+    // منع انتقال التمرير من القائمة إلى المودال (يمنع إغلاق القائمة عند استخدام عجلة الماوس)
+    dropdown.addEventListener('scroll', function(e) { e.stopPropagation(); });
+    dropdown.addEventListener('wheel', function(e) { e.stopPropagation(); });
 
     // زر إزالة الاختيار
     tagRemove.addEventListener('click', function(e) {
@@ -672,8 +675,13 @@ function initTeacherSearch() {
     input.addEventListener('input', function() {
         var query = this.value.trim().toLowerCase();
         if (!query) {
-            dropdown.classList.remove('show');
-            dropdown.innerHTML = '';
+            // عند مسح النص، عرض كل المدرسين بدل إخفاء القائمة
+            if (currentTeachersList.length > 0) {
+                renderTeacherDropdown(currentTeachersList);
+            } else {
+                dropdown.classList.remove('show');
+                dropdown.innerHTML = '';
+            }
             return;
         }
         // تصفية المدرسين المرتبطين بالطالب فقط - دائماً من القائمة الكاملة
@@ -687,16 +695,19 @@ function initTeacherSearch() {
     // عند التركيز على حقل البحث - عرض كل المدرسين المرتبطين بالطالب
     input.addEventListener('focus', function() {
         if (this.disabled) return;
-        if (this.value.trim() === '' && currentTeachersList.length > 0) {
+        if (currentTeachersList.length > 0) {
             renderTeacherDropdown(currentTeachersList);
         }
     });
 
-    // منع إغلاق المودال
+    // منع إغلاق المودال ومنع انتقال التمرير للمودال
     input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
     input.addEventListener('focusin', function(e) { e.stopPropagation(); });
     dropdown.addEventListener('mousedown', function(e) { e.stopPropagation(); });
     dropdown.addEventListener('focusin', function(e) { e.stopPropagation(); });
+    // منع انتقال التمرير من القائمة إلى المودال (يمنع إغلاق القائمة عند استخدام عجلة الماوس)
+    dropdown.addEventListener('scroll', function(e) { e.stopPropagation(); });
+    dropdown.addEventListener('wheel', function(e) { e.stopPropagation(); });
 
     // زر إزالة الاختيار
     tagRemove.addEventListener('click', function(e) {
