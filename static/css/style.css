@@ -842,7 +842,7 @@ table .btn-group.btn-group-sm {
 .modal-content {
     border: none;
     border-radius: var(--radius-xl);
-    overflow: hidden;
+    overflow: visible;
     box-shadow: var(--shadow-xl);
 }
 
@@ -2642,7 +2642,7 @@ textarea:focus-visible {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    z-index: 1060;
+    z-index: 9999;
     display: none;
     overflow: hidden;
     animation: ssDropIn 0.15s ease;

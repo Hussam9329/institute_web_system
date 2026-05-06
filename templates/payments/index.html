@@ -345,16 +345,21 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 var teachersBalanceData = {};
-document.getElementById('pay_date').value = getTodayDate();
 
 // تهيئة البحث المباشر في خانات الطالب والمدرس
 var payStudentSS = null;
 var payTeacherSS = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    // تعيين تاريخ اليوم
+    var payDateEl = document.getElementById('pay_date');
+    if (payDateEl) payDateEl.value = getTodayDate();
+
     payStudentSS = makeSearchableSelect('pay_student_id', {
         placeholder: '-- اختر الطالب --',
         searchPlaceholder: 'ابحث باسم الطالب...',
@@ -552,7 +557,6 @@ function filterPaymentsByDate() {
         const matchDateFrom = !dateFrom || rowDate >= dateFrom;
         const matchDateTo = !dateTo || rowDate <= dateTo;
         const currentlyHiddenByText = row.style.display === 'none' && (dateFrom || dateTo);
-        // إذا لم يكن مخفياً بالبحث النصي، طبق فلتر التاريخ
         if (!currentlyHiddenByText) {
             row.style.display = (matchDateFrom && matchDateTo) ? '' : 'none';
         }
