@@ -1126,7 +1126,8 @@ function getEventsAt(day, time) {
         const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
         const dayMatch = ev.day_of_week === day;
         const isStart = ev.start_time === time;
-        return roomMatch && dayMatch && isStart;
+        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        return roomMatch && dayMatch && isStart && typeMatch;
     });
 }
 
@@ -1194,7 +1195,8 @@ function renderScheduleGrid() {
 // Check if a time slot is occupied by an event that started earlier
 function isSlotOccupied(roomId, day, time) {
     return allSchedule.some(ev => {
-        return ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
+        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        return typeMatch && ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
     });
 }
 
