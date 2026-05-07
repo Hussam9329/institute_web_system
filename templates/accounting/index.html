@@ -2,6 +2,43 @@
 
 {% block title %}محاسبة المدرسين - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== SORT BY ===== */
+.sort-by-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sort-by-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+}
+.sort-by-select {
+    padding: 5px 26px 5px 8px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 8px center;
+    min-width: 130px;
+}
+.sort-by-select:hover { border-color: #93c5fd; }
+.sort-by-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.12); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
 <div class="container-fluid">
@@ -11,6 +48,18 @@
         <div style="min-width:0;">
             <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-calculator me-2"></i>محاسبة المدرسين</h4>
             <p class="text-muted mb-0 small">ملخص مالي شامل لجميع المدرسين</p>
+        </div>
+        <div class="sort-by-wrapper">
+            <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
+            <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
+                <option value="name-asc">الاسم (أ-ي)</option>
+                <option value="name-desc">الاسم (ي-أ)</option>
+                <option value="subject-asc">المادة</option>
+                <option value="remaining-desc">المتبقي (الأعلى)</option>
+                <option value="remaining-asc">المتبقي (الأقل)</option>
+                <option value="received-desc">المدفوع (الأعلى)</option>
+                <option value="students-desc">عدد الطلاب (الأعلى)</option>
+            </select>
         </div>
     </div>
 
@@ -103,7 +152,7 @@
     <!-- ===== بطاقات المدرسين المالية ===== -->
     <div class="row g-3" id="accountingCards">
         {% for teacher in teachers %}
-        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
+        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.financial.total_received or 0 }}" data-remaining="{{ teacher.financial.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
             <div class="list-card h-100">
                 <!-- رأس الكارت بتدرج -->
                 <div class="card-header bg-gradient-blue text-white border-0">
@@ -273,6 +322,28 @@ if (accountingSearchInput) {
             noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
         }
     });
+}
+
+// ===== SORT BY =====
+function applySorting(sortKey) {
+    const [field, direction] = sortKey.split('-');
+    const asc = direction === 'asc' ? 1 : -1;
+
+    const cardsContainer = document.getElementById('accountingCards');
+    if (cardsContainer) {
+        const cards = Array.from(cardsContainer.querySelectorAll('.accounting-card'));
+        cards.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'subject') { va = a.dataset.subject || ''; vb = b.dataset.subject || ''; }
+            else if (field === 'received') { va = parseInt(a.dataset.received) || 0; vb = parseInt(b.dataset.received) || 0; }
+            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
+            else if (field === 'students') { va = parseInt(a.dataset.students) || 0; vb = parseInt(b.dataset.students) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        cards.forEach(card => cardsContainer.appendChild(card));
+    }
 }
 </script>
 {% endblock %}

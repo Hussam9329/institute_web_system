@@ -2,6 +2,50 @@
 
 {% block title %}إدارة المواد الدراسية - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== SORT BY ===== */
+.sort-by-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sort-by-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+}
+.sort-by-select {
+    padding: 5px 26px 5px 8px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 8px center;
+    min-width: 130px;
+}
+.sort-by-select:hover { border-color: #c4b5fd; }
+.sort-by-select:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.12); }
+
+/* ===== MOBILE: Force card view ===== */
+@media (max-width: 991.98px) {
+    #tableView { display: none !important; }
+    #cardView { display: block !important; }
+    .view-toggle-group { display: none !important; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
 <div class="container-fluid">
@@ -12,8 +56,17 @@
             <h4 class="fw-bold mb-1 text-gradient-purple"><i class="fas fa-book-open me-2"></i>المواد الدراسية</h4>
             <p class="text-muted mb-0 small">{{ subjects|length }} مادة</p>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-            <div class="btn-group btn-group-sm" role="group">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <div class="sort-by-wrapper">
+                <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
+                <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
+                    <option value="name-asc">الاسم (أ-ي)</option>
+                    <option value="name-desc">الاسم (ي-أ)</option>
+                    <option value="teachers-desc">عدد المدرسين (الأعلى)</option>
+                    <option value="teachers-asc">عدد المدرسين (الأقل)</option>
+                </select>
+            </div>
+            <div class="btn-group btn-group-sm view-toggle-group" role="group">
                 <button type="button" class="btn btn-outline-primary active" onclick="switchView('table', this)" title="عرض جدول">
                     <i class="fas fa-table"></i>
                 </button>
@@ -79,7 +132,7 @@
                         </thead>
                         <tbody>
                             {% for subject in subjects %}
-                            <tr class="subject-row" data-name="{{ subject.name|lower }}">
+                            <tr class="subject-row" data-name="{{ subject.name|lower }}" data-teachers="{{ subject.teachers_count or 0 }}">
                                 <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -137,7 +190,7 @@
     <div id="cardView" class="d-none">
         <div class="row g-3" id="subjectCards">
             {% for subject in subjects %}
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 subject-card" data-name="{{ subject.name|lower }}">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 subject-card" data-name="{{ subject.name|lower }}" data-teachers="{{ subject.teachers_count or 0 }}">
                 <div class="list-card list-card-accent accent-purple h-100">
                     <div class="card-body">
                         <!-- رأس الكارت -->
@@ -264,11 +317,56 @@
 
 <script>
 function switchView(view, btn) {
+    if (window.innerWidth < 992) return; // منع التبديل على الهاتف
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tableView')?.classList.toggle('d-none', view !== 'table');
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
+
+// ===== SORT BY =====
+function applySorting(sortKey) {
+    const [field, direction] = sortKey.split('-');
+    const asc = direction === 'asc' ? 1 : -1;
+
+    // ترتيب صفوف الجدول
+    const tbody = document.querySelector('#subjectsTable tbody, table tbody');
+    if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('.subject-row'));
+        rows.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'teachers') { va = parseInt(a.dataset.teachers) || 0; vb = parseInt(b.dataset.teachers) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // ترتيب الكارتات
+    const cardsContainer = document.getElementById('subjectCards');
+    if (cardsContainer) {
+        const cards = Array.from(cardsContainer.querySelectorAll('.subject-card'));
+        cards.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'teachers') { va = parseInt(a.dataset.teachers) || 0; vb = parseInt(b.dataset.teachers) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        cards.forEach(card => cardsContainer.appendChild(card));
+    }
+}
+
+// ===== MOBILE: Force card view on load =====
+function enforceMobileView() {
+    if (window.innerWidth < 992) {
+        document.getElementById('tableView')?.classList.add('d-none');
+        document.getElementById('cardView')?.classList.remove('d-none');
+    }
+}
+enforceMobileView();
+window.addEventListener('resize', enforceMobileView);
 
 function editSubject(id, name) {
     document.getElementById('edit_subject_id').value = id;

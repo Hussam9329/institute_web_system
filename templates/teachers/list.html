@@ -2,6 +2,50 @@
 
 {% block title %}إدارة المدرسين - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== SORT BY ===== */
+.sort-by-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sort-by-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+}
+.sort-by-select {
+    padding: 5px 26px 5px 8px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 8px center;
+    min-width: 130px;
+}
+.sort-by-select:hover { border-color: #86efac; }
+.sort-by-select:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,0.12); }
+
+/* ===== MOBILE: Force card view ===== */
+@media (max-width: 991.98px) {
+    #tableView { display: none !important; }
+    #cardView { display: block !important; }
+    .view-toggle-group { display: none !important; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
 <div class="container-fluid">
@@ -12,8 +56,21 @@
             <h4 class="fw-bold mb-1 text-gradient-emerald"><i class="fas fa-chalkboard-teacher me-2"></i>إدارة المدرسين</h4>
             <p class="text-muted mb-0 small">{{ teachers|length }} مدرس مسجل</p>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-            <div class="btn-group btn-group-sm" role="group">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <div class="sort-by-wrapper">
+                <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
+                <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
+                    <option value="name-asc">الاسم (أ-ي)</option>
+                    <option value="name-desc">الاسم (ي-أ)</option>
+                    <option value="subject-asc">المادة</option>
+                    <option value="received-desc">المدفوع (الأعلى)</option>
+                    <option value="received-asc">المدفوع (الأقل)</option>
+                    <option value="remaining-desc">متبقي المدرس (الأعلى)</option>
+                    <option value="remaining-asc">متبقي المدرس (الأقل)</option>
+                    <option value="students-desc">عدد الطلاب (الأعلى)</option>
+                </select>
+            </div>
+            <div class="btn-group btn-group-sm view-toggle-group" role="group">
                 <button type="button" class="btn btn-outline-primary active" onclick="switchView('table', this)" title="عرض جدول">
                     <i class="fas fa-table"></i>
                 </button>
@@ -113,7 +170,7 @@
                         </thead>
                         <tbody>
                             {% for teacher in teachers %}
-                            <tr class="teacher-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
+                            <tr class="teacher-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.total_received or 0 }}" data-remaining="{{ teacher.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
                                 <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                 <td>
                                     <a href="/teachers/{{ teacher.id }}" class="text-decoration-none fw-semibold text-success">
@@ -201,7 +258,7 @@
     <div id="cardView" class="d-none">
         <div class="row g-3" id="teacherCards">
             {% for teacher in teachers %}
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 teacher-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 teacher-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.total_received or 0 }}" data-remaining="{{ teacher.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
                 <div class="list-card list-card-accent accent-emerald h-100">
                     <div class="card-body">
                         <!-- رأس الكارت -->
@@ -296,11 +353,62 @@
 
 <script>
 function switchView(view, btn) {
+    if (window.innerWidth < 992) return; // منع التبديل على الهاتف
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tableView')?.classList.toggle('d-none', view !== 'table');
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
+
+// ===== SORT BY =====
+function applySorting(sortKey) {
+    const [field, direction] = sortKey.split('-');
+    const asc = direction === 'asc' ? 1 : -1;
+
+    // ترتيب صفوف الجدول
+    const tbody = document.querySelector('#teachersTable tbody');
+    if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('.teacher-row'));
+        rows.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'subject') { va = a.dataset.subject || ''; vb = b.dataset.subject || ''; }
+            else if (field === 'received') { va = parseInt(a.dataset.received) || 0; vb = parseInt(b.dataset.received) || 0; }
+            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
+            else if (field === 'students') { va = parseInt(a.dataset.students) || 0; vb = parseInt(b.dataset.students) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // ترتيب الكارتات
+    const cardsContainer = document.getElementById('teacherCards');
+    if (cardsContainer) {
+        const cards = Array.from(cardsContainer.querySelectorAll('.teacher-card'));
+        cards.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'subject') { va = a.dataset.subject || ''; vb = b.dataset.subject || ''; }
+            else if (field === 'received') { va = parseInt(a.dataset.received) || 0; vb = parseInt(b.dataset.received) || 0; }
+            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
+            else if (field === 'students') { va = parseInt(a.dataset.students) || 0; vb = parseInt(b.dataset.students) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        cards.forEach(card => cardsContainer.appendChild(card));
+    }
+}
+
+// ===== MOBILE: Force card view on load =====
+function enforceMobileView() {
+    if (window.innerWidth < 992) {
+        document.getElementById('tableView')?.classList.add('d-none');
+        document.getElementById('cardView')?.classList.remove('d-none');
+    }
+}
+enforceMobileView();
+window.addEventListener('resize', enforceMobileView);
 
 // معالجة أحداث الأزرار عبر data-action (بدون XSS)
 document.addEventListener('click', function(e) {

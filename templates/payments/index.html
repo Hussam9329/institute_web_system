@@ -12,8 +12,22 @@
             <h4 class="fw-bold mb-1 text-gradient-orange"><i class="fas fa-money-check-alt me-2"></i>إدارة الأقساط</h4>
             <p class="text-muted mb-0 small">{{ installments|length }} عملية دفع</p>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-            <div class="btn-group btn-group-sm" role="group">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <div class="sort-by-wrapper">
+                <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
+                <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
+                    <option value="date-desc">التاريخ (الأحدث)</option>
+                    <option value="date-asc">التاريخ (الأقدم)</option>
+                    <option value="name-asc">اسم الطالب (أ-ي)</option>
+                    <option value="name-desc">اسم الطالب (ي-أ)</option>
+                    <option value="amount-desc">المبلغ (الأعلى)</option>
+                    <option value="amount-asc">المبلغ (الأقل)</option>
+                    <option value="remaining-desc">المتبقي (الأعلى)</option>
+                    <option value="remaining-asc">المتبقي (الأقل)</option>
+                    <option value="type-asc">نوع القسط</option>
+                </select>
+            </div>
+            <div class="btn-group btn-group-sm view-toggle-group" role="group">
                 <button type="button" class="btn btn-outline-primary active" onclick="switchView('table', this)" title="عرض جدول">
                     <i class="fas fa-table"></i>
                 </button>
@@ -310,6 +324,46 @@
     #payDiscountSection .pay-section-title:hover {
         opacity: 0.85;
     }
+
+    /* ===== SORT BY ===== */
+    .sort-by-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .sort-by-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        white-space: nowrap;
+    }
+    .sort-by-select {
+        padding: 5px 26px 5px 8px;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: left 8px center;
+        min-width: 130px;
+    }
+    .sort-by-select:hover { border-color: #fcd34d; }
+    .sort-by-select:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.12); }
+
+    /* ===== MOBILE: Force card view ===== */
+    @media (max-width: 991.98px) {
+        #tableView { display: none !important; }
+        #cardView { display: block !important; }
+        .view-toggle-group { display: none !important; }
+    }
     </style>
 
     {% if installments %}
@@ -334,7 +388,7 @@
                         </thead>
                         <tbody>
                             {% for inst in installments %}
-                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
+                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-amount="{{ inst.amount or 0 }}" data-remaining="{{ inst.remaining or 0 }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
                                 <td class="text-center text-muted fw-bold">{{ loop.index }}</td>
                                 <td>
                                     <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">
@@ -392,7 +446,7 @@
     <div id="cardView" class="d-none">
         <div class="row g-3" id="paymentCards">
             {% for inst in installments %}
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 payment-card" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 payment-card" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-amount="{{ inst.amount or 0 }}" data-remaining="{{ inst.remaining or 0 }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
                 <div class="list-card list-card-accent accent-orange h-100">
                     <div class="card-body">
                         <!-- رأس الكارت -->
@@ -1360,11 +1414,62 @@ function escapeHtml(text) {
 }
 
 function switchView(view, btn) {
+    if (window.innerWidth < 992) return; // منع التبديل على الهاتف
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tableView')?.classList.toggle('d-none', view !== 'table');
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
+
+// ===== SORT BY =====
+function applySorting(sortKey) {
+    const [field, direction] = sortKey.split('-');
+    const asc = direction === 'asc' ? 1 : -1;
+
+    // ترتيب صفوف الجدول
+    const tbody = document.querySelector('#paymentsTable tbody');
+    if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('.payment-row'));
+        rows.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'date') { va = a.dataset.date || ''; vb = b.dataset.date || ''; }
+            else if (field === 'amount') { va = parseInt(a.dataset.amount) || 0; vb = parseInt(b.dataset.amount) || 0; }
+            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
+            else if (field === 'type') { va = a.dataset.type || ''; vb = b.dataset.type || ''; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // ترتيب الكارتات
+    const cardsContainer = document.getElementById('paymentCards');
+    if (cardsContainer) {
+        const cards = Array.from(cardsContainer.querySelectorAll('.payment-card'));
+        cards.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'date') { va = a.dataset.date || ''; vb = b.dataset.date || ''; }
+            else if (field === 'amount') { va = parseInt(a.dataset.amount) || 0; vb = parseInt(b.dataset.amount) || 0; }
+            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
+            else if (field === 'type') { va = a.dataset.type || ''; vb = b.dataset.type || ''; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        cards.forEach(card => cardsContainer.appendChild(card));
+    }
+}
+
+// ===== MOBILE: Force card view on load =====
+function enforceMobileView() {
+    if (window.innerWidth < 992) {
+        document.getElementById('tableView')?.classList.add('d-none');
+        document.getElementById('cardView')?.classList.remove('d-none');
+    }
+}
+enforceMobileView();
+window.addEventListener('resize', enforceMobileView);
 
 async function submitPayment(event) {
     event.preventDefault();

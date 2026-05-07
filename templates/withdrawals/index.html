@@ -20,6 +20,45 @@
     @media (max-width: 767px) {
         .action-btns .btn { padding: 0.25rem 0.4rem; font-size: 0.72rem; }
     }
+
+    /* ===== SORT BY ===== */
+    .sort-by-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .sort-by-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        white-space: nowrap;
+    }
+    .sort-by-select {
+        padding: 5px 26px 5px 8px;
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        outline: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: left 8px center;
+        min-width: 130px;
+    }
+    .sort-by-select:hover { border-color: #86efac; }
+    .sort-by-select:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,0.12); }
+
+    /* ===== MOBILE: Force card view ===== */
+    @media (max-width: 991.98px) {
+        #tableView { display: none !important; }
+        #cardView { display: block !important; }
+    }
 </style>
 {% endblock %}
 
@@ -35,9 +74,22 @@
             </h4>
             <p class="text-muted mb-0 small">إدارة جميع سحوبات المدرسين</p>
         </div>
-        <button class="btn btn-success btn-sm" onclick="openAddWithdrawalModal()">
-            <i class="fas fa-plus me-1"></i>سحب جديد
-        </button>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <div class="sort-by-wrapper">
+                <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
+                <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
+                    <option value="date-desc">التاريخ (الأحدث)</option>
+                    <option value="date-asc">التاريخ (الأقدم)</option>
+                    <option value="name-asc">المدرس (أ-ي)</option>
+                    <option value="name-desc">المدرس (ي-أ)</option>
+                    <option value="amount-desc">المبلغ (الأعلى)</option>
+                    <option value="amount-asc">المبلغ (الأقل)</option>
+                </select>
+            </div>
+            <button class="btn btn-success btn-sm" onclick="openAddWithdrawalModal()">
+                <i class="fas fa-plus me-1"></i>سحب جديد
+            </button>
+        </div>
     </div>
 
     <!-- ===== بطاقات الإحصائيات ===== -->
@@ -83,6 +135,7 @@
     </div>
 
     <!-- ===== جدول السحوبات ===== -->
+    <div id="tableView">
     <div class="card withdraw-card">
         <div class="card-header bg-gradient-emerald text-white border-0 py-2">
             <h6 class="mb-0">
@@ -106,7 +159,7 @@
                     </thead>
                     <tbody>
                         {% for w in withdrawals %}
-                        <tr class="withdrawal-row" data-date="{{ w.withdrawal_date }}">
+                        <tr class="withdrawal-row" data-date="{{ w.withdrawal_date }}" data-name="{{ w.teacher_name|lower }}" data-amount="{{ w.amount or 0 }}">
                             <td class="fw-bold text-muted">{{ loop.index }}</td>
                             <td>
                                 <a href="/teachers/{{ w.teacher_id }}" class="text-decoration-none fw-semibold">
@@ -148,6 +201,56 @@
             </div>
             {% endif %}
         </div>
+    </div>
+    </div>
+
+    <!-- ===== عرض الكارتات (للهاتف) ===== -->
+    <div id="cardView" class="d-none">
+        {% if withdrawals %}
+        <div class="row g-3" id="withdrawalCards">
+            {% for w in withdrawals %}
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 withdrawal-card-item" data-date="{{ w.withdrawal_date }}" data-name="{{ w.teacher_name|lower }}" data-amount="{{ w.amount or 0 }}">
+                <div class="list-card list-card-accent accent-emerald h-100">
+                    <div class="card-body">
+                        <div class="list-card-header">
+                            <div class="list-card-icon icon-emerald">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="header-text">
+                                <h6 class="mb-1"><a href="/teachers/{{ w.teacher_id }}" class="text-decoration-none text-dark">{{ w.teacher_name }}</a></h6>
+                                <div class="header-sub"><i class="fas fa-book-open me-1"></i>{{ w.subject }}</div>
+                            </div>
+                        </div>
+                        <div class="list-card-divider"></div>
+                        <div class="list-card-info" style="grid-template-columns: 1fr 1fr;">
+                            <div class="info-item" style="background: rgba(245,158,11,0.08);">
+                                <div class="info-label">المبلغ</div>
+                                <div class="info-value text-warning">{{ format_currency(w.amount) }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">التاريخ</div>
+                                <div class="info-value" style="font-size: 0.82rem;">{{ format_date(w.withdrawal_date) }}</div>
+                            </div>
+                        </div>
+                        {% if w.notes %}
+                        <div class="header-sub mb-2"><i class="fas fa-sticky-note me-1"></i>{{ w.notes[:50] }}</div>
+                        {% endif %}
+                        <div class="list-card-divider"></div>
+                        <div class="list-card-actions">
+                            <button class="btn btn-outline-warning btn-sm" data-action="edit-withdrawal" data-id="{{ w.id }}" data-amount="{{ w.amount }}" data-date="{{ w.withdrawal_date }}" data-notes="{{ (w.notes or '') | e }}" title="تعديل"><i class="fas fa-edit me-1"></i>تعديل</button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteWithdrawal({{ w.id }})" title="حذف"><i class="fas fa-trash me-1"></i>حذف</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-receipt fa-3x text-muted d-block mb-3"></i>
+            <p class="text-muted mb-0">لا توجد سحوبات مسجلة</p>
+        </div>
+        {% endif %}
     </div>
 
 </div>
@@ -376,6 +479,52 @@ async function deleteWithdrawal(withdrawalId) {
         showAlert(error.message, 'error');
     }
 }
+
+// ===== SORT BY =====
+function applySorting(sortKey) {
+    const [field, direction] = sortKey.split('-');
+    const asc = direction === 'asc' ? 1 : -1;
+
+    // ترتيب صفوف الجدول
+    const tbody = document.querySelector('#withdrawalsTable tbody');
+    if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('.withdrawal-row'));
+        rows.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'date') { va = a.dataset.date || ''; vb = b.dataset.date || ''; }
+            else if (field === 'amount') { va = parseInt(a.dataset.amount) || 0; vb = parseInt(b.dataset.amount) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // ترتيب الكارتات
+    const cardsContainer = document.getElementById('withdrawalCards');
+    if (cardsContainer) {
+        const cards = Array.from(cardsContainer.querySelectorAll('.withdrawal-card-item'));
+        cards.sort((a, b) => {
+            let va, vb;
+            if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
+            else if (field === 'date') { va = a.dataset.date || ''; vb = b.dataset.date || ''; }
+            else if (field === 'amount') { va = parseInt(a.dataset.amount) || 0; vb = parseInt(b.dataset.amount) || 0; }
+            if (typeof va === 'number') return (va - vb) * asc;
+            return va.localeCompare(vb, 'ar') * asc;
+        });
+        cards.forEach(card => cardsContainer.appendChild(card));
+    }
+}
+
+// ===== MOBILE: Force card view on load =====
+function enforceMobileView() {
+    if (window.innerWidth < 992) {
+        document.getElementById('tableView')?.classList.add('d-none');
+        document.getElementById('cardView')?.classList.remove('d-none');
+    }
+}
+enforceMobileView();
+window.addEventListener('resize', enforceMobileView);
 
 async function submitAddWithdrawal(event) {
     event.preventDefault();
