@@ -418,23 +418,30 @@ const PrintUtils = {
     },
 
     /**
-     * Print Teachers List
+     * Print Teachers List - includes institute rate, institute deduction, teacher due, withdrawn
      */
     printTeachers() {
         const visibleRows = [];
         const allRows = document.querySelectorAll('.teacher-row');
-        let totalReceived = 0, totalRemaining = 0, count = 0;
+        let totalReceived = 0, totalRemaining = 0, totalDeduction = 0, totalTeacherDue = 0, totalWithdrawn = 0, count = 0;
 
         allRows.forEach(row => {
             if (row.style.display === 'none') return;
             count++;
             totalReceived += parseInt(row.dataset.received) || 0;
             totalRemaining += parseInt(row.dataset.remaining) || 0;
+            totalDeduction += parseInt(row.dataset.deduction) || 0;
+            totalTeacherDue += parseInt(row.dataset.teacherDue) || 0;
+            totalWithdrawn += parseInt(row.dataset.withdrawn) || 0;
 
             const cells = row.querySelectorAll('td');
             const name = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : '';
             const subject = row.dataset.subject || '';
             const received = parseInt(row.dataset.received) || 0;
+            const rateDisplay = row.dataset.rateDisplay || '';
+            const deduction = parseInt(row.dataset.deduction) || 0;
+            const teacherDue = parseInt(row.dataset.teacherDue) || 0;
+            const withdrawn = parseInt(row.dataset.withdrawn) || 0;
             const remaining = parseInt(row.dataset.remaining) || 0;
             const students = parseInt(row.dataset.students) || 0;
 
@@ -443,6 +450,10 @@ const PrintUtils = {
                 name,
                 `<span class="badge-continue">${subject}</span>`,
                 formatCurrency(received),
+                rateDisplay,
+                `<span style="color:var(--danger);font-weight:600">${formatCurrency(deduction)}</span>`,
+                `<span style="color:var(--info);font-weight:600">${formatCurrency(teacherDue)}</span>`,
+                `<span style="color:var(--warning);font-weight:600">${formatCurrency(withdrawn)}</span>`,
                 remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(remaining)}</span>` : '<span style="color:var(--muted)">0</span>',
                 students
             ]);
@@ -454,7 +465,10 @@ const PrintUtils = {
         }
 
         visibleRows.push([
-            '', 'الإجمالي', '', formatCurrency(totalReceived),
+            '', 'الإجمالي', '', formatCurrency(totalReceived), '',
+            `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
+            `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
+            `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
             totalRemaining > 0 ? formatCurrency(totalRemaining) : '0', ''
         ]);
 
@@ -470,22 +484,24 @@ const PrintUtils = {
         }
 
         this.openReport({
-            title: 'تقرير المدرسين',
+            title: 'تقرير المدرسين الشامل',
             subtitle: `${count} مدرس مسجل`,
             kpis: [
                 { value: count, label: 'إجمالي المدرسين', cls: 'kpi-success' },
                 { value: formatCurrency(totalReceived), label: 'إجمالي المدفوع', cls: 'kpi-accent' },
-                { value: formatCurrency(totalRemaining), label: 'إجمالي متبقي المدرسين', cls: totalRemaining > 0 ? 'kpi-success' : 'kpi-warning' },
-                { value: visibleRows.reduce((s, r) => s + (parseInt(r[5]) || 0), 0), label: 'إجمالي الطلاب', cls: 'kpi-purple' }
+                { value: formatCurrency(totalDeduction), label: 'إجمالي خصم المعهد', cls: 'kpi-danger' },
+                { value: formatCurrency(totalTeacherDue), label: 'إجمالي مستحق المدرسين', cls: 'kpi-info' },
+                { value: formatCurrency(totalWithdrawn), label: 'إجمالي المسحوب', cls: 'kpi-warning' },
+                { value: formatCurrency(totalRemaining), label: 'إجمالي متبقي المدرسين', cls: totalRemaining > 0 ? 'kpi-success' : 'kpi-purple' }
             ],
             filters: filters,
             sections: [{
-                title: 'قائمة المدرسين',
+                title: 'قائمة المدرسين - التفاصيل المالية الشاملة',
                 icon: 'chalkboard-teacher',
                 content: this.buildTableHTML(
-                    ['#', 'المدرس', 'المادة', 'المدفوع', 'متبقي المدرس', 'الطلاب'],
+                    ['#', 'المدرس', 'المادة', 'المدفوع', 'نسبة المعهد', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي', 'الطلاب'],
                     visibleRows,
-                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
+                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
                 )
             }]
         });
@@ -546,7 +562,7 @@ const PrintUtils = {
     },
 
     /**
-     * Print Payments/Installments List
+     * Print Payments/Installments List - includes financial summary with deductions
      */
     printPayments() {
         const visibleRows = [];
@@ -611,8 +627,17 @@ const PrintUtils = {
             filters.push('الترتيب: ' + sortText);
         }
 
+        // Collect financial summary stats from the page header cards
+        const summaryCards = document.querySelectorAll('.bg-gradient-emerald, .bg-gradient-blue, .bg-gradient-purple');
+        let totalPaidFromCards = totalAmount;
+        let totalOperations = count;
+        let totalPayers = studentSet.size;
+        summaryCards.forEach(card => {
+            const valueText = card.querySelector('h5')?.textContent?.trim() || '';
+        });
+
         this.openReport({
-            title: 'تقرير الأقساط والمدفوعات',
+            title: 'تقرير الأقساط والمدفوعات الشامل',
             subtitle: `${count} عملية دفع`,
             kpis: [
                 { value: formatCurrency(totalAmount), label: 'إجمالي المدفوعات', cls: 'kpi-success' },
@@ -622,7 +647,7 @@ const PrintUtils = {
             ],
             filters: filters,
             sections: [{
-                title: 'سجل الأقساط',
+                title: 'سجل الأقساط والمدفوعات',
                 icon: 'money-check-alt',
                 content: this.buildTableHTML(
                     ['#', 'الطالب', 'المدرس', 'المادة', 'المبلغ', 'المتبقي', 'النوع', 'التاريخ'],
@@ -704,20 +729,26 @@ const PrintUtils = {
     },
 
     /**
-     * Print Accounting Page
+     * Print Accounting Page - comprehensive with deductions, teacher due, withdrawn
      */
     printAccounting() {
         const visibleCards = [];
         const allCards = document.querySelectorAll('.accounting-card');
-        let totalReceived = 0, totalRemaining = 0, totalStudents = 0, count = 0;
+        let totalReceived = 0, totalDeduction = 0, totalTeacherDue = 0, totalWithdrawn = 0, totalRemaining = 0, totalStudents = 0, count = 0;
 
         allCards.forEach(card => {
             if (card.style.display === 'none') return;
             count++;
             const received = parseInt(card.dataset.received) || 0;
+            const deduction = parseInt(card.dataset.deduction) || 0;
+            const teacherDue = parseInt(card.dataset.teacherDue) || 0;
+            const withdrawn = parseInt(card.dataset.withdrawn) || 0;
             const remaining = parseInt(card.dataset.remaining) || 0;
             const students = parseInt(card.dataset.students) || 0;
             totalReceived += received;
+            totalDeduction += deduction;
+            totalTeacherDue += teacherDue;
+            totalWithdrawn += withdrawn;
             totalRemaining += remaining;
             totalStudents += students;
 
@@ -725,6 +756,9 @@ const PrintUtils = {
                 name: card.dataset.name || '',
                 subject: card.dataset.subject || '',
                 received: received,
+                deduction: deduction,
+                teacherDue: teacherDue,
+                withdrawn: withdrawn,
                 remaining: remaining,
                 students: students
             });
@@ -741,10 +775,19 @@ const PrintUtils = {
             `<span class="badge-continue">${c.subject}</span>`,
             c.students,
             formatCurrency(c.received),
+            `<span style="color:var(--danger);font-weight:600">${formatCurrency(c.deduction)}</span>`,
+            `<span style="color:var(--info);font-weight:600">${formatCurrency(c.teacherDue)}</span>`,
+            `<span style="color:var(--warning);font-weight:600">${formatCurrency(c.withdrawn)}</span>`,
             c.remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(c.remaining)}</span>` : '<span style="color:var(--muted)">0</span>'
         ]);
 
-        rows.push(['', 'الإجمالي', '', totalStudents, formatCurrency(totalReceived), totalRemaining > 0 ? formatCurrency(totalRemaining) : '0']);
+        rows.push([
+            '', 'الإجمالي', '', totalStudents, formatCurrency(totalReceived),
+            `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
+            `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
+            `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
+            totalRemaining > 0 ? formatCurrency(totalRemaining) : '0'
+        ]);
 
         const filters = [];
         const searchVal = document.getElementById('accountingLiveSearch')?.value;
@@ -760,29 +803,32 @@ const PrintUtils = {
         }
 
         this.openReport({
-            title: 'تقرير محاسبة المدرسين',
+            title: 'تقرير محاسبة المدرسين الشامل',
             subtitle: `${count} مدرس`,
             kpis: [
                 { value: count, label: 'المدرسين', cls: 'kpi-accent' },
                 { value: totalStudents, label: 'الطلاب الكلي', cls: 'kpi-success' },
-                { value: formatCurrency(totalRemaining), label: 'إجمالي المتبقي', cls: 'kpi-purple' },
-                { value: formatCurrency(totalReceived), label: 'إجمالي المدفوع', cls: 'kpi-warning' }
+                { value: formatCurrency(totalReceived), label: 'إجمالي المدفوع', cls: 'kpi-accent' },
+                { value: formatCurrency(totalDeduction), label: 'إجمالي خصم المعهد', cls: 'kpi-danger' },
+                { value: formatCurrency(totalTeacherDue), label: 'إجمالي مستحق المدرسين', cls: 'kpi-info' },
+                { value: formatCurrency(totalWithdrawn), label: 'إجمالي المسحوب', cls: 'kpi-warning' },
+                { value: formatCurrency(totalRemaining), label: 'إجمالي المتبقي', cls: 'kpi-purple' }
             ],
             filters: filters,
             sections: [{
-                title: 'ملخص محاسبة المدرسين',
+                title: 'ملخص محاسبة المدرسين - التفاصيل الشاملة',
                 icon: 'calculator',
                 content: this.buildTableHTML(
-                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'متبقي المدرس'],
+                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي'],
                     rows,
-                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
+                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
                 )
             }]
         });
     },
 
     /**
-     * Print Statistics Page with selective info
+     * Print Statistics Page with selective info - includes deductions and institute rates
      */
     printStats() {
         // Get stats data from the page
@@ -839,12 +885,16 @@ const PrintUtils = {
         let includeKPIs = true;
         let includeDetail = true;
         let includeFinancial = true;
+        let includeDeductions = true;
+        let includeTeacherDue = true;
 
         if (printCheckboxes.length > 0) {
             includeKPIs = document.getElementById('print_cb_kpis')?.checked !== false;
             includeDetail = document.getElementById('print_cb_detail')?.checked !== false;
             includeFinancial = document.getElementById('print_cb_financial')?.checked !== false;
             includeNet = document.getElementById('print_cb_net')?.checked !== false;
+            includeDeductions = document.getElementById('print_cb_deductions')?.checked !== false;
+            includeTeacherDue = document.getElementById('print_cb_teacher_due')?.checked !== false;
 
             // Filter detail rows based on individual checkboxes
             selectedData = [];
@@ -887,6 +937,41 @@ const PrintUtils = {
             });
         }
 
+        // خصم المعهد والاستقطاعات
+        if (includeDeductions) {
+            // استخراج بيانات الخصم من جدول التفاصيل أو من البطاقات المالية
+            const deductionData = allData.find(d => d.label.includes('خصم المعهد') || d.label.includes('استقطاع'));
+            const totalDeduction = deductionData ? deductionData.value : '';
+            if (totalDeduction) {
+                sections.push({
+                    title: 'خصم المعهد (الاستقطاعات)',
+                    icon: 'building',
+                    content: `<div style="text-align:center;padding:20px;background:#fef2f2;border-radius:14px;border:2px solid rgba(239,68,68,0.25);">
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي خصم المعهد (الاستقطاعات)</div>
+                        <div style="font-size:28px;font-weight:900;color:var(--danger);">${totalDeduction}</div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">نسبة المعهد المستقطعة من المدفوعات</div>
+                    </div>`
+                });
+            }
+        }
+
+        // مستحق المدرسين
+        if (includeTeacherDue) {
+            const teacherDueData = allData.find(d => d.label.includes('مستحق المدرس'));
+            const totalTeacherDue = teacherDueData ? teacherDueData.value : '';
+            if (totalTeacherDue) {
+                sections.push({
+                    title: 'مستحق المدرسين',
+                    icon: 'user-tie',
+                    content: `<div style="text-align:center;padding:20px;background:rgba(6,182,212,0.06);border-radius:14px;border:2px solid rgba(6,182,212,0.25);">
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي مستحق المدرسين (بعد خصم المعهد)</div>
+                        <div style="font-size:28px;font-weight:900;color:var(--info);">${totalTeacherDue}</div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">المدفوعات - خصم المعهد = مستحق المدرسين</div>
+                    </div>`
+                });
+            }
+        }
+
         if (includeNet && netValue) {
             sections.push({
                 title: netLabel || 'صافي الإيرادات',
@@ -898,10 +983,20 @@ const PrintUtils = {
             });
         }
 
+        // Add comprehensive financial summary KPIs if deductions are included
+        const enhancedKpis = includeKPIs ? [...kpis] : [];
+        if (includeDeductions && includeKPIs) {
+            // Already have the stat cards, add institute-specific KPIs
+            const deductionData = allData.find(d => d.label.includes('خصم المعهد') || d.label.includes('استقطاع'));
+            if (deductionData) {
+                enhancedKpis.push({ value: deductionData.value, label: 'خصم المعهد', cls: 'kpi-danger' });
+            }
+        }
+
         this.openReport({
-            title: 'التقرير الإحصائي العام',
-            subtitle: 'نظرة شاملة على أداء المعهد',
-            kpis: includeKPIs ? kpis : [],
+            title: 'التقرير الإحصائي الشامل',
+            subtitle: 'نظرة شاملة على أداء المعهد مع التفاصيل المالية',
+            kpis: enhancedKpis,
             sections: sections
         });
     }

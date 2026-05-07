@@ -155,7 +155,7 @@
     <!-- ===== بطاقات المدرسين المالية ===== -->
     <div class="row g-3" id="accountingCards">
         {% for teacher in teachers %}
-        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.financial.total_received or 0 }}" data-remaining="{{ teacher.financial.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
+        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.financial.total_received or 0 }}" data-deduction="{{ teacher.financial.institute_deduction or 0 }}" data-teacher-due="{{ teacher.financial.teacher_due or 0 }}" data-withdrawn="{{ teacher.financial.withdrawn_total or 0 }}" data-remaining="{{ teacher.financial.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
             <div class="list-card h-100">
                 <!-- رأس الكارت بتدرج -->
                 <div class="card-header bg-gradient-blue text-white border-0">
