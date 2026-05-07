@@ -100,6 +100,20 @@
     box-shadow: 0 2px 6px rgba(79,70,229,0.3);
 }
 .ws-room-pill i { font-size: 11px; }
+.ws-room-pill .pill-num {
+    background: rgba(255,255,255,0.25);
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 800;
+}
+.ws-room-pill.active .pill-num {
+    background: rgba(255,255,255,0.3);
+}
+.ws-room-pill:not(.active) .pill-num {
+    background: #eef2ff;
+    color: #4f46e5;
+}
 
 /* Type Filter - 3 color-coded pills */
 .ws-type-pills {
@@ -223,6 +237,50 @@
     font-size: 11px; color: #6b7280; font-weight: 600;
 }
 
+/* ===== ROOM GRID SECTION ===== */
+.ws-room-section {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.ws-room-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    border-bottom: 2px solid #e0e7ff;
+}
+.ws-room-section-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 16px;
+}
+.ws-room-section-title {
+    flex: 1;
+}
+.ws-room-section-title h5 {
+    margin: 0; font-weight: 800; font-size: 16px; color: #1e1b4b;
+    display: flex; align-items: center; gap: 8px;
+}
+.ws-room-section-title h5 .room-num {
+    background: #4f46e5;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 800;
+}
+.ws-room-section-title .room-meta {
+    font-size: 12px; color: #64748b; font-weight: 500; margin-top: 2px;
+    display: flex; gap: 12px;
+}
+.ws-room-section-title .room-meta i { font-size: 10px; margin-left: 3px; }
+
 /* ===== SCHEDULE GRID ===== */
 .ws-grid-wrap {
     background: white;
@@ -325,6 +383,19 @@
 }
 .ws-lec .ws-ev-info { color: #3b82f6; }
 .ws-exm .ws-ev-info { color: #ea580c; }
+.ws-ev .ws-ev-room-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(79,70,229,0.12);
+    color: #4f46e5;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    margin-bottom: 1px;
+}
+.ws-ev .ws-ev-room-tag i { font-size: 8px; }
 /* Hover actions */
 .ws-ev .ws-ev-acts {
     position: absolute;
@@ -359,6 +430,44 @@
 }
 .ws-add-btn:hover {
     border-color: #6366f1; color: #6366f1; background: #f5f3ff;
+}
+
+/* ===== PAGINATION ===== */
+.ws-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 0 8px;
+    flex-wrap: wrap;
+}
+.ws-page-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.ws-page-btn:hover { border-color: #a5b4fc; color: #4f46e5; }
+.ws-page-btn.active {
+    background: #4f46e5; color: white; border-color: #4f46e5;
+}
+.ws-page-btn.ws-page-nav {
+    width: auto;
+    padding: 0 14px;
+    gap: 5px;
+    font-size: 12px;
+}
+.ws-page-info {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    padding: 0 8px;
 }
 
 /* ===== LIST VIEW ===== */
@@ -516,6 +625,7 @@
     color: #4f46e5; font-size: 13px;
 }
 .ws-room-row .rr-name { font-weight: 600; color: #1e293b; font-size: 13.5px; }
+.ws-room-row .rr-id { font-size: 11px; color: #4f46e5; font-weight: 700; background: #eef2ff; padding: 1px 7px; border-radius: 6px; }
 .ws-room-row .rr-cap { font-size: 11.5px; color: #64748b; }
 .ws-room-row .rr-acts { display: flex; gap: 4px; }
 .ws-room-row .rr-acts button {
@@ -576,6 +686,10 @@
     .ws-lv { padding: 8px 10px; }
     .ws-lv .ws-lv-subj { font-size: 12.5px; }
     .ws-lv .ws-lv-meta { font-size: 10.5px; }
+    .ws-room-section-header { padding: 10px 14px; gap: 8px; }
+    .ws-room-section-icon { width: 34px; height: 34px; font-size: 14px; }
+    .ws-room-section-title h5 { font-size: 14px; }
+    .ws-page-btn { width: 32px; height: 32px; font-size: 12px; }
 }
 </style>
 {% endblock %}
@@ -671,25 +785,11 @@
 <!-- STATS BAR -->
 <div class="ws-stats" id="statsBar"></div>
 
-<!-- SCHEDULE GRID VIEW -->
-<div class="ws-grid-wrap" id="gridWrap">
-    <div class="ws-grid-scroll">
-        <table class="ws-grid" id="scheduleGrid">
-            <thead>
-                <tr>
-                    <th class="ws-time-col">الوقت</th>
-                    <th>الإثنين</th>
-                    <th>الثلاثاء</th>
-                    <th>الأربعاء</th>
-                    <th>الخميس</th>
-                    <th>الجمعة</th>
-                    <th>السبت</th>
-                    <th>الأحد</th>
-                </tr>
-            </thead>
-            <tbody id="gridBody"></tbody>
-        </table>
-    </div>
+<!-- SCHEDULE GRID VIEW - now dynamic container for room sections -->
+<div id="gridWrap">
+    <div id="gridContent"></div>
+    <!-- Pagination for all-rooms view -->
+    <div id="gridPagination" class="ws-pagination"></div>
 </div>
 
 <!-- SCHEDULE LIST VIEW -->
@@ -847,6 +947,10 @@ let currentTeacherFilter = 0;
 let currentDayFilter = 'all';
 let currentViewMode = 'grid';
 
+// ===== PAGINATION STATE =====
+let currentRoomPage = 1;
+const ROOMS_PER_PAGE = 4;
+
 const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 const TIME_SLOTS = [];
 for (let h = 7; h <= 21; h++) {
@@ -883,13 +987,14 @@ function renderRoomPills() {
     const el = document.getElementById('roomPills');
     let html = '<div class="ws-room-pill ' + (currentRoomFilter === 'all' ? 'active' : '') + '" onclick="filterByRoom(\'all\')"><i class="fas fa-th"></i> الكل</div>';
     allRooms.forEach(room => {
-        html += '<div class="ws-room-pill ' + (currentRoomFilter === room.id ? 'active' : '') + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open"></i> ' + escapeHtml(room.name) + '</div>';
+        html += '<div class="ws-room-pill ' + (currentRoomFilter === room.id ? 'active' : '') + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open"></i> ' + escapeHtml(room.name) + ' <span class="pill-num">#' + room.id + '</span></div>';
     });
     el.innerHTML = html;
 }
 
 function filterByRoom(roomId) {
     currentRoomFilter = roomId;
+    currentRoomPage = 1;
     currentSortBy = 'time';
     currentEventTypeFilter = 'all';
     currentTeacherFilter = 0;
@@ -960,10 +1065,6 @@ function renderFilterDropdowns() {
         dhtml += '<option value="' + day + '" ' + (currentDayFilter === day ? 'selected' : '') + '>' + day + '</option>';
     });
     dayEl.innerHTML = dhtml;
-
-    // Show/hide day filter based on current room
-    dayEl.parentElement; // it's inside ws-controls
-    // Always show day filter now
 }
 
 function setSortBy(sortType) {
@@ -1042,11 +1143,11 @@ function renderCurrentView() {
     const gridWrap = document.getElementById('gridWrap');
     const listWrap = document.getElementById('listWrap');
     if (currentViewMode === 'grid') {
-        gridWrap.classList.remove('hidden');
+        gridWrap.style.display = '';
         listWrap.classList.remove('active');
         renderScheduleGrid();
     } else {
-        gridWrap.classList.add('hidden');
+        gridWrap.style.display = 'none';
         listWrap.classList.add('active');
         renderScheduleList();
     }
@@ -1060,7 +1161,20 @@ function isSlotOccupied(roomId, day, time) {
     });
 }
 
-// ===== HELPER: Get events at slot =====
+// ===== HELPER: Get events at slot for a specific room =====
+function getEventsAtForRoom(roomId, day, time) {
+    return allSchedule.filter(ev => {
+        const roomMatch = ev.room_id === roomId;
+        const dayMatch = ev.day_of_week === day;
+        const isStart = ev.start_time === time;
+        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
+        const dayMatchFilter = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
+        return roomMatch && dayMatch && isStart && typeMatch && teacherMatch && dayMatchFilter;
+    });
+}
+
+// ===== HELPER: Get events at slot for all rooms (legacy) =====
 function getEventsAt(day, time) {
     return allSchedule.filter(ev => {
         const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
@@ -1071,55 +1185,152 @@ function getEventsAt(day, time) {
     });
 }
 
-// ===== SCHEDULE GRID =====
-function renderScheduleGrid() {
-    const tbody = document.getElementById('gridBody');
-    const activeRoom = currentRoomFilter !== 'all' ? allRooms.find(r => r.id === currentRoomFilter) : null;
-    let html = '';
+// ===== BUILD SINGLE ROOM GRID TABLE =====
+function buildRoomGridTable(room) {
+    let html = '<div class="ws-room-section">';
+    // Room header
+    html += '<div class="ws-room-section-header">';
+    html += '<div class="ws-room-section-icon"><i class="fas fa-door-open"></i></div>';
+    html += '<div class="ws-room-section-title">';
+    html += '<h5><span class="room-num">#' + room.id + '</span> ' + escapeHtml(room.name) + '</h5>';
+    html += '<div class="room-meta">';
+    html += '<span><i class="fas fa-users"></i> السعة: ' + (room.capacity || '-') + '</span>';
+    const roomEvents = allSchedule.filter(ev => {
+        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
+        const dayMatch = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
+        return ev.room_id === room.id && typeMatch && teacherMatch && dayMatch;
+    });
+    html += '<span><i class="fas fa-calendar-check"></i> الفعاليات: ' + roomEvents.length + '</span>';
+    html += '</div></div></div>';
+
+    // Grid table
+    html += '<div class="ws-grid-scroll"><table class="ws-grid"><thead><tr>';
+    html += '<th class="ws-time-col">الوقت</th>';
+    DAYS.forEach(day => { html += '<th>' + day + '</th>'; });
+    html += '</tr></thead><tbody>';
 
     TIME_SLOTS.forEach(time => {
         html += '<tr>';
         html += '<td class="ws-time-cell">' + time + '</td>';
 
         DAYS.forEach(day => {
-            const events = getEventsAt(day, time);
+            const events = getEventsAtForRoom(room.id, day, time);
             if (events.length > 0) {
                 html += '<td>';
                 events.forEach(ev => {
                     const isExam = (ev.event_type === 'امتحان');
                     const cls = isExam ? 'ws-exm' : 'ws-lec';
                     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
-                    const startMin = timeToMinutes(ev.start_time);
-                    const endMin = timeToMinutes(ev.end_time);
-                    const slots = Math.max(1, Math.round((endMin - startMin) / 60));
 
-                    html += '<div class="ws-ev ' + cls + '" title="' + escapeHtml(ev.room_name) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time + '">';
+                    html += '<div class="ws-ev ' + cls + '" title="' + escapeHtml(ev.subject) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time + '">';
                     html += '<div class="ws-ev-acts">';
                     html += '<button class="act-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
                     html += '<button class="act-del" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
                     html += '</div>';
                     html += '<div class="ws-ev-type">' + typeLabel + '</div>';
                     html += '<div class="ws-ev-subj">' + escapeHtml(ev.subject) + '</div>';
-                    if (currentRoomFilter === 'all') {
-                        html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + ' | ' + escapeHtml(ev.room_name) + '</div>';
-                    } else {
-                        html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + '</div>';
-                    }
+                    html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + '</div>';
                     html += '</div>';
                 });
                 html += '</td>';
             } else {
-                const isBlocked = activeRoom ? isSlotOccupied(activeRoom.id, day, time) : false;
+                const isBlocked = isSlotOccupied(room.id, day, time);
                 if (isBlocked) {
                     html += '<td class="ws-blocked"></td>';
                 } else {
-                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
+                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
                 }
             }
         });
         html += '</tr>';
     });
-    tbody.innerHTML = html;
+
+    html += '</tbody></table></div></div>';
+    return html;
+}
+
+// ===== SCHEDULE GRID (main render) =====
+function renderScheduleGrid() {
+    const container = document.getElementById('gridContent');
+    const paginationEl = document.getElementById('gridPagination');
+
+    if (currentRoomFilter !== 'all') {
+        // Single room view
+        paginationEl.innerHTML = '';
+        const room = allRooms.find(r => r.id === currentRoomFilter);
+        if (!room) {
+            container.innerHTML = '<div class="ws-empty"><i class="fas fa-door-open"></i><p>القاعة غير موجودة</p></div>';
+            return;
+        }
+        container.innerHTML = buildRoomGridTable(room);
+    } else {
+        // All rooms view with pagination
+        if (allRooms.length === 0) {
+            container.innerHTML = '<div class="ws-empty"><i class="fas fa-door-open"></i><p>لا توجد قاعات بعد. قم بإضافة قاعات من زر "القاعات" أعلاه.</p></div>';
+            paginationEl.innerHTML = '';
+            return;
+        }
+
+        const totalPages = Math.ceil(allRooms.length / ROOMS_PER_PAGE);
+        if (currentRoomPage > totalPages) currentRoomPage = totalPages;
+        if (currentRoomPage < 1) currentRoomPage = 1;
+
+        const startIdx = (currentRoomPage - 1) * ROOMS_PER_PAGE;
+        const endIdx = Math.min(startIdx + ROOMS_PER_PAGE, allRooms.length);
+        const pageRooms = allRooms.slice(startIdx, endIdx);
+
+        let html = '';
+        pageRooms.forEach(room => {
+            html += buildRoomGridTable(room);
+        });
+        container.innerHTML = html;
+
+        // Build pagination
+        renderPagination(totalPages);
+    }
+}
+
+// ===== PAGINATION =====
+function renderPagination(totalPages) {
+    const paginationEl = document.getElementById('gridPagination');
+    if (totalPages <= 1) {
+        paginationEl.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Previous button
+    html += '<button class="ws-page-btn ws-page-nav" ' + (currentRoomPage <= 1 ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : '') + ' onclick="goToRoomPage(' + (currentRoomPage - 1) + ')"><i class="fas fa-chevron-right"></i> السابق</button>';
+
+    // Page numbers
+    for (let p = 1; p <= totalPages; p++) {
+        if (totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - currentRoomPage) <= 1) {
+            html += '<button class="ws-page-btn ' + (p === currentRoomPage ? 'active' : '') + '" onclick="goToRoomPage(' + p + ')">' + p + '</button>';
+        } else if (Math.abs(p - currentRoomPage) === 2) {
+            html += '<span class="ws-page-info">...</span>';
+        }
+    }
+
+    // Next button
+    html += '<button class="ws-page-btn ws-page-nav" ' + (currentRoomPage >= totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed;"' : '') + ' onclick="goToRoomPage(' + (currentRoomPage + 1) + ')">التالي <i class="fas fa-chevron-left"></i></button>';
+
+    // Page info
+    const startRoom = (currentRoomPage - 1) * ROOMS_PER_PAGE + 1;
+    const endRoom = Math.min(currentRoomPage * ROOMS_PER_PAGE, allRooms.length);
+    html += '<span class="ws-page-info">القاعات ' + startRoom + '-' + endRoom + ' من ' + allRooms.length + '</span>';
+
+    paginationEl.innerHTML = html;
+}
+
+function goToRoomPage(page) {
+    const totalPages = Math.ceil(allRooms.length / ROOMS_PER_PAGE);
+    if (page < 1 || page > totalPages) return;
+    currentRoomPage = page;
+    renderScheduleGrid();
+    // Scroll to top of grid area
+    document.getElementById('gridWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ===== SCHEDULE LIST VIEW =====
@@ -1151,7 +1362,8 @@ function renderScheduleList() {
     } else if (currentSortBy === 'room') {
         const groups = {};
         events.forEach(ev => {
-            const key = ev.room_name || 'غير محدد';
+            const room = allRooms.find(r => r.id === ev.room_id);
+            const key = room ? '#' + room.id + ' ' + (ev.room_name || room.name) : (ev.room_name || 'غير محدد');
             if (!groups[key]) groups[key] = [];
             groups[key].push(ev);
         });
@@ -1171,17 +1383,31 @@ function renderScheduleList() {
             html += renderListGroup(day, 'fa-calendar-day', grp);
         });
     } else {
-        // Default: group by day
-        const groups = {};
-        events.forEach(ev => {
-            const key = ev.day_of_week || 'غير محدد';
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(ev);
-        });
-        Object.keys(groups).sort((a,b) => (dayOrder[a]||99) - (dayOrder[b]||99)).forEach(day => {
-            const grp = groups[day].sort((a,b) => a.start_time.localeCompare(b.start_time));
-            html += renderListGroup(day, 'fa-calendar-day', grp);
-        });
+        // Default: group by room when "all", by day otherwise
+        if (currentRoomFilter === 'all') {
+            const groups = {};
+            events.forEach(ev => {
+                const room = allRooms.find(r => r.id === ev.room_id);
+                const key = room ? '#' + room.id + ' ' + (ev.room_name || room.name) : (ev.room_name || 'غير محدد');
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(ev);
+            });
+            Object.keys(groups).sort((a,b) => a.localeCompare(b,'ar')).forEach(name => {
+                const grp = groups[name].sort((a,b) => (dayOrder[a.day_of_week]||99) - (dayOrder[b.day_of_week]||99) || a.start_time.localeCompare(b.start_time));
+                html += renderListGroup(name, 'fa-door-open', grp);
+            });
+        } else {
+            const groups = {};
+            events.forEach(ev => {
+                const key = ev.day_of_week || 'غير محدد';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(ev);
+            });
+            Object.keys(groups).sort((a,b) => (dayOrder[a]||99) - (dayOrder[b]||99)).forEach(day => {
+                const grp = groups[day].sort((a,b) => a.start_time.localeCompare(b.start_time));
+                html += renderListGroup(day, 'fa-calendar-day', grp);
+            });
+        }
     }
 
     container.innerHTML = html;
@@ -1213,6 +1439,8 @@ function renderListEventCard(ev) {
     const isExam = (ev.event_type === 'امتحان');
     const cls = isExam ? 'ws-lv-exm' : 'ws-lv-lec';
     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
+    const room = allRooms.find(r => r.id === ev.room_id);
+    const roomDisplay = room ? '#' + room.id + ' ' + escapeHtml(room.name) : escapeHtml(ev.room_name || '');
 
     let html = '<div class="ws-lv ' + cls + '">';
     html += '<div class="ws-lv-bar"></div>';
@@ -1222,9 +1450,7 @@ function renderListEventCard(ev) {
     html += '<span><i class="fas fa-clock"></i> ' + ev.start_time + ' - ' + ev.end_time + '</span>';
     html += '<span><i class="fas fa-calendar-day"></i> ' + escapeHtml(ev.day_of_week) + '</span>';
     html += '<span><i class="fas fa-user-tie"></i> ' + escapeHtml(ev.teacher_name) + '</span>';
-    if (currentRoomFilter === 'all' || currentSortBy === 'teacher') {
-        html += '<span><i class="fas fa-door-open"></i> ' + escapeHtml(ev.room_name) + '</span>';
-    }
+    html += '<span><i class="fas fa-door-open"></i> ' + roomDisplay + '</span>';
     if (ev.notes) {
         html += '<span><i class="fas fa-sticky-note"></i> ' + escapeHtml(ev.notes) + '</span>';
     }
@@ -1252,7 +1478,7 @@ function renderRoomsList() {
         html += '<div class="ws-room-row">';
         html += '<div class="rr-info">';
         html += '<div class="rr-icon"><i class="fas fa-door-open"></i></div>';
-        html += '<div><div class="rr-name">' + escapeHtml(room.name) + '</div>';
+        html += '<div><span class="rr-id">#' + room.id + '</span> <span class="rr-name">' + escapeHtml(room.name) + '</span>';
         html += '<div class="rr-cap">السعة: ' + (room.capacity || '-') + ' | فعاليات: ' + cnt + '</div></div>';
         html += '</div>';
         html += '<div class="rr-acts">';
@@ -1404,7 +1630,7 @@ async function checkConflictPreview() {
 function populateModalSelects() {
     const roomSelect = document.getElementById('lecRoom');
     let rhtml = '<option value="">اختر القاعة</option>';
-    allRooms.forEach(r => { rhtml += '<option value="' + r.id + '">' + escapeHtml(r.name) + '</option>'; });
+    allRooms.forEach(r => { rhtml += '<option value="' + r.id + '">#' + r.id + ' ' + escapeHtml(r.name) + '</option>'; });
     roomSelect.innerHTML = rhtml;
 
     const teacherSelect = document.getElementById('lecTeacher');
@@ -1428,10 +1654,9 @@ function populateModalSelects() {
     });
 }
 
-function openAddEventModal(day, time) {
+function openAddEventModal(day, time, roomId) {
     document.getElementById('editEventId').value = '';
     document.getElementById('eventModalTitle').textContent = 'إضافة حدث جديد';
-    document.getElementById('lecRoom').value = currentRoomFilter !== 'all' ? currentRoomFilter : '';
     document.getElementById('lecTeacher').value = '';
     document.getElementById('lecSubject').value = '';
     document.getElementById('lecDay').value = day || 'الإثنين';
@@ -1441,8 +1666,13 @@ function openAddEventModal(day, time) {
     document.getElementById('lecConflictWarning').style.display = 'none';
     setEventType('محاضرة');
     populateModalSelects();
-    if (currentRoomFilter !== 'all') {
+    // Set room - either passed explicitly, or from filter, or empty
+    if (roomId) {
+        document.getElementById('lecRoom').value = roomId;
+    } else if (currentRoomFilter !== 'all') {
         document.getElementById('lecRoom').value = currentRoomFilter;
+    } else {
+        document.getElementById('lecRoom').value = '';
     }
     updateEndTime();
     new bootstrap.Modal(document.getElementById('eventModal')).show();
