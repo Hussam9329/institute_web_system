@@ -596,12 +596,16 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         new_type = installment.installment_type
         
         # القواعد:
-        # 1. "دفع كامل" → مسموح فقط إذا لم توجد أي أقساط سابقة
+        # 1. "دفع كامل" → مسموح إذا لم توجد أي أقساط سابقة، أو إذا وُجد القسط الأول فقط (تحويل من دفعات إلى دفع كامل)
         if new_type == 'دفع كامل' and has_any_existing:
-            return {
-                "success": False,
-                "message": "لا يمكن تسجيل دفع كامل! يوجد أقساط مسجلة مسبقاً لهذا الطالب عند هذا المدرس"
-            }
+            # السماح بتحويل القسط الأول إلى دفع كامل (الطالب دفع القسط الأول ويريد تحويله لدفع كامل)
+            if has_existing_first and not has_existing_second and not has_existing_full:
+                pass  # مسموح - تحويل من دفعات إلى دفع كامل
+            else:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل دفع كامل! يوجد أقساط مسجلة مسبقاً لهذا الطالب عند هذا المدرس"
+                }
         
         # 2. "القسط الثاني" → مسموح فقط إذا وُجد "القسط الأول" ولم يُسجل "القسط الثاني" سابقاً
         if new_type == 'القسط الثاني':
@@ -761,8 +765,10 @@ async def api_get_allowed_installment_types(request: Request, student_id: int, t
         if has_first and not has_second and not has_full:
             allowed.append('القسط الثاني')
         
-        # دفع كامل: مسموح فقط إذا لم توجد أي أقساط
+        # دفع كامل: مسموح إذا لم توجد أي أقساط، أو إذا وُجد القسط الأول فقط (تحويل من دفعات إلى دفع كامل)
         if not existing_types:
+            allowed.append('دفع كامل')
+        elif has_first and not has_second and not has_full:
             allowed.append('دفع كامل')
         
         return {
@@ -948,6 +954,223 @@ async def api_get_statistics(request: Request):
     check_permission(request, 'view_dashboard')
     stats = finance_service.get_system_statistics()
     return {"success": True, "data": stats}
+
+
+# ===== فحص سلامة قاعدة البيانات =====
+
+@router.get("/database-integrity-check")
+async def api_database_integrity_check(request: Request):
+    """
+    فحص شامل لسلامة البيانات في قاعدة البيانات
+    يكتشف أي سجلات تتنافى مع منطق النظام وشروطه
+    """
+    check_permission(request, 'system_settings')
+    db = Database()
+    issues = []
+    
+    try:
+        # ===== 1. طلاب لديهم أقساط بدون رابط student_teacher =====
+        orphan_installments = db.execute_query('''
+            SELECT i.student_id, i.teacher_id, s.name as student_name, t.name as teacher_name,
+                   COUNT(i.id) as installment_count, SUM(i.amount) as total_amount
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE st.student_id IS NULL
+            GROUP BY i.student_id, i.teacher_id, s.name, t.name
+        ''')
+        if orphan_installments:
+            for row in orphan_installments:
+                issues.append({
+                    'type': 'orphan_installments',
+                    'severity': 'critical',
+                    'message': f"أقساط بدون رابط طالب-مدرس: الطالب '{row['student_name']}' والمدرس '{row['teacher_name']}' لديهما {row['installment_count']} قسط (مجموع {format_currency(row['total_amount'])}) بدون رابط في جدول student_teacher",
+                    'data': dict(row)
+                })
+        
+        # ===== 2. طلاب دفعوا أكثر من القسط الكلي (overpayment) =====
+        all_links = db.execute_query('''
+            SELECT st.student_id, st.teacher_id, s.name as student_name, t.name as teacher_name,
+                   st.discount_type, st.discount_value, st.study_type
+            FROM student_teacher st
+            JOIN students s ON st.student_id = s.id
+            JOIN teachers t ON st.teacher_id = t.id
+            WHERE st.status = 'مستمر'
+        ''')
+        if all_links:
+            for link in all_links:
+                try:
+                    balance = finance_service.calculate_student_teacher_balance(link['student_id'], link['teacher_id'])
+                    if balance.get('has_overpayment', False):
+                        issues.append({
+                            'type': 'overpayment',
+                            'severity': 'critical',
+                            'message': f"مدفوع يتجاوز القسط: الطالب '{link['student_name']}' عند المدرس '{link['teacher_name']}' - المدفوع {format_currency(balance['paid_total'])} يتجاوز القسط {format_currency(balance['total_fee'])} بمبلغ {format_currency(balance['overpayment_amount'])}",
+                            'data': {
+                                'student_id': link['student_id'],
+                                'teacher_id': link['teacher_id'],
+                                'student_name': link['student_name'],
+                                'teacher_name': link['teacher_name'],
+                                'paid_total': balance['paid_total'],
+                                'total_fee': balance['total_fee'],
+                                'overpayment': balance['overpayment_amount']
+                            }
+                        })
+                except Exception:
+                    pass
+        
+        # ===== 3. طلاب مجانيون لديهم أقساط مسجلة =====
+        free_with_installments = db.execute_query('''
+            SELECT i.student_id, i.teacher_id, s.name as student_name, t.name as teacher_name,
+                   COUNT(i.id) as installment_count, SUM(i.amount) as total_amount
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE st.discount_type = 'free'
+            GROUP BY i.student_id, i.teacher_id, s.name, t.name
+        ''')
+        if free_with_installments:
+            for row in free_with_installments:
+                issues.append({
+                    'type': 'free_with_installments',
+                    'severity': 'high',
+                    'message': f"طالب مجاني لديه أقساط: الطالب '{row['student_name']}' عند المدرس '{row['teacher_name']}' مسجل كمجاني لكن لديه {row['installment_count']} قسط (مجموع {format_currency(row['total_amount'])})",
+                    'data': dict(row)
+                })
+        
+        # ===== 4. قسط ثاني بدون قسط أول =====
+        second_without_first = db.execute_query('''
+            SELECT i.student_id, i.teacher_id, s.name as student_name, t.name as teacher_name
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            WHERE i.installment_type = 'القسط الثاني'
+            AND NOT EXISTS (
+                SELECT 1 FROM installments i2 
+                WHERE i2.student_id = i.student_id AND i2.teacher_id = i.teacher_id 
+                AND i2.installment_type = 'القسط الأول'
+            )
+        ''')
+        if second_without_first:
+            for row in second_without_first:
+                issues.append({
+                    'type': 'second_without_first',
+                    'severity': 'critical',
+                    'message': f"قسط ثاني بدون قسط أول: الطالب '{row['student_name']}' عند المدرس '{row['teacher_name']}' لديه قسط ثاني بدون قسط أول",
+                    'data': dict(row)
+                })
+        
+        # ===== 5. دفع كامل مع أقساط أخرى (بعد التحديث الجديد يُسمح بدفع كامل + قسط أول فقط) =====
+        invalid_combinations = db.execute_query('''
+            SELECT i.student_id, i.teacher_id, s.name as student_name, t.name as teacher_name,
+                   STRING_AGG(DISTINCT i.installment_type, ', ') as installment_types
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            WHERE i.installment_type = 'دفع كامل'
+            GROUP BY i.student_id, i.teacher_id, s.name, t.name
+            HAVING COUNT(DISTINCT i.installment_type) > 1
+        ''')
+        if invalid_combinations:
+            for row in invalid_combinations:
+                types = row['installment_types'] or ''
+                # مسموح فقط: دفع كامل + القسط الأول (تحويل من دفعات إلى كامل)
+                if 'القسط الثاني' in types:
+                    issues.append({
+                        'type': 'invalid_installment_combo',
+                        'severity': 'critical',
+                        'message': f"تركيب أقساط غير صالح: الطالب '{row['student_name']}' عند المدرس '{row['teacher_name']}' لديه الأنواع: {types} - لا يمكن وجود قسط ثاني مع دفع كامل",
+                        'data': dict(row)
+                    })
+        
+        # ===== 6. طلاب بحالة غير متسقة =====
+        inconsistent_status = db.execute_query('''
+            SELECT s.id, s.name, s.status as student_status,
+                   CASE 
+                       WHEN NOT EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id) THEN 'no_links'
+                       WHEN (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) = 
+                            (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id AND st.status = 'منسحب') THEN 'all_withdrawn'
+                       ELSE 'has_active'
+                   END as computed_status
+            FROM students s
+            WHERE 
+                (s.status = 'مستمر' AND NOT EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id AND st.status = 'مستمر'))
+                OR
+                (s.status = 'منسحب' AND EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id AND st.status = 'مستمر'))
+                OR
+                (s.status = 'غير مربوط' AND EXISTS (SELECT 1 FROM student_teacher st WHERE st.student_id = s.id))
+        ''')
+        if inconsistent_status:
+            for row in inconsistent_status:
+                issues.append({
+                    'type': 'inconsistent_status',
+                    'severity': 'medium',
+                    'message': f"حالة طالب غير متسقة: الطالب '{row['name']}' حالته '{row['student_status']}' لكن الوضع الفعلي '{row['computed_status']}'",
+                    'data': dict(row)
+                })
+        
+        # ===== 7. سحوبات تتجاوز المستحق =====
+        teachers_list = db.execute_query("SELECT id, name FROM teachers")
+        if teachers_list:
+            for teacher in teachers_list:
+                try:
+                    balance = finance_service.calculate_teacher_balance(teacher['id'])
+                    if balance.get('has_over_withdrawal', False):
+                        issues.append({
+                            'type': 'over_withdrawal',
+                            'severity': 'critical',
+                            'message': f"سحوبات تتجاوز المستحق: المدرس '{teacher['name']}' - المسحوب {format_currency(balance['withdrawn_total'])} يتجاوز المستحق {format_currency(balance['teacher_due'])} بمبلغ {format_currency(balance['over_withdrawal_amount'])}",
+                            'data': {
+                                'teacher_id': teacher['id'],
+                                'teacher_name': teacher['name'],
+                                'teacher_due': balance['teacher_due'],
+                                'withdrawn_total': balance['withdrawn_total'],
+                                'over_withdrawal': balance['over_withdrawal_amount']
+                            }
+                        })
+                except Exception:
+                    pass
+        
+        # ===== 8. روابط مكررة لنفس المادة =====
+        duplicate_subjects = db.execute_query('''
+            SELECT st.student_id, s.name as student_name, t.subject,
+                   COUNT(*) as link_count,
+                   STRING_AGG(t.name, ', ') as teacher_names
+            FROM student_teacher st
+            JOIN students s ON st.student_id = s.id
+            JOIN teachers t ON st.teacher_id = t.id
+            WHERE st.status = 'مستمر'
+            GROUP BY st.student_id, s.name, t.subject
+            HAVING COUNT(*) > 1
+        ''')
+        if duplicate_subjects:
+            for row in duplicate_subjects:
+                issues.append({
+                    'type': 'duplicate_subject_link',
+                    'severity': 'high',
+                    'message': f"ربط مكرر بنفس المادة: الطالب '{row['student_name']}' مربوط بـ {row['link_count']} مدرسين للمادة '{row['subject']}' ({row['teacher_names']})",
+                    'data': dict(row)
+                })
+        
+        # ===== ملخص =====
+        critical_count = sum(1 for i in issues if i['severity'] == 'critical')
+        high_count = sum(1 for i in issues if i['severity'] == 'high')
+        medium_count = sum(1 for i in issues if i['severity'] == 'medium')
+        
+        return {
+            "success": True,
+            "total_issues": len(issues),
+            "critical": critical_count,
+            "high": high_count,
+            "medium": medium_count,
+            "is_clean": len(issues) == 0,
+            "issues": issues
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في فحص السلامة: {str(e)}"}
 
 
 # ===== تصدير شامل =====

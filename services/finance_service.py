@@ -356,7 +356,8 @@ class FinanceService:
                 other_half_ded = ded_value - half_ded
                 
                 if has_full:
-                    # دفع كامل → الخصم الكامل
+                    # دفع كامل (وحده أو مع القسط الأول) → الخصم الكامل
+                    # ملاحظة: القسط الأول + دفع كامل = تحويل من دفعات إلى كامل → خصم كامل
                     total_deduction += ded_value
                 elif has_first and has_second:
                     # قسط أول + قسط ثاني → الخصم الكامل (نصف + نصف = كامل)
@@ -375,7 +376,8 @@ class FinanceService:
                 other_half_deduction = full_deduction - half_deduction
                 
                 if has_full:
-                    # دفع كامل → الخصم الكامل
+                    # دفع كامل (وحده أو مع القسط الأول) → الخصم الكامل
+                    # ملاحظة: القسط الأول + دفع كامل = تحويل من دفعات إلى كامل → خصم كامل
                     total_deduction += full_deduction
                 elif has_first and has_second:
                     # قسط أول + قسط ثاني → الخصم الكامل (نصف + نصف = كامل)
