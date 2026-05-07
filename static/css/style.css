@@ -2745,9 +2745,10 @@ textarea:focus-visible {
 }
 
 .searchable-select .ss-options {
-    max-height: 220px;
+    max-height: 280px;
     overflow-y: auto;
     padding: 4px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .searchable-select .ss-option {
@@ -2793,7 +2794,7 @@ textarea:focus-visible {
 /* Responsive */
 @media (max-width: 576px) {
     .searchable-select .ss-options {
-        max-height: 180px;
+        max-height: 220px;
     }
 }
 

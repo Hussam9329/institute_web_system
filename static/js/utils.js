@@ -550,6 +550,25 @@ function makeSearchableSelect(selectId, options = {}) {
         e.stopPropagation();
     });
 
+    // منع حدث السكرول (wheel) من الانتقال للـ modal واغلاق القائمة
+    optionsList.addEventListener('wheel', function(e) {
+        e.stopPropagation();
+    });
+
+    // منع سكرول اللمس من الانتقال للـ modal (للموبايل)
+    optionsList.addEventListener('touchmove', function(e) {
+        e.stopPropagation();
+    });
+
+    // منع سكرول القائمة المنسدلة ككل من الانتقال للـ modal
+    dropdown.addEventListener('wheel', function(e) {
+        e.stopPropagation();
+    });
+
+    dropdown.addEventListener('touchmove', function(e) {
+        e.stopPropagation();
+    });
+
     // منع Bootstrap modal من سرقة الـ focus عند التفاعل مع القائمة المنسدلة
     // هذا يحل مشكلة enforceFocus في Bootstrap 5
     container.addEventListener('focusin', function(e) {
@@ -584,9 +603,14 @@ function makeSearchableSelect(selectId, options = {}) {
     });
 
     // داخل modal: إغلاق القائمة عند تمرير الـ modal (لأن position: fixed لا يتبع التمرير)
+    // لكن لا نغلق اذا كان السكرول جاي من داخل القائمة المنسدلة نفسها
     if (isInsideModal && modalParent) {
-        modalParent.addEventListener('scroll', function() {
+        modalParent.addEventListener('scroll', function(e) {
             if (dropdown.classList.contains('show')) {
+                // تحقق اذا كان مصدر السكرول من داخل القائمة المنسدلة
+                if (dropdown.contains(e.target) || container.contains(e.target)) {
+                    return; // لا تغلق - السكرول من داخل القائمة
+                }
                 closeDropdown();
             }
         }, true);
