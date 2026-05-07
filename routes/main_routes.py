@@ -100,31 +100,60 @@ async def subject_delete(request: Request, subject_id: int):
 # ===== الطلاب =====
 
 @router.get("/students", response_class=HTMLResponse)
-async def students_list(request: Request, search: str = "", msg: str = "", error: str = ""):
-    """صفحة قائمة الطلاب"""
+async def students_list(request: Request, search: str = "", msg: str = "", error: str = "",
+                        status_filter: str = "", payment_filter: str = "", teacher_filter: str = "",
+                        study_type_filter: str = ""):
+    """صفحة قائمة الطلاب مع فلاتر متقدمة"""
     check_permission(request, 'view_students_list')
     db = Database()
 
     try:
+        # بناء الاستعلام مع الفلاتر
+        where_clauses = []
+        params = []
+
         if search:
-            query = '''
-                SELECT s.*,
-                    (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
-                    (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
-                FROM students s
-                WHERE s.name LIKE %s OR s.barcode LIKE %s
-                ORDER BY s.name
-            '''
-            students = db.execute_query(query, (f'%{search}%', f'%{search}%'))
-        else:
-            query = '''
-                SELECT s.*,
-                    (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
-                    (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
-                FROM students s
-                ORDER BY s.name
-            '''
-            students = db.execute_query(query)
+            where_clauses.append("(s.name LIKE %s OR s.barcode LIKE %s)")
+            params.extend([f'%{search}%', f'%{search}%'])
+
+        # فلتر الحالة (مستمر/منسحب/مدمج/غير مربوط)
+        if status_filter:
+            if status_filter == 'مستمر':
+                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) = 0")
+            elif status_filter == 'منسحب':
+                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) = (SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id)")
+            elif status_filter == 'مدمج':
+                where_clauses.append("(SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) < (SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id)")
+            elif status_filter == 'غير مربوط':
+                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) = 0")
+
+        # فلتر المدرس
+        if teacher_filter:
+            try:
+                tid = int(teacher_filter)
+                where_clauses.append("s.id IN (SELECT st2.student_id FROM student_teacher st2 WHERE st2.teacher_id = %s)")
+                params.append(tid)
+            except ValueError:
+                pass
+
+        # فلتر نوع الدراسة
+        if study_type_filter:
+            where_clauses.append("s.id IN (SELECT st2.student_id FROM student_teacher st2 WHERE st2.study_type = %s)")
+            params.append(study_type_filter)
+
+        where_sql = ""
+        if where_clauses:
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+
+        query = f'''
+            SELECT s.*,
+                (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
+                (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
+            FROM students s
+            {where_sql}
+            ORDER BY s.name
+        '''
+        students = db.execute_query(query, tuple(params) if params else None)
     except Exception as e:
         students = []
         print(f"Error loading students: {e}")
@@ -136,12 +165,36 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         s['total_paid'] = sum(ts['paid_total'] for ts in summary) if summary else 0
         s['total_remaining'] = sum(ts['remaining_balance'] for ts in summary) if summary else 0
 
+    # فلتر حالة الدفع (بعد حساب المبالغ)
+    if payment_filter:
+        if payment_filter == 'paid':
+            students = [s for s in students if (s.get('total_remaining') or 0) <= 0 and (s.get('total_fees') or 0) > 0]
+        elif payment_filter == 'unpaid':
+            students = [s for s in students if (s.get('total_remaining') or 0) > 0]
+        elif payment_filter == 'partial':
+            students = [s for s in students if (s.get('total_paid') or 0) > 0 and (s.get('total_remaining') or 0) > 0]
+        elif payment_filter == 'no_payment':
+            students = [s for s in students if (s.get('total_paid') or 0) == 0 and (s.get('total_fees') or 0) > 0]
+        elif payment_filter == 'free':
+            students = [s for s in students if (s.get('total_fees') or 0) == 0 and (s.get('teachers_count') or 0) > 0]
+
+    # جلب قائمة المدرسين للفلتر
+    try:
+        teachers_list = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
+    except Exception:
+        teachers_list = []
+
     return templates.TemplateResponse("students/list.html", {
         "request": request,
         "students": students,
         "search": search,
         "msg": msg,
         "error": error,
+        "status_filter": status_filter,
+        "payment_filter": payment_filter,
+        "teacher_filter": teacher_filter,
+        "study_type_filter": study_type_filter,
+        "teachers_list": [dict(t) for t in teachers_list] if teachers_list else [],
         "format_currency": format_currency
     })
 

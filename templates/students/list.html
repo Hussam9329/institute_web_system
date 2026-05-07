@@ -2,6 +2,187 @@
 
 {% block title %}إدارة الطلاب - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== FILTER PANEL ===== */
+.sf-panel {
+    background: white;
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+}
+.sf-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0;
+    cursor: pointer;
+    user-select: none;
+}
+.sf-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #1e1b4b;
+    font-size: 14px;
+}
+.sf-panel-title .sf-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 13px;
+}
+.sf-panel-body {
+    display: none;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 12px;
+}
+.sf-panel-body.open { display: block; }
+.sf-panel-toggle {
+    background: none; border: none; color: #94a3b8; cursor: pointer;
+    font-size: 13px; transition: transform 0.2s;
+}
+.sf-panel-toggle.open { transform: rotate(180deg); }
+
+/* Filter Row */
+.sf-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+}
+.sf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.sf-field.grow { flex: 1; }
+.sf-field-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.sf-select {
+    padding: 7px 28px 7px 10px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 10px center;
+    min-width: 140px;
+}
+.sf-select:hover { border-color: #a5b4fc; }
+.sf-select:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79,70,229,0.12); }
+
+/* Active filter badges */
+.sf-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.sf-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #eef2ff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+}
+.sf-filter-badge i { font-size: 10px; }
+.sf-filter-badge .remove-filter {
+    cursor: pointer;
+    background: #4f46e5;
+    color: white;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Filter action buttons */
+.sf-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.sf-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+.sf-btn-apply {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+}
+.sf-btn-apply:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(79,70,229,0.3); }
+.sf-btn-clear {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e5e7eb;
+}
+.sf-btn-clear:hover { border-color: #fca5a5; color: #ef4444; background: #fef2f2; }
+
+/* Stats row */
+.sf-stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.sf-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.sf-stat.blue { background: #eff6ff; color: #3b82f6; }
+.sf-stat.green { background: #ecfdf5; color: #059669; }
+.sf-stat.red { background: #fef2f2; color: #ef4444; }
+.sf-stat.yellow { background: #fefce8; color: #ca8a04; }
+.sf-stat.purple { background: #f5f3ff; color: #7c3aed; }
+
+@media (max-width: 768px) {
+    .sf-select { min-width: 120px; font-size: 12px; }
+    .sf-row { gap: 8px; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
     <div class="container-fluid">
@@ -10,7 +191,7 @@
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <div style="min-width:0;">
                 <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-user-graduate me-2"></i>إدارة الطلاب</h4>
-                <p class="text-muted mb-0 small">{{ students|length }} طالب مسجل</p>
+                <p class="text-muted mb-0 small">{{ students|length }} طالب{% if status_filter or payment_filter or teacher_filter or study_type_filter %} (مُصفّى){% endif %}</p>
             </div>
             <div class="d-flex gap-2 align-items-center">
                 <div class="btn-group btn-group-sm" role="group">
@@ -41,25 +222,150 @@
         </div>
         {% endif %}
 
-        <!-- ===== تلميح ===== -->
-        <div class="alert alert-light border mb-3 py-2">
-            <i class="fas fa-info-circle text-primary me-2"></i>
-            <small class="text-muted">يمكنك البحث عن طالب بالاسم أو الرمز. اضغط على اسم الطالب لعرض بروفايله الكامل بما فيه الأقساط والمبالغ المتبقية.</small>
-        </div>
-
-        <!-- ===== بحث ===== -->
-        <div class="mb-3">
-            <form method="GET" action="/students" id="studentSearchForm">
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent border-end-0">
-                        <i class="fas fa-search text-muted"></i>
-                    </span>
-                    <input type="text" class="form-control border-start-0 ps-0"
-                           placeholder="بحث بالاسم أو الرمز..." id="studentLiveSearch" name="search"
-                           value="{{ search }}">
-                    <button type="submit" class="btn btn-outline-primary border-start-0" title="بحث">
-                        <i class="fas fa-search"></i>
+        <!-- ===== بحث + فلاتر ===== -->
+        <div class="sf-panel">
+            <form method="GET" action="/students" id="studentFilterForm">
+                <!-- Search + Filter Toggle -->
+                <div class="sf-panel-header" onclick="toggleFilterPanel()">
+                    <div class="sf-panel-title">
+                        <div class="sf-icon"><i class="fas fa-filter"></i></div>
+                        <span>بحث وتصفية متقدمة</span>
+                        {% if status_filter or payment_filter or teacher_filter or study_type_filter %}
+                        <span class="badge bg-primary">فعّال</span>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="sf-panel-toggle {% if status_filter or payment_filter or teacher_filter or study_type_filter %}open{% endif %}" id="filterToggleBtn">
+                        <i class="fas fa-chevron-down"></i>
                     </button>
+                </div>
+
+                <!-- Search bar (always visible) -->
+                <div class="mt-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 border-end-0 ps-0"
+                               placeholder="بحث بالاسم أو الرمز..." id="studentLiveSearch" name="search"
+                               value="{{ search }}">
+                        <button type="submit" class="btn btn-outline-primary" title="بحث">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter dropdowns (collapsible) -->
+                <div class="sf-panel-body {% if status_filter or payment_filter or teacher_filter or study_type_filter %}open{% endif %}" id="filterBody">
+                    <div class="sf-row">
+                        <!-- فلتر الحالة -->
+                        <div class="sf-field">
+                            <label class="sf-field-label">الحالة</label>
+                            <select class="sf-select" name="status_filter" id="filterStatus">
+                                <option value="">كل الحالات</option>
+                                <option value="مستمر" {% if status_filter == 'مستمر' %}selected{% endif %}>مستمر</option>
+                                <option value="منسحب" {% if status_filter == 'منسحب' %}selected{% endif %}>منسحب</option>
+                                <option value="مدمج" {% if status_filter == 'مدمج' %}selected{% endif %}>مدمج</option>
+                                <option value="غير مربوط" {% if status_filter == 'غير مربوط' %}selected{% endif %}>غير مربوط</option>
+                            </select>
+                        </div>
+
+                        <!-- فلتر الدفع -->
+                        <div class="sf-field">
+                            <label class="sf-field-label">حالة الدفع</label>
+                            <select class="sf-select" name="payment_filter" id="filterPayment">
+                                <option value="">كل حالات الدفع</option>
+                                <option value="paid" {% if payment_filter == 'paid' %}selected{% endif %}>مدفوع بالكامل</option>
+                                <option value="unpaid" {% if payment_filter == 'unpaid' %}selected{% endif %}>عليه متبقي</option>
+                                <option value="partial" {% if payment_filter == 'partial' %}selected{% endif %}>مدفوع جزئياً</option>
+                                <option value="no_payment" {% if payment_filter == 'no_payment' %}selected{% endif %}>لم يدفع شيئاً</option>
+                                <option value="free" {% if payment_filter == 'free' %}selected{% endif %}>مجاني (خصم كامل)</option>
+                            </select>
+                        </div>
+
+                        <!-- فلتر المدرس -->
+                        <div class="sf-field">
+                            <label class="sf-field-label">المدرس</label>
+                            <select class="sf-select" name="teacher_filter" id="filterTeacher">
+                                <option value="">كل المدرسين</option>
+                                {% for t in teachers_list %}
+                                <option value="{{ t.id }}" {% if teacher_filter|string == t.id|string %}selected{% endif %}>{{ t.name }} ({{ t.subject }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- فلتر نوع الدراسة -->
+                        <div class="sf-field">
+                            <label class="sf-field-label">نوع الدراسة</label>
+                            <select class="sf-select" name="study_type_filter" id="filterStudyType">
+                                <option value="">كل الأنواع</option>
+                                <option value="حضوري" {% if study_type_filter == 'حضوري' %}selected{% endif %}>حضوري</option>
+                                <option value="الكتروني" {% if study_type_filter == 'الكتروني' %}selected{% endif %}>الكتروني</option>
+                                <option value="مدمج" {% if study_type_filter == 'مدمج' %}selected{% endif %}>مدمج</option>
+                            </select>
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="sf-actions">
+                            <button type="submit" class="sf-btn sf-btn-apply">
+                                <i class="fas fa-filter"></i> تصفية
+                            </button>
+                            <a href="/students" class="sf-btn sf-btn-clear">
+                                <i class="fas fa-times"></i> مسح
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Active Filters Badges -->
+                    {% if status_filter or payment_filter or teacher_filter or study_type_filter or search %}
+                    <div class="sf-active-filters">
+                        {% if search %}
+                        <span class="sf-filter-badge">
+                            <i class="fas fa-search"></i> بحث: {{ search }}
+                            <button type="button" class="remove-filter" onclick="removeFilter('search')" title="إزالة">&times;</button>
+                        </span>
+                        {% endif %}
+                        {% if status_filter %}
+                        <span class="sf-filter-badge">
+                            <i class="fas fa-user-check"></i> {{ status_filter }}
+                            <button type="button" class="remove-filter" onclick="removeFilter('status_filter')" title="إزالة">&times;</button>
+                        </span>
+                        {% endif %}
+                        {% if payment_filter %}
+                        <span class="sf-filter-badge">
+                            <i class="fas fa-money-bill-wave"></i> {% if payment_filter == 'paid' %}مدفوع بالكامل{% elif payment_filter == 'unpaid' %}عليه متبقي{% elif payment_filter == 'partial' %}مدفوع جزئياً{% elif payment_filter == 'no_payment' %}لم يدفع{% elif payment_filter == 'free' %}مجاني{% endif %}
+                            <button type="button" class="remove-filter" onclick="removeFilter('payment_filter')" title="إزالة">&times;</button>
+                        </span>
+                        {% endif %}
+                        {% if teacher_filter %}
+                        {% for t in teachers_list %}
+                        {% if t.id|string == teacher_filter|string %}
+                        <span class="sf-filter-badge">
+                            <i class="fas fa-chalkboard-teacher"></i> {{ t.name }}
+                            <button type="button" class="remove-filter" onclick="removeFilter('teacher_filter')" title="إزالة">&times;</button>
+                        </span>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                        {% if study_type_filter %}
+                        <span class="sf-filter-badge">
+                            <i class="fas fa-book"></i> {{ study_type_filter }}
+                            <button type="button" class="remove-filter" onclick="removeFilter('study_type_filter')" title="إزالة">&times;</button>
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Quick Stats -->
+                    {% if students %}
+                    <div class="sf-stats">
+                        <span class="sf-stat blue"><i class="fas fa-users"></i> {{ students|length }} طالب</span>
+                        {% set paid_count = students | selectattr('total_remaining', 'defined') | rejectattr('total_remaining') | list | length %}
+                        {% set unpaid_count = students | selectattr('total_remaining', '>', 0) | list | length %}
+                        <span class="sf-stat green"><i class="fas fa-check-circle"></i> مدفوع: {{ students | selectattr('total_remaining', 'defined') | selectattr('total_remaining', '<=', 0) | rejectattr('total_fees', '<=', 0) | list | length }}</span>
+                        <span class="sf-stat red"><i class="fas fa-exclamation-circle"></i> عليه متبقي: {{ unpaid_count }}</span>
+                        <span class="sf-stat yellow"><i class="fas fa-clock"></i> لم يدفع: {{ students | selectattr('total_paid', '=', 0) | selectattr('total_fees', '>', 0) | list | length }}</span>
+                    </div>
+                    {% endif %}
                 </div>
             </form>
         </div>
@@ -84,7 +390,7 @@
                             </thead>
                             <tbody>
                                 {% for student in students %}
-                                <tr class="student-row" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
+                                <tr class="student-row" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}" data-status="{{ student.status or 'مستمر' }}" data-paid="{{ student.total_paid or 0 }}" data-remaining="{{ student.total_remaining or 0 }}" data-fees="{{ student.total_fees or 0 }}">
                                     <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
                                     <td>
                                         <a href="/students/{{ student.id }}" class="text-decoration-none fw-semibold text-primary">
@@ -149,7 +455,7 @@
         <div id="cardView" class="d-none">
             <div class="row g-3" id="studentCards">
                 {% for student in students %}
-                <div class="col-12 col-sm-6 col-lg-4 col-xl-3 student-card" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-3 student-card" data-name="{{ student.name|lower }}" data-barcode="{{ student.barcode|lower }}" data-status="{{ student.status or 'مستمر' }}" data-paid="{{ student.total_paid or 0 }}" data-remaining="{{ student.total_remaining or 0 }}" data-fees="{{ student.total_fees or 0 }}">
                     <div class="list-card list-card-accent accent-blue h-100">
                         <div class="card-body">
                             <div class="list-card-header">
@@ -225,6 +531,25 @@
 <form id="deleteForm" method="POST" action="" style="display: none;"></form>
 
 <script>
+// ===== FILTER PANEL TOGGLE =====
+function toggleFilterPanel() {
+    const body = document.getElementById('filterBody');
+    const btn = document.getElementById('filterToggleBtn');
+    body.classList.toggle('open');
+    btn.classList.toggle('open');
+}
+
+// ===== REMOVE SINGLE FILTER =====
+function removeFilter(paramName) {
+    const form = document.getElementById('studentFilterForm');
+    const select = form.querySelector('[name="' + paramName + '"]');
+    const input = form.querySelector('input[name="' + paramName + '"]');
+    if (select) select.value = '';
+    if (input) input.value = '';
+    form.submit();
+}
+
+// ===== VIEW SWITCH =====
 function switchView(view, btn) {
     btn.closest('.btn-group').querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -232,7 +557,7 @@ function switchView(view, btn) {
     document.getElementById('cardView')?.classList.toggle('d-none', view !== 'card');
 }
 
-// معالجة أحداث الأزرار عبر data-action (بدون XSS)
+// ===== DELETE STUDENT =====
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('[data-action="delete-student"]');
     if (!btn) return;
@@ -244,7 +569,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// بحث مباشر + إرسال فورم عند Enter
+// ===== LIVE SEARCH =====
 const studentSearchInput = document.getElementById('studentLiveSearch');
 if (studentSearchInput) {
     studentSearchInput.addEventListener('input', function() {
@@ -283,7 +608,7 @@ if (studentSearchInput) {
     studentSearchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            document.getElementById('studentSearchForm').submit();
+            document.getElementById('studentFilterForm').submit();
         }
     });
 }
