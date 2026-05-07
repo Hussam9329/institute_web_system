@@ -5,149 +5,174 @@
 
 {% block extra_css %}
 <style>
-.schedule-header {
-    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
-    color: white;
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(30, 27, 75, 0.3);
-}
-.schedule-header h4 {
-    margin: 0;
-    font-weight: 700;
-    font-size: 20px;
-}
-.schedule-header .badge-count {
-    background: rgba(255,255,255,0.2);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-}
-
-/* Legend */
-.schedule-legend {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    padding: 12px 16px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
-    align-items: center;
-}
-.legend-item {
+/* ===== HEADER ===== */
+.ws-header {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #374151;
-}
-.legend-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
-}
-.legend-dot.lecture { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.legend-dot.exam { background: linear-gradient(135deg, #f97316, #ea580c); }
-.legend-dot.blocked { background: repeating-linear-gradient(45deg, #fee2e2, #fee2e2 3px, #fecaca 3px, #fecaca 6px); border: 1px solid #fca5a5; }
-
-/* Room tabs */
-.room-tabs {
-    display: flex;
-    gap: 8px;
+    justify-content: space-between;
     flex-wrap: wrap;
-    margin-bottom: 16px;
-    padding: 12px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    gap: 12px;
+    margin-bottom: 20px;
 }
-.room-tab {
-    padding: 8px 18px;
-    border-radius: 8px;
-    border: 2px solid #e5e7eb;
-    background: white;
-    cursor: pointer;
-    font-size: 13.5px;
-    font-weight: 600;
+.ws-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.ws-header-title .ws-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 18px;
+}
+.ws-header-title h4 {
+    margin: 0; font-weight: 800; font-size: 20px; color: #1e1b4b;
+}
+.ws-header-title small {
+    display: block; font-size: 12px; color: #6b7280; font-weight: 500;
+}
+.ws-actions {
+    display: flex; gap: 8px; align-items: center;
+}
+.ws-btn {
+    padding: 8px 16px; border-radius: 10px; border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
     transition: all 0.2s;
-    color: #374151;
 }
-.room-tab:hover {
-    border-color: #6366f1;
-    color: #4f46e5;
-}
-.room-tab.active {
-    background: #4f46e5;
+.ws-btn-primary {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
     color: white;
-    border-color: #4f46e5;
 }
+.ws-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
+.ws-btn-outline {
+    background: white; color: #4f46e5;
+    border: 2px solid #e0e7ff;
+}
+.ws-btn-outline:hover { border-color: #4f46e5; background: #f5f3ff; }
+.ws-btn-success {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white;
+}
+.ws-btn-success:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.35); }
 
-/* ===== Filter Toolbar ===== */
-.filter-toolbar {
+/* ===== SMART CONTROL BAR ===== */
+.ws-controls {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 14px 16px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
     align-items: center;
 }
-.filter-toolbar .filter-label {
-    font-size: 13px;
-    font-weight: 700;
-    color: #1e1b4b;
-    white-space: nowrap;
+
+/* Room Selector - Horizontal scrollable pills */
+.ws-room-pills {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    gap: 6px;
+    overflow-x: auto;
+    flex: 1;
+    min-width: 0;
+    padding: 2px 0;
+    scrollbar-width: none;
 }
-.filter-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 14px;
+.ws-room-pills::-webkit-scrollbar { display: none; }
+.ws-room-pill {
+    padding: 6px 14px;
     border-radius: 20px;
     border: 2px solid #e5e7eb;
     background: white;
     cursor: pointer;
     font-size: 12.5px;
     font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
     transition: all 0.2s;
-    color: #374151;
+    display: flex; align-items: center; gap: 5px;
+}
+.ws-room-pill:hover { border-color: #a5b4fc; color: #4f46e5; }
+.ws-room-pill.active {
+    background: #4f46e5; color: white; border-color: #4f46e5;
+    box-shadow: 0 2px 6px rgba(79,70,229,0.3);
+}
+.ws-room-pill i { font-size: 11px; }
+
+/* Type Filter - 3 color-coded pills */
+.ws-type-pills {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 3px;
+}
+.ws-type-pill {
+    padding: 5px 14px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    transition: all 0.2s;
     white-space: nowrap;
 }
-.filter-pill:hover {
-    border-color: #a5b4fc;
-    color: #4f46e5;
-    background: #f5f3ff;
+.ws-type-pill:hover { color: #1e293b; }
+.ws-type-pill.active-all {
+    background: white; color: #1e1b4b;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.filter-pill.active {
-    background: #4f46e5;
-    color: white;
-    border-color: #4f46e5;
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+.ws-type-pill.active-lecture {
+    background: #3b82f6; color: white;
+    box-shadow: 0 1px 3px rgba(59,130,246,0.3);
 }
-.filter-pill i {
-    font-size: 11px;
+.ws-type-pill.active-exam {
+    background: #f97316; color: white;
+    box-shadow: 0 1px 3px rgba(249,115,22,0.3);
 }
-.filter-divider {
-    width: 1px;
-    height: 24px;
-    background: #e5e7eb;
-    margin: 0 4px;
+
+/* Divider */
+.ws-ctrl-divider {
+    width: 1px; height: 28px;
+    background: #e2e8f0;
+    flex-shrink: 0;
 }
-.filter-select {
+
+/* View Toggle */
+.ws-view-toggle {
+    display: flex;
+    gap: 2px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 3px;
+}
+.ws-view-btn {
     padding: 5px 10px;
-    border-radius: 20px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: #94a3b8;
+    transition: all 0.2s;
+}
+.ws-view-btn:hover { color: #475569; }
+.ws-view-btn.active {
+    background: white; color: #4f46e5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Filter Dropdowns */
+.ws-filter-select {
+    padding: 6px 28px 6px 10px;
+    border-radius: 8px;
     border: 2px solid #e5e7eb;
     background: white;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 600;
     color: #374151;
     cursor: pointer;
@@ -156,213 +181,67 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    padding-left: 10px;
-    padding-right: 24px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234f46e5' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: left 8px center;
+    background-position: left 10px center;
 }
-.filter-select:hover {
-    border-color: #a5b4fc;
-}
-.filter-select:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
-}
+.ws-filter-select:hover { border-color: #a5b4fc; }
+.ws-filter-select:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79,70,229,0.12); }
 
-/* ===== List View ===== */
-.schedule-list-wrapper {
-    display: none;
+/* ===== STATS BAR ===== */
+.ws-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
 }
-.schedule-list-wrapper.active {
-    display: block;
-}
-.schedule-grid-wrapper.hidden {
-    display: none;
-}
-
-.list-group-section {
-    margin-bottom: 20px;
+.ws-stat-card {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 14px;
+    border-radius: 10px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    overflow: hidden;
-}
-.list-group-header {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 18px;
-    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
-    border-bottom: 2px solid #e0e7ff;
-    font-weight: 700;
-    color: #1e1b4b;
-    font-size: 15px;
 }
-.list-group-header .group-icon {
-    width: 36px;
-    height: 36px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
+.ws-stat-icon {
+    width: 36px; height: 36px;
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
+    display: flex; align-items: center; justify-content: center;
     font-size: 14px;
 }
-.list-group-header .group-count {
-    background: #4f46e5;
-    color: white;
-    padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    margin-right: auto;
+.ws-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+.ws-stat-icon.orange { background: #fff7ed; color: #f97316; }
+.ws-stat-icon.purple { background: #f5f3ff; color: #7c3aed; }
+.ws-stat-icon.green { background: #ecfdf5; color: #059669; }
+.ws-stat-num {
+    font-size: 20px; font-weight: 800; color: #1e1b4b; line-height: 1;
 }
-.list-group-body {
-    padding: 8px 12px;
+.ws-stat-label {
+    font-size: 11px; color: #6b7280; font-weight: 600;
 }
-.list-event-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid #f1f5f9;
-    margin-bottom: 8px;
-    transition: all 0.2s;
-    position: relative;
-}
-.list-event-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border-color: #c7d2fe;
-    transform: translateY(-1px);
-}
-.list-event-card.lecture-list-card {
-    background: linear-gradient(135deg, #eff6ff 0%, #f8faff 100%);
-    border-right: 3px solid #3b82f6;
-}
-.list-event-card.exam-list-card {
-    background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
-    border-right: 3px solid #f97316;
-}
-.list-event-card .lec-type-indicator {
-    width: 8px;
-    height: 40px;
-    border-radius: 4px;
-    flex-shrink: 0;
-}
-.lecture-list-card .lec-type-indicator { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-.exam-list-card .lec-type-indicator { background: linear-gradient(180deg, #f97316, #ea580c); }
-.list-event-card .lec-info {
-    flex: 1;
-    min-width: 0;
-}
-.list-event-card .lec-info .lec-subject {
-    font-weight: 700;
-    font-size: 14px;
-    margin-bottom: 3px;
-    white-space: nowrap;
+
+/* ===== SCHEDULE GRID ===== */
+.ws-grid-wrap {
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
     overflow: hidden;
-    text-overflow: ellipsis;
 }
-.lecture-list-card .lec-subject { color: #1e40af; }
-.exam-list-card .lec-subject { color: #9a3412; }
-.list-event-card .lec-info .lec-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    font-size: 12.5px;
-    color: #64748b;
-    font-weight: 500;
-}
-.list-event-card .lec-info .lec-meta i {
-    font-size: 11px;
-    margin-left: 3px;
-    color: #94a3b8;
-}
-.list-event-card .lec-type-badge {
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-.lecture-list-card .lec-type-badge {
-    background: #dbeafe;
-    color: #1e40af;
-}
-.exam-list-card .lec-type-badge {
-    background: #ffedd5;
-    color: #9a3412;
-}
-.list-event-card .lec-actions {
-    display: flex;
-    gap: 4px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    flex-shrink: 0;
-}
-.list-event-card:hover .lec-actions {
-    opacity: 1;
-}
-.list-event-card .lec-actions button {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    background: white;
-    cursor: pointer;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-.list-event-card .lec-actions .btn-edit:hover {
-    background: #fef3c7;
-    border-color: #fbbf24;
-    color: #92400e;
-}
-.list-event-card .lec-actions .btn-delete:hover {
-    background: #fee2e2;
-    border-color: #fca5a5;
-    color: #991b1b;
-}
-
-/* Empty state for list */
-.list-empty-state {
-    text-align: center;
-    padding: 30px 20px;
-    color: #94a3b8;
-}
-.list-empty-state i {
-    font-size: 32px;
-    margin-bottom: 8px;
-    display: block;
-}
-.list-empty-state p {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0;
-}
-
-/* Schedule Grid */
-.schedule-grid-wrapper {
+.ws-grid-scroll {
     overflow-x: auto;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    background: white;
 }
-.schedule-grid {
+.ws-grid {
     width: 100%;
-    min-width: 800px;
+    min-width: 760px;
     border-collapse: collapse;
 }
-.schedule-grid th {
+.ws-grid th {
     background: #f8fafc;
-    padding: 12px 8px;
-    font-size: 13px;
+    padding: 10px 6px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #1e1b4b;
     border-bottom: 2px solid #e2e8f0;
@@ -371,419 +250,455 @@
     top: 0;
     z-index: 1;
 }
-.schedule-grid th.time-col {
-    width: 90px;
-    min-width: 90px;
+.ws-grid th.ws-time-col {
+    width: 70px; min-width: 70px;
+    background: #f1f5f9;
 }
-.schedule-grid td {
+.ws-grid td {
     border: 1px solid #f1f5f9;
-    padding: 4px;
+    padding: 2px;
     vertical-align: top;
-    min-height: 60px;
-    height: 60px;
+    height: 48px;
+    position: relative;
 }
-.schedule-grid td.time-cell {
+.ws-grid td.ws-time-cell {
     background: #f8fafc;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 600;
-    color: #475569;
+    color: #64748b;
     text-align: center;
     vertical-align: middle;
     border-right: 2px solid #e2e8f0;
 }
-.schedule-grid td.blocked-cell {
+.ws-grid td.ws-blocked {
     background: repeating-linear-gradient(45deg, #fef2f2, #fef2f2 4px, #fee2e2 4px, #fee2e2 8px);
-    position: relative;
-}
-.schedule-grid td.blocked-cell::after {
-    content: '';
-    position: absolute;
-    inset: 2px;
-    border: 1px dashed #fca5a5;
-    border-radius: 4px;
-    pointer-events: none;
 }
 
-/* Event Card - Lecture */
-.event-card {
-    border-radius: 8px;
-    padding: 6px 8px;
-    font-size: 11.5px;
-    position: relative;
+/* Event Card in Grid */
+.ws-ev {
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 11px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
 }
-.event-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+.ws-ev:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     transform: translateY(-1px);
+    z-index: 2;
 }
-.event-card.lecture-card {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+.ws-ev.ws-lec {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe);
     border-right: 3px solid #3b82f6;
 }
-.event-card.lecture-card:hover {
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-.event-card.exam-card {
-    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+.ws-ev.ws-exm {
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
     border-right: 3px solid #f97316;
 }
-.event-card.exam-card:hover {
-    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
-}
-.event-card .ev-type-badge {
+.ws-ev .ws-ev-type {
     display: inline-block;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 9.5px;
+    padding: 0 5px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 800;
+    margin-bottom: 1px;
+}
+.ws-lec .ws-ev-type { background: #3b82f6; color: white; }
+.ws-exm .ws-ev-type { background: #f97316; color: white; }
+.ws-ev .ws-ev-subj {
     font-weight: 700;
-    margin-bottom: 2px;
-}
-.lecture-card .ev-type-badge {
-    background: #3b82f6;
-    color: white;
-}
-.exam-card .ev-type-badge {
-    background: #f97316;
-    color: white;
-}
-.event-card .ev-subject {
-    font-weight: 700;
-    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.3;
 }
-.lecture-card .ev-subject { color: #1e40af; }
-.exam-card .ev-subject { color: #9a3412; }
-.event-card .ev-teacher {
+.ws-lec .ws-ev-subj { color: #1e40af; }
+.ws-exm .ws-ev-subj { color: #9a3412; }
+.ws-ev .ws-ev-info {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
-.lecture-card .ev-teacher { color: #3b82f6; }
-.exam-card .ev-teacher { color: #ea580c; }
-.event-card .ev-time {
-    font-size: 10.5px;
-}
-.lecture-card .ev-time { color: #6366f1; }
-.exam-card .ev-time { color: #c2410c; }
-.event-card .ev-actions {
+.ws-lec .ws-ev-info { color: #3b82f6; }
+.ws-exm .ws-ev-info { color: #ea580c; }
+/* Hover actions */
+.ws-ev .ws-ev-acts {
     position: absolute;
-    top: 2px;
-    left: 2px;
+    top: 2px; left: 2px;
     display: none;
-}
-.event-card:hover .ev-actions {
-    display: flex;
     gap: 2px;
 }
-.event-card .ev-actions button {
-    width: 20px;
-    height: 20px;
+.ws-ev:hover .ws-ev-acts { display: flex; }
+.ws-ev-acts button {
+    width: 18px; height: 18px;
     border-radius: 4px;
     border: none;
-    font-size: 10px;
+    font-size: 9px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+    display: flex; align-items: center; justify-content: center;
 }
-.ev-btn-edit {
-    background: #fbbf24;
-    color: #78350f;
-}
-.ev-btn-delete {
-    background: #fca5a5;
-    color: #991b1b;
-}
+.ws-ev-acts .act-edit { background: #fbbf24; color: #78350f; }
+.ws-ev-acts .act-del { background: #fca5a5; color: #991b1b; }
 
-/* Empty cell add button */
-.add-event-btn {
-    width: 100%;
-    height: 100%;
-    min-height: 52px;
-    border: 2px dashed #cbd5e1;
-    border-radius: 8px;
+/* Add button in empty cells */
+.ws-add-btn {
+    width: 100%; height: 100%;
+    min-height: 42px;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 6px;
     background: transparent;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     color: #94a3b8;
-    font-size: 16px;
+    font-size: 14px;
     transition: all 0.2s;
 }
-.add-event-btn:hover {
-    border-color: #6366f1;
-    color: #6366f1;
-    background: #f5f3ff;
+.ws-add-btn:hover {
+    border-color: #6366f1; color: #6366f1; background: #f5f3ff;
 }
 
-/* Rooms Management Panel */
-.rooms-panel {
+/* ===== LIST VIEW ===== */
+.ws-list-wrap { display: none; }
+.ws-list-wrap.active { display: block; }
+.ws-grid-wrap.hidden { display: none; }
+
+.ws-list-group {
     background: white;
     border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin-bottom: 20px;
-}
-.rooms-panel h6 {
-    font-weight: 700;
-    color: #1e1b4b;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    overflow: hidden;
     margin-bottom: 12px;
 }
-.room-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 8px;
-    transition: all 0.2s;
-}
-.room-item:hover {
-    border-color: #c7d2fe;
-    background: #fafafe;
-}
-.room-item .room-info {
+.ws-list-group-hd {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-.room-item .room-icon {
-    width: 36px;
-    height: 36px;
-    background: #eef2ff;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #4f46e5;
-    font-size: 14px;
-}
-.room-item .room-name {
-    font-weight: 600;
-    color: #1e293b;
-    font-size: 14px;
-}
-.room-item .room-capacity {
-    font-size: 12px;
-    color: #64748b;
-}
-.room-item .room-actions {
-    display: flex;
-    gap: 4px;
-}
-.room-item .room-actions button {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-    background: white;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
     cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+.ws-list-group-hd:hover { background: #eef2ff; }
+.ws-list-group-hd .grp-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 13px;
+}
+.ws-list-group-hd .grp-title {
+    font-weight: 700; color: #1e1b4b; font-size: 14px;
+}
+.ws-list-group-hd .grp-count {
+    background: #e0e7ff; color: #4f46e5;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 700;
+}
+.ws-list-group-hd .grp-chevron {
+    margin-right: auto;
+    color: #94a3b8;
     font-size: 12px;
-    transition: all 0.2s;
+    transition: transform 0.2s;
+}
+.ws-list-group-hd.collapsed .grp-chevron {
+    transform: rotate(-90deg);
+}
+.ws-list-group-bd {
+    padding: 6px 10px;
+}
+.ws-list-group-bd.collapsed {
+    display: none;
+}
+
+/* List Event Row */
+.ws-lv {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #f1f5f9;
+    margin-bottom: 6px;
+    transition: all 0.15s;
+    position: relative;
 }
-.room-item .room-actions .btn-edit:hover {
-    background: #fef3c7;
-    border-color: #fbbf24;
-    color: #92400e;
+.ws-lv:hover { box-shadow: 0 1px 6px rgba(0,0,0,0.06); border-color: #c7d2fe; }
+.ws-lv.ws-lv-lec {
+    background: linear-gradient(135deg, #eff6ff, #f8faff);
+    border-right: 3px solid #3b82f6;
 }
-.room-item .room-actions .btn-delete:hover {
-    background: #fee2e2;
-    border-color: #fca5a5;
-    color: #991b1b;
+.ws-lv.ws-lv-exm {
+    background: linear-gradient(135deg, #fff7ed, #fffbf5);
+    border-right: 3px solid #f97316;
 }
-
-/* Modal */
-.modal-schedule .modal-dialog {
-    max-width: 560px;
+.ws-lv .ws-lv-bar {
+    width: 5px; height: 36px; border-radius: 3px; flex-shrink: 0;
 }
-.modal-schedule .modal-header {
-    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);
-    color: white;
-    border-radius: 0;
+.ws-lv-lec .ws-lv-bar { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+.ws-lv-exm .ws-lv-bar { background: linear-gradient(180deg, #f97316, #ea580c); }
+.ws-lv .ws-lv-body { flex: 1; min-width: 0; }
+.ws-lv .ws-lv-subj {
+    font-weight: 700; font-size: 13.5px; color: #1e1b4b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 2px;
 }
-.modal-schedule .modal-header .btn-close {
-    filter: brightness(0) invert(1);
+.ws-lv .ws-lv-meta {
+    display: flex; flex-wrap: wrap; gap: 6px 14px;
+    font-size: 11.5px; color: #64748b; font-weight: 500;
 }
-.form-label-sm {
-    font-size: 13px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 4px;
+.ws-lv .ws-lv-meta i { font-size: 10px; margin-left: 2px; color: #94a3b8; }
+.ws-lv .ws-lv-badge {
+    padding: 3px 10px; border-radius: 10px;
+    font-size: 10.5px; font-weight: 700; flex-shrink: 0;
 }
-
-/* Duration selector highlight */
-.duration-option {
+.ws-lv-lec .ws-lv-badge { background: #dbeafe; color: #1e40af; }
+.ws-lv-exm .ws-lv-badge { background: #ffedd5; color: #9a3412; }
+.ws-lv .ws-lv-acts {
+    display: flex; gap: 3px; opacity: 0; transition: opacity 0.15s; flex-shrink: 0;
+}
+.ws-lv:hover .ws-lv-acts { opacity: 1; }
+.ws-lv .ws-lv-acts button {
+    width: 26px; height: 26px; border-radius: 6px;
+    border: 1px solid #e5e7eb; background: white;
+    cursor: pointer; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
     transition: all 0.15s;
 }
-.duration-option.active {
-    background: #4f46e5 !important;
-    color: white !important;
-    border-color: #4f46e5 !important;
-}
+.ws-lv-acts .act-edit:hover { background: #fef3c7; border-color: #fbbf24; color: #92400e; }
+.ws-lv-acts .act-del:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
 
+/* Empty State */
+.ws-empty {
+    text-align: center; padding: 40px 20px; color: #94a3b8;
+}
+.ws-empty i { font-size: 36px; margin-bottom: 8px; display: block; }
+.ws-empty p { font-size: 14px; font-weight: 600; margin: 0; }
+
+/* ===== ROOMS PANEL ===== */
+.ws-rooms-panel {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+    display: none;
+}
+.ws-rooms-panel.open { display: block; }
+.ws-rooms-panel h6 { font-weight: 700; color: #1e1b4b; margin-bottom: 12px; }
+.ws-rooms-add {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.ws-rooms-add input {
+    flex: 1; min-width: 120px;
+    padding: 7px 12px; border-radius: 8px; border: 2px solid #e5e7eb;
+    font-size: 13px; outline: none; transition: border-color 0.2s;
+}
+.ws-rooms-add input:focus { border-color: #4f46e5; }
+.ws-room-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 8px; border: 1px solid #e5e7eb;
+    margin-bottom: 6px; transition: all 0.15s;
+}
+.ws-room-row:hover { border-color: #c7d2fe; background: #fafafe; }
+.ws-room-row .rr-info {
+    display: flex; align-items: center; gap: 8px;
+}
+.ws-room-row .rr-icon {
+    width: 32px; height: 32px;
+    background: #eef2ff; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #4f46e5; font-size: 13px;
+}
+.ws-room-row .rr-name { font-weight: 600; color: #1e293b; font-size: 13.5px; }
+.ws-room-row .rr-cap { font-size: 11.5px; color: #64748b; }
+.ws-room-row .rr-acts { display: flex; gap: 4px; }
+.ws-room-row .rr-acts button {
+    width: 28px; height: 28px; border-radius: 6px;
+    border: 1px solid #e5e7eb; background: white;
+    cursor: pointer; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+}
+.ws-room-row .rr-acts .act-edit:hover { background: #fef3c7; border-color: #fbbf24; color: #92400e; }
+.ws-room-row .rr-acts .act-del:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+
+/* ===== MODAL ===== */
+.ws-modal .modal-dialog { max-width: 520px; }
+.ws-modal .modal-header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white; border-radius: 0;
+}
+.ws-modal .modal-header .btn-close { filter: brightness(0) invert(1); }
+.ws-fld-label {
+    font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 3px;
+}
+/* Event type toggle in modal */
+.ws-evtype-toggle {
+    display: flex; gap: 6px;
+}
+.ws-evtype-btn {
+    flex: 1; padding: 8px; border-radius: 8px; border: 2px solid #e5e7eb;
+    background: white; cursor: pointer; font-size: 13px; font-weight: 700;
+    text-align: center; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.ws-evtype-btn.active-lec {
+    background: #3b82f6; color: white; border-color: #3b82f6;
+}
+.ws-evtype-btn.active-exm {
+    background: #f97316; color: white; border-color: #f97316;
+}
+.ws-evtype-btn:hover:not(.active-lec):not(.active-exm) {
+    border-color: #a5b4fc;
+}
 /* Conflict warning */
-.conflict-warning {
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 13px;
-    color: #991b1b;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.ws-conflict {
+    background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+    padding: 8px 12px; font-size: 12.5px; color: #991b1b;
+    display: flex; align-items: center; gap: 6px;
 }
 
-/* Auto-sort button */
-.auto-sort-btn {
-    background: linear-gradient(135deg, #059669, #047857);
-    color: white;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.auto-sort-btn:hover {
-    background: linear-gradient(135deg, #047857, #065f46);
-    transform: translateY(-1px);
-}
-
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .schedule-header { padding: 16px; }
-    .schedule-header h4 { font-size: 16px; }
-    .room-tabs { padding: 8px; }
-    .room-tab { padding: 6px 12px; font-size: 12px; }
-    .schedule-legend { gap: 10px; padding: 8px 12px; }
-    .filter-toolbar { padding: 10px 12px; gap: 6px; }
-    .filter-pill { padding: 4px 10px; font-size: 11.5px; }
-    .filter-select { font-size: 11.5px; }
-    .list-event-card { padding: 10px 12px; gap: 8px; }
-    .list-event-card .lec-info .lec-subject { font-size: 13px; }
-    .list-event-card .lec-info .lec-meta { font-size: 11.5px; }
+    .ws-controls { padding: 10px 12px; gap: 8px; }
+    .ws-room-pill { padding: 5px 10px; font-size: 11.5px; }
+    .ws-type-pill { padding: 4px 10px; font-size: 11px; }
+    .ws-stats { gap: 6px; }
+    .ws-stat-card { padding: 8px 10px; min-width: 90px; }
+    .ws-stat-num { font-size: 16px; }
+    .ws-stat-icon { width: 30px; height: 30px; font-size: 12px; }
+    .ws-lv { padding: 8px 10px; }
+    .ws-lv .ws-lv-subj { font-size: 12.5px; }
+    .ws-lv .ws-lv-meta { font-size: 10.5px; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Header -->
-<div class="schedule-header">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+<!-- HEADER -->
+<div class="ws-header">
+    <div class="ws-header-title">
+        <div class="ws-icon"><i class="fas fa-calendar-alt"></i></div>
         <div>
-            <h4><i class="fas fa-calendar-alt me-2"></i>الجدول الأسبوعي</h4>
-            <small style="opacity: 0.85;">تنظيم المحاضرات والامتحانات على مدار الأسبوع حسب القاعات</small>
+            <h4>الجدول الأسبوعي</h4>
+            <small>تنظيم المحاضرات والامتحانات</small>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-light btn-sm" onclick="openRoomPanel()" title="إدارة القاعات">
-                <i class="fas fa-door-open me-1"></i>القاعات
-            </button>
-            <button class="auto-sort-btn" onclick="autoSortSchedule()" title="ترتيب تلقائي">
-                <i class="fas fa-sort-amount-down me-1"></i>ترتيب تلقائي
-            </button>
-            <button class="btn btn-warning btn-sm text-dark" onclick="openAddEventModal()" title="إضافة حدث جديد">
-                <i class="fas fa-plus me-1"></i>حدث جديد
-            </button>
-        </div>
+    </div>
+    <div class="ws-actions">
+        <button class="ws-btn ws-btn-outline" onclick="toggleRoomsPanel()" title="إدارة القاعات">
+            <i class="fas fa-door-open"></i> القاعات
+        </button>
+        <button class="ws-btn ws-btn-success" onclick="autoSortSchedule()" title="ترتيب تلقائي">
+            <i class="fas fa-magic"></i> ترتيب
+        </button>
+        <button class="ws-btn ws-btn-primary" onclick="openAddEventModal()" title="إضافة حدث">
+            <i class="fas fa-plus"></i> حدث جديد
+        </button>
     </div>
 </div>
 
-<!-- Legend -->
-<div class="schedule-legend">
-    <span style="font-weight:700; color:#1e1b4b; font-size:13px;"><i class="fas fa-palette me-1"></i>دليل الألوان:</span>
-    <div class="legend-item">
-        <div class="legend-dot lecture"></div>
-        محاضرة
-    </div>
-    <div class="legend-item">
-        <div class="legend-dot exam"></div>
-        امتحان
-    </div>
-    <div class="legend-item">
-        <div class="legend-dot blocked"></div>
-        محجوز (تعارض)
-    </div>
-</div>
-
-<!-- Rooms Management Panel (hidden by default) -->
-<div id="roomsPanel" class="rooms-panel" style="display: none;">
-    <div class="d-flex align-items-center justify-content-between mb-3">
+<!-- ROOMS MANAGEMENT PANEL (hidden) -->
+<div id="roomsPanel" class="ws-rooms-panel">
+    <div class="d-flex align-items-center justify-content-between mb-2">
         <h6 class="mb-0"><i class="fas fa-door-open me-2"></i>إدارة القاعات</h6>
-        <button class="btn btn-sm btn-outline-secondary" onclick="closeRoomPanel()">
+        <button class="btn btn-sm btn-outline-secondary" onclick="toggleRoomsPanel()">
             <i class="fas fa-times"></i>
         </button>
     </div>
-    
-    <!-- Add room form -->
-    <div class="row g-2 mb-3">
-        <div class="col-12 col-md-5">
-            <input type="text" id="newRoomName" class="form-control form-control-sm" placeholder="اسم القاعة">
-        </div>
-        <div class="col-6 col-md-3">
-            <input type="number" id="newRoomCapacity" class="form-control form-control-sm" placeholder="السعة" min="0">
-        </div>
-        <div class="col-6 col-md-4">
-            <button class="btn btn-primary btn-sm w-100" onclick="addRoom()">
-                <i class="fas fa-plus me-1"></i>إضافة قاعة
-            </button>
-        </div>
+    <div class="ws-rooms-add">
+        <input type="text" id="newRoomName" placeholder="اسم القاعة">
+        <input type="number" id="newRoomCapacity" placeholder="السعة" min="0" style="max-width:100px;">
+        <button class="ws-btn ws-btn-primary" onclick="addRoom()" style="padding:7px 14px;">
+            <i class="fas fa-plus"></i> إضافة
+        </button>
     </div>
-    
-    <!-- Rooms list -->
     <div id="roomsList"></div>
 </div>
 
-<!-- Room Filter Tabs -->
-<div class="room-tabs" id="roomTabs">
-    <div class="room-tab active" data-room="all" onclick="filterByRoom('all')">
-        <i class="fas fa-th me-1"></i>الكل
+<!-- SMART CONTROL BAR -->
+<div class="ws-controls">
+    <!-- Room Pills -->
+    <div class="ws-room-pills" id="roomPills"></div>
+
+    <div class="ws-ctrl-divider"></div>
+
+    <!-- Type Filter -->
+    <div class="ws-type-pills">
+        <button class="ws-type-pill active-all" id="typeAll" onclick="setTypeFilter('all')">الكل</button>
+        <button class="ws-type-pill" id="typeLec" onclick="setTypeFilter('محاضرة')">
+            <i class="fas fa-chalkboard-teacher" style="font-size:10px;"></i> محاضرات
+        </button>
+        <button class="ws-type-pill" id="typeExm" onclick="setTypeFilter('امتحان')">
+            <i class="fas fa-file-alt" style="font-size:10px;"></i> امتحانات
+        </button>
+    </div>
+
+    <div class="ws-ctrl-divider"></div>
+
+    <!-- View Toggle -->
+    <div class="ws-view-toggle">
+        <button class="ws-view-btn active" id="viewGrid" onclick="setView('grid')" title="عرض جدول">
+            <i class="fas fa-th"></i>
+        </button>
+        <button class="ws-view-btn" id="viewList" onclick="setView('list')" title="عرض قائمة">
+            <i class="fas fa-list"></i>
+        </button>
+    </div>
+
+    <!-- Sort & Filters -->
+    <select class="ws-filter-select" id="sortSelect" onchange="setSortBy(this.value)" title="ترتيب حسب">
+        <option value="time">حسب الوقت</option>
+        <option value="teacher">حسب الاستاد</option>
+        <option value="day">حسب اليوم</option>
+        <option value="room">حسب القاعة</option>
+    </select>
+
+    <select class="ws-filter-select" id="teacherFilter" onchange="setTeacherFilter(parseInt(this.value))" title="المدرس">
+        <option value="0">كل المدرسين</option>
+    </select>
+
+    <select class="ws-filter-select" id="dayFilter" onchange="setDayFilter(this.value)" title="اليوم">
+        <option value="all">كل الأيام</option>
+    </select>
+</div>
+
+<!-- STATS BAR -->
+<div class="ws-stats" id="statsBar"></div>
+
+<!-- SCHEDULE GRID VIEW -->
+<div class="ws-grid-wrap" id="gridWrap">
+    <div class="ws-grid-scroll">
+        <table class="ws-grid" id="scheduleGrid">
+            <thead>
+                <tr>
+                    <th class="ws-time-col">الوقت</th>
+                    <th>الإثنين</th>
+                    <th>الثلاثاء</th>
+                    <th>الأربعاء</th>
+                    <th>الخميس</th>
+                    <th>الجمعة</th>
+                    <th>السبت</th>
+                    <th>الأحد</th>
+                </tr>
+            </thead>
+            <tbody id="gridBody"></tbody>
+        </table>
     </div>
 </div>
 
-<!-- Filter/Sort Toolbar -->
-<div class="filter-toolbar" id="filterToolbar">
-    <!-- Will be rendered by JS -->
+<!-- SCHEDULE LIST VIEW -->
+<div class="ws-list-wrap" id="listWrap">
+    <div id="listContent"></div>
 </div>
 
-<!-- Schedule Grid -->
-<div class="schedule-grid-wrapper" id="scheduleGridWrapper">
-    <table class="schedule-grid" id="scheduleGrid">
-        <thead>
-            <tr>
-                <th class="time-col">الوقت</th>
-                <th>الإثنين</th>
-                <th>الثلاثاء</th>
-                <th>الأربعاء</th>
-                <th>الخميس</th>
-                <th>الجمعة</th>
-                <th>السبت</th>
-                <th>الأحد</th>
-            </tr>
-        </thead>
-        <tbody id="scheduleBody"></tbody>
-    </table>
-</div>
-
-<!-- Schedule List View -->
-<div class="schedule-list-wrapper" id="scheduleListWrapper">
-    <div id="scheduleListContent">
-        <!-- Will be rendered by JS -->
-    </div>
-</div>
-
-<!-- Add/Edit Event Modal -->
-<div class="modal fade modal-schedule" id="eventModal" tabindex="-1">
+<!-- ADD/EDIT EVENT MODAL -->
+<div class="modal fade ws-modal" id="eventModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -795,33 +710,34 @@
                 <div class="row g-3">
                     <!-- Event Type -->
                     <div class="col-12">
-                        <label class="form-label-sm">نوع الحدث</label>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm flex-fill event-type-btn active" id="btnTypeLecture" 
-                                onclick="setEventType('محاضرة')" style="background:#3b82f6;color:white;border:2px solid #3b82f6;">
-                                <i class="fas fa-chalkboard-teacher me-1"></i>محاضرة
+                        <label class="ws-fld-label">نوع الحدث</label>
+                        <div class="ws-evtype-toggle">
+                            <button type="button" class="ws-evtype-btn active-lec" id="btnTypeLecture"
+                                onclick="setEventType('محاضرة')">
+                                <i class="fas fa-chalkboard-teacher"></i> محاضرة
                             </button>
-                            <button type="button" class="btn btn-sm flex-fill event-type-btn" id="btnTypeExam" 
-                                onclick="setEventType('امتحان')" style="background:white;color:#ea580c;border:2px solid #f97316;">
-                                <i class="fas fa-file-alt me-1"></i>امتحان
+                            <button type="button" class="ws-evtype-btn" id="btnTypeExam"
+                                onclick="setEventType('امتحان')">
+                                <i class="fas fa-file-alt"></i> امتحان
                             </button>
                         </div>
                         <input type="hidden" id="lecEventType" value="محاضرة">
                     </div>
                     <div class="col-6">
-                        <label class="form-label-sm">القاعة</label>
+                        <label class="ws-fld-label">القاعة</label>
                         <select id="lecRoom" class="form-select form-select-sm" required></select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label-sm">المدرس</label>
+                        <label class="ws-fld-label">المدرس</label>
                         <select id="lecTeacher" class="form-select form-select-sm" required></select>
                     </div>
                     <div class="col-12">
-                        <label class="form-label-sm">المادة</label>
-                        <input type="text" id="lecSubject" class="form-control form-control-sm" placeholder="تُملأ تلقائياً من مادة المدرس">
+                        <label class="ws-fld-label">المادة</label>
+                        <input type="text" id="lecSubject" class="form-control form-control-sm"
+                            placeholder="تُملأ تلقائياً من مادة المدرس">
                     </div>
                     <div class="col-12">
-                        <label class="form-label-sm">اليوم</label>
+                        <label class="ws-fld-label">اليوم</label>
                         <select id="lecDay" class="form-select form-select-sm">
                             <option value="الإثنين">الإثنين</option>
                             <option value="الثلاثاء">الثلاثاء</option>
@@ -833,19 +749,18 @@
                         </select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label-sm">من الساعة</label>
-                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required onchange="updateEndTime()">
+                        <label class="ws-fld-label">من الساعة</label>
+                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required
+                            onchange="updateEndTime()">
                     </div>
                     <div class="col-6">
-                        <label class="form-label-sm">المدة</label>
+                        <label class="ws-fld-label">المدة</label>
                         <select id="lecDuration" class="form-select form-select-sm" onchange="updateEndTime()">
-                            <!-- Lecture durations -->
                             <optgroup label="محاضرة" id="lectureDurations">
                                 <option value="60">1 ساعة</option>
                                 <option value="90" selected>ساعة ونصف</option>
                                 <option value="120">ساعتين</option>
                             </optgroup>
-                            <!-- Exam durations -->
                             <optgroup label="امتحان" id="examDurations">
                                 <option value="120">ساعتين</option>
                                 <option value="180">3 ساعات</option>
@@ -858,20 +773,22 @@
                         </select>
                     </div>
                     <div class="col-12">
-                        <label class="form-label-sm">إلى الساعة <small class="text-muted">(تُحسب تلقائياً)</small></label>
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" readonly style="background:#f8fafc;">
+                        <label class="ws-fld-label">إلى الساعة <small class="text-muted">(تلقائي)</small></label>
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" readonly
+                            style="background:#f8fafc;">
                     </div>
                     <div class="col-12">
-                        <label class="form-label-sm">ملاحظات</label>
-                        <input type="text" id="lecNotes" class="form-control form-control-sm" placeholder="ملاحظات اختيارية">
+                        <label class="ws-fld-label">ملاحظات</label>
+                        <input type="text" id="lecNotes" class="form-control form-control-sm"
+                            placeholder="ملاحظات اختيارية">
                     </div>
                 </div>
                 <!-- Conflict Warning -->
-                <div id="lecConflictWarning" class="conflict-warning mt-3" style="display:none;">
+                <div id="lecConflictWarning" class="ws-conflict mt-3" style="display:none;">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span id="lecConflictText"></span>
                 </div>
-                <div id="lecError" class="alert alert-danger mt-3" style="display:none; font-size: 13px;"></div>
+                <div id="lecError" class="alert alert-danger mt-3" style="display:none; font-size:12.5px;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">إلغاء</button>
@@ -883,8 +800,8 @@
     </div>
 </div>
 
-<!-- Edit Room Modal -->
-<div class="modal fade modal-schedule" id="roomEditModal" tabindex="-1">
+<!-- EDIT ROOM MODAL -->
+<div class="modal fade ws-modal" id="roomEditModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <div class="modal-header">
@@ -894,11 +811,11 @@
             <div class="modal-body">
                 <input type="hidden" id="editRoomId" value="">
                 <div class="mb-2">
-                    <label class="form-label-sm">اسم القاعة</label>
+                    <label class="ws-fld-label">اسم القاعة</label>
                     <input type="text" id="editRoomName" class="form-control form-control-sm">
                 </div>
                 <div class="mb-2">
-                    <label class="form-label-sm">السعة</label>
+                    <label class="ws-fld-label">السعة</label>
                     <input type="number" id="editRoomCapacity" class="form-control form-control-sm" min="0">
                 </div>
             </div>
@@ -915,25 +832,24 @@
 
 {% block extra_js %}
 <script>
-// ===== Data =====
+// ===== DATA =====
 let allRooms = {{ rooms | tojson }};
 let allTeachers = {{ teachers | tojson }};
 let allSchedule = {{ schedule | tojson }};
 let currentRoomFilter = 'all';
 let currentEventType = 'محاضرة';
 
-// ===== Filter/Sort State =====
-let currentSortBy = 'time';        // 'time', 'teacher', 'day', 'room'
-let currentEventTypeFilter = 'all'; // 'all', 'محاضرة', 'امتحان'
-let currentTeacherFilter = 0;      // 0 = all
-let currentDayFilter = 'all';      // 'all' or specific day name
-let currentViewMode = 'grid';      // 'grid' or 'list'
+// ===== FILTER STATE =====
+let currentSortBy = 'time';
+let currentEventTypeFilter = 'all';
+let currentTeacherFilter = 0;
+let currentDayFilter = 'all';
+let currentViewMode = 'grid';
 
 const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 const TIME_SLOTS = [];
 for (let h = 7; h <= 21; h++) {
     TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
-    TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
 }
 
 const LECTURE_DURATIONS = [
@@ -951,176 +867,199 @@ const EXAM_DURATIONS = [
     { value: 480, label: '8 ساعات' }
 ];
 
-// ===== Initialize =====
+// ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
-    renderRoomTabs();
-    renderFilterToolbar();
+    renderRoomPills();
+    renderFilterDropdowns();
+    renderStats();
     renderCurrentView();
     renderRoomsList();
     populateModalSelects();
 });
 
-// ===== Room Tabs =====
-function renderRoomTabs() {
-    const tabsEl = document.getElementById('roomTabs');
-    let html = '<div class="room-tab ' + (currentRoomFilter === 'all' ? 'active' : '') + '" data-room="all" onclick="filterByRoom(\'all\')"><i class="fas fa-th me-1"></i>الكل</div>';
+// ===== ROOM PILLS =====
+function renderRoomPills() {
+    const el = document.getElementById('roomPills');
+    let html = '<div class="ws-room-pill ' + (currentRoomFilter === 'all' ? 'active' : '') + '" onclick="filterByRoom(\'all\')"><i class="fas fa-th"></i> الكل</div>';
     allRooms.forEach(room => {
-        html += '<div class="room-tab ' + (currentRoomFilter === room.id ? 'active' : '') + '" data-room="' + room.id + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open me-1"></i>' + escapeHtml(room.name) + '</div>';
+        html += '<div class="ws-room-pill ' + (currentRoomFilter === room.id ? 'active' : '') + '" onclick="filterByRoom(' + room.id + ')"><i class="fas fa-door-open"></i> ' + escapeHtml(room.name) + '</div>';
     });
-    tabsEl.innerHTML = html;
+    el.innerHTML = html;
 }
 
 function filterByRoom(roomId) {
     currentRoomFilter = roomId;
-    // Reset sort/filter when switching rooms
     currentSortBy = 'time';
     currentEventTypeFilter = 'all';
     currentTeacherFilter = 0;
     currentDayFilter = 'all';
     currentViewMode = 'grid';
-    renderRoomTabs();
-    renderFilterToolbar();
+    // Reset UI state
+    document.getElementById('sortSelect').value = 'time';
+    document.getElementById('teacherFilter').value = '0';
+    document.getElementById('dayFilter').value = 'all';
+    resetTypePills();
+    setViewActive('grid');
+    renderRoomPills();
+    renderStats();
     renderCurrentView();
 }
 
-// ===== Filter Toolbar =====
-function renderFilterToolbar() {
-    const toolbar = document.getElementById('filterToolbar');
-    const isAllRooms = currentRoomFilter === 'all';
-    
-    let html = '';
-    
-    // View mode toggle
-    html += '<span class="filter-label"><i class="fas fa-filter me-1"></i>عرض:</span>';
-    html += '<button class="filter-pill ' + (currentSortBy === 'time' ? 'active' : '') + '" onclick="setSortBy(\'time\')"><i class="fas fa-th"></i> جدول</button>';
-    
-    if (isAllRooms) {
-        html += '<button class="filter-pill ' + (currentSortBy === 'teacher' ? 'active' : '') + '" onclick="setSortBy(\'teacher\')"><i class="fas fa-user-tie"></i> الاستاد</button>';
-        html += '<button class="filter-pill ' + (currentSortBy === 'day' ? 'active' : '') + '" onclick="setSortBy(\'day\')"><i class="fas fa-calendar-day"></i> اليوم</button>';
-        html += '<button class="filter-pill ' + (currentSortBy === 'room' ? 'active' : '') + '" onclick="setSortBy(\'room\')"><i class="fas fa-door-open"></i> القاعة</button>';
+// ===== TYPE FILTER =====
+function setTypeFilter(type) {
+    currentEventTypeFilter = type;
+    resetTypePills();
+    if (type === 'all') {
+        document.getElementById('typeAll').className = 'ws-type-pill active-all';
+    } else if (type === 'محاضرة') {
+        document.getElementById('typeLec').className = 'ws-type-pill active-lecture';
     } else {
-        html += '<button class="filter-pill ' + (currentSortBy === 'teacher' ? 'active' : '') + '" onclick="setSortBy(\'teacher\')"><i class="fas fa-user-tie"></i> الاستاد</button>';
+        document.getElementById('typeExm').className = 'ws-type-pill active-exam';
     }
-    
-    // Divider
-    html += '<div class="filter-divider"></div>';
-    
-    // Event type filter
-    html += '<span class="filter-label"><i class="fas fa-tags me-1"></i>النوع:</span>';
-    html += '<button class="filter-pill ' + (currentEventTypeFilter === 'all' ? 'active' : '') + '" onclick="setEventTypeFilter(\'all\')"><i class="fas fa-layer-group"></i> الكل</button>';
-    html += '<button class="filter-pill ' + (currentEventTypeFilter === 'محاضرة' ? 'active' : '') + '" onclick="setEventTypeFilter(\'محاضرة\')"><i class="fas fa-chalkboard-teacher"></i> محاضرات</button>';
-    html += '<button class="filter-pill ' + (currentEventTypeFilter === 'امتحان' ? 'active' : '') + '" onclick="setEventTypeFilter(\'امتحان\')"><i class="fas fa-file-alt"></i> امتحانات</button>';
-    
-    // Divider
-    html += '<div class="filter-divider"></div>';
-    
-    // Teacher filter dropdown
-    html += '<select class="filter-select" onchange="setTeacherFilter(parseInt(this.value))" title="تصفية حسب المدرس">';
-    html += '<option value="0">كل المدرسين</option>';
-    allTeachers.forEach(t => {
-        html += '<option value="' + t.id + '" ' + (currentTeacherFilter === t.id ? 'selected' : '') + '>' + escapeHtml(t.name) + '</option>';
-    });
-    html += '</select>';
-    
-    // Day filter dropdown (only when viewing all rooms)
-    if (isAllRooms) {
-        html += '<select class="filter-select" onchange="setDayFilter(this.value)" title="تصفية حسب اليوم">';
-        html += '<option value="all">كل الأيام</option>';
-        DAYS.forEach(day => {
-            html += '<option value="' + day + '" ' + (currentDayFilter === day ? 'selected' : '') + '>' + day + '</option>';
-        });
-        html += '</select>';
-    }
-    
-    toolbar.innerHTML = html;
+    renderStats();
+    renderCurrentView();
 }
 
-// ===== Sort/Filter Setters =====
+function resetTypePills() {
+    document.getElementById('typeAll').className = 'ws-type-pill';
+    document.getElementById('typeLec').className = 'ws-type-pill';
+    document.getElementById('typeExm').className = 'ws-type-pill';
+}
+
+// ===== VIEW TOGGLE =====
+function setView(mode) {
+    currentViewMode = mode;
+    setViewActive(mode);
+    if (mode === 'grid') {
+        currentSortBy = 'time';
+        document.getElementById('sortSelect').value = 'time';
+    }
+    renderCurrentView();
+}
+
+function setViewActive(mode) {
+    document.getElementById('viewGrid').className = 'ws-view-btn' + (mode === 'grid' ? ' active' : '');
+    document.getElementById('viewList').className = 'ws-view-btn' + (mode === 'list' ? ' active' : '');
+}
+
+// ===== SORT/FILTER DROPDOWNS =====
+function renderFilterDropdowns() {
+    // Teacher dropdown
+    const teacherEl = document.getElementById('teacherFilter');
+    let thtml = '<option value="0">كل المدرسين</option>';
+    allTeachers.forEach(t => {
+        thtml += '<option value="' + t.id + '" ' + (currentTeacherFilter === t.id ? 'selected' : '') + '>' + escapeHtml(t.name) + '</option>';
+    });
+    teacherEl.innerHTML = thtml;
+
+    // Day dropdown
+    const dayEl = document.getElementById('dayFilter');
+    let dhtml = '<option value="all">كل الأيام</option>';
+    DAYS.forEach(day => {
+        dhtml += '<option value="' + day + '" ' + (currentDayFilter === day ? 'selected' : '') + '>' + day + '</option>';
+    });
+    dayEl.innerHTML = dhtml;
+
+    // Show/hide day filter based on current room
+    dayEl.parentElement; // it's inside ws-controls
+    // Always show day filter now
+}
+
 function setSortBy(sortType) {
     currentSortBy = sortType;
     if (sortType === 'time') {
         currentViewMode = 'grid';
+        setViewActive('grid');
     } else {
         currentViewMode = 'list';
+        setViewActive('list');
     }
-    renderFilterToolbar();
-    renderCurrentView();
-}
-
-function setEventTypeFilter(filterType) {
-    currentEventTypeFilter = filterType;
-    renderFilterToolbar();
     renderCurrentView();
 }
 
 function setTeacherFilter(teacherId) {
     currentTeacherFilter = teacherId;
+    renderStats();
     renderCurrentView();
 }
 
 function setDayFilter(day) {
     currentDayFilter = day;
+    renderStats();
     renderCurrentView();
 }
 
-// ===== Get Filtered Events =====
+// ===== STATS BAR =====
+function renderStats() {
+    const events = getFilteredEvents();
+    const lecCount = events.filter(e => e.event_type === 'محاضرة').length;
+    const exmCount = events.filter(e => e.event_type === 'امتحان').length;
+    const roomCount = currentRoomFilter === 'all' ? allRooms.length : 1;
+    const teacherIds = new Set(events.map(e => e.teacher_id));
+    const teacherCount = teacherIds.size;
+
+    const el = document.getElementById('statsBar');
+    el.innerHTML =
+        '<div class="ws-stat-card">' +
+            '<div class="ws-stat-icon blue"><i class="fas fa-chalkboard-teacher"></i></div>' +
+            '<div><div class="ws-stat-num">' + lecCount + '</div><div class="ws-stat-label">محاضرة</div></div>' +
+        '</div>' +
+        '<div class="ws-stat-card">' +
+            '<div class="ws-stat-icon orange"><i class="fas fa-file-alt"></i></div>' +
+            '<div><div class="ws-stat-num">' + exmCount + '</div><div class="ws-stat-label">امتحان</div></div>' +
+        '</div>' +
+        '<div class="ws-stat-card">' +
+            '<div class="ws-stat-icon purple"><i class="fas fa-door-open"></i></div>' +
+            '<div><div class="ws-stat-num">' + roomCount + '</div><div class="ws-stat-label">قاعة</div></div>' +
+        '</div>' +
+        '<div class="ws-stat-card">' +
+            '<div class="ws-stat-icon green"><i class="fas fa-user-tie"></i></div>' +
+            '<div><div class="ws-stat-num">' + teacherCount + '</div><div class="ws-stat-label">استاد</div></div>' +
+        '</div>';
+}
+
+// ===== GET FILTERED EVENTS =====
 function getFilteredEvents() {
     let events = [...allSchedule];
-    
-    // Room filter
     if (currentRoomFilter !== 'all') {
         events = events.filter(ev => ev.room_id === currentRoomFilter);
     }
-    
-    // Event type filter
     if (currentEventTypeFilter !== 'all') {
         events = events.filter(ev => ev.event_type === currentEventTypeFilter);
     }
-    
-    // Teacher filter
     if (currentTeacherFilter > 0) {
         events = events.filter(ev => ev.teacher_id === currentTeacherFilter);
     }
-    
-    // Day filter
     if (currentDayFilter !== 'all') {
         events = events.filter(ev => ev.day_of_week === currentDayFilter);
     }
-    
     return events;
 }
 
-// ===== Render Current View =====
+// ===== RENDER CURRENT VIEW =====
 function renderCurrentView() {
-    const gridWrapper = document.getElementById('scheduleGridWrapper');
-    const listWrapper = document.getElementById('scheduleListWrapper');
-    
+    const gridWrap = document.getElementById('gridWrap');
+    const listWrap = document.getElementById('listWrap');
     if (currentViewMode === 'grid') {
-        gridWrapper.classList.remove('hidden');
-        listWrapper.classList.remove('active');
+        gridWrap.classList.remove('hidden');
+        listWrap.classList.remove('active');
         renderScheduleGrid();
     } else {
-        gridWrapper.classList.add('hidden');
-        listWrapper.classList.add('active');
+        gridWrap.classList.add('hidden');
+        listWrap.classList.add('active');
         renderScheduleList();
     }
 }
 
-// ===== Helper: Check if a time slot is blocked =====
-function isSlotBlocked(roomId, day, time) {
-    if (currentRoomFilter === 'all') {
-        return false;
-    }
-    const roomEvents = allSchedule.filter(ev => ev.room_id === roomId && ev.day_of_week === day);
-    for (const ev of roomEvents) {
-        if (time >= ev.start_time && time < ev.end_time) {
-            return true;
-        }
-    }
-    return false;
+// ===== HELPER: Is slot occupied =====
+function isSlotOccupied(roomId, day, time) {
+    return allSchedule.some(ev => {
+        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        return typeMatch && ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
+    });
 }
 
-// ===== Helper: Get events at a specific slot =====
+// ===== HELPER: Get events at slot =====
 function getEventsAt(day, time) {
     return allSchedule.filter(ev => {
         const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
@@ -1131,216 +1070,154 @@ function getEventsAt(day, time) {
     });
 }
 
-// ===== Schedule Grid =====
+// ===== SCHEDULE GRID =====
 function renderScheduleGrid() {
-    const tbody = document.getElementById('scheduleBody');
+    const tbody = document.getElementById('gridBody');
     const activeRoom = currentRoomFilter !== 'all' ? allRooms.find(r => r.id === currentRoomFilter) : null;
     let html = '';
-    
+
     TIME_SLOTS.forEach(time => {
         html += '<tr>';
-        html += '<td class="time-cell">' + time + '</td>';
-        
+        html += '<td class="ws-time-cell">' + time + '</td>';
+
         DAYS.forEach(day => {
             const events = getEventsAt(day, time);
             if (events.length > 0) {
                 html += '<td>';
                 events.forEach(ev => {
                     const isExam = (ev.event_type === 'امتحان');
-                    const cardClass = isExam ? 'exam-card' : 'lecture-card';
-                    const evTypeLabel = isExam ? 'امتحان' : 'محاضرة';
-                    
-                    // Calculate row span based on duration
+                    const cls = isExam ? 'ws-exm' : 'ws-lec';
+                    const typeLabel = isExam ? 'امتحان' : 'محاضرة';
                     const startMin = timeToMinutes(ev.start_time);
                     const endMin = timeToMinutes(ev.end_time);
-                    const durationMin = endMin - startMin;
-                    const slots = Math.max(1, Math.round(durationMin / 30));
-                    
-                    html += '<div class="event-card ' + cardClass + '" title="' + escapeHtml(ev.room_name) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time + '" data-slots="' + slots + '">';
-                    html += '<div class="ev-actions">';
-                    html += '<button class="ev-btn-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
-                    html += '<button class="ev-btn-delete" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+                    const slots = Math.max(1, Math.round((endMin - startMin) / 60));
+
+                    html += '<div class="ws-ev ' + cls + '" title="' + escapeHtml(ev.room_name) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time + '">';
+                    html += '<div class="ws-ev-acts">';
+                    html += '<button class="act-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+                    html += '<button class="act-del" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
                     html += '</div>';
-                    html += '<div class="ev-type-badge">' + evTypeLabel + '</div>';
-                    html += '<div class="ev-subject">' + escapeHtml(ev.subject) + '</div>';
+                    html += '<div class="ws-ev-type">' + typeLabel + '</div>';
+                    html += '<div class="ws-ev-subj">' + escapeHtml(ev.subject) + '</div>';
                     if (currentRoomFilter === 'all') {
-                        html += '<div class="ev-teacher">' + escapeHtml(ev.teacher_name) + ' | ' + escapeHtml(ev.room_name) + '</div>';
+                        html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + ' | ' + escapeHtml(ev.room_name) + '</div>';
                     } else {
-                        html += '<div class="ev-teacher">' + escapeHtml(ev.teacher_name) + '</div>';
+                        html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + '</div>';
                     }
-                    html += '<div class="ev-time">' + ev.start_time + ' - ' + ev.end_time + '</div>';
                     html += '</div>';
                 });
                 html += '</td>';
             } else {
-                // Check if this time slot is blocked (occupied by an ongoing event from a previous row)
                 const isBlocked = activeRoom ? isSlotOccupied(activeRoom.id, day, time) : false;
-                
                 if (isBlocked) {
-                    html += '<td class="blocked-cell" title="هذا الوقت محجوز"></td>';
-                } else if (time.endsWith(':00')) {
-                    html += '<td><button class="add-event-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\')" title="إضافة حدث"><i class="fas fa-plus"></i></button></td>';
+                    html += '<td class="ws-blocked"></td>';
                 } else {
-                    html += '<td></td>';
+                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
                 }
             }
         });
-        
         html += '</tr>';
     });
-    
     tbody.innerHTML = html;
 }
 
-// Check if a time slot is occupied by an event that started earlier
-function isSlotOccupied(roomId, day, time) {
-    return allSchedule.some(ev => {
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
-        return typeMatch && ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
-    });
-}
-
-// ===== Schedule List View =====
+// ===== SCHEDULE LIST VIEW =====
 function renderScheduleList() {
-    const container = document.getElementById('scheduleListContent');
+    const container = document.getElementById('listContent');
     const events = getFilteredEvents();
-    const dayOrder = {'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4, 'الجمعة': 5, 'السبت': 6, 'الأحد': 7};
-    
+    const dayOrder = {'الإثنين':1,'الثلاثاء':2,'الأربعاء':3,'الخميس':4,'الجمعة':5,'السبت':6,'الأحد':7};
+
     if (events.length === 0) {
-        container.innerHTML = '<div class="list-empty-state"><i class="fas fa-calendar-times"></i><p>لا توجد فعاليات مطابقة للتصفية المحددة</p></div>';
+        container.innerHTML = '<div class="ws-empty"><i class="fas fa-calendar-times"></i><p>لا توجد فعاليات</p></div>';
         return;
     }
-    
+
     let html = '';
-    
+
     if (currentSortBy === 'teacher') {
-        // Group by teacher
-        const teacherGroups = {};
+        const groups = {};
         events.forEach(ev => {
             const key = ev.teacher_name || 'غير محدد';
-            if (!teacherGroups[key]) teacherGroups[key] = [];
-            teacherGroups[key].push(ev);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(ev);
         });
-        
-        // Sort teachers alphabetically, then sort events within each group by day and time
-        const sortedTeacherNames = Object.keys(teacherGroups).sort((a, b) => a.localeCompare(b, 'ar'));
-        
-        sortedTeacherNames.forEach(teacherName => {
-            const groupEvents = teacherGroups[teacherName].sort((a, b) => {
-                const dayA = dayOrder[a.day_of_week] || 99;
-                const dayB = dayOrder[b.day_of_week] || 99;
-                if (dayA !== dayB) return dayA - dayB;
-                return a.start_time.localeCompare(b.start_time);
-            });
-            
-            const teacher = allTeachers.find(t => t.name === teacherName);
+        Object.keys(groups).sort((a,b) => a.localeCompare(b,'ar')).forEach(name => {
+            const grp = groups[name].sort((a,b) => (dayOrder[a.day_of_week]||99) - (dayOrder[b.day_of_week]||99) || a.start_time.localeCompare(b.start_time));
+            const teacher = allTeachers.find(t => t.name === name);
             const subject = teacher ? teacher.subject : '';
-            
-            html += '<div class="list-group-section">';
-            html += '<div class="list-group-header">';
-            html += '<div class="group-icon"><i class="fas fa-user-tie"></i></div>';
-            html += '<span>' + escapeHtml(teacherName) + (subject ? ' (' + escapeHtml(subject) + ')' : '') + '</span>';
-            html += '<span class="group-count">' + groupEvents.length + ' فعالية</span>';
-            html += '</div>';
-            html += '<div class="list-group-body">';
-            groupEvents.forEach(ev => {
-                html += renderListEventCard(ev);
-            });
-            html += '</div>';
-            html += '</div>';
+            html += renderListGroup(name, 'fa-user-tie', grp, subject ? ' (' + escapeHtml(subject) + ')' : '');
         });
-        
     } else if (currentSortBy === 'room') {
-        // Group by room
-        const roomGroups = {};
+        const groups = {};
         events.forEach(ev => {
             const key = ev.room_name || 'غير محدد';
-            if (!roomGroups[key]) roomGroups[key] = [];
-            roomGroups[key].push(ev);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(ev);
         });
-        
-        const sortedRoomNames = Object.keys(roomGroups).sort((a, b) => a.localeCompare(b, 'ar'));
-        
-        sortedRoomNames.forEach(roomName => {
-            const groupEvents = roomGroups[roomName].sort((a, b) => {
-                const dayA = dayOrder[a.day_of_week] || 99;
-                const dayB = dayOrder[b.day_of_week] || 99;
-                if (dayA !== dayB) return dayA - dayB;
-                return a.start_time.localeCompare(b.start_time);
-            });
-            
-            html += '<div class="list-group-section">';
-            html += '<div class="list-group-header">';
-            html += '<div class="group-icon"><i class="fas fa-door-open"></i></div>';
-            html += '<span>' + escapeHtml(roomName) + '</span>';
-            html += '<span class="group-count">' + groupEvents.length + ' فعالية</span>';
-            html += '</div>';
-            html += '<div class="list-group-body">';
-            groupEvents.forEach(ev => {
-                html += renderListEventCard(ev);
-            });
-            html += '</div>';
-            html += '</div>';
+        Object.keys(groups).sort((a,b) => a.localeCompare(b,'ar')).forEach(name => {
+            const grp = groups[name].sort((a,b) => (dayOrder[a.day_of_week]||99) - (dayOrder[b.day_of_week]||99) || a.start_time.localeCompare(b.start_time));
+            html += renderListGroup(name, 'fa-door-open', grp);
         });
-        
     } else if (currentSortBy === 'day') {
-        // Group by day
-        const dayGroups = {};
+        const groups = {};
         events.forEach(ev => {
             const key = ev.day_of_week || 'غير محدد';
-            if (!dayGroups[key]) dayGroups[key] = [];
-            dayGroups[key].push(ev);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(ev);
         });
-        
-        // Sort days by order
-        const sortedDays = Object.keys(dayGroups).sort((a, b) => {
-            return (dayOrder[a] || 99) - (dayOrder[b] || 99);
+        Object.keys(groups).sort((a,b) => (dayOrder[a]||99) - (dayOrder[b]||99)).forEach(day => {
+            const grp = groups[day].sort((a,b) => a.start_time.localeCompare(b.start_time));
+            html += renderListGroup(day, 'fa-calendar-day', grp);
         });
-        
-        const dayIcons = {
-            'الإثنين': 'fa-calendar-day',
-            'الثلاثاء': 'fa-calendar-day',
-            'الأربعاء': 'fa-calendar-day',
-            'الخميس': 'fa-calendar-day',
-            'الجمعة': 'fa-calendar-day',
-            'السبت': 'fa-calendar-day',
-            'الأحد': 'fa-calendar-day'
-        };
-        
-        sortedDays.forEach(day => {
-            const groupEvents = dayGroups[day].sort((a, b) => {
-                return a.start_time.localeCompare(b.start_time);
-            });
-            
-            html += '<div class="list-group-section">';
-            html += '<div class="list-group-header">';
-            html += '<div class="group-icon"><i class="fas ' + (dayIcons[day] || 'fa-calendar-day') + '"></i></div>';
-            html += '<span>' + escapeHtml(day) + '</span>';
-            html += '<span class="group-count">' + groupEvents.length + ' فعالية</span>';
-            html += '</div>';
-            html += '<div class="list-group-body">';
-            groupEvents.forEach(ev => {
-                html += renderListEventCard(ev);
-            });
-            html += '</div>';
-            html += '</div>';
+    } else {
+        // Default: group by day
+        const groups = {};
+        events.forEach(ev => {
+            const key = ev.day_of_week || 'غير محدد';
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(ev);
+        });
+        Object.keys(groups).sort((a,b) => (dayOrder[a]||99) - (dayOrder[b]||99)).forEach(day => {
+            const grp = groups[day].sort((a,b) => a.start_time.localeCompare(b.start_time));
+            html += renderListGroup(day, 'fa-calendar-day', grp);
         });
     }
-    
+
     container.innerHTML = html;
+}
+
+function renderListGroup(title, icon, events, suffix) {
+    suffix = suffix || '';
+    let html = '<div class="ws-list-group">';
+    html += '<div class="ws-list-group-hd" onclick="toggleListGroup(this)">';
+    html += '<div class="grp-icon"><i class="fas ' + icon + '"></i></div>';
+    html += '<span class="grp-title">' + escapeHtml(title) + suffix + '</span>';
+    html += '<span class="grp-count">' + events.length + '</span>';
+    html += '<i class="fas fa-chevron-down grp-chevron"></i>';
+    html += '</div>';
+    html += '<div class="ws-list-group-bd">';
+    events.forEach(ev => { html += renderListEventCard(ev); });
+    html += '</div>';
+    html += '</div>';
+    return html;
+}
+
+function toggleListGroup(header) {
+    header.classList.toggle('collapsed');
+    const body = header.nextElementSibling;
+    body.classList.toggle('collapsed');
 }
 
 function renderListEventCard(ev) {
     const isExam = (ev.event_type === 'امتحان');
-    const cardClass = isExam ? 'exam-list-card' : 'lecture-list-card';
-    const evTypeLabel = isExam ? 'امتحان' : 'محاضرة';
-    
-    let html = '';
-    html += '<div class="list-event-card ' + cardClass + '">';
-    html += '<div class="lec-type-indicator"></div>';
-    html += '<div class="lec-info">';
-    html += '<div class="lec-subject">' + escapeHtml(ev.subject) + '</div>';
-    html += '<div class="lec-meta">';
+    const cls = isExam ? 'ws-lv-exm' : 'ws-lv-lec';
+    const typeLabel = isExam ? 'امتحان' : 'محاضرة';
+
+    let html = '<div class="ws-lv ' + cls + '">';
+    html += '<div class="ws-lv-bar"></div>';
+    html += '<div class="ws-lv-body">';
+    html += '<div class="ws-lv-subj">' + escapeHtml(ev.subject) + '</div>';
+    html += '<div class="ws-lv-meta">';
     html += '<span><i class="fas fa-clock"></i> ' + ev.start_time + ' - ' + ev.end_time + '</span>';
     html += '<span><i class="fas fa-calendar-day"></i> ' + escapeHtml(ev.day_of_week) + '</span>';
     html += '<span><i class="fas fa-user-tie"></i> ' + escapeHtml(ev.teacher_name) + '</span>';
@@ -1352,55 +1229,50 @@ function renderListEventCard(ev) {
     }
     html += '</div>';
     html += '</div>';
-    html += '<span class="lec-type-badge">' + evTypeLabel + '</span>';
-    html += '<div class="lec-actions">';
-    html += '<button class="btn-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
-    html += '<button class="btn-delete" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+    html += '<span class="ws-lv-badge">' + typeLabel + '</span>';
+    html += '<div class="ws-lv-acts">';
+    html += '<button class="act-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+    html += '<button class="act-del" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
     html += '</div>';
     html += '</div>';
     return html;
 }
 
-// ===== Rooms List =====
+// ===== ROOMS LIST =====
 function renderRoomsList() {
     const el = document.getElementById('roomsList');
     if (allRooms.length === 0) {
-        el.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-door-open fa-2x mb-2 d-block"></i>لا توجد قاعات بعد</div>';
+        el.innerHTML = '<div class="text-center text-muted py-3" style="font-size:13px;"><i class="fas fa-door-open fa-2x mb-2 d-block"></i>لا توجد قاعات بعد</div>';
         return;
     }
     let html = '';
     allRooms.forEach(room => {
-        const lecCount = allSchedule.filter(s => s.room_id === room.id).length;
-        html += '<div class="room-item">';
-        html += '<div class="room-info">';
-        html += '<div class="room-icon"><i class="fas fa-door-open"></i></div>';
-        html += '<div>';
-        html += '<div class="room-name">' + escapeHtml(room.name) + '</div>';
-        html += '<div class="room-capacity">السعة: ' + (room.capacity || '-') + ' | فعاليات: ' + lecCount + '</div>';
+        const cnt = allSchedule.filter(s => s.room_id === room.id).length;
+        html += '<div class="ws-room-row">';
+        html += '<div class="rr-info">';
+        html += '<div class="rr-icon"><i class="fas fa-door-open"></i></div>';
+        html += '<div><div class="rr-name">' + escapeHtml(room.name) + '</div>';
+        html += '<div class="rr-cap">السعة: ' + (room.capacity || '-') + ' | فعاليات: ' + cnt + '</div></div>';
         html += '</div>';
-        html += '</div>';
-        html += '<div class="room-actions">';
-        html += '<button class="btn-edit" onclick="openEditRoomModal(' + room.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
-        html += '<button class="btn-delete" onclick="deleteRoom(' + room.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+        html += '<div class="rr-acts">';
+        html += '<button class="act-edit" onclick="openEditRoomModal(' + room.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+        html += '<button class="act-del" onclick="deleteRoom(' + room.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
         html += '</div>';
         html += '</div>';
     });
     el.innerHTML = html;
 }
 
-function openRoomPanel() {
-    document.getElementById('roomsPanel').style.display = 'block';
-}
-function closeRoomPanel() {
-    document.getElementById('roomsPanel').style.display = 'none';
+function toggleRoomsPanel() {
+    const panel = document.getElementById('roomsPanel');
+    panel.classList.toggle('open');
 }
 
-// ===== Room CRUD =====
+// ===== ROOM CRUD =====
 async function addRoom() {
     const name = document.getElementById('newRoomName').value.trim();
     const capacity = parseInt(document.getElementById('newRoomCapacity').value) || 0;
     if (!name) { showAlert('يرجى إدخال اسم القاعة'); return; }
-    
     try {
         const res = await apiRequest('/api/rooms', {
             method: 'POST',
@@ -1415,9 +1287,7 @@ async function addRoom() {
         } else {
             showAlert(res.message || 'خطأ في إضافة القاعة');
         }
-    } catch(e) {
-        showAlert('خطأ في الاتصال');
-    }
+    } catch(e) { showAlert('خطأ في الاتصال'); }
 }
 
 function openEditRoomModal(roomId) {
@@ -1434,7 +1304,6 @@ async function updateRoom() {
     const name = document.getElementById('editRoomName').value.trim();
     const capacity = parseInt(document.getElementById('editRoomCapacity').value) || 0;
     if (!name) { showAlert('يرجى إدخال اسم القاعة'); return; }
-    
     try {
         const res = await apiRequest('/api/rooms/' + id, {
             method: 'PUT',
@@ -1445,12 +1314,8 @@ async function updateRoom() {
             bootstrap.Modal.getInstance(document.getElementById('roomEditModal')).hide();
             await refreshData();
             showAlert('تم تحديث القاعة بنجاح', 'success');
-        } else {
-            showAlert(res.message || 'خطأ في التحديث');
-        }
-    } catch(e) {
-        showAlert('خطأ في الاتصال');
-    }
+        } else { showAlert(res.message || 'خطأ في التحديث'); }
+    } catch(e) { showAlert('خطأ في الاتصال'); }
 }
 
 async function deleteRoom(roomId) {
@@ -1460,38 +1325,23 @@ async function deleteRoom(roomId) {
         if (res.success) {
             await refreshData();
             showAlert('تم حذف القاعة', 'success');
-        } else {
-            showAlert(res.message || 'خطأ في الحذف');
-        }
-    } catch(e) {
-        showAlert('خطأ في الاتصال');
-    }
+        } else { showAlert(res.message || 'خطأ في الحذف'); }
+    } catch(e) { showAlert('خطأ في الاتصال'); }
 }
 
-// ===== Event Type Switching =====
+// ===== EVENT TYPE SWITCHING =====
 function setEventType(type) {
     currentEventType = type;
     document.getElementById('lecEventType').value = type;
-    
-    const btnLecture = document.getElementById('btnTypeLecture');
-    const btnExam = document.getElementById('btnTypeExam');
-    
+    const btnL = document.getElementById('btnTypeLecture');
+    const btnE = document.getElementById('btnTypeExam');
     if (type === 'محاضرة') {
-        btnLecture.style.background = '#3b82f6';
-        btnLecture.style.color = 'white';
-        btnLecture.style.borderColor = '#3b82f6';
-        btnExam.style.background = 'white';
-        btnExam.style.color = '#ea580c';
-        btnExam.style.borderColor = '#f97316';
+        btnL.className = 'ws-evtype-btn active-lec';
+        btnE.className = 'ws-evtype-btn';
     } else {
-        btnExam.style.background = '#f97316';
-        btnExam.style.color = 'white';
-        btnExam.style.borderColor = '#f97316';
-        btnLecture.style.background = 'white';
-        btnLecture.style.color = '#3b82f6';
-        btnLecture.style.borderColor = '#3b82f6';
+        btnE.className = 'ws-evtype-btn active-exm';
+        btnL.className = 'ws-evtype-btn';
     }
-    
     updateDurationOptions();
     updateEndTime();
 }
@@ -1500,8 +1350,6 @@ function updateDurationOptions() {
     const select = document.getElementById('lecDuration');
     const isExam = currentEventType === 'امتحان';
     const durations = isExam ? EXAM_DURATIONS : LECTURE_DURATIONS;
-    
-    // Clear and rebuild
     select.innerHTML = '';
     durations.forEach(d => {
         const opt = document.createElement('option');
@@ -1509,25 +1357,15 @@ function updateDurationOptions() {
         opt.textContent = d.label;
         select.appendChild(opt);
     });
-    
-    // Default: 90 for lecture, 120 for exam
-    if (!isExam) {
-        select.value = '90';
-    } else {
-        select.value = '120';
-    }
+    select.value = isExam ? '120' : '90';
 }
 
-// ===== Time Calculation =====
+// ===== TIME CALCULATION =====
 function updateEndTime() {
     const startTime = document.getElementById('lecStartTime').value;
     const duration = parseInt(document.getElementById('lecDuration').value) || 0;
-    
     if (startTime && duration) {
-        const end = incrementTime(startTime, duration);
-        document.getElementById('lecEndTime').value = end;
-        
-        // Check for conflicts in real-time
+        document.getElementById('lecEndTime').value = incrementTime(startTime, duration);
         checkConflictPreview();
     }
 }
@@ -1538,23 +1376,19 @@ async function checkConflictPreview() {
     const startTime = document.getElementById('lecStartTime').value;
     const endTime = document.getElementById('lecEndTime').value;
     const editId = document.getElementById('editEventId').value;
-    
     const warningEl = document.getElementById('lecConflictWarning');
     const warningText = document.getElementById('lecConflictText');
-    
+
     if (!roomId || !day || !startTime || !endTime) {
-        warningEl.style.display = 'none';
-        return;
+        warningEl.style.display = 'none'; return;
     }
-    
-    // Check locally first
+
     const conflicts = allSchedule.filter(ev => {
         if (editId && ev.id === parseInt(editId)) return false;
         if (ev.room_id !== roomId || ev.day_of_week !== day) return false;
-        // Overlap check: startA < endB AND startB < endA
         return startTime < ev.end_time && ev.start_time < endTime;
     });
-    
+
     if (conflicts.length > 0) {
         const c = conflicts[0];
         const cType = c.event_type === 'امتحان' ? 'امتحان' : 'محاضرة';
@@ -1565,31 +1399,29 @@ async function checkConflictPreview() {
     }
 }
 
-// ===== Event CRUD =====
+// ===== EVENT CRUD =====
 function populateModalSelects() {
     const roomSelect = document.getElementById('lecRoom');
-    let roomHtml = '<option value="">اختر القاعة</option>';
-    allRooms.forEach(r => { roomHtml += '<option value="' + r.id + '">' + escapeHtml(r.name) + '</option>'; });
-    roomSelect.innerHTML = roomHtml;
-    
+    let rhtml = '<option value="">اختر القاعة</option>';
+    allRooms.forEach(r => { rhtml += '<option value="' + r.id + '">' + escapeHtml(r.name) + '</option>'; });
+    roomSelect.innerHTML = rhtml;
+
     const teacherSelect = document.getElementById('lecTeacher');
-    let teacherHtml = '<option value="">اختر المدرس</option>';
-    allTeachers.forEach(t => { teacherHtml += '<option value="' + t.id + '" data-subject="' + escapeHtml(t.subject) + '">' + escapeHtml(t.name) + ' (' + escapeHtml(t.subject) + ')</option>'; });
-    teacherSelect.innerHTML = teacherHtml;
-    
-    // Auto-fill subject when teacher is selected
+    let thtml = '<option value="">اختر المدرس</option>';
+    allTeachers.forEach(t => { thtml += '<option value="' + t.id + '" data-subject="' + escapeHtml(t.subject) + '">' + escapeHtml(t.name) + ' (' + escapeHtml(t.subject) + ')</option>'; });
+    teacherSelect.innerHTML = thtml;
+
+    // Auto-fill subject from teacher
     document.getElementById('lecTeacher').addEventListener('change', function() {
         const opt = this.options[this.selectedIndex];
         if (opt && opt.dataset.subject) {
             document.getElementById('lecSubject').value = opt.dataset.subject;
         }
     });
-    
-    // Check conflict when room/day/time changes
+
+    // Conflict check triggers
     ['lecRoom', 'lecDay', 'lecStartTime'].forEach(id => {
-        document.getElementById(id).addEventListener('change', function() {
-            updateEndTime();
-        });
+        document.getElementById(id).addEventListener('change', updateEndTime);
     });
 }
 
@@ -1604,15 +1436,11 @@ function openAddEventModal(day, time) {
     document.getElementById('lecNotes').value = '';
     document.getElementById('lecError').style.display = 'none';
     document.getElementById('lecConflictWarning').style.display = 'none';
-    
-    // Reset event type to lecture
     setEventType('محاضرة');
-    
     populateModalSelects();
     if (currentRoomFilter !== 'all') {
         document.getElementById('lecRoom').value = currentRoomFilter;
     }
-    
     updateEndTime();
     new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
@@ -1621,7 +1449,7 @@ function editEvent(eventId) {
     const ev = allSchedule.find(e => e.id === eventId);
     if (!ev) return;
     populateModalSelects();
-    
+
     document.getElementById('editEventId').value = ev.id;
     document.getElementById('lecRoom').value = ev.room_id;
     document.getElementById('lecTeacher').value = ev.teacher_id;
@@ -1631,40 +1459,28 @@ function editEvent(eventId) {
     document.getElementById('lecNotes').value = ev.notes || '';
     document.getElementById('lecError').style.display = 'none';
     document.getElementById('lecConflictWarning').style.display = 'none';
-    
-    // Set event type
+
     const evType = ev.event_type || 'محاضرة';
     setEventType(evType);
-    
-    // Calculate duration and set the dropdown
-    const startMin = timeToMinutes(ev.start_time);
-    const endMin = timeToMinutes(ev.end_time);
-    const durationMin = endMin - startMin;
-    
-    // Try to match exact duration in dropdown
+
+    // Match duration
+    const durationMin = timeToMinutes(ev.end_time) - timeToMinutes(ev.start_time);
     const durationSelect = document.getElementById('lecDuration');
     let matched = false;
     for (let i = 0; i < durationSelect.options.length; i++) {
         if (parseInt(durationSelect.options[i].value) === durationMin) {
-            durationSelect.selectedIndex = i;
-            matched = true;
-            break;
+            durationSelect.selectedIndex = i; matched = true; break;
         }
     }
     if (!matched) {
-        // Add custom duration option
         const customOpt = document.createElement('option');
         customOpt.value = durationMin;
         customOpt.textContent = formatDuration(durationMin);
         durationSelect.appendChild(customOpt);
         durationSelect.value = durationMin;
     }
-    
     document.getElementById('lecEndTime').value = ev.end_time;
-    
-    const modalTitle = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
-    document.getElementById('eventModalTitle').textContent = modalTitle;
-    
+    document.getElementById('eventModalTitle').textContent = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
     new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
@@ -1681,15 +1497,11 @@ async function saveEvent() {
         duration: parseInt(document.getElementById('lecDuration').value) || null,
         notes: document.getElementById('lecNotes').value.trim()
     };
-    
     const errorEl = document.getElementById('lecError');
-    
     if (!data.room_id || !data.teacher_id || !data.day_of_week || !data.start_time || !data.end_time) {
         errorEl.textContent = 'يرجى ملء جميع الحقول المطلوبة';
-        errorEl.style.display = 'block';
-        return;
+        errorEl.style.display = 'block'; return;
     }
-    
     try {
         let res;
         if (editId) {
@@ -1705,7 +1517,6 @@ async function saveEvent() {
                 body: JSON.stringify(data)
             });
         }
-        
         if (res.success) {
             bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
             await refreshData();
@@ -1729,43 +1540,30 @@ async function deleteEvent(eventId) {
         if (res.success) {
             await refreshData();
             showAlert('تم حذف ' + evLabel, 'success');
-        } else {
-            showAlert(res.message || 'خطأ في الحذف');
-        }
-    } catch(e) {
-        showAlert('خطأ في الاتصال');
-    }
+        } else { showAlert(res.message || 'خطأ في الحذف'); }
+    } catch(e) { showAlert('خطأ في الاتصال'); }
 }
 
-// ===== Auto Sort =====
+// ===== AUTO SORT =====
 async function autoSortSchedule() {
-    if (allRooms.length === 0) {
-        showAlert('لا توجد قاعات بعد', 'warning');
-        return;
-    }
-    
-    // Sort the schedule data by room, then day, then start time
-    const dayOrder = {'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4, 'الجمعة': 5, 'السبت': 6, 'الأحد': 7};
-    
-    // Group by room
-    const sortedSchedule = [...allSchedule].sort((a, b) => {
+    if (allRooms.length === 0) { showAlert('لا توجد قاعات بعد', 'warning'); return; }
+    const dayOrder = {'الإثنين':1,'الثلاثاء':2,'الأربعاء':3,'الخميس':4,'الجمعة':5,'السبت':6,'الأحد':7};
+    allSchedule = [...allSchedule].sort((a,b) => {
         if (a.room_id !== b.room_id) return a.room_id - b.room_id;
         const dayA = dayOrder[a.day_of_week] || 99;
         const dayB = dayOrder[b.day_of_week] || 99;
         if (dayA !== dayB) return dayA - dayB;
         return a.start_time.localeCompare(b.start_time);
     });
-    
-    // Update local data and re-render
-    allSchedule = sortedSchedule;
     currentSortBy = 'time';
     currentViewMode = 'grid';
-    renderFilterToolbar();
+    document.getElementById('sortSelect').value = 'time';
+    setViewActive('grid');
     renderCurrentView();
-    showAlert('تم ترتيب الجدول بنجاح حسب القاعة واليوم والوقت', 'success');
+    showAlert('تم ترتيب الجدول بنجاح', 'success');
 }
 
-// ===== Utilities =====
+// ===== UTILITIES =====
 function timeToMinutes(time) {
     const [h, m] = time.split(':').map(Number);
     return h * 60 + m;
@@ -1800,14 +1598,13 @@ async function refreshData() {
         ]);
         allRooms = roomsRes.data || [];
         allSchedule = scheduleRes.data || [];
-        renderRoomTabs();
-        renderFilterToolbar();
+        renderRoomPills();
+        renderFilterDropdowns();
+        renderStats();
         renderCurrentView();
         renderRoomsList();
         populateModalSelects();
-    } catch(e) {
-        console.error('Refresh error:', e);
-    }
+    } catch(e) { console.error('Refresh error:', e); }
 }
 </script>
 {% endblock %}
