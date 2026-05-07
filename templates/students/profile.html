@@ -608,6 +608,15 @@
                                 <option value="القسط الأول">القسط الأول</option>
                                 <option value="القسط الثاني">القسط الثاني</option>
                                 <option value="دفع كامل">دفع كامل</option>
+                                <option value="دفعات">دفعات (تقسيم القسط)</option>
+                            </select>
+                        </div>
+                        <!-- حقل for_installment - يظهر فقط عند اختيار "دفعات" -->
+                        <div class="col-7 d-none" id="inst_for_installment_container">
+                            <label class="form-label fw-bold"><i class="fas fa-layer-group me-1 text-warning"></i>الدفعات للقسط:</label>
+                            <select class="form-select form-select-lg" id="inst_for_installment_select">
+                                <option value="القسط الأول">دفعات للقسط الأول</option>
+                                <option value="القسط الثاني">دفعات للقسط الثاني</option>
                             </select>
                         </div>
                         <div class="col-5">

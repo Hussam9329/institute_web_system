@@ -602,6 +602,17 @@
                                     <option value="القسط الأول">القسط الأول</option>
                                     <option value="القسط الثاني">القسط الثاني</option>
                                     <option value="دفع كامل">دفع كامل</option>
+                                    <option value="دفعات">دفعات (تقسيم القسط)</option>
+                                </select>
+                            </div>
+                            <!-- حقل for_installment - يظهر فقط عند اختيار "دفعات" -->
+                            <div class="col-12 col-md-4 d-none" id="pay_for_installment_container">
+                                <label class="pay-field-label">
+                                    <i class="fas fa-layer-group"></i>الدفعات للقسط
+                                </label>
+                                <select class="form-select pay-field-input" id="pay_for_installment">
+                                    <option value="القسط الأول">دفعات للقسط الأول</option>
+                                    <option value="القسط الثاني">دفعات للقسط الثاني</option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-4">
@@ -666,6 +677,21 @@ document.addEventListener('DOMContentLoaded', function() {
     initStudentSearch();
     // تهيئة بحث المدرس
     initTeacherSearch();
+
+    // عند تغيير نوع القسط - إظهار/إخفاء حقل for_installment
+    var payTypeEl = document.getElementById('pay_type');
+    if (payTypeEl) {
+        payTypeEl.addEventListener('change', function() {
+            var forInstContainer = document.getElementById('pay_for_installment_container');
+            if (forInstContainer) {
+                if (this.value === 'دفعات') {
+                    forInstContainer.classList.remove('d-none');
+                } else {
+                    forInstContainer.classList.add('d-none');
+                }
+            }
+        });
+    }
 
     // معاينة المبلغ الفعلي أثناء الكتابة
     var amountInput = document.getElementById('pay_amount');
@@ -1394,8 +1420,15 @@ async function submitPayment(event) {
         payment_date: paymentDate,
         installment_type: document.getElementById('pay_type').value,
         study_type: document.getElementById('pay_study_type')?.value || 'حضوري',
-        notes: document.getElementById('pay_notes').value
+        notes: document.getElementById('pay_notes').value,
+        for_installment: ''
     };
+    
+    // إذا كان النوع "دفعات"، أضف for_installment
+    if (data.installment_type === 'دفعات') {
+        var forInstEl = document.getElementById('pay_for_installment');
+        data.for_installment = forInstEl ? forInstEl.value : 'القسط الأول';
+    }
 
     try {
         const result = await apiRequest('/api/installments', {

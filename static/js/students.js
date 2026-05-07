@@ -200,6 +200,7 @@ async function openInstallmentModal(studentId, teacherId, teacherName, studyType
             if (result.success && result.allowed_types) {
                 elType.innerHTML = '';
                 const allowedTypes = result.allowed_types;
+                const splitOptions = result.split_options || [];
                 
                 if (allowedTypes.length === 0) {
                     // لا توجد أنواع مسموحة - الطالب أكمل جميع أقساطه
@@ -213,6 +214,12 @@ async function openInstallmentModal(studentId, teacherId, teacherName, studyType
                         elType.appendChild(option);
                     });
                     elType.disabled = false;
+                    
+                    // حفظ خيارات الدفعات للاستخدام لاحقاً
+                    window._currentSplitOptions = splitOptions;
+                    
+                    // إضافة/تحديث حقل for_installment
+                    updateForInstallmentField(splitOptions);
                 }
             } else {
                 // في حالة الخطأ، نسمح بالقسط الأول فقط كافتراضي
@@ -232,6 +239,12 @@ async function openInstallmentModal(studentId, teacherId, teacherName, studyType
             elType.appendChild(option);
             elType.disabled = false;
         }
+        
+        // عند تغيير نوع القسط - تحديث حقل for_installment
+        elType.addEventListener('change', function() {
+            const splitOptions = window._currentSplitOptions || [];
+            updateForInstallmentField(splitOptions);
+        });
     }
 
     if (installmentModal) {
@@ -350,6 +363,34 @@ function resetDiscountForm() {
 }
 
 /**
+ * تحديث حقل for_installment حسب نوع القسط المختار
+ */
+function updateForInstallmentField(splitOptions) {
+    const elType = document.getElementById('inst_type');
+    const container = document.getElementById('inst_for_installment_container');
+    const selectEl = document.getElementById('inst_for_installment_select');
+    
+    if (!elType) return;
+    
+    // إظهار/إخفاء الحقل حسب نوع القسط
+    if (elType.value === 'دفعات' && container) {
+        container.classList.remove('d-none');
+        // تحديث خيارات for_installment
+        if (selectEl && splitOptions && splitOptions.length > 0) {
+            selectEl.innerHTML = '';
+            splitOptions.forEach(function(opt) {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                selectEl.appendChild(option);
+            });
+        }
+    } else if (container) {
+        container.classList.add('d-none');
+    }
+}
+
+/**
  * إضافة قسط جديد
  */
 async function addInstallment(event) {
@@ -375,8 +416,19 @@ async function addInstallment(event) {
         payment_date: dateEl.value,
         installment_type: typeEl ? typeEl.value : 'القسط الأول',
         study_type: studyTypeEl ? studyTypeEl.value : 'حضوري',
-        notes: notesEl ? notesEl.value : ''
+        notes: notesEl ? notesEl.value : '',
+        for_installment: ''  // سيتم ملؤه إذا كان النوع "دفعات"
     };
+    
+    // إذا كان النوع "دفعات"، أضف for_installment
+    if (data.installment_type === 'دفعات') {
+        const forInstEl = document.getElementById('inst_for_installment_select');
+        if (forInstEl) {
+            data.for_installment = forInstEl.value;
+        } else {
+            data.for_installment = 'القسط الأول'; // افتراضي
+        }
+    }
 
     // التحقق من البيانات
     if (!data.student_id || isNaN(data.student_id)) {

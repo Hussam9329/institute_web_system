@@ -31,6 +31,7 @@ class AddInstallment(BaseModel):
     installment_type: str = "القسط الأول"
     study_type: Optional[str] = "حضوري"
     notes: Optional[str] = ""
+    for_installment: Optional[str] = ""  # للدفعات: يحدد القسط الذي تنتمي إليه (القسط الأول أو القسط الثاني)
 
 
 class AddWithdrawal(BaseModel):
@@ -591,7 +592,8 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         has_existing_first = 'القسط الأول' in existing_types
         has_existing_second = 'القسط الثاني' in existing_types
         has_existing_full = 'دفع كامل' in existing_types
-        has_any_existing = len(existing_types) > 0
+        has_existing_splits = 'دفعات' in existing_types
+        has_any_existing = len(existing_types - {'دفعات'}) > 0  # الدفعات لا تمنع إضافة أقساط جديدة
         
         new_type = installment.installment_type
         
@@ -607,9 +609,9 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                     "message": "لا يمكن تسجيل دفع كامل! يوجد أقساط مسجلة مسبقاً لهذا الطالب عند هذا المدرس"
                 }
         
-        # 2. "القسط الثاني" → مسموح فقط إذا وُجد "القسط الأول" ولم يُسجل "القسط الثاني" سابقاً
+        # 2. "القسط الثاني" → مسموح فقط إذا وُجد "القسط الأول" أو دفعات للقسط الأول ولم يُسجل "القسط الثاني" سابقاً
         if new_type == 'القسط الثاني':
-            if not has_existing_first:
+            if not has_existing_first and not has_existing_splits:
                 return {
                     "success": False,
                     "message": "لا يمكن تسجيل القسط الثاني! يجب تسجيل القسط الأول أولاً"
@@ -630,7 +632,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             if has_existing_first:
                 return {
                     "success": False,
-                    "message": "لا يمكن تسجيل القسط الأول مرتين! القسط الأول مسجل مسبقاً"
+                    "message": "لا يمكن تسجيل القسط الأول مرتين! القسط الأول مسجل مسبقاً. يمكنك استخدام 'دفعات' لتسجيل دفعات إضافية للقسط الأول"
                 }
             if has_existing_full:
                 return {
@@ -642,6 +644,29 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                     "success": False,
                     "message": "لا يمكن تسجيل القسط الأول! يوجد قسط ثاني مسجل مسبقاً"
                 }
+        
+        # 4. "دفعات" → مسموح دائماً إذا لم يُسجل "دفع كامل"
+        if new_type == 'دفعات':
+            if has_existing_full:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل دفعات! يوجد دفع كامل مسجل مسبقاً"
+                }
+            # التحقق من أن for_installment محدد وقيمته صحيحة
+            for_inst = installment.for_installment or ''
+            if for_inst and for_inst not in ('القسط الأول', 'القسط الثاني'):
+                return {
+                    "success": False,
+                    "message": "قيمة for_installment غير صحيحة. يجب أن تكون 'القسط الأول' أو 'القسط الثاني'"
+                }
+            # إذا لم يتم تحديد for_installment، حدده تلقائياً
+            if not for_inst:
+                if has_existing_second:
+                    # إذا وُجد القسط الثاني، الدفعات تنتمي له
+                    installment.for_installment = 'القسط الثاني'
+                else:
+                    # افتراضي: الدفعات تنتمي للقسط الأول
+                    installment.for_installment = 'القسط الأول'
 
         # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
         current_balance = finance_service.calculate_student_teacher_balance(
@@ -664,11 +689,28 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                 "message": f"المبلغ يتجاوز القسط الكلي! القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)}، المتبقي {format_currency(remaining)}"
             }
 
+        # ===== تحويل تلقائي: إذا كان مبلغ القسط الأول يساوي أو يتجاوز المبلغ الكلي =====
+        # هذا يمنع خسارة المعهد لنصف نسبة الخصم عندما يدفع الطالب المبلغ الكلي كـ "قسط أول"
+        auto_converted = False
+        if installment.installment_type == 'القسط الأول' and installment.amount >= total_fee and not has_existing_first:
+            # المبلغ يساوي القسط الكلي - تحويل تلقائي إلى "دفع كامل"
+            installment.installment_type = 'دفع كامل'
+            installment.for_installment = ''
+            auto_converted = True
+        
+        # ===== تحذير: إذا كان مبلغ القسط الأول يقارب المبلغ الكلي =====
+        # تنبيه المستخدم حتى لو لم يتم التحويل التلقائي
+        amount_warning = None
+        if not auto_converted and installment.installment_type == 'القسط الأول' and total_fee > 0:
+            ratio = installment.amount / total_fee
+            if ratio >= 0.8:  # 80% أو أكثر من القسط الكلي
+                amount_warning = f"تنبيه: مبلغ القسط الأول ({format_currency(installment.amount)}) يشكل {round(ratio*100)}% من القسط الكلي ({format_currency(total_fee)}). سيتم استقطاع نصف نسبة المعهد فقط. إذا كنت تريد استقطاع النسبة كاملةً، اختر 'دفع كامل'."
+
         from config import get_current_date as _get_current_date
         
         insert_query = '''
-            INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, notes, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, for_installment, notes, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         '''
         
@@ -678,6 +720,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             installment.amount,
             installment.payment_date,
             installment.installment_type,
+            installment.for_installment or '',
             installment.notes,
             _get_current_date()
         ))
@@ -688,11 +731,19 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             installment.teacher_id
         )
         
+        message = "تم إضافة القسط بنجاح"
+        if auto_converted:
+            message = f"⚠️ تم تحويل القسط تلقائياً من 'القسط الأول' إلى 'دفع كامل' لأن المبلغ ({format_currency(installment.amount)}) يساوي القسط الكلي ({format_currency(total_fee)}). هذا يضمن استقطاع نسبة المعهد كاملةً بدلاً من نصفها فقط."
+        elif amount_warning:
+            message = f"تم إضافة القسط بنجاح. {amount_warning}"
+        
         return {
             "success": True, 
-            "message": "تم إضافة القسط بنجاح",
+            "message": message,
             "new_balance": new_balance,
-            "installment_id": installment_id
+            "installment_id": installment_id,
+            "auto_converted": auto_converted,
+            "amount_warning": amount_warning
         }
         
     except Exception as e:
@@ -754,27 +805,46 @@ async def api_get_allowed_installment_types(request: Request, student_id: int, t
         has_first = 'القسط الأول' in existing_types
         has_second = 'القسط الثاني' in existing_types
         has_full = 'دفع كامل' in existing_types
+        has_splits = 'دفعات' in existing_types
         
         allowed = []
         
-        # القسط الأول: مسموح فقط إذا لم يُسجل أي قسط من قبل
+        # القسط الأول: مسموح فقط إذا لم يُسجل أي قسط من قبل (باستثناء الدفعات)
         if not has_first and not has_second and not has_full:
             allowed.append('القسط الأول')
         
-        # القسط الثاني: مسموح فقط إذا وُجد القسط الأول ولم يُسجل القسط الثاني أو دفع كامل بعد
-        if has_first and not has_second and not has_full:
+        # القسط الثاني: مسموح فقط إذا وُجد القسط الأول أو دفعات ولم يُسجل القسط الثاني أو دفع كامل بعد
+        if (has_first or has_splits) and not has_second and not has_full:
             allowed.append('القسط الثاني')
         
-        # دفع كامل: مسموح إذا لم توجد أي أقساط، أو إذا وُجد القسط الأول فقط (تحويل من دفعات إلى دفع كامل)
-        if not existing_types:
+        # دفع كامل: مسموح إذا لم توجد أي أقساط رئيسية، أو إذا وُجد القسط الأول فقط (تحويل من دفعات إلى دفع كامل)
+        if not existing_types or has_first and not has_second and not has_full:
             allowed.append('دفع كامل')
-        elif has_first and not has_second and not has_full:
-            allowed.append('دفع كامل')
+        
+        # دفعات: مسموح دائماً إذا لم يُسجل "دفع كامل"
+        # الدفعات تتيح تقسيم القسط الأول أو الثاني إلى دفعات أصغر
+        if not has_full:
+            # تحديد خيارات for_installment المتاحة
+            split_options = []
+            if not has_first and not has_second:
+                # لا توجد أقساط بعد - يمكن عمل دفعات للقسط الأول
+                split_options.append({'value': 'القسط الأول', 'label': 'دفعات للقسط الأول'})
+            elif has_first and not has_second:
+                # وُجد القسط الأول - يمكن عمل دفعات إضافية للقسط الأول أو الثاني
+                split_options.append({'value': 'القسط الأول', 'label': 'دفعات إضافية للقسط الأول'})
+                split_options.append({'value': 'القسط الثاني', 'label': 'دفعات للقسط الثاني'})
+            elif has_second:
+                # وُجد القسط الثاني - يمكن عمل دفعات إضافية
+                split_options.append({'value': 'القسط الثاني', 'label': 'دفعات إضافية للقسط الثاني'})
+            
+            if split_options:
+                allowed.append('دفعات')
         
         return {
             "success": True,
             "allowed_types": allowed,
-            "existing_types": list(existing_types)
+            "existing_types": list(existing_types),
+            "split_options": split_options if not has_full else []
         }
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -828,6 +898,295 @@ async def api_delete_installment(request: Request, installment_id: int):
             "success": True, 
             "message": "تم حذف القسط",
             "deleted_installment": inst_data
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+# ===== فحص سلامة البيانات =====
+
+@router.get("/data-integrity-check")
+async def api_data_integrity_check(request: Request):
+    """فحص السجلات التي تتنافى مع منطق النظام وشروطه"""
+    check_permission(request, 'view_reports')
+    db = Database()
+    
+    issues = []
+    
+    try:
+        # 1. فحص: قسط أول مسجل لكن مبلغه يساوي القسط الكلي (كان يجب أن يكون "دفع كامل")
+        query1 = '''
+            SELECT i.id, i.student_id, i.teacher_id, i.amount, i.installment_type,
+                   s.name as student_name, t.name as teacher_name,
+                   st.discount_type, st.discount_value, st.institute_waiver,
+                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   st.study_type
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE i.installment_type = 'القسط الأول'
+        '''
+        first_installments = db.execute_query(query1)
+        
+        if first_installments:
+            for inst in first_installments:
+                # حساب القسط الفعلي
+                study_type = inst.get('study_type', 'حضوري') or 'حضوري'
+                if study_type == 'الكتروني' and (inst.get('fee_electronic', 0) or 0) > 0:
+                    original_fee = inst['fee_electronic']
+                elif study_type == 'مدمج' and (inst.get('fee_blended', 0) or 0) > 0:
+                    original_fee = inst['fee_blended']
+                elif study_type == 'حضوري' and (inst.get('fee_in_person', 0) or 0) > 0:
+                    original_fee = inst['fee_in_person']
+                else:
+                    original_fee = inst.get('total_fee', 0)
+                
+                # تطبيق خصم الطالب
+                discount_type = inst.get('discount_type', 'none') or 'none'
+                discount_value = inst.get('discount_value', 0) or 0
+                
+                if discount_type == 'free':
+                    effective_fee = 0
+                elif discount_type in ('percentage', 'custom') and discount_value > 0:
+                    effective_fee = original_fee - round(original_fee * discount_value / 100)
+                elif discount_type == 'fixed' and discount_value > 0:
+                    effective_fee = original_fee - discount_value
+                else:
+                    effective_fee = original_fee
+                
+                if effective_fee > 0 and inst['amount'] >= effective_fee:
+                    issues.append({
+                        'type': 'first_installment_equals_full',
+                        'severity': 'high',
+                        'installment_id': inst['id'],
+                        'student_name': inst['student_name'],
+                        'teacher_name': inst['teacher_name'],
+                        'amount': inst['amount'],
+                        'effective_fee': effective_fee,
+                        'message': f"القسط الأول (#{inst['id']}) للطالب {inst['student_name']} عند المدرس {inst['teacher_name']}: المبلغ {format_currency(inst['amount'])} يساوي القسط الكلي {format_currency(effective_fee)} - كان يجب تسجيله كـ 'دفع كامل' بدلاً من 'القسط الأول' لضمان استقطاع نسبة المعهد كاملةً"
+                    })
+        
+        # 2. فحص: مدفوعات تتجاوز القسط الكلي
+        query2 = '''
+            SELECT i.student_id, i.teacher_id, 
+                   SUM(i.amount) as total_paid,
+                   COUNT(*) as installment_count,
+                   s.name as student_name, t.name as teacher_name,
+                   st.discount_type, st.discount_value, st.institute_waiver,
+                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   st.study_type
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            GROUP BY i.student_id, i.teacher_id, s.name, t.name, 
+                     st.discount_type, st.discount_value, st.institute_waiver,
+                     t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                     st.study_type
+            HAVING SUM(i.amount) > 0
+        '''
+        payment_totals = db.execute_query(query2)
+        
+        if payment_totals:
+            for pt in payment_totals:
+                study_type = pt.get('study_type', 'حضوري') or 'حضوري'
+                if study_type == 'الكتروني' and (pt.get('fee_electronic', 0) or 0) > 0:
+                    original_fee = pt['fee_electronic']
+                elif study_type == 'مدمج' and (pt.get('fee_blended', 0) or 0) > 0:
+                    original_fee = pt['fee_blended']
+                elif study_type == 'حضوري' and (pt.get('fee_in_person', 0) or 0) > 0:
+                    original_fee = pt['fee_in_person']
+                else:
+                    original_fee = pt.get('total_fee', 0)
+                
+                discount_type = pt.get('discount_type', 'none') or 'none'
+                discount_value = pt.get('discount_value', 0) or 0
+                
+                if discount_type == 'free':
+                    effective_fee = 0
+                elif discount_type in ('percentage', 'custom') and discount_value > 0:
+                    effective_fee = original_fee - round(original_fee * discount_value / 100)
+                elif discount_type == 'fixed' and discount_value > 0:
+                    effective_fee = original_fee - discount_value
+                else:
+                    effective_fee = original_fee
+                
+                if effective_fee > 0 and pt['total_paid'] > effective_fee:
+                    overpayment = pt['total_paid'] - effective_fee
+                    issues.append({
+                        'type': 'overpayment',
+                        'severity': 'medium',
+                        'student_name': pt['student_name'],
+                        'teacher_name': pt['teacher_name'],
+                        'total_paid': pt['total_paid'],
+                        'effective_fee': effective_fee,
+                        'overpayment': overpayment,
+                        'message': f"الطالب {pt['student_name']} عند المدرس {pt['teacher_name']}: المدفوع {format_currency(pt['total_paid'])} يتجاوز القسط الكلي {format_currency(effective_fee)} بمبلغ {format_currency(overpayment)}"
+                    })
+        
+        # 3. فحص: طالب مجاني لديه أقساط مسجلة
+        query3 = '''
+            SELECT i.id, i.amount, i.installment_type,
+                   s.name as student_name, t.name as teacher_name
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE st.discount_type = 'free'
+        '''
+        free_with_payments = db.execute_query(query3)
+        if free_with_payments:
+            for fwp in free_with_payments:
+                issues.append({
+                    'type': 'free_student_with_payment',
+                    'severity': 'high',
+                    'installment_id': fwp['id'],
+                    'student_name': fwp['student_name'],
+                    'teacher_name': fwp['teacher_name'],
+                    'amount': fwp['amount'],
+                    'message': f"الطالب {fwp['student_name']} مجاني لكن لديه قسط مسجل (#{fwp['id']}) بمبلغ {format_currency(fwp['amount'])} عند المدرس {fwp['teacher_name']}"
+                })
+        
+        # 4. فحص: قسط ثاني بدون قسط أول
+        query4 = '''
+            SELECT i.id, i.amount, s.name as student_name, t.name as teacher_name
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            WHERE i.installment_type = 'القسط الثاني'
+            AND NOT EXISTS (
+                SELECT 1 FROM installments i2 
+                WHERE i2.student_id = i.student_id 
+                AND i2.teacher_id = i.teacher_id 
+                AND i2.installment_type = 'القسط الأول'
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM installments i3 
+                WHERE i3.student_id = i.student_id 
+                AND i3.teacher_id = i.teacher_id 
+                AND i3.installment_type = 'دفعات'
+            )
+        '''
+        second_without_first = db.execute_query(query4)
+        if second_without_first:
+            for swf in second_without_first:
+                issues.append({
+                    'type': 'second_without_first',
+                    'severity': 'medium',
+                    'installment_id': swf['id'],
+                    'student_name': swf['student_name'],
+                    'teacher_name': swf['teacher_name'],
+                    'message': f"الطالب {swf['student_name']}: قسط ثاني مسجل (#{swf['id']}) بدون قسط أول عند المدرس {swf['teacher_name']}"
+                })
+        
+        # 5. فحص: طلاب مربوطين بمدرسين بنفس المادة وحالة مستمر
+        query5 = '''
+            SELECT s.name as student_name, t1.name as teacher1_name, t2.name as teacher2_name, t1.subject
+            FROM student_teacher st1
+            JOIN student_teacher st2 ON st1.student_id = st2.student_id AND st1.teacher_id < st2.teacher_id
+            JOIN students s ON st1.student_id = s.id
+            JOIN teachers t1 ON st1.teacher_id = t1.id
+            JOIN teachers t2 ON st2.teacher_id = t2.id
+            WHERE t1.subject = t2.subject
+            AND st1.status = 'مستمر' AND st2.status = 'مستمر'
+        '''
+        duplicate_subjects = db.execute_query(query5)
+        if duplicate_subjects:
+            for ds in duplicate_subjects:
+                issues.append({
+                    'type': 'duplicate_subject_link',
+                    'severity': 'high',
+                    'student_name': ds['student_name'],
+                    'subject': ds['subject'],
+                    'teacher1_name': ds['teacher1_name'],
+                    'teacher2_name': ds['teacher2_name'],
+                    'message': f"الطالب {ds['student_name']} مربوط بمدرسين لنفس المادة ({ds['subject']}): {ds['teacher1_name']} و {ds['teacher2_name']}"
+                })
+        
+        return {
+            "success": True,
+            "total_issues": len(issues),
+            "high_severity": len([i for i in issues if i.get('severity') == 'high']),
+            "medium_severity": len([i for i in issues if i.get('severity') == 'medium']),
+            "issues": issues
+        }
+        
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في فحص البيانات: {str(e)}"}
+
+
+@router.post("/fix-first-installment-to-full")
+async def api_fix_first_to_full(request: Request):
+    """إصلاح: تحويل الأقساط الأولى التي يساوي مبلغها القسط الكلي إلى 'دفع كامل'"""
+    check_permission(request, 'delete_payments')  # يتطلب صلاحية عالية
+    db = Database()
+    
+    try:
+        user = getattr(request.state, 'user', None)
+        if not user or user.get('role_name', '') != 'مدير عام':
+            return {"success": False, "message": "فقط مدير النظام يمكنه تنفيذ هذا الإصلاح"}
+        
+        # البحث عن الأقساط الأولى التي يساوي مبلغها القسط الكلي
+        query = '''
+            SELECT i.id, i.student_id, i.teacher_id, i.amount,
+                   s.name as student_name, t.name as teacher_name,
+                   st.discount_type, st.discount_value, st.institute_waiver,
+                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   st.study_type
+            FROM installments i
+            JOIN students s ON i.student_id = s.id
+            JOIN teachers t ON i.teacher_id = t.id
+            JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+            WHERE i.installment_type = 'القسط الأول'
+        '''
+        first_installments = db.execute_query(query)
+        
+        fixed = []
+        if first_installments:
+            for inst in first_installments:
+                study_type = inst.get('study_type', 'حضوري') or 'حضوري'
+                if study_type == 'الكتروني' and (inst.get('fee_electronic', 0) or 0) > 0:
+                    original_fee = inst['fee_electronic']
+                elif study_type == 'مدمج' and (inst.get('fee_blended', 0) or 0) > 0:
+                    original_fee = inst['fee_blended']
+                elif study_type == 'حضوري' and (inst.get('fee_in_person', 0) or 0) > 0:
+                    original_fee = inst['fee_in_person']
+                else:
+                    original_fee = inst.get('total_fee', 0)
+                
+                discount_type = inst.get('discount_type', 'none') or 'none'
+                discount_value = inst.get('discount_value', 0) or 0
+                
+                if discount_type == 'free':
+                    effective_fee = 0
+                elif discount_type in ('percentage', 'custom') and discount_value > 0:
+                    effective_fee = original_fee - round(original_fee * discount_value / 100)
+                elif discount_type == 'fixed' and discount_value > 0:
+                    effective_fee = original_fee - discount_value
+                else:
+                    effective_fee = original_fee
+                
+                if effective_fee > 0 and inst['amount'] >= effective_fee:
+                    # تحويل إلى دفع كامل
+                    db.execute_query(
+                        "UPDATE installments SET installment_type = 'دفع كامل', for_installment = '' WHERE id = %s",
+                        (inst['id'],)
+                    )
+                    fixed.append({
+                        'installment_id': inst['id'],
+                        'student_name': inst['student_name'],
+                        'teacher_name': inst['teacher_name'],
+                        'amount': inst['amount'],
+                        'effective_fee': effective_fee
+                    })
+        
+        return {
+            "success": True,
+            "message": f"تم إصلاح {len(fixed)} قسط: تحويل من 'القسط الأول' إلى 'دفع كامل'",
+            "fixed_count": len(fixed),
+            "fixed_records": fixed
         }
         
     except Exception as e:

@@ -271,6 +271,7 @@ class FinanceService:
         # Get all installments with study type and discount info for this teacher
         query = '''
             SELECT i.student_id, i.installment_type, i.amount,
+                   COALESCE(i.for_installment, '') as for_installment,
                    COALESCE(st.study_type, 'حضوري') as study_type,
                    COALESCE(st.discount_type, 'none') as discount_type,
                    COALESCE(st.discount_value, 0) as discount_value,
@@ -305,16 +306,21 @@ class FinanceService:
         for student_id, payments in student_payments.items():
             # تحديد أنواع الأقساط الموجودة (presence flags) بدلاً من العد
             # القسط الأول → نصف النسبة | القسط الثاني → النصف الثاني | دفع كامل → النسبة كاملة
+            # دفعات → تحسب حسب القسط الذي تنتمي إليه
             has_first = False
             has_second = False
             has_full = False
+            has_splits_first = False  # دفعات للقسط الأول
+            has_splits_second = False  # دفعات للقسط الثاني
             study_type = 'حضوري'
             discount_type = 'none'
+            discount_value = 0
             institute_waiver = 0
             
             for p in payments:
                 study_type = p.get('study_type', 'حضوري') or 'حضوري'
                 discount_type = p.get('discount_type', 'none') or 'none'
+                discount_value = p.get('discount_value', 0) or 0
                 institute_waiver = p.get('institute_waiver', 0) or 0
                 itype = p['installment_type']
                 if itype == 'القسط الأول':
@@ -323,6 +329,14 @@ class FinanceService:
                     has_second = True
                 elif itype == 'دفع كامل':
                     has_full = True
+                elif itype == 'دفعات':
+                    # تحديد القسط الذي تنتمي إليه الدفعة
+                    for_inst = p.get('for_installment', '')
+                    if for_inst == 'القسط الثاني':
+                        has_splits_second = True
+                    else:
+                        # افتراضي: الدفعات تنتمي للقسط الأول
+                        has_splits_first = True
             
             # Determine deduction type and value based on study type
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
@@ -350,23 +364,51 @@ class FinanceService:
             # نسبة المعهد تُحسب من القسط الأصلي (قبل الخصم) لأن الخصم خصم للطالب وليس للمعهد
             fee_for_deduction = self._get_fee_for_study_type(t, study_type)  # القسط الأصلي بدون خصم
             
+            # حساب القسط الفعلي (بعد خصم الطالب) لفحص اكتمال الدفع
+            discount_info_for_calc = {
+                'discount_type': discount_type,
+                'discount_value': discount_value,
+                'institute_waiver': institute_waiver
+            }
+            effective_fee = self._apply_discount_to_fee(fee_for_deduction, discount_info_for_calc)
+            
+            # حساب إجمالي المدفوع لهذا الطالب عند هذا المدرس
+            total_paid_by_student = sum(p['amount'] for p in payments)
+            
+            # ===== فحص مهم: إذا كان إجمالي المدفوع >= القسط الفعلي =====
+            # هذا يعني أن الطالب دفع المبلغ الكلي فعلياً (حتى لو نُوع كـ "قسط أول")
+            # في هذه الحالة يتم قطع النسبة كاملة لمنع خسارة المعهد
+            is_effectively_full_payment = effective_fee > 0 and total_paid_by_student >= effective_fee
+            
+            # فحص إضافي: إذا كان مبلغ القسط الأول وحده >= القسط الفعلي
+            first_installment_total = sum(p['amount'] for p in payments if p['installment_type'] == 'القسط الأول')
+            is_first_equals_full = has_first and not has_second and not has_full and first_installment_total >= effective_fee and effective_fee > 0
+            
             if ded_type == 'manual':
                 # مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً
                 half_ded = ded_value // 2
                 other_half_ded = ded_value - half_ded
                 
-                if has_full:
+                if is_effectively_full_payment or is_first_equals_full:
+                    # المدفوع الفعلي يساوي أو يتجاوز القسط الكلي → الخصم الكامل
+                    total_deduction += ded_value
+                elif has_full:
                     # دفع كامل (وحده أو مع القسط الأول) → الخصم الكامل
-                    # ملاحظة: القسط الأول + دفع كامل = تحويل من دفعات إلى كامل → خصم كامل
                     total_deduction += ded_value
                 elif has_first and has_second:
                     # قسط أول + قسط ثاني → الخصم الكامل (نصف + نصف = كامل)
                     total_deduction += ded_value
-                elif has_first:
-                    # قسط أول فقط → نصف الخصم
+                elif has_first and has_splits_second:
+                    # قسط أول + دفعات للقسط الثاني → الخصم الكامل (إذا اكتمل المبلغ)
+                    total_deduction += ded_value
+                elif has_splits_first and has_second:
+                    # دفعات للقسط الأول + قسط ثاني → الخصم الكامل (إذا اكتمل المبلغ)
+                    total_deduction += ded_value
+                elif has_first or has_splits_first:
+                    # قسط أول فقط أو دفعات للقسط الأول → نصف الخصم
                     total_deduction += half_ded
-                elif has_second:
-                    # قسط ثاني فقط → النصف الثاني
+                elif has_second or has_splits_second:
+                    # قسط ثاني فقط أو دفعات للقسط الثاني → النصف الثاني
                     total_deduction += other_half_ded
             else:
                 # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
@@ -375,18 +417,26 @@ class FinanceService:
                 half_deduction = full_deduction // 2
                 other_half_deduction = full_deduction - half_deduction
                 
-                if has_full:
+                if is_effectively_full_payment or is_first_equals_full:
+                    # المدفوع الفعلي يساوي أو يتجاوز القسط الكلي → الخصم الكامل
+                    total_deduction += full_deduction
+                elif has_full:
                     # دفع كامل (وحده أو مع القسط الأول) → الخصم الكامل
-                    # ملاحظة: القسط الأول + دفع كامل = تحويل من دفعات إلى كامل → خصم كامل
                     total_deduction += full_deduction
                 elif has_first and has_second:
                     # قسط أول + قسط ثاني → الخصم الكامل (نصف + نصف = كامل)
                     total_deduction += full_deduction
-                elif has_first:
-                    # قسط أول فقط → نصف الخصم
+                elif has_first and has_splits_second:
+                    # قسط أول + دفعات للقسط الثاني → الخصم الكامل
+                    total_deduction += full_deduction
+                elif has_splits_first and has_second:
+                    # دفعات للقسط الأول + قسط ثاني → الخصم الكامل
+                    total_deduction += full_deduction
+                elif has_first or has_splits_first:
+                    # قسط أول فقط أو دفعات للقسط الأول → نصف الخصم
                     total_deduction += half_deduction
-                elif has_second:
-                    # قسط ثاني فقط → النصف الثاني
+                elif has_second or has_splits_second:
+                    # قسط ثاني فقط أو دفعات للقسط الثاني → النصف الثاني
                     total_deduction += other_half_deduction
         
         # معالجة الطلاب "مجاني بدون تنازل المعهد" الذين ليس لديهم أقساط مدفوعة

@@ -151,7 +151,16 @@ def init_db():
                 AND a.student_id = b.student_id
                 AND a.teacher_id = b.teacher_id
                 AND a.installment_type = b.installment_type
+                AND a.installment_type != 'دفعات'
             ''')
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        # فهرس فريد جزئي - يمنع تكرار الأنواع الرئيسية فقط (لا يشمل 'دفعات')
+        # أولاً حذف الفهرس القديم إذا وُجد
+        try:
+            cursor.execute('DROP INDEX IF EXISTS idx_installment_unique_type')
             conn.commit()
         except Exception:
             conn.rollback()
@@ -159,6 +168,7 @@ def init_db():
         cursor.execute('''
             CREATE UNIQUE INDEX IF NOT EXISTS idx_installment_unique_type
             ON installments (student_id, teacher_id, installment_type)
+            WHERE installment_type != 'دفعات'
         ''')
         
         cursor.execute('''
@@ -459,7 +469,9 @@ def init_db():
             "ALTER TABLE installments ADD COLUMN IF NOT EXISTS created_at TEXT DEFAULT ''",
             # قيد CHECK على installment_type
             "ALTER TABLE installments DROP CONSTRAINT IF EXISTS installments_installment_type_check",
-            "ALTER TABLE installments ADD CONSTRAINT installments_installment_type_check CHECK(installment_type IN ('القسط الأول', 'القسط الثاني', 'دفع كامل'))",
+            "ALTER TABLE installments ADD CONSTRAINT installments_installment_type_check CHECK(installment_type IN ('القسط الأول', 'القسط الثاني', 'دفع كامل', 'دفعات'))",
+            # عمود for_installment - يحدد القسط الذي تنتمي إليه الدفعة (للدفعات فقط)
+            "ALTER TABLE installments ADD COLUMN IF NOT EXISTS for_installment VARCHAR(30) DEFAULT ''",
             # قيد CHECK على institute_waiver - فقط 0 أو 1
             "ALTER TABLE student_teacher DROP CONSTRAINT IF EXISTS student_teacher_institute_waiver_check",
             "ALTER TABLE student_teacher ADD CONSTRAINT student_teacher_institute_waiver_check CHECK(institute_waiver IN (0, 1))",
