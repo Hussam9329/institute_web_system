@@ -141,6 +141,18 @@
     background: rgba(255,255,255,0.2);
     color: #fff;
 }
+.link-teacher-card .tc-type-badge {
+    font-size: 0.6rem;
+    padding: 0px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+    line-height: 1.6;
+    transition: all 0.15s;
+}
+.link-teacher-card.selected .tc-type-badge {
+    background: rgba(255,255,255,0.2) !important;
+    color: #fff !important;
+}
 .link-teacher-card.linked {
     opacity: 0.45;
     pointer-events: none;
@@ -718,9 +730,24 @@ function renderLinkTeacherCards(filter) {
 
         var feeStr = t.total_fee ? formatCurrency(t.total_fee) : '';
 
+        // بادجات انواع الدراسة
+        var ttTypes = (t.teaching_types || '\u062d\u0636\u0648\u0631\u064a').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+        var ttBadges = '';
+        var typeMap = {'\u062d\u0636\u0648\u0631\u064a': '\u062d\u0636\u0648\u0631\u064a', '\u0627\u0644\u0643\u062a\u0631\u0648\u0646\u064a': '\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a', '\u0645\u062f\u0645\u062c': '\u0645\u062f\u0645\u062c'};
+        ttTypes.forEach(function(tt) {
+            var label = typeMap[tt] || tt;
+            var colors = {
+                '\u062d\u0636\u0648\u0631\u064a': 'background:#eef2ff;color:#4f46e5;',
+                '\u0627\u0644\u0643\u062a\u0631\u0648\u0646\u064a': 'background:#ecfdf5;color:#059669;',
+                '\u0645\u062f\u0645\u062c': 'background:#fef3c7;color:#d97706;'
+            };
+            ttBadges += '<span class="tc-type-badge" style="' + (colors[tt] || 'background:#f3f4f6;color:#666;') + '">' + escapeHtmlSimple(label) + '</span>';
+        });
+
         card.innerHTML = '<i class="fas fa-chalkboard-teacher tc-icon"></i>' +
             '<span class="tc-name">' + escapeHtmlSimple(name) + '</span>' +
             '<span class="tc-subj">' + escapeHtmlSimple(subject) + '</span>' +
+            ttBadges +
             (feeStr ? '<span class="tc-fee">' + feeStr + '</span>' : '') +
             (isLinked ? '<span style="font-size:0.65rem;opacity:0.6;"><i class="fas fa-link"></i></span>' : '');
 
@@ -769,6 +796,30 @@ function selectLinkTeacher(id, name) {
     tag.classList.remove('d-none');
     submitBtn.disabled = false;
 
+    // فلتر نوع الدراسة حسب المدرس المختار
+    var teacher = allTeachersData.find(function(t) { return t.id === id; });
+    var studyTypeSelect = document.getElementById('link_study_type');
+    if (teacher && studyTypeSelect) {
+        var ttTypes = (teacher.teaching_types || '\u062d\u0636\u0648\u0631\u064a').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+        // لو نوع واحد فقط - اختاره مباشرة واعطل التغيير
+        studyTypeSelect.innerHTML = '';
+        var typeLabelMap = {'\u062d\u0636\u0648\u0631\u064a': '\u062d\u0636\u0648\u0631\u064a', '\u0627\u0644\u0643\u062a\u0631\u0648\u0646\u064a': '\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a', '\u0645\u062f\u0645\u062c': '\u0645\u062f\u0645\u062c'};
+        ttTypes.forEach(function(tt) {
+            var opt = document.createElement('option');
+            opt.value = tt;
+            opt.textContent = typeLabelMap[tt] || tt;
+            studyTypeSelect.appendChild(opt);
+        });
+        if (ttTypes.length === 1) {
+            studyTypeSelect.value = ttTypes[0];
+            studyTypeSelect.disabled = true;
+            studyTypeSelect.style.opacity = '0.6';
+        } else {
+            studyTypeSelect.disabled = false;
+            studyTypeSelect.style.opacity = '1';
+        }
+    }
+
     // تحديث حالة البطاقات
     var container = document.getElementById('linkTeacherCardsContainer');
     container.querySelectorAll('.link-teacher-card').forEach(function(card) {
@@ -787,9 +838,21 @@ function clearLinkTeacher() {
     document.getElementById('link_teacher_id').value = '';
     var tag = document.getElementById('linkTeacherTag');
     var submitBtn = document.getElementById('linkTeacherSubmitBtn');
+    var studyTypeSelect = document.getElementById('link_study_type');
 
     tag.classList.add('d-none');
     submitBtn.disabled = true;
+
+    // إعادة نوع الدراسة لكل الخيارات
+    if (studyTypeSelect) {
+        studyTypeSelect.innerHTML =
+            '<option value="\u062d\u0636\u0648\u0631\u064a">\u062d\u0636\u0648\u0631\u064a</option>' +
+            '<option value="\u0627\u0644\u0643\u062a\u0631\u0648\u0646\u064a">\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a</option>' +
+            '<option value="\u0645\u062f\u0645\u062c">\u0645\u062f\u0645\u062c</option>';
+        studyTypeSelect.disabled = false;
+        studyTypeSelect.style.opacity = '1';
+        studyTypeSelect.value = '\u062d\u0636\u0648\u0631\u064a';
+    }
 
     // إزالة التحديد
     var container = document.getElementById('linkTeacherCardsContainer');
