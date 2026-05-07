@@ -57,8 +57,19 @@
                             <i class="fas fa-search text-muted"></i>
                         </span>
                         <input type="text" name="search" class="form-control border-start-0 ps-0" 
-                               placeholder="بحث بالاسم أو المادة..." id="teacherLiveSearch"
+                               placeholder="بحث بالاسم أو المادة أو الرمز..." id="teacherLiveSearch"
                                value="{{ request.args.get('search', '') }}">
+                        <button type="button" class="btn btn-outline-secondary" title="بحث بالرمز" onclick="openTeacherBarcodeSearch()">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                    </div>
+                    <!-- نتيجة بحث الباركود -->
+                    <div id="teacherBarcodeResult" class="mt-2 d-none">
+                        <div class="alert alert-info py-2 px-3 d-flex align-items-center gap-2 mb-0">
+                            <i class="fas fa-spinner fa-spin" id="teacherBarcodeSpinner"></i>
+                            <span id="teacherBarcodeResultText">جاري البحث...</span>
+                            <button type="button" class="btn-close ms-auto" style="font-size:0.7rem" onclick="closeTeacherBarcodeResult()"></button>
+                        </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-3">
@@ -303,6 +314,93 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// ===== بحث بالباركود / QR للمدرسين =====
+function openTeacherBarcodeSearch() {
+    let modal = document.getElementById('teacherBarcodeModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'teacherBarcodeModal';
+        modal.className = 'modal fade';
+        modal.setAttribute('tabindex', '-1');
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header py-2">
+                        <h6 class="modal-title"><i class="fas fa-qrcode me-2"></i>بحث بالرمز</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-3">
+                        <label class="form-label small fw-bold">أدخل الرمز أو رقم المدرس:</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" id="teacherBarcodeInput" placeholder="رقم المدرس أو الاسم..." autofocus>
+                            <button class="btn btn-success" type="button" onclick="lookupTeacherBarcode(document.getElementById('teacherBarcodeInput').value)">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">يمكنك إدخال رقم المدرس أو جزء من الاسم</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    const inp = document.getElementById('teacherBarcodeInput');
+    if (inp) {
+        inp.onkeydown = function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); lookupTeacherBarcode(this.value); }
+        };
+    }
+}
+
+function lookupTeacherBarcode(code) {
+    if (!code || !code.trim()) return;
+    code = code.trim();
+    
+    const resultDiv = document.getElementById('teacherBarcodeResult');
+    const resultText = document.getElementById('teacherBarcodeResultText');
+    const spinner = document.getElementById('teacherBarcodeSpinner');
+    
+    resultDiv.classList.remove('d-none');
+    spinner.classList.remove('d-none');
+    resultText.textContent = 'جاري البحث عن: ' + code;
+    
+    // إغلاق أي modal مفتوح
+    document.querySelectorAll('.modal.show').forEach(m => {
+        const bsModal = bootstrap.Modal.getInstance(m);
+        if (bsModal) bsModal.hide();
+    });
+    
+    fetch('/api/lookup?code=' + encodeURIComponent(code))
+        .then(r => r.json())
+        .then(data => {
+            spinner.classList.add('d-none');
+            if (data.found) {
+                if (data.type === 'teacher') {
+                    resultText.innerHTML = '<i class="fas fa-chalkboard-teacher text-success me-1"></i> مدرس: <strong>' + data.name + '</strong>';
+                    setTimeout(() => { window.location.href = data.url; }, 800);
+                } else if (data.type === 'student') {
+                    resultText.innerHTML = '<i class="fas fa-user-graduate text-primary me-1"></i> طالب: <strong>' + data.name + '</strong>';
+                    setTimeout(() => { window.location.href = data.url; }, 800);
+                }
+            } else {
+                resultText.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> لم يتم العثور على نتائج لـ: <strong>' + code + '</strong>';
+                setTimeout(() => { closeTeacherBarcodeResult(); }, 3000);
+            }
+        })
+        .catch(err => {
+            spinner.classList.add('d-none');
+            resultText.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i> خطأ في البحث';
+            setTimeout(() => { closeTeacherBarcodeResult(); }, 2000);
+        });
+}
+
+function closeTeacherBarcodeResult() {
+    const resultDiv = document.getElementById('teacherBarcodeResult');
+    if (resultDiv) resultDiv.classList.add('d-none');
+}
+
 // بحث مباشر
 document.getElementById('teacherLiveSearch')?.addEventListener('input', function() {
     const query = this.value.toLowerCase();
@@ -326,6 +424,38 @@ document.getElementById('teacherLiveSearch')?.addEventListener('input', function
         const cards = document.querySelectorAll('.teacher-card');
         noCards.classList.toggle('d-none', !(cards.length > 0 && cardVisible === 0 && query.length > 0));
     }
+});
+
+// ===== دعم إدخال الماسح الضوئي التلقائي =====
+let teacherScannerBuffer = '';
+let teacherScannerTimeout = null;
+
+document.addEventListener('keydown', function(e) {
+    const activeEl = document.activeElement;
+    const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+    if (isInput) return;
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key.length > 1 && e.key !== 'Enter') return;
+    
+    if (teacherScannerTimeout) clearTimeout(teacherScannerTimeout);
+    
+    if (e.key === 'Enter') {
+        if (teacherScannerBuffer.length >= 3) {
+            lookupTeacherBarcode(teacherScannerBuffer.trim());
+        }
+        teacherScannerBuffer = '';
+        return;
+    }
+    
+    teacherScannerBuffer += e.key;
+    if (teacherScannerBuffer.length > 50) teacherScannerBuffer = teacherScannerBuffer.slice(-30);
+    
+    teacherScannerTimeout = setTimeout(() => {
+        if (teacherScannerBuffer.length >= 4 && (teacherScannerBuffer.startsWith('STU') || /^[\d\-]+$/.test(teacherScannerBuffer))) {
+            lookupTeacherBarcode(teacherScannerBuffer.trim());
+        }
+        teacherScannerBuffer = '';
+    }, 150);
 });
 </script>
 {% endblock %}

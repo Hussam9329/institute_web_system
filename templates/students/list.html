@@ -246,11 +246,22 @@
                             <i class="fas fa-search text-muted"></i>
                         </span>
                         <input type="text" class="form-control border-start-0 border-end-0 ps-0"
-                               placeholder="بحث بالاسم أو الرمز..." id="studentLiveSearch" name="search"
+                               placeholder="بحث بالاسم أو الرمز أو الباركود..." id="studentLiveSearch" name="search"
                                value="{{ search }}">
+                        <button type="button" class="btn btn-outline-secondary" title="مسح QR / باركود" onclick="openQRScanner()">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
                         <button type="submit" class="btn btn-outline-primary" title="بحث">
                             <i class="fas fa-search"></i>
                         </button>
+                    </div>
+                    <!-- نتيجة بحث الباركود -->
+                    <div id="barcodeResult" class="mt-2 d-none">
+                        <div class="alert alert-info py-2 px-3 d-flex align-items-center gap-2 mb-0">
+                            <i class="fas fa-spinner fa-spin" id="barcodeSpinner"></i>
+                            <span id="barcodeResultText">جاري البحث...</span>
+                            <button type="button" class="btn-close ms-auto" style="font-size:0.7rem" onclick="closeBarcodeResult()"></button>
+                        </div>
                     </div>
                 </div>
 
@@ -567,6 +578,211 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// ===== QR SCANNER / BARCODE LOOKUP =====
+let qrScannerStream = null;
+
+function openQRScanner() {
+    // محاولة فتح الكاميرا لمسح QR
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // إنشاء نافذة الماسح الضوئي
+        let scannerModal = document.getElementById('qrScannerModal');
+        if (!scannerModal) {
+            scannerModal = document.createElement('div');
+            scannerModal.id = 'qrScannerModal';
+            scannerModal.className = 'modal fade';
+            scannerModal.setAttribute('tabindex', '-1');
+            scannerModal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header py-2">
+                            <h6 class="modal-title"><i class="fas fa-qrcode me-2"></i>مسح QR / باركود</h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeQRScanner()"></button>
+                        </div>
+                        <div class="modal-body text-center p-3">
+                            <div id="qrVideoContainer" style="position:relative; width:100%; max-width:320px; margin:0 auto; border-radius:12px; overflow:hidden; background:#000;">
+                                <video id="qrVideo" autoplay playsinline style="width:100%; display:block;"></video>
+                                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:60%; height:60%; border:3px solid rgba(79,70,229,0.8); border-radius:12px; pointer-events:none;"></div>
+                            </div>
+                            <div id="qrCameraError" class="d-none mt-3">
+                                <i class="fas fa-camera fa-2x text-muted d-block mb-2"></i>
+                                <p class="text-muted small mb-2">لا يمكن الوصول إلى الكاميرا</p>
+                            </div>
+                            <div class="mt-3">
+                                <label class="form-label small fw-bold">أو أدخل الرمز يدوياً:</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="manualBarcodeInput" placeholder="STU-2026-000001 أو رقم الطالب...">
+                                    <button class="btn btn-primary" type="button" onclick="lookupBarcode(document.getElementById('manualBarcodeInput').value)">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(scannerModal);
+        }
+        // Show modal using bootstrap
+        const bsModal = new bootstrap.Modal(scannerModal);
+        bsModal.show();
+        startCamera();
+    } else {
+        // لا كاميرا - عرض نافذة إدخال يدوي
+        let manualModal = document.getElementById('qrManualModal');
+        if (!manualModal) {
+            manualModal = document.createElement('div');
+            manualModal.id = 'qrManualModal';
+            manualModal.className = 'modal fade';
+            manualModal.setAttribute('tabindex', '-1');
+            manualModal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header py-2">
+                            <h6 class="modal-title"><i class="fas fa-barcode me-2"></i>بحث بالرمز</h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-3">
+                            <label class="form-label small fw-bold">أدخل رمز الطالب أو الباركود:</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="manualBarcodeInput2" placeholder="STU-2026-000001" autofocus>
+                                <button class="btn btn-primary" type="button" onclick="lookupBarcode(document.getElementById('manualBarcodeInput2').value)">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted d-block mt-2">يمكنك إدخال: الباركود الكامل، رقم الطالب، أو جزء من الرمز</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(manualModal);
+        }
+        const bsModal = new bootstrap.Modal(manualModal);
+        bsModal.show();
+        // Enter key support
+        const inp = document.getElementById('manualBarcodeInput2');
+        if (inp) {
+            inp.onkeydown = function(e) {
+                if (e.key === 'Enter') { e.preventDefault(); lookupBarcode(this.value); }
+            };
+        }
+    }
+}
+
+function startCamera() {
+    const video = document.getElementById('qrVideo');
+    const container = document.getElementById('qrVideoContainer');
+    const errorDiv = document.getElementById('qrCameraError');
+    
+    if (!video) return;
+    
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+            qrScannerStream = stream;
+            video.srcObject = stream;
+            video.play();
+            container.style.display = '';
+            errorDiv.classList.add('d-none');
+            // بدء محاولة قراءة QR
+            scanQRFrame();
+        })
+        .catch(err => {
+            console.log('Camera not available:', err);
+            container.style.display = 'none';
+            errorDiv.classList.remove('d-none');
+        });
+}
+
+function closeQRScanner() {
+    if (qrScannerStream) {
+        qrScannerStream.getTracks().forEach(t => t.stop());
+        qrScannerStream = null;
+    }
+}
+
+// Listen for modal close
+document.addEventListener('hidden.bs.modal', function(e) {
+    if (e.target.id === 'qrScannerModal') {
+        closeQRScanner();
+    }
+});
+
+function scanQRFrame() {
+    const video = document.getElementById('qrVideo');
+    if (!video || !qrScannerStream) return;
+    
+    // Check if BarcodeDetector API is available
+    if ('BarcodeDetector' in window) {
+        const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
+        const detect = () => {
+            if (!qrScannerStream) return;
+            detector.detect(video).then(barcodes => {
+                if (barcodes.length > 0) {
+                    const code = barcodes[0].rawValue;
+                    closeQRScanner();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
+                    if (modal) modal.hide();
+                    lookupBarcode(code);
+                    return;
+                }
+                requestAnimationFrame(detect);
+            }).catch(() => {
+                requestAnimationFrame(detect);
+            });
+        };
+        detect();
+    }
+}
+
+function lookupBarcode(code) {
+    if (!code || !code.trim()) return;
+    code = code.trim();
+    
+    const resultDiv = document.getElementById('barcodeResult');
+    const resultText = document.getElementById('barcodeResultText');
+    const spinner = document.getElementById('barcodeSpinner');
+    
+    // إظهار حالة التحميل
+    resultDiv.classList.remove('d-none');
+    spinner.classList.remove('d-none');
+    resultText.textContent = 'جاري البحث عن: ' + code;
+    
+    // إغلاق أي modal مفتوح
+    document.querySelectorAll('.modal.show').forEach(m => {
+        const bsModal = bootstrap.Modal.getInstance(m);
+        if (bsModal) bsModal.hide();
+    });
+    
+    fetch('/api/lookup?code=' + encodeURIComponent(code))
+        .then(r => r.json())
+        .then(data => {
+            spinner.classList.add('d-none');
+            if (data.found) {
+                if (data.type === 'student') {
+                    resultText.innerHTML = '<i class="fas fa-user-graduate text-primary me-1"></i> طالب: <strong>' + data.name + '</strong> <span class="text-muted">(' + data.barcode + ')</span>';
+                    // التوجيه مباشرة لصفحة الطالب
+                    setTimeout(() => { window.location.href = data.url; }, 800);
+                } else if (data.type === 'teacher') {
+                    resultText.innerHTML = '<i class="fas fa-chalkboard-teacher text-success me-1"></i> مدرس: <strong>' + data.name + '</strong>';
+                    setTimeout(() => { window.location.href = data.url; }, 800);
+                }
+            } else {
+                resultText.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> لم يتم العثور على نتائج لـ: <strong>' + code + '</strong>';
+                // إذا كان الكود يشبه باركود طالب، اعرض اقتراح البحث في القائمة
+                setTimeout(() => { closeBarcodeResult(); }, 3000);
+            }
+        })
+        .catch(err => {
+            spinner.classList.add('d-none');
+            resultText.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i> خطأ في البحث';
+            setTimeout(() => { closeBarcodeResult(); }, 2000);
+        });
+}
+
+function closeBarcodeResult() {
+    const resultDiv = document.getElementById('barcodeResult');
+    if (resultDiv) resultDiv.classList.add('d-none');
+}
+
 // ===== LIVE SEARCH =====
 const studentSearchInput = document.getElementById('studentLiveSearch');
 if (studentSearchInput) {
@@ -606,9 +822,57 @@ if (studentSearchInput) {
     studentSearchInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            document.getElementById('studentFilterForm').submit();
+            // إذا كان البحث يشبه باركود (يبدأ بـ STU-) ابحث عبر API
+            const val = this.value.trim();
+            if (val.startsWith('STU-') || /^[\d]+$/.test(val)) {
+                lookupBarcode(val);
+            } else {
+                document.getElementById('studentFilterForm').submit();
+            }
         }
     });
 }
+
+// ===== دعم إدخال الماسح الضوئي التلقائي =====
+// بعض ماسحات الباركود ترسل الأحرف بسرعة كأنها لوحة مفاتيح
+let scannerBuffer = '';
+let scannerTimeout = null;
+
+document.addEventListener('keydown', function(e) {
+    // فقط إذا لم يكن التركيز على حقل إدخال
+    const activeEl = document.activeElement;
+    const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
+    if (isInput) return;
+    
+    // تجاهل مفاتيح التحكم
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key.length > 1 && e.key !== 'Enter') return;
+    
+    if (scannerTimeout) clearTimeout(scannerTimeout);
+    
+    if (e.key === 'Enter') {
+        if (scannerBuffer.length >= 3) {
+            lookupBarcode(scannerBuffer.trim());
+        }
+        scannerBuffer = '';
+        return;
+    }
+    
+    scannerBuffer += e.key;
+    
+    // إذا تجاوز 50 حرف، نبدأ من جديد
+    if (scannerBuffer.length > 50) {
+        scannerBuffer = scannerBuffer.slice(-30);
+    }
+    
+    // مسح المؤقت إذا لم يتم إدخال أي حرف لمدة 100ms (سرعة الماسح)
+    scannerTimeout = setTimeout(() => {
+        // إذا كان المخزن يشبه باركود
+        if (scannerBuffer.length >= 4 && (scannerBuffer.startsWith('STU') || /^[\d\-]+$/.test(scannerBuffer))) {
+            lookupBarcode(scannerBuffer.trim());
+        }
+        scannerBuffer = '';
+    }, 150);
+});
 </script>
 {% endblock %}

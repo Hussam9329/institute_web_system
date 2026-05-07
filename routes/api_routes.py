@@ -2088,3 +2088,88 @@ async def api_delete_weekly_lecture(request: Request, lecture_id: int):
         return {"success": True, "message": "تم حذف المحاضرة"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
+
+
+# ===== بحث بالباركود / QR =====
+
+@router.get("/lookup")
+async def api_lookup_barcode(request: Request, code: str = ""):
+    """
+    بحث سريع بالباركود أو الرمز - يبحث في الطلاب والمدرسين
+    يُستخدم للماسح الضوئي (QR Scanner) أو إدخال الرمز يدوياً
+    
+    Returns:
+        - found: هل وُجد نتيجة؟
+        - type: 'student' أو 'teacher' أو 'none'
+        - id: رقم السجل
+        - name: الاسم
+        - url: رابط الصفحة
+    """
+    if not code or len(code.strip()) < 1:
+        return {"found": False, "type": "none", "message": "لم يتم إدخال رمز"}
+    
+    code = code.strip()
+    db = Database()
+    
+    try:
+        # 1. بحث في الطلاب بالباركود (مطابقة تامة أو جزئية)
+        student = db.execute_query(
+            "SELECT id, name, barcode FROM students WHERE barcode = %s LIMIT 1",
+            (code,)
+        )
+        if not student:
+            # محاولة بحث جزئي
+            student = db.execute_query(
+                "SELECT id, name, barcode FROM students WHERE barcode LIKE %s LIMIT 1",
+                (f'%{code}%',)
+            )
+        if not student:
+            # بحث بالرقم التسلسلي (id)
+            try:
+                sid = int(code.replace('STU-', '').split('-')[-1])
+                student = db.execute_query(
+                    "SELECT id, name, barcode FROM students WHERE id = %s LIMIT 1",
+                    (sid,)
+                )
+            except (ValueError, IndexError):
+                pass
+        
+        if student:
+            s = student[0]
+            return {
+                "found": True,
+                "type": "student",
+                "id": s['id'],
+                "name": s['name'],
+                "barcode": s['barcode'],
+                "url": f"/students/{s['id']}"
+            }
+        
+        # 2. بحث في المدرسين بالاسم أو الرقم
+        try:
+            tid = int(code)
+            teacher = db.execute_query(
+                "SELECT id, name, subject FROM teachers WHERE id = %s LIMIT 1",
+                (tid,)
+            )
+        except ValueError:
+            teacher = db.execute_query(
+                "SELECT id, name, subject FROM teachers WHERE name LIKE %s LIMIT 1",
+                (f'%{code}%',)
+            )
+        
+        if teacher:
+            t = teacher[0]
+            return {
+                "found": True,
+                "type": "teacher",
+                "id": t['id'],
+                "name": t['name'],
+                "subject": t['subject'],
+                "url": f"/teachers/{t['id']}"
+            }
+        
+        return {"found": False, "type": "none", "message": "لم يتم العثور على نتائج"}
+        
+    except Exception as e:
+        return {"found": False, "type": "none", "message": f"خطأ في البحث: {str(e)}"}
