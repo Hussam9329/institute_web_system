@@ -116,48 +116,6 @@ function initTooltips() {
     });
 }
 
-/**
- * التعامل مع أخطاء النموذج
- * @param {Event} event - حدث الإرسال
- * @param {FormElement} form - النموذج
- */
-function handleFormError(event, form) {
-    event.preventDefault();
-    
-    // إزالة الأخطاء السابقة
-    form.querySelectorAll('.is-invalid').forEach(el => {
-        el.classList.remove('is-invalid');
-    });
-    form.querySelectorAll('.invalid-feedback').forEach(el => {
-        el.remove();
-    });
-
-    let hasError = false;
-    const requiredFields = form.querySelectorAll('[required]');
-
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            
-            const feedback = document.createElement('div');
-            feedback.className = 'invalid-feedback';
-            feedback.textContent = 'هذا الحقل مطلوب';
-            field.parentNode.appendChild(feedback);
-            
-            hasError = true;
-        }
-    });
-
-    if (hasError) {
-        showAlert('يرجى ملء جميع الحقول المطلوبة', 'warning');
-        // التركيز على أول حقل خاطئ
-        const firstError = form.querySelector('.is-invalid');
-        if (firstError) firstError.focus();
-    }
-
-    return !hasError;
-}
-
 // ===== أحداث عامة =====
 
 // منع إرسال النموذج إذا كان هناك حقول فارغة

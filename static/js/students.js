@@ -21,9 +21,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (instModalEl) installmentModal = new bootstrap.Modal(instModalEl);
     if (instListModalEl) installmentsListModal = new bootstrap.Modal(instListModalEl);
     
-    // تحميل قائمة المدرسين عند فتح modal الربط
-    loadTeachersList();
-
     // معالجة أحداث الأزرار عبر data-action (بدون XSS)
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('[data-action]');

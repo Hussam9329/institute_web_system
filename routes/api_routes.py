@@ -299,11 +299,14 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         institute_waiver = int(data.get('institute_waiver', 0))
         
         # التحقق من صحة القيم
-        if discount_type not in ('none', 'percentage', 'free'):
+        if discount_type not in ('none', 'percentage', 'fixed', 'custom', 'free'):
             return {"success": False, "message": "نوع الخصم غير صالح"}
         
-        if discount_type == 'percentage' and (discount_value < 0 or discount_value > 100):
+        if discount_type in ('percentage', 'custom') and (discount_value < 0 or discount_value > 100):
             return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 0 و 100"}
+        
+        if discount_type == 'fixed' and discount_value < 0:
+            return {"success": False, "message": "قيمة الخصم يجب أن تكون أكبر من صفر"}
         
         if discount_type == 'free' and institute_waiver not in (0, 1):
             return {"success": False, "message": "قيمة تنازل المعهد غير صالحة"}
@@ -323,17 +326,48 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         
         # إذا كان الطالب أكمل جميع أقساطه (remaining_balance <= 0) وهناك محاولة لتغيير الخصم
         if current_balance['remaining_balance'] <= 0 and current_balance['paid_total'] > 0:
-            # السماح فقط إذا كان الخصم الحالي هو نفسه (لا تغيير فعلي)
-            if discount_type != current_discount_type or (discount_type == 'percentage' and int(data.get('discount_value', 0)) != (link[0].get('discount_value', 0) or 0)):
+            # السماح فقط إذا لم يتغير شيء فعلياً
+            value_changed = False
+            if discount_type != current_discount_type:
+                value_changed = True
+            else:
+                new_discount_value = int(data.get('discount_value', 0))
+                old_discount_value = link[0].get('discount_value', 0) or 0
+                if new_discount_value != old_discount_value:
+                    value_changed = True
+                new_waiver = int(data.get('institute_waiver', 0))
+                old_waiver = link[0].get('institute_waiver', 0) or 0
+                if new_waiver != old_waiver:
+                    value_changed = True
+
+            if value_changed:
                 return {
                     "success": False,
-                    "message": f"لا يمكن تطبيق أو تعديل الخصم! الطالب أتمّ جميع أقساطه لدى هذا المدرس (المدفوع: {format_currency(current_balance['paid_total'])} من {format_currency(current_balance['total_fee'])})"
+                    "message": f"لا يمكن تعديل الخصم! الطالب أتمّ جميع أقساطه لدى هذا المدرس (المدفوع: {format_currency(current_balance['paid_total'])} من {format_currency(current_balance['total_fee'])})"
                 }
         
         # التحقق: لا يمكن تطبيق خصم نسبة إذا كان الطالب قد دفع بالفعل
         if discount_type == 'percentage' and discount_value > 0:
             if current_balance['paid_total'] > 0:
                 # التحقق من أن الخصم لا يجعل المبلغ المدفوع أكبر من القسط الجديد
+                original_fee = current_balance.get('original_fee', current_balance['total_fee'])
+                new_fee = original_fee - int(original_fee * discount_value / 100)
+                if current_balance['paid_total'] > new_fee:
+                    return {
+                        "success": False, 
+                        "message": f"لا يمكن تطبيق هذا الخصم! المبلغ المدفوع ({format_currency(current_balance['paid_total'])}) يتجاوز القسط بعد الخصم ({format_currency(new_fee)})"
+                    }
+        elif discount_type == 'fixed' and discount_value > 0:
+            if current_balance['paid_total'] > 0:
+                original_fee = current_balance.get('original_fee', current_balance['total_fee'])
+                new_fee = original_fee - discount_value
+                if current_balance['paid_total'] > new_fee:
+                    return {
+                        "success": False, 
+                        "message": f"لا يمكن تطبيق هذا الخصم! المبلغ المدفوع ({format_currency(current_balance['paid_total'])}) يتجاوز القسط بعد الخصم ({format_currency(new_fee)})"
+                    }
+        elif discount_type == 'custom' and discount_value > 0:
+            if current_balance['paid_total'] > 0:
                 original_fee = current_balance.get('original_fee', current_balance['total_fee'])
                 new_fee = original_fee - int(original_fee * discount_value / 100)
                 if current_balance['paid_total'] > new_fee:
@@ -536,7 +570,13 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         already_paid = current_balance['paid_total']
         new_total = already_paid + installment.amount
         
-        if new_total > total_fee and total_fee > 0:
+        if total_fee <= 0:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل قسط - القسط الكلي صفر (طالب مجاني أو خصم كامل)"
+            }
+
+        if new_total > total_fee:
             remaining = total_fee - already_paid
             return {
                 "success": False,

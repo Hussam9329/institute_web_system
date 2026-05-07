@@ -40,14 +40,9 @@ def verify_password(password: str, password_hash: str) -> bool:
     return hashlib.sha256(password.encode('utf-8')).hexdigest() == password_hash
 
 
-def is_bcrypt_hash(password_hash: str) -> bool:
-    """فحص هل الهاش من نوع bcrypt"""
-    return password_hash.startswith('$2b$') or password_hash.startswith('$2a$')
-
-
 def needs_bcrypt_migration(password_hash: str) -> bool:
     """فحص هل يحتاج الهاش للترحيل من SHA-256 إلى bcrypt"""
-    return not is_bcrypt_hash(password_hash)
+    return not (password_hash.startswith('$2b$') or password_hash.startswith('$2a$'))
 
 
 # ===== إدارة الجلسات =====
@@ -160,19 +155,6 @@ def check_permission(request: Request, permission_code: str):
         raise HTTPException(status_code=401, detail="يجب تسجيل الدخول")
     if not user_has_permission(user, permission_code):
         raise HTTPException(status_code=403, detail="ليس لديك صلاحية لهذا الإجراء")
-
-
-def check_permission_or_redirect(request: Request, permission_code: str):
-    """
-    فحص صلاحية المستخدم - يُعيد توجيه إذا لم يملك الصلاحية
-    يُستخدم في مسارات HTML
-    """
-    user = getattr(request.state, 'user', None)
-    if not user:
-        return RedirectResponse(url='/login', status_code=303)
-    if not user_has_permission(user, permission_code):
-        return RedirectResponse(url='/?error=no_permission', status_code=303)
-    return None
 
 
 # ===== وسيط المصادقة (Middleware) =====

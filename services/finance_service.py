@@ -131,7 +131,7 @@ class FinanceService:
         effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
         
         paid_total = self.get_student_paid_total(student_id, teacher_id)
-        remaining_balance = effective_fee - paid_total
+        remaining_balance = max(0, effective_fee - paid_total)
         
         return {
             'total_fee': effective_fee,
@@ -349,6 +349,17 @@ class FinanceService:
                 first_count = 0
                 first_amount = 0
 
+            # تأكد أن المبلغ المدفوع لا يتجاوز القسط الكلي (حماية من الأخطاء)
+            student_paid_total = first_amount + second_amount + full_amount
+            if student_paid_total > student_total_fee and student_total_fee > 0:
+                # إذا تجاوز المدفوع القسط، اعتبره دفع كامل فقط
+                full_count = 1
+                full_amount = min(full_amount, student_total_fee)
+                first_count = 0
+                first_amount = 0
+                second_count = 0
+                second_amount = 0
+
             if ded_value <= 0:
                 continue
             
@@ -491,7 +502,7 @@ class FinanceService:
         """
         due_info = self.calculate_teacher_due(teacher_id)
         withdrawn_total = self.get_teacher_withdrawn_total(teacher_id)
-        remaining_balance = due_info['teacher_due'] - withdrawn_total
+        remaining_balance = max(0, due_info['teacher_due'] - withdrawn_total)
         
         return {
             'teacher_due': due_info['teacher_due'],
@@ -606,7 +617,7 @@ class FinanceService:
             effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
             
             paid = self.get_student_paid_total(student['id'], teacher_id)
-            remaining = effective_fee - paid
+            remaining = max(0, effective_fee - paid)
             result.append({
                 **student,
                 'total_fee': effective_fee,
