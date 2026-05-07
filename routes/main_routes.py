@@ -17,6 +17,7 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # إضافة دوال عامة للقوالب
 templates.env.globals['format_date'] = format_date
+templates.env.globals['format_currency'] = format_currency
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -160,10 +161,15 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
 
     # حساب المتبقي لكل طالب باستخدام finance_service (يدعم الخصم)
     for s in students:
-        summary = finance_service.get_student_all_teachers_summary(s['id'])
-        s['total_fees'] = sum(ts['total_fee'] for ts in summary) if summary else 0
-        s['total_paid'] = sum(ts['paid_total'] for ts in summary) if summary else 0
-        s['total_remaining'] = sum(ts['remaining_balance'] for ts in summary) if summary else 0
+        try:
+            summary = finance_service.get_student_all_teachers_summary(s['id'])
+            s['total_fees'] = sum(ts['total_fee'] for ts in summary) if summary else 0
+            s['total_paid'] = sum(ts['paid_total'] for ts in summary) if summary else 0
+            s['total_remaining'] = sum(ts['remaining_balance'] for ts in summary) if summary else 0
+        except Exception:
+            s['total_fees'] = 0
+            s['total_paid'] = 0
+            s['total_remaining'] = 0
 
     # فلتر حالة الدفع (بعد حساب المبالغ)
     if payment_filter:
@@ -177,6 +183,13 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
             students = [s for s in students if (s.get('total_paid') or 0) == 0 and (s.get('total_fees') or 0) > 0]
         elif payment_filter == 'free':
             students = [s for s in students if (s.get('total_fees') or 0) == 0 and (s.get('teachers_count') or 0) > 0]
+
+    # إحصائيات سريعة (محسوبة في Python بدل Jinja2 لتجنب أخطاء القوالب)
+    stats_counts = {
+        'paid': sum(1 for s in students if (s.get('total_remaining') or 0) <= 0 and (s.get('total_fees') or 0) > 0),
+        'unpaid': sum(1 for s in students if (s.get('total_remaining') or 0) > 0),
+        'no_payment': sum(1 for s in students if (s.get('total_paid') or 0) == 0 and (s.get('total_fees') or 0) > 0),
+    }
 
     # جلب قائمة المدرسين للفلتر
     try:
@@ -195,6 +208,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         "teacher_filter": teacher_filter,
         "study_type_filter": study_type_filter,
         "teachers_list": [dict(t) for t in teachers_list] if teachers_list else [],
+        "stats_counts": stats_counts,
         "format_currency": format_currency
     })
 

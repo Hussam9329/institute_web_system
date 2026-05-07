@@ -359,11 +359,9 @@
                     {% if students %}
                     <div class="sf-stats">
                         <span class="sf-stat blue"><i class="fas fa-users"></i> {{ students|length }} طالب</span>
-                        {% set paid_count = students | selectattr('total_remaining', 'defined') | rejectattr('total_remaining') | list | length %}
-                        {% set unpaid_count = students | selectattr('total_remaining', '>', 0) | list | length %}
-                        <span class="sf-stat green"><i class="fas fa-check-circle"></i> مدفوع: {{ students | selectattr('total_remaining', 'defined') | selectattr('total_remaining', '<=', 0) | rejectattr('total_fees', '<=', 0) | list | length }}</span>
-                        <span class="sf-stat red"><i class="fas fa-exclamation-circle"></i> عليه متبقي: {{ unpaid_count }}</span>
-                        <span class="sf-stat yellow"><i class="fas fa-clock"></i> لم يدفع: {{ students | selectattr('total_paid', '=', 0) | selectattr('total_fees', '>', 0) | list | length }}</span>
+                        <span class="sf-stat green"><i class="fas fa-check-circle"></i> مدفوع: {{ stats_counts.paid }}</span>
+                        <span class="sf-stat red"><i class="fas fa-exclamation-circle"></i> عليه متبقي: {{ stats_counts.unpaid }}</span>
+                        <span class="sf-stat yellow"><i class="fas fa-clock"></i> لم يدفع: {{ stats_counts.no_payment }}</span>
                     </div>
                     {% endif %}
                 </div>
