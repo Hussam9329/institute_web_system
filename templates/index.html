@@ -70,10 +70,15 @@
     color: white;
 }
 .dash-stats .stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
     text-decoration: none;
     color: white;
+    filter: brightness(1.08);
+}
+.dash-stats .stat-card:active {
+    transform: translateY(-1px) scale(0.98);
+    filter: brightness(0.95);
 }
 .dash-stats .stat-card .card-body {
     padding: 1.25rem;
@@ -82,25 +87,20 @@
 .dash-stats .stat-card .stat-detail span {
     color: inherit;
 }
-.dash-stats .stat-card .stat-go {
+/* Click indicator - bottom bar */
+.dash-stats .stat-card .stat-click-hint {
     position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 22px;
-    height: 22px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: rgba(255,255,255,0.7);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
     transition: all 0.2s;
 }
-.dash-stats .stat-card:hover .stat-go {
-    background: rgba(255,255,255,0.35);
-    color: white;
-    transform: translateX(-2px);
+.dash-stats .stat-card:hover .stat-click-hint {
+    height: 5px;
+    background: rgba(255,255,255,0.6);
 }
 .dash-stats .stat-card {
     position: relative;
@@ -538,7 +538,7 @@
         <!-- الطلاب -->
         <div class="col-6 col-md-4 dash-animate dash-delay-1">
             <a href="/students" class="card stat-card bg-gradient-blue text-white">
-                <span class="stat-go"><i class="fas fa-arrow-left"></i></span>
+                <span class="stat-click-hint"></span>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
@@ -565,7 +565,7 @@
         <!-- المدرسين -->
         <div class="col-6 col-md-4 dash-animate dash-delay-2">
             <a href="/teachers" class="card stat-card bg-gradient-emerald text-white">
-                <span class="stat-go"><i class="fas fa-arrow-left"></i></span>
+                <span class="stat-click-hint"></span>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
@@ -587,7 +587,7 @@
         <!-- المدفوعات -->
         <div class="col-6 col-md-4 dash-animate dash-delay-3">
             <a href="/payments" class="card stat-card bg-gradient-purple text-white">
-                <span class="stat-go"><i class="fas fa-arrow-left"></i></span>
+                <span class="stat-click-hint"></span>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
