@@ -8,8 +8,11 @@
  * @returns {string} المبلغ منسق
  */
 function formatCurrency(amount) {
-    if (amount === null || amount === undefined) return '0د.ع';
-    return amount.toLocaleString('en-US').replace(/,/g, '.') + 'د.ع';
+    if (amount === null || amount === undefined) return '0 د.ع';
+    const isNegative = amount < 0;
+    const absAmount = Math.abs(amount);
+    const formatted = absAmount.toLocaleString('en-US').replace(/,/g, '.');
+    return isNegative ? '-' + formatted + ' د.ع' : formatted + ' د.ع';
 }
 
 /**
@@ -216,7 +219,9 @@ function printElement(elementId) {
  * مثال: 150 → 150000
  */
 function toFullAmount(thousands) {
-    return (parseInt(thousands) || 0) * 1000;
+    const val = parseFloat(thousands);
+    if (isNaN(val) || val <= 0) return 0;
+    return Math.round(val * 1000);
 }
 
 /**
@@ -293,6 +298,18 @@ function exportTableToCSV(tableId, filename) {
     showAlert('تم تصدير البيانات بنجاح', 'success');
 }
 
+/**
+ * تهريب HTML لمنع هجمات XSS
+ * @param {string} str - النص المراد تهريبه
+ * @returns {string} النص المهرب
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // تصدير الدوال للاستخدام العام
 window.formatCurrency = formatCurrency;
 window.formatDate = formatDate;
@@ -307,6 +324,7 @@ window.copyToClipboard = copyToClipboard;
 window.printElement = printElement;
 window.toFullAmount = toFullAmount;
 window.exportTableToCSV = exportTableToCSV;
+window.escapeHtml = escapeHtml;
 
 // ============================================
 // Searchable Select Component

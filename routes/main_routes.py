@@ -52,8 +52,6 @@ async def subjects_list(request: Request):
     """صفحة إدارة المواد الدراسية"""
     check_permission(request, 'view_subjects')
     db = Database()
-    error_msg = ""
-    error_detail = ""
     try:
         subjects = db.execute_query("SELECT * FROM subjects ORDER BY name")
         subjects_with_count = []
@@ -67,9 +65,7 @@ async def subjects_list(request: Request):
 
     return templates.TemplateResponse("subjects/list.html", {
         "request": request,
-        "subjects": subjects_with_count,
-        "error_msg": error_msg,
-        "error_detail": error_detail
+        "subjects": subjects_with_count
     })
 
 
@@ -369,27 +365,25 @@ async def student_update(
             new_institute_waiver = current_institute_waiver
         
         # ===== فحص: لا يمكن تطبيق خصم يجعل المدفوع يتجاوز القسط الجديد =====
-        if balance['paid_total'] > 0 and new_discount_type != 'none' and new_discount_type != current_discount_type or (new_discount_type == current_discount_type and new_discount_value != current_discount_value):
+        if balance['paid_total'] > 0 and (new_discount_type != current_discount_type or new_discount_value != current_discount_value or new_institute_waiver != current_institute_waiver):
             # تم تغيير الخصم - نحتاج فحص إضافي
             original_fee = balance.get('original_fee', balance['total_fee'])
-            discount_changed = (new_discount_type != current_discount_type) or (new_discount_value != current_discount_value) or (new_institute_waiver != current_institute_waiver)
             
-            if discount_changed and balance['paid_total'] > 0:
-                # حساب القسط الجديد بعد الخصم المطلوب
-                if new_discount_type == 'free':
-                    new_fee = 0
-                elif new_discount_type in ('percentage', 'custom'):
-                    new_fee = original_fee - int(original_fee * new_discount_value / 100)
-                elif new_discount_type == 'fixed':
-                    new_fee = original_fee - new_discount_value
-                else:
-                    new_fee = original_fee
-                
-                if balance['paid_total'] > new_fee:
-                    # الخصم الجديد يجعل المدفوع يتجاوز القسط - نحافظ على الخصم الحالي
-                    new_discount_type = current_discount_type
-                    new_discount_value = current_discount_value
-                    new_institute_waiver = current_institute_waiver
+            # حساب القسط الجديد بعد الخصم المطلوب
+            if new_discount_type == 'free':
+                new_fee = 0
+            elif new_discount_type in ('percentage', 'custom'):
+                new_fee = original_fee - round(original_fee * new_discount_value / 100)
+            elif new_discount_type == 'fixed':
+                new_fee = original_fee - new_discount_value
+            else:
+                new_fee = original_fee
+            
+            if balance['paid_total'] > new_fee:
+                # الخصم الجديد يجعل المدفوع يتجاوز القسط - نحافظ على الخصم الحالي
+                new_discount_type = current_discount_type
+                new_discount_value = current_discount_value
+                new_institute_waiver = current_institute_waiver
         
         # ===== فحص: لا يمكن تغيير نوع الدراسة إذا وُجدت أقساط مدفوعة =====
         payment_check = db.execute_query(

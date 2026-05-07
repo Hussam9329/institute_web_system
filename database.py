@@ -5,7 +5,7 @@
 import psycopg2
 import psycopg2.extras
 import os
-from config import DATABASE_URL, DB_AVAILABLE
+from config import DATABASE_URL
 
 class Database:
     """إدارة اتصال وقاعدة البيانات PostgreSQL"""

@@ -105,6 +105,18 @@ async def api_delete_subject(request: Request, subject_id: int):
     check_permission(request, 'delete_subjects')
     db = Database()
     try:
+        # فحص وجود مدرسين مرتبطين بالمادة
+        subject_info = db.execute_query("SELECT name FROM subjects WHERE id = %s", (subject_id,))
+        if not subject_info:
+            return {"success": False, "message": "المادة غير موجودة"}
+        
+        teachers_count = db.execute_query(
+            "SELECT COUNT(*) as cnt FROM teachers WHERE subject = %s",
+            (subject_info[0]['name'],)
+        )
+        if teachers_count and teachers_count[0]['cnt'] > 0:
+            return {"success": False, "message": f"لا يمكن حذف المادة - يوجد {teachers_count[0]['cnt']} مدرس مرتبط بها"}
+        
         db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
         return {"success": True, "message": "تم حذف المادة"}
     except Exception as e:
@@ -114,8 +126,9 @@ async def api_delete_subject(request: Request, subject_id: int):
 # ===== عمليات الطلاب =====
 
 @router.get("/students/{student_id}")
-async def api_get_student(student_id: int):
+async def api_get_student(request: Request, student_id: int):
     """الحصول على بيانات طالب"""
+    check_permission(request, 'preview_students')
     db = Database()
     query = "SELECT * FROM students WHERE id = %s"
     result = db.execute_query(query, (student_id,))
@@ -127,8 +140,9 @@ async def api_get_student(student_id: int):
 
 
 @router.get("/students/{student_id}/teachers")
-async def api_get_student_teachers(student_id: int):
+async def api_get_student_teachers(request: Request, student_id: int):
     """الحصول على قائمة مدرسي طالب"""
+    check_permission(request, 'preview_students')
     teachers_summary = finance_service.get_student_all_teachers_summary(student_id)
     return {"success": True, "data": teachers_summary}
 
@@ -136,8 +150,9 @@ async def api_get_student_teachers(student_id: int):
 # ===== عمليات المدرسين =====
 
 @router.get("/teachers")
-async def api_get_all_teachers():
+async def api_get_all_teachers(request: Request):
     """الحصول على قائمة جميع المدرسين"""
+    check_permission(request, 'view_teachers_list')
     db = Database()
     query = "SELECT id, name, subject, total_fee, notes, teaching_types, fee_in_person, fee_electronic, fee_blended FROM teachers ORDER BY name"
     results = db.execute_query(query)
@@ -146,8 +161,9 @@ async def api_get_all_teachers():
 
 
 @router.get("/teachers/{teacher_id}")
-async def api_get_teacher(teacher_id: int):
+async def api_get_teacher(request: Request, teacher_id: int):
     """الحصول على بيانات مدرس"""
+    check_permission(request, 'preview_teachers')
     db = Database()
     query = "SELECT * FROM teachers WHERE id = %s"
     result = db.execute_query(query, (teacher_id,))
@@ -159,15 +175,17 @@ async def api_get_teacher(teacher_id: int):
 
 
 @router.get("/teachers/{teacher_id}/balance")
-async def api_get_teacher_balance(teacher_id: int):
+async def api_get_teacher_balance(request: Request, teacher_id: int):
     """الحصول على الرصيد المالي للمدرس"""
+    check_permission(request, 'view_teacher_balance')
     balance = finance_service.calculate_teacher_balance(teacher_id)
     return {"success": True, "data": balance}
 
 
 @router.get("/teachers/{teacher_id}/students")
-async def api_get_teacher_students(teacher_id: int):
+async def api_get_teacher_students(request: Request, teacher_id: int):
     """الحصول على قائمة طلاب مدرس"""
+    check_permission(request, 'preview_teachers')
     students = finance_service.get_teacher_students_list(teacher_id)
     return {"success": True, "data": students}
 
@@ -354,7 +372,7 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
             if discount_type == 'free':
                 new_fee = 0
             elif discount_type in ('percentage', 'custom'):
-                new_fee = original_fee - int(original_fee * discount_value / 100)
+                new_fee = original_fee - round(original_fee * discount_value / 100)
             elif discount_type == 'fixed':
                 new_fee = original_fee - discount_value
             else:
@@ -612,8 +630,9 @@ async def api_add_installment(request: Request, installment: AddInstallment):
 
 
 @router.get("/installments/student/{student_id}/teacher/{teacher_id}")
-async def api_get_installments(student_id: int, teacher_id: int):
+async def api_get_installments(request: Request, student_id: int, teacher_id: int):
     """الحصول على أقساط طالب عند مدرس معين"""
+    check_permission(request, 'view_payments_list')
     db = Database()
     
     query = '''
@@ -636,8 +655,9 @@ async def api_get_installments(student_id: int, teacher_id: int):
 
 
 @router.get("/installments/recent")
-async def api_get_recent_installments(limit: int = 20):
+async def api_get_recent_installments(request: Request, limit: int = 20):
     """الحصول على آخر الأقساط المسجلة"""
+    check_permission(request, 'view_payments_list')
     db = Database()
     query = '''
         SELECT i.*, s.name as student_name, t.name as teacher_name, t.subject as teacher_subject
@@ -722,8 +742,9 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
 
 
 @router.get("/withdrawals/teacher/{teacher_id}")
-async def api_get_withdrawals(teacher_id: int, limit: int = 10):
+async def api_get_withdrawals(request: Request, teacher_id: int, limit: int = 10):
     """الحصول على سحوبات مدرس"""
+    check_permission(request, 'view_withdrawals_list')
     withdrawals = finance_service.get_teacher_recent_withdrawals(teacher_id, limit)
     total = finance_service.get_teacher_withdrawn_total(teacher_id)
     
@@ -741,6 +762,11 @@ async def api_delete_withdrawal(request: Request, withdrawal_id: int):
     db = Database()
     
     try:
+        # فحص وجود السحب قبل الحذف
+        existing = db.execute_query("SELECT id FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
+        if not existing:
+            return {"success": False, "message": "السحب غير موجود"}
+        
         db.execute_query("DELETE FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         return {"success": True, "message": "تم حذف السحب"}
     except Exception as e:
@@ -757,6 +783,9 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
         amount = int(data.get('amount', 0))
         withdrawal_date = data.get('withdrawal_date', '')
         notes = data.get('notes', '')
+        
+        if amount <= 0:
+            return {"success": False, "message": "المبلغ يجب أن يكون أكبر من صفر"}
         
         old = db.execute_query("SELECT teacher_id, amount FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         if not old:
@@ -782,8 +811,9 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
 # ===== إحصائيات =====
 
 @router.get("/statistics")
-async def api_get_statistics():
+async def api_get_statistics(request: Request):
     """الحصول على إحصائيات النظام"""
+    check_permission(request, 'view_dashboard')
     stats = finance_service.get_system_statistics()
     return {"success": True, "data": stats}
 

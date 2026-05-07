@@ -40,7 +40,7 @@ async def student_report(request: Request, student_id: int):
     total_fee_all = sum(ts['total_fee'] for ts in teachers_summary) if teachers_summary else 0
     total_paid_all = sum(ts['paid_total'] for ts in teachers_summary) if teachers_summary else 0
     remaining_all = sum(ts['remaining_balance'] for ts in teachers_summary) if teachers_summary else 0
-    payment_pct = int((total_paid_all / total_fee_all) * 100) if total_fee_all > 0 else 0
+    payment_pct = round((total_paid_all / total_fee_all) * 100) if total_fee_all > 0 else 0
 
     # سجل المدفوعات
     try:
