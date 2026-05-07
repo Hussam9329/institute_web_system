@@ -131,13 +131,19 @@ class FinanceService:
         effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
         
         paid_total = self.get_student_paid_total(student_id, teacher_id)
-        remaining_balance = max(0, effective_fee - paid_total)
+        remaining_balance = effective_fee - paid_total
+        # إذا كان الرصيد سالباً، فهذا يعني وجود خطأ محاسبي (مدفوع يتجاوز القسط)
+        # نعرضه كصفر لكن نضيف علامة تحذير
+        has_overpayment = remaining_balance < 0
+        display_remaining = max(0, remaining_balance)
         
         return {
             'total_fee': effective_fee,
             'original_fee': original_fee,
             'paid_total': paid_total,
-            'remaining_balance': remaining_balance,
+            'remaining_balance': display_remaining,
+            'has_overpayment': has_overpayment,
+            'overpayment_amount': abs(remaining_balance) if has_overpayment else 0,
             'discount_info': discount_info
         }
     
@@ -169,6 +175,8 @@ class FinanceService:
                 'original_fee': balance.get('original_fee', balance['total_fee']),
                 'paid_total': balance['paid_total'],
                 'remaining_balance': balance['remaining_balance'],
+                'has_overpayment': balance.get('has_overpayment', False),
+                'overpayment_amount': balance.get('overpayment_amount', 0),
                 'study_type': teacher.get('study_type', 'حضوري'),
                 'status': teacher.get('link_status', 'مستمر'),
                 'discount_info': balance.get('discount_info', {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0})
@@ -371,18 +379,20 @@ class FinanceService:
                 # مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً
                 total_installments = first_count + second_count + (full_count * 2)
                 if total_installments > 0:
-                    # كل قسط أول أو ثاني = نصف المبلغ (بتقريب عادل)، كل دفع كامل = المبلغ كاملاً
-                    half_ded = round(ded_value / 2)
-                    # التحقق: مجموع النصفين يجب أن يساوي الكامل
-                    total_deduction += (full_count * ded_value) + (first_count * half_ded) + (second_count * half_ded)
+                    # تقريب عادل: يضمن أن مجموع النصفين = القيمة الكاملة
+                    half_ded = ded_value // 2
+                    other_half_ded = ded_value - half_ded
+                    # القسط الأول يأخذ النصف الأول، القسط الثاني يأخذ النصف الثاني
+                    total_deduction += (full_count * ded_value) + (first_count * half_ded) + (second_count * other_half_ded)
             else:
                 # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
                 full_deduction = round((fee_for_deduction * ded_value) / 100)
-                # نصف الخصم لكل قسط (بتقريب عادل)
-                deduction_per_installment = round(full_deduction / 2)
+                # تقريب عادل: يضمن أن مجموع النصفين = الخصم الكامل
+                half_deduction = full_deduction // 2
+                other_half_deduction = full_deduction - half_deduction
                 
-                # كل قسط أول أو ثاني يحسب نصف الخصم، كل دفع كامل يحسب الخصم كاملاً
-                total_deduction += (full_count * full_deduction) + (first_count * deduction_per_installment) + (second_count * deduction_per_installment)
+                # القسط الأول يأخذ النصف الأول، القسط الثاني يأخذ النصف الثاني
+                total_deduction += (full_count * full_deduction) + (first_count * half_deduction) + (second_count * other_half_deduction)
         
         # معالجة الطلاب "مجاني بدون تنازل المعهد" الذين ليس لديهم أقساط مدفوعة
         # هؤلاء الطلاب مجانيين لكن المدرس لا يزال ملزماً بدفع نسبته للمعهد
@@ -502,12 +512,17 @@ class FinanceService:
         """
         due_info = self.calculate_teacher_due(teacher_id)
         withdrawn_total = self.get_teacher_withdrawn_total(teacher_id)
-        remaining_balance = max(0, due_info['teacher_due'] - withdrawn_total)
+        remaining_balance = due_info['teacher_due'] - withdrawn_total
+        # إذا كان الرصيد سالباً، فهذا يعني سحوبات تتجاوز المستحق
+        has_over_withdrawal = remaining_balance < 0
+        display_remaining = max(0, remaining_balance)
         
         return {
             'teacher_due': due_info['teacher_due'],
             'withdrawn_total': withdrawn_total,
-            'remaining_balance': remaining_balance,
+            'remaining_balance': display_remaining,
+            'has_over_withdrawal': has_over_withdrawal,
+            'over_withdrawal_amount': abs(remaining_balance) if has_over_withdrawal else 0,
             'can_withdraw': remaining_balance > 0,
             **due_info
         }
@@ -617,13 +632,17 @@ class FinanceService:
             effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
             
             paid = self.get_student_paid_total(student['id'], teacher_id)
-            remaining = max(0, effective_fee - paid)
+            remaining = effective_fee - paid
+            has_overpayment = remaining < 0
+            display_remaining = max(0, remaining)
             result.append({
                 **student,
                 'total_fee': effective_fee,
                 'original_fee': original_fee,
                 'paid_total': paid,
-                'remaining_balance': remaining,
+                'remaining_balance': display_remaining,
+                'has_overpayment': has_overpayment,
+                'overpayment_amount': abs(remaining) if has_overpayment else 0,
                 'is_paying': paid > 0,
                 'discount_info': discount_info
             })

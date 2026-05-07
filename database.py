@@ -477,10 +477,3 @@ def init_db():
         cursor.close()
         conn.close()
 
-def get_db():
-    """Dependency للحصول على اتصال قاعدة البيانات في FastAPI"""
-    db = Database()
-    try:
-        yield db.get_connection()
-    finally:
-        pass

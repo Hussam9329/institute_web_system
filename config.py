@@ -80,14 +80,22 @@ def format_currency(amount: int) -> str:
     """
     تنسيق المبلغ بالدينار العراقي مع فاصلة الآلاف
     Input: 150000 (integer)
-    Output: "150,000 د.ع"
+    Output: "150.000 د.ع"
+    يدعم القيم السالبة: -5000 → "-5.000 د.ع"
     """
     if amount is None:
-        return "0د.ع"
+        return "0 د.ع"
+    
+    # التعامل مع القيم السالبة
+    is_negative = amount < 0
+    abs_amount = abs(amount)
     
     # تحويل لـ string واستبدال الفاصلة بنقطة
-    formatted = f"{amount:,}".replace(",", ".")
-    return f"{formatted}د.ع"
+    formatted = f"{abs_amount:,}".replace(",", ".")
+    
+    if is_negative:
+        return f"-{formatted} د.ع"
+    return f"{formatted} د.ع"
 
 # ===== تنسيق التاريخ =====
 def format_date(date_string: str) -> str:

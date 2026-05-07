@@ -305,8 +305,8 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         if discount_type in ('percentage', 'custom') and (discount_value < 0 or discount_value > 100):
             return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 0 و 100"}
         
-        if discount_type == 'fixed' and discount_value < 0:
-            return {"success": False, "message": "قيمة الخصم يجب أن تكون أكبر من صفر"}
+        if discount_type == 'fixed' and discount_value <= 0:
+            return {"success": False, "message": "قيمة الخصم الثابت يجب أن تكون أكبر من صفر"}
         
         if discount_type == 'free' and institute_waiver not in (0, 1):
             return {"success": False, "message": "قيمة تنازل المعهد غير صالحة"}
@@ -346,31 +346,27 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
                     "message": f"لا يمكن تعديل الخصم! الطالب أتمّ جميع أقساطه لدى هذا المدرس (المدفوع: {format_currency(current_balance['paid_total'])} من {format_currency(current_balance['total_fee'])})"
                 }
         
-        # التحقق: لا يمكن تطبيق خصم نسبة إذا كان الطالب قد دفع بالفعل
-        if discount_type == 'percentage' and discount_value > 0:
-            if current_balance['paid_total'] > 0:
-                # التحقق من أن الخصم لا يجعل المبلغ المدفوع أكبر من القسط الجديد
-                original_fee = current_balance.get('original_fee', current_balance['total_fee'])
+        # ===== التحقق الشامل: لا يمكن تطبيق أي خصم يجعل المدفوع يتجاوز القسط الجديد =====
+        if current_balance['paid_total'] > 0 and discount_type != 'none':
+            original_fee = current_balance.get('original_fee', current_balance['total_fee'])
+            
+            # حساب القسط الجديد بعد الخصم المطلوب
+            if discount_type == 'free':
+                new_fee = 0
+            elif discount_type in ('percentage', 'custom'):
                 new_fee = original_fee - int(original_fee * discount_value / 100)
-                if current_balance['paid_total'] > new_fee:
-                    return {
-                        "success": False, 
-                        "message": f"لا يمكن تطبيق هذا الخصم! المبلغ المدفوع ({format_currency(current_balance['paid_total'])}) يتجاوز القسط بعد الخصم ({format_currency(new_fee)})"
-                    }
-        elif discount_type == 'fixed' and discount_value > 0:
-            if current_balance['paid_total'] > 0:
-                original_fee = current_balance.get('original_fee', current_balance['total_fee'])
+            elif discount_type == 'fixed':
                 new_fee = original_fee - discount_value
-                if current_balance['paid_total'] > new_fee:
+            else:
+                new_fee = original_fee
+            
+            if current_balance['paid_total'] > new_fee:
+                if discount_type == 'free':
                     return {
                         "success": False, 
-                        "message": f"لا يمكن تطبيق هذا الخصم! المبلغ المدفوع ({format_currency(current_balance['paid_total'])}) يتجاوز القسط بعد الخصم ({format_currency(new_fee)})"
+                        "message": f"لا يمكن تحويل الطالب إلى مجاني! الطالب لديه مدفوعات ({format_currency(current_balance['paid_total'])}) تتجاوز القسط بعد الخصم (0)"
                     }
-        elif discount_type == 'custom' and discount_value > 0:
-            if current_balance['paid_total'] > 0:
-                original_fee = current_balance.get('original_fee', current_balance['total_fee'])
-                new_fee = original_fee - int(original_fee * discount_value / 100)
-                if current_balance['paid_total'] > new_fee:
+                else:
                     return {
                         "success": False, 
                         "message": f"لا يمكن تطبيق هذا الخصم! المبلغ المدفوع ({format_currency(current_balance['paid_total'])}) يتجاوز القسط بعد الخصم ({format_currency(new_fee)})"

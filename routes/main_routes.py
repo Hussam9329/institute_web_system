@@ -341,29 +341,70 @@ async def student_update(
 
     # تحديث الروابط الموجودة
     for tid in new_teacher_ids & old_teacher_ids:
-        study_type = form_data.get(f"study_type_{tid}", "حضوري")
+        new_study_type = form_data.get(f"study_type_{tid}", "حضوري")
         status = form_data.get(f"status_{tid}", "مستمر")
-        discount_type = form_data.get(f"discount_type_{tid}", "none")
-        discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
-        institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
+        new_discount_type = form_data.get(f"discount_type_{tid}", "none")
+        new_discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+        new_institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
         
-        # فحص اكتمال الأقساط: لا يسمح بتعديل الخصم بعد اكتمال الأقساط
+        # جلب البيانات الحالية للربط
+        current_link = db.execute_query(
+            "SELECT study_type, discount_type, discount_value, institute_waiver FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+            (student_id, tid)
+        )
+        current_data = dict(current_link[0]) if current_link else {}
+        current_discount_type = current_data.get('discount_type', 'none') or 'none'
+        current_discount_value = current_data.get('discount_value', 0) or 0
+        current_study_type = current_data.get('study_type', 'حضوري')
+        current_institute_waiver = current_data.get('institute_waiver', 0) or 0
+        
+        # حساب الرصيد الحالي
         balance = finance_service.calculate_student_teacher_balance(student_id, tid)
+        
+        # ===== فحص اكتمال الأقساط: لا يسمح بتعديل الخصم بعد اكتمال الأقساط =====
         if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
-            # الحفاظ على الخصم الحالي - لا تحديث
-            current_link = db.execute_query(
-                "SELECT discount_type, discount_value, institute_waiver FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-                (student_id, tid)
-            )
-            if current_link:
-                discount_type = current_link[0].get('discount_type', 'none') or 'none'
-                discount_value = current_link[0].get('discount_value', 0) or 0
-                institute_waiver = current_link[0].get('institute_waiver', 0) or 0
+            # الحفاظ على الخصم الحالي - لا تحديث للخصم
+            new_discount_type = current_discount_type
+            new_discount_value = current_discount_value
+            new_institute_waiver = current_institute_waiver
+        
+        # ===== فحص: لا يمكن تطبيق خصم يجعل المدفوع يتجاوز القسط الجديد =====
+        if balance['paid_total'] > 0 and new_discount_type != 'none' and new_discount_type != current_discount_type or (new_discount_type == current_discount_type and new_discount_value != current_discount_value):
+            # تم تغيير الخصم - نحتاج فحص إضافي
+            original_fee = balance.get('original_fee', balance['total_fee'])
+            discount_changed = (new_discount_type != current_discount_type) or (new_discount_value != current_discount_value) or (new_institute_waiver != current_institute_waiver)
+            
+            if discount_changed and balance['paid_total'] > 0:
+                # حساب القسط الجديد بعد الخصم المطلوب
+                if new_discount_type == 'free':
+                    new_fee = 0
+                elif new_discount_type in ('percentage', 'custom'):
+                    new_fee = original_fee - int(original_fee * new_discount_value / 100)
+                elif new_discount_type == 'fixed':
+                    new_fee = original_fee - new_discount_value
+                else:
+                    new_fee = original_fee
+                
+                if balance['paid_total'] > new_fee:
+                    # الخصم الجديد يجعل المدفوع يتجاوز القسط - نحافظ على الخصم الحالي
+                    new_discount_type = current_discount_type
+                    new_discount_value = current_discount_value
+                    new_institute_waiver = current_institute_waiver
+        
+        # ===== فحص: لا يمكن تغيير نوع الدراسة إذا وُجدت أقساط مدفوعة =====
+        payment_check = db.execute_query(
+            "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
+            (student_id, tid)
+        )
+        has_payments = payment_check and payment_check[0]['cnt'] > 0
+        if has_payments:
+            # الحفاظ على نوع الدراسة الحالي
+            new_study_type = current_study_type
         
         try:
             db.execute_query(
                 "UPDATE student_teacher SET study_type=%s, status=%s, discount_type=%s, discount_value=%s, institute_waiver=%s WHERE student_id=%s AND teacher_id=%s",
-                (study_type, status, discount_type, discount_value, institute_waiver, student_id, tid)
+                (new_study_type, status, new_discount_type, new_discount_value, new_institute_waiver, student_id, tid)
             )
         except:
             pass
