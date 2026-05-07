@@ -277,6 +277,8 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
 
     # عدد الأقساط المدفوعة لكل مدرس مرتبط (لمنع تغيير نوع الدراسة إذا وُجدت مدفوعات)
     installment_counts = {}
+    # المدرسين الذين أكمل الطالب جميع أقساطهم (لمنع تطبيق/تعديل الخصم)
+    completed_teachers = set()
     if linked_ids:
         counts = db.execute_query(
             "SELECT teacher_id, COUNT(*) as cnt FROM installments WHERE student_id = %s GROUP BY teacher_id",
@@ -285,6 +287,12 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
         if counts:
             for c in counts:
                 installment_counts[c['teacher_id']] = c['cnt']
+        
+        # فحص اكتمال الأقساط لكل مدرس مرتبط
+        for tid in linked_ids:
+            balance = finance_service.calculate_student_teacher_balance(student_id, tid)
+            if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
+                completed_teachers.add(tid)
 
     return templates.TemplateResponse("students/form.html", {
         "request": request,
@@ -294,6 +302,7 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
         "linked_teacher_ids": linked_ids,
         "linked_data": linked_data,
         "installment_counts": installment_counts,
+        "completed_teachers": completed_teachers,
         "error": error,
         "error_detail": detail
     })
@@ -337,6 +346,20 @@ async def student_update(
         discount_type = form_data.get(f"discount_type_{tid}", "none")
         discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
         institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
+        
+        # فحص اكتمال الأقساط: لا يسمح بتعديل الخصم بعد اكتمال الأقساط
+        balance = finance_service.calculate_student_teacher_balance(student_id, tid)
+        if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
+            # الحفاظ على الخصم الحالي - لا تحديث
+            current_link = db.execute_query(
+                "SELECT discount_type, discount_value, institute_waiver FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+                (student_id, tid)
+            )
+            if current_link:
+                discount_type = current_link[0].get('discount_type', 'none') or 'none'
+                discount_value = current_link[0].get('discount_value', 0) or 0
+                institute_waiver = current_link[0].get('institute_waiver', 0) or 0
+        
         try:
             db.execute_query(
                 "UPDATE student_teacher SET study_type=%s, status=%s, discount_type=%s, discount_value=%s, institute_waiver=%s WHERE student_id=%s AND teacher_id=%s",

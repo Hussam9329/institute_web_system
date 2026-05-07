@@ -8,6 +8,8 @@ let linkTeacherModal, installmentModal, installmentsListModal;
 let currentDiscountType = 'none';
 let currentDiscountValue = 0;
 let currentInstituteWaiver = 0;
+let currentRemainingBalance = -1; // -1 يعني غير محدد بعد
+let currentPaidTotal = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
     // تهيئة Modals
@@ -210,6 +212,8 @@ async function loadCurrentDiscount(studentId, teacherId) {
             currentDiscountType = data.discount_type || 'none';
             currentDiscountValue = data.discount_value || 0;
             currentInstituteWaiver = data.institute_waiver || 0;
+            currentRemainingBalance = data.remaining_balance !== undefined ? data.remaining_balance : -1;
+            currentPaidTotal = data.paid_total || 0;
             
             // عرض معلومات الخصم
             updateDiscountDisplay();
@@ -236,11 +240,26 @@ function updateDiscountDisplay() {
     const pctInfo = document.getElementById('discountPctInfo');
     const freeInfo = document.getElementById('discountFreeInfo');
     const waiverInfo = document.getElementById('discountWaiverInfo');
+    const completedWarning = document.getElementById('discountCompletedWarning');
+    const editLink = document.getElementById('discountEditLink');
 
     if (noneInfo) noneInfo.classList.add('d-none');
     if (pctInfo) pctInfo.classList.add('d-none');
     if (freeInfo) freeInfo.classList.add('d-none');
     if (waiverInfo) waiverInfo.classList.add('d-none');
+    if (completedWarning) completedWarning.classList.add('d-none');
+    if (editLink) editLink.classList.remove('d-none');
+
+    // فحص اكتمال الأقساط: الطالب أكمل جميع أقساطه (remaining_balance <= 0 و paid_total > 0)
+    // استثناء: الطالب المجاني (discount_type = free) ليس له أقساط حقيقية
+    const paidTotal = currentPaidTotal || 0;
+    const isCompleted = currentRemainingBalance <= 0 && paidTotal > 0;
+
+    if (isCompleted) {
+        if (completedWarning) completedWarning.classList.remove('d-none');
+        // إخفاء رابط تعديل الخصم عند اكتمال الأقساط
+        if (editLink) editLink.classList.add('d-none');
+    }
 
     if (currentDiscountType === 'percentage' && currentDiscountValue > 0) {
         if (pctInfo) {
@@ -272,6 +291,14 @@ function resetDiscountForm() {
     currentDiscountType = 'none';
     currentDiscountValue = 0;
     currentInstituteWaiver = 0;
+    currentRemainingBalance = -1;
+    currentPaidTotal = 0;
+    
+    // إخفاء تحذير اكتمال الأقساط
+    const completedWarning = document.getElementById('discountCompletedWarning');
+    if (completedWarning) completedWarning.classList.add('d-none');
+    const editLink = document.getElementById('discountEditLink');
+    if (editLink) editLink.classList.remove('d-none');
     
     // تفعيل حقل المبلغ
     const amountEl = document.getElementById('inst_amount');

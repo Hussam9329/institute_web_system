@@ -112,6 +112,7 @@
                                         {% set current_discount_type = ld.get('discount_type', 'none') if ld else 'none' %}
                                         {% set current_discount_value = ld.get('discount_value', 0) if ld else 0 %}
                                         {% set current_institute_waiver = ld.get('institute_waiver', 0) if ld else 0 %}
+                                        {% set is_completed = (completed_teachers is defined and teacher.id in completed_teachers) %}
 
                                         <div class="teacher-row {% if is_linked %}active{% endif %} border-bottom {% if not loop.last %}border-light{% else %}border-0{% endif %}"
                                              id="teacher_row_{{ teacher.id }}">
@@ -160,6 +161,18 @@
                                                 </div>
                                                 <!-- زر الخصم -->
                                                 <div class="teacher-field" style="width:5rem;flex-shrink:0">
+                                                    {% if is_completed %}
+                                                    <button type="button" class="btn btn-sm teacher-opt discount-toggle-btn btn-outline-secondary"
+                                                            id="discount_btn_{{ teacher.id }}"
+                                                            disabled
+                                                            title="لا يمكن تعديل الخصم - أتمّ الطالب جميع أقساطه"
+                                                            style="opacity:0.5;cursor:not-allowed;">
+                                                        <i class="fas fa-lock" style="font-size:0.7rem;"></i>
+                                                        {% if current_discount_type == 'percentage' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> {{ current_discount_value }}%</span>
+                                                        {% elif current_discount_type == 'free' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>
+                                                        {% endif %}
+                                                    </button>
+                                                    {% else %}
                                                     <button type="button" class="btn btn-sm teacher-opt discount-toggle-btn {% if current_discount_type != 'none' %}btn-warning{% else %}btn-outline-secondary{% endif %}"
                                                             id="discount_btn_{{ teacher.id }}"
                                                             onclick="toggleDiscountPanel({{ teacher.id }})"
@@ -169,10 +182,23 @@
                                                         {% elif current_discount_type == 'free' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>
                                                         {% endif %}
                                                     </button>
+                                                    {% endif %}
                                                 </div>
                                             </div>
 
                                             <!-- ===== لوحة الخصم المخفية ===== -->
+                                            {% if is_completed %}
+                                            <!-- تحذير اكتمال الأقساط + حقول مخفية للخصم الحالي -->
+                                            <input type="hidden" name="discount_type_{{ teacher.id }}" value="{{ current_discount_type }}">
+                                            <input type="hidden" name="discount_value_{{ teacher.id }}" value="{{ current_discount_value }}">
+                                            <input type="hidden" name="institute_waiver_{{ teacher.id }}" value="{{ current_institute_waiver }}">
+                                            <div class="px-3 pb-2 pt-1">
+                                                <div class="alert alert-warning py-2 px-3 mb-0 small d-flex align-items-center" style="border-radius:8px;">
+                                                    <i class="fas fa-exclamation-triangle text-warning me-2" style="font-size:0.85rem;"></i>
+                                                    <span>لا يمكن تطبيق أو تعديل الخصم — الطالب أتمّ جميع أقساطه لدى هذا المدرس</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
                                             <div class="discount-panel d-none" id="discount_panel_{{ teacher.id }}">
                                                 <div class="px-3 pb-3 pt-1">
                                                     <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fffbeb,#fff8ed);border:1px solid #fbbf24 !important;border-radius:10px;">

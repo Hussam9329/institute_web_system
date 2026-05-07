@@ -317,9 +317,21 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         if not link:
             return {"success": False, "message": "الربط غير موجود"}
         
+        # ===== فحص اكتمال الأقساط: لا يسمح بالخصم بعد اتمام جميع الأقساط =====
+        current_balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
+        current_discount_type = link[0].get('discount_type', 'none') or 'none'
+        
+        # إذا كان الطالب أكمل جميع أقساطه (remaining_balance <= 0) وهناك محاولة لتغيير الخصم
+        if current_balance['remaining_balance'] <= 0 and current_balance['paid_total'] > 0:
+            # السماح فقط إذا كان الخصم الحالي هو نفسه (لا تغيير فعلي)
+            if discount_type != current_discount_type or (discount_type == 'percentage' and int(data.get('discount_value', 0)) != (link[0].get('discount_value', 0) or 0)):
+                return {
+                    "success": False,
+                    "message": f"لا يمكن تطبيق أو تعديل الخصم! الطالب أتمّ جميع أقساطه لدى هذا المدرس (المدفوع: {format_currency(current_balance['paid_total'])} من {format_currency(current_balance['total_fee'])})"
+                }
+        
         # التحقق: لا يمكن تطبيق خصم نسبة إذا كان الطالب قد دفع بالفعل
         if discount_type == 'percentage' and discount_value > 0:
-            current_balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
             if current_balance['paid_total'] > 0:
                 # التحقق من أن الخصم لا يجعل المبلغ المدفوع أكبر من القسط الجديد
                 original_fee = current_balance.get('original_fee', current_balance['total_fee'])
@@ -357,6 +369,11 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
 async def api_get_student_discount(student_id: int, teacher_id: int):
     """الحصول على معلومات خصم الطالب عند مدرس"""
     discount_info = finance_service._get_discount_info(student_id, teacher_id)
+    # إضافة معلومات الرصيد لفحص اكتمال الأقساط
+    balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
+    discount_info['remaining_balance'] = balance['remaining_balance']
+    discount_info['paid_total'] = balance['paid_total']
+    discount_info['total_fee'] = balance['total_fee']
     return {"success": True, "data": discount_info}
 
 
