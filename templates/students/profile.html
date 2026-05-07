@@ -2,6 +2,185 @@
 
 {% block title %}بروفايل الطالب - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* ===== ربط المدرس - بطاقات احترافية ===== */
+.link-teacher-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    animation: tagSlideIn 0.2s ease;
+}
+@keyframes tagSlideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.link-teacher-tag i { font-size: 0.85rem; }
+.link-teacher-tag-remove {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-right: auto;
+    transition: opacity 0.15s;
+}
+.link-teacher-tag-remove:hover { opacity: 1; }
+
+.link-teacher-search {
+    position: relative;
+}
+.link-teacher-search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+.link-teacher-search-input {
+    width: 100%;
+    padding: 8px 36px 8px 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    direction: rtl;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fff;
+}
+.link-teacher-search-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+.link-teacher-search-input::placeholder { color: #b0b0b0; }
+
+.link-teacher-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 60px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1.5px dashed #d1d5db;
+    border-radius: 10px;
+    background: #fafbfc;
+    transition: border-color 0.2s, background 0.2s;
+    -webkit-overflow-scrolling: touch;
+}
+.link-teacher-cards:has(.link-teacher-card) {
+    border-color: #6366f1;
+    background: #f8f9ff;
+}
+.link-teacher-cards:has(.link-teacher-card.selected) {
+    border-color: #4f46e5;
+    background: #f0f1ff;
+}
+
+.link-teacher-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+.link-teacher-card:hover {
+    border-color: #6366f1;
+    background: #f3f4ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(99,102,241,0.12);
+}
+.link-teacher-card.selected {
+    border-color: #4f46e5;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(99,102,241,0.3);
+    transform: translateY(-1px);
+}
+.link-teacher-card .tc-icon {
+    font-size: 0.9rem;
+    color: #6366f1;
+    transition: color 0.15s;
+}
+.link-teacher-card.selected .tc-icon { color: #fff; }
+.link-teacher-card .tc-name { font-weight: 600; }
+.link-teacher-card .tc-subj {
+    color: #888;
+    font-size: 0.72rem;
+    transition: color 0.15s;
+}
+.link-teacher-card.selected .tc-subj { color: rgba(255,255,255,0.8); }
+.link-teacher-card .tc-fee {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: #eef2ff;
+    color: #4f46e5;
+    transition: all 0.15s;
+}
+.link-teacher-card.selected .tc-fee {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+}
+.link-teacher-card.linked {
+    opacity: 0.45;
+    pointer-events: none;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.link-teacher-loading,
+.link-teacher-empty {
+    font-size: 0.82rem;
+    padding: 12px 4px;
+    width: 100%;
+    text-align: center;
+}
+.link-teacher-loading { color: #6366f1; }
+.link-teacher-empty { color: #999; }
+
+.link-teacher-count {
+    font-size: 0.72rem;
+    color: #999;
+    text-align: left;
+    margin-top: 4px;
+    padding: 0 4px;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .link-teacher-cards {
+        max-height: 180px;
+        gap: 6px;
+        padding: 8px;
+    }
+    .link-teacher-card {
+        padding: 6px 10px;
+        font-size: 0.78rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
     <div class="container-fluid">
@@ -272,7 +451,7 @@
 
 <!-- ===== Modal ربط المدرس ===== -->
 <div class="modal fade" id="linkTeacherModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-gradient-blue text-white border-0">
                 <h5 class="modal-title">
@@ -283,15 +462,34 @@
             <form id="linkTeacherForm" onsubmit="linkStudentTeacher(event)">
                 <div class="modal-body p-3 p-md-4">
                     <input type="hidden" id="link_student_id" value="{{ student.id }}">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">اختر المدرس:</label>
-                        <select class="form-select form-select-lg" id="link_teacher_id" required>
-                            <option value="">-- اختر مدرس --</option>
-                        </select>
+                    <input type="hidden" id="link_teacher_id" value="">
+
+                    <!-- التاج عند الاختيار -->
+                    <div class="link-teacher-tag d-none" id="linkTeacherTag">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span id="linkTeacherTagName"></span>
+                        <button type="button" class="link-teacher-tag-remove" onclick="clearLinkTeacher()">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="row g-2 mb-2">
+
+                    <!-- بحث المدرسين -->
+                    <div class="link-teacher-search mb-2">
+                        <i class="fas fa-search link-teacher-search-icon"></i>
+                        <input type="text" id="linkTeacherSearchInput" class="link-teacher-search-input" placeholder="ابحث باسم المدرس أو المادة..." autocomplete="off">
+                    </div>
+
+                    <!-- مستطيل المدرسين المنقط -->
+                    <div id="linkTeacherCardsContainer" class="link-teacher-cards">
+                        <div class="link-teacher-loading">
+                            <span class="spinner-border spinner-border-sm me-1"></span>جاري تحميل المدرسين...
+                        </div>
+                    </div>
+
+                    <!-- نوع الدراسة والحالة -->
+                    <div class="row g-2 mt-3">
                         <div class="col-6">
-                            <label class="form-label fw-bold">نوع الدراسة:</label>
+                            <label class="form-label fw-bold"><i class="fas fa-book-open me-1 text-primary"></i>نوع الدراسة:</label>
                             <select class="form-select form-select-sm" id="link_study_type">
                                 <option value="حضوري">حضوري</option>
                                 <option value="الكتروني">إلكتروني</option>
@@ -299,7 +497,7 @@
                             </select>
                         </div>
                         <div class="col-6">
-                            <label class="form-label fw-bold">الحالة:</label>
+                            <label class="form-label fw-bold"><i class="fas fa-user-check me-1 text-success"></i>الحالة:</label>
                             <select class="form-select form-select-sm" id="link_status">
                                 <option value="مستمر">مستمر</option>
                                 <option value="منسحب">منسحب</option>
@@ -309,7 +507,9 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-primary">ربط</button>
+                    <button type="submit" class="btn btn-primary" id="linkTeacherSubmitBtn" disabled>
+                        <i class="fas fa-link me-1"></i>ربط
+                    </button>
                 </div>
             </form>
         </div>
@@ -441,21 +641,176 @@
 {% block extra_js %}
 <script src="/static/js/students.js"></script>
 <script>
-// تهيئة البحث المباشر في خانة المدرس
-var linkTeacherSS = null;
+// ===== متغيرات بطاقات المدرسين =====
+var allTeachersData = [];
+var linkedTeacherIds = [{% for ts in teachers_summary %}{{ ts.teacher_id }}{% if not loop.last %},{% endif %}{% endfor %}];
 
 document.addEventListener('DOMContentLoaded', function() {
-    // تأخير بسيط حتى يتم تحميل قائمة المدرسين
-    setTimeout(function() {
-        linkTeacherSS = makeSearchableSelect('link_teacher_id', {
-            placeholder: '-- اختر مدرس --',
-            searchPlaceholder: 'ابحث باسم المدرس أو المادة...'
+    // تحميل قائمة المدرسين
+    loadTeachersForLink();
+
+    // بحث المدرسين
+    var searchInput = document.getElementById('linkTeacherSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            renderLinkTeacherCards(this.value);
         });
-    }, 500);
+        // منع إغلاق المودال عند الكتابة
+        searchInput.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+        searchInput.addEventListener('focusin', function(e) { e.stopPropagation(); });
+    }
+
+    // منع سكرول المستطيل المنقط من يروح للمودال
+    var cardsContainer = document.getElementById('linkTeacherCardsContainer');
+    if (cardsContainer) {
+        cardsContainer.addEventListener('wheel', function(e) { e.stopPropagation(); });
+        cardsContainer.addEventListener('touchmove', function(e) { e.stopPropagation(); });
+    }
 });
 
+/**
+ * تحميل قائمة المدرسين
+ */
+async function loadTeachersForLink() {
+    var container = document.getElementById('linkTeacherCardsContainer');
+    if (!container) return;
+
+    try {
+        var response = await apiRequest('/api/teachers');
+        allTeachersData = response.data || [];
+        renderLinkTeacherCards('');
+    } catch (error) {
+        container.innerHTML = '<div class="link-teacher-empty"><i class="fas fa-exclamation-triangle me-1 text-danger"></i>خطأ في تحميل المدرسين</div>';
+    }
+}
+
+/**
+ * عرض بطاقات المدرسين مع فلتر البحث
+ */
+function renderLinkTeacherCards(filter) {
+    var container = document.getElementById('linkTeacherCardsContainer');
+    if (!container) return;
+
+    var query = (filter || '').toLowerCase().trim();
+    container.innerHTML = '';
+
+    var visibleCount = 0;
+
+    allTeachersData.forEach(function(t) {
+        var name = t.name || '';
+        var subject = t.subject || '';
+        var combined = (name + ' ' + subject).toLowerCase();
+
+        // فلتر البحث
+        if (query && !combined.includes(query)) return;
+
+        var card = document.createElement('button');
+        card.type = 'button';
+        var isLinked = linkedTeacherIds.indexOf(t.id) !== -1;
+        var isSelected = document.getElementById('link_teacher_id')?.value === String(t.id);
+
+        card.className = 'link-teacher-card' + (isSelected ? ' selected' : '') + (isLinked ? ' linked' : '');
+        card.setAttribute('data-teacher-id', t.id);
+
+        if (isLinked) {
+            card.title = 'هذا المدرس مربوط بالفعل';
+        }
+
+        var feeStr = t.total_fee ? formatCurrency(t.total_fee) : '';
+
+        card.innerHTML = '<i class="fas fa-chalkboard-teacher tc-icon"></i>' +
+            '<span class="tc-name">' + escapeHtmlSimple(name) + '</span>' +
+            '<span class="tc-subj">' + escapeHtmlSimple(subject) + '</span>' +
+            (feeStr ? '<span class="tc-fee">' + feeStr + '</span>' : '') +
+            (isLinked ? '<span style="font-size:0.65rem;opacity:0.6;"><i class="fas fa-link"></i></span>' : '');
+
+        if (!isLinked) {
+            card.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectLinkTeacher(t.id, name + ' - ' + subject);
+            });
+            card.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+        }
+
+        container.appendChild(card);
+        visibleCount++;
+    });
+
+    if (visibleCount === 0) {
+        container.innerHTML = '<div class="link-teacher-empty"><i class="fas fa-search me-1"></i>' +
+            (query ? 'لا توجد نتائج لـ "' + escapeHtmlSimple(query) + '"' : 'لا يوجد مدرسين متاحين') +
+            '</div>';
+    }
+
+    // عداد
+    var totalAvailable = allTeachersData.filter(function(t) {
+        return linkedTeacherIds.indexOf(t.id) === -1;
+    }).length;
+
+    var existingCount = container.querySelector('.link-teacher-count');
+    if (existingCount) existingCount.remove();
+    var countDiv = document.createElement('div');
+    countDiv.className = 'link-teacher-count';
+    countDiv.textContent = visibleCount + ' من ' + allTeachersData.length + ' مدرس' +
+        (linkedTeacherIds.length > 0 ? ' (' + linkedTeacherIds.length + ' مربوط)' : '');
+    container.parentElement.insertBefore(countDiv, container.nextSibling);
+}
+
+/**
+ * اختيار مدرس للربط
+ */
+function selectLinkTeacher(id, name) {
+    document.getElementById('link_teacher_id').value = id;
+    var tag = document.getElementById('linkTeacherTag');
+    var tagName = document.getElementById('linkTeacherTagName');
+    var submitBtn = document.getElementById('linkTeacherSubmitBtn');
+
+    tagName.textContent = name;
+    tag.classList.remove('d-none');
+    submitBtn.disabled = false;
+
+    // تحديث حالة البطاقات
+    var container = document.getElementById('linkTeacherCardsContainer');
+    container.querySelectorAll('.link-teacher-card').forEach(function(card) {
+        if (card.getAttribute('data-teacher-id') === String(id)) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+    });
+}
+
+/**
+ * إلغاء اختيار المدرس
+ */
+function clearLinkTeacher() {
+    document.getElementById('link_teacher_id').value = '';
+    var tag = document.getElementById('linkTeacherTag');
+    var submitBtn = document.getElementById('linkTeacherSubmitBtn');
+
+    tag.classList.add('d-none');
+    submitBtn.disabled = true;
+
+    // إزالة التحديد
+    var container = document.getElementById('linkTeacherCardsContainer');
+    container.querySelectorAll('.link-teacher-card.selected').forEach(function(card) {
+        card.classList.remove('selected');
+    });
+
+    // إعادة التركيز على البحث
+    document.getElementById('linkTeacherSearchInput')?.focus();
+}
+
+/**
+ * دالة بسيطة للهروب من HTML
+ */
+function escapeHtmlSimple(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function printAllReceipts(studentId) {
-    // فتح تقرير الطالب الشامل بنظام التقارير الموحد
     window.open('/reports/student/' + studentId, '_blank');
 }
 </script>
