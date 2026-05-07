@@ -59,7 +59,7 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding: 12px;
     background: white;
     border-radius: 12px;
@@ -84,6 +84,267 @@
     background: #4f46e5;
     color: white;
     border-color: #4f46e5;
+}
+
+/* ===== Filter Toolbar ===== */
+.filter-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+    align-items: center;
+}
+.filter-toolbar .filter-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e1b4b;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: all 0.2s;
+    color: #374151;
+    white-space: nowrap;
+}
+.filter-pill:hover {
+    border-color: #a5b4fc;
+    color: #4f46e5;
+    background: #f5f3ff;
+}
+.filter-pill.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+}
+.filter-pill i {
+    font-size: 11px;
+}
+.filter-divider {
+    width: 1px;
+    height: 24px;
+    background: #e5e7eb;
+    margin: 0 4px;
+}
+.filter-select {
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: white;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-left: 10px;
+    padding-right: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234f46e5' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 8px center;
+}
+.filter-select:hover {
+    border-color: #a5b4fc;
+}
+.filter-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+}
+
+/* ===== List View ===== */
+.schedule-list-wrapper {
+    display: none;
+}
+.schedule-list-wrapper.active {
+    display: block;
+}
+.schedule-grid-wrapper.hidden {
+    display: none;
+}
+
+.list-group-section {
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+.list-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
+    border-bottom: 2px solid #e0e7ff;
+    font-weight: 700;
+    color: #1e1b4b;
+    font-size: 15px;
+}
+.list-group-header .group-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+}
+.list-group-header .group-count {
+    background: #4f46e5;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: auto;
+}
+.list-group-body {
+    padding: 8px 12px;
+}
+.list-event-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+    position: relative;
+}
+.list-event-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-color: #c7d2fe;
+    transform: translateY(-1px);
+}
+.list-event-card.lecture-list-card {
+    background: linear-gradient(135deg, #eff6ff 0%, #f8faff 100%);
+    border-right: 3px solid #3b82f6;
+}
+.list-event-card.exam-list-card {
+    background: linear-gradient(135deg, #fff7ed 0%, #fffbf5 100%);
+    border-right: 3px solid #f97316;
+}
+.list-event-card .lec-type-indicator {
+    width: 8px;
+    height: 40px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.lecture-list-card .lec-type-indicator { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+.exam-list-card .lec-type-indicator { background: linear-gradient(180deg, #f97316, #ea580c); }
+.list-event-card .lec-info {
+    flex: 1;
+    min-width: 0;
+}
+.list-event-card .lec-info .lec-subject {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lecture-list-card .lec-subject { color: #1e40af; }
+.exam-list-card .lec-subject { color: #9a3412; }
+.list-event-card .lec-info .lec-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+.list-event-card .lec-info .lec-meta i {
+    font-size: 11px;
+    margin-left: 3px;
+    color: #94a3b8;
+}
+.list-event-card .lec-type-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.lecture-list-card .lec-type-badge {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.exam-list-card .lec-type-badge {
+    background: #ffedd5;
+    color: #9a3412;
+}
+.list-event-card .lec-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+.list-event-card:hover .lec-actions {
+    opacity: 1;
+}
+.list-event-card .lec-actions button {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.list-event-card .lec-actions .btn-edit:hover {
+    background: #fef3c7;
+    border-color: #fbbf24;
+    color: #92400e;
+}
+.list-event-card .lec-actions .btn-delete:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+/* Empty state for list */
+.list-empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: #94a3b8;
+}
+.list-empty-state i {
+    font-size: 32px;
+    margin-bottom: 8px;
+    display: block;
+}
+.list-empty-state p {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
 }
 
 /* Schedule Grid */
@@ -406,6 +667,12 @@
     .room-tabs { padding: 8px; }
     .room-tab { padding: 6px 12px; font-size: 12px; }
     .schedule-legend { gap: 10px; padding: 8px 12px; }
+    .filter-toolbar { padding: 10px 12px; gap: 6px; }
+    .filter-pill { padding: 4px 10px; font-size: 11.5px; }
+    .filter-select { font-size: 11.5px; }
+    .list-event-card { padding: 10px 12px; gap: 8px; }
+    .list-event-card .lec-info .lec-subject { font-size: 13px; }
+    .list-event-card .lec-info .lec-meta { font-size: 11.5px; }
 }
 </style>
 {% endblock %}
@@ -484,8 +751,13 @@
     </div>
 </div>
 
+<!-- Filter/Sort Toolbar -->
+<div class="filter-toolbar" id="filterToolbar">
+    <!-- Will be rendered by JS -->
+</div>
+
 <!-- Schedule Grid -->
-<div class="schedule-grid-wrapper">
+<div class="schedule-grid-wrapper" id="scheduleGridWrapper">
     <table class="schedule-grid" id="scheduleGrid">
         <thead>
             <tr>
@@ -501,6 +773,13 @@
         </thead>
         <tbody id="scheduleBody"></tbody>
     </table>
+</div>
+
+<!-- Schedule List View -->
+<div class="schedule-list-wrapper" id="scheduleListWrapper">
+    <div id="scheduleListContent">
+        <!-- Will be rendered by JS -->
+    </div>
 </div>
 
 <!-- Add/Edit Event Modal -->
@@ -643,6 +922,13 @@ let allSchedule = {{ schedule | tojson }};
 let currentRoomFilter = 'all';
 let currentEventType = 'محاضرة';
 
+// ===== Filter/Sort State =====
+let currentSortBy = 'time';        // 'time', 'teacher', 'day', 'room'
+let currentEventTypeFilter = 'all'; // 'all', 'محاضرة', 'امتحان'
+let currentTeacherFilter = 0;      // 0 = all
+let currentDayFilter = 'all';      // 'all' or specific day name
+let currentViewMode = 'grid';      // 'grid' or 'list'
+
 const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 const TIME_SLOTS = [];
 for (let h = 7; h <= 21; h++) {
@@ -668,7 +954,8 @@ const EXAM_DURATIONS = [
 // ===== Initialize =====
 document.addEventListener('DOMContentLoaded', function() {
     renderRoomTabs();
-    renderScheduleGrid();
+    renderFilterToolbar();
+    renderCurrentView();
     renderRoomsList();
     populateModalSelects();
 });
@@ -685,15 +972,143 @@ function renderRoomTabs() {
 
 function filterByRoom(roomId) {
     currentRoomFilter = roomId;
+    // Reset sort/filter when switching rooms
+    currentSortBy = 'time';
+    currentEventTypeFilter = 'all';
+    currentTeacherFilter = 0;
+    currentDayFilter = 'all';
+    currentViewMode = 'grid';
     renderRoomTabs();
-    renderScheduleGrid();
+    renderFilterToolbar();
+    renderCurrentView();
+}
+
+// ===== Filter Toolbar =====
+function renderFilterToolbar() {
+    const toolbar = document.getElementById('filterToolbar');
+    const isAllRooms = currentRoomFilter === 'all';
+    
+    let html = '';
+    
+    // View mode toggle
+    html += '<span class="filter-label"><i class="fas fa-filter me-1"></i>عرض:</span>';
+    html += '<button class="filter-pill ' + (currentSortBy === 'time' ? 'active' : '') + '" onclick="setSortBy(\'time\')"><i class="fas fa-th"></i> جدول</button>';
+    
+    if (isAllRooms) {
+        html += '<button class="filter-pill ' + (currentSortBy === 'teacher' ? 'active' : '') + '" onclick="setSortBy(\'teacher\')"><i class="fas fa-user-tie"></i> الاستاد</button>';
+        html += '<button class="filter-pill ' + (currentSortBy === 'day' ? 'active' : '') + '" onclick="setSortBy(\'day\')"><i class="fas fa-calendar-day"></i> اليوم</button>';
+        html += '<button class="filter-pill ' + (currentSortBy === 'room' ? 'active' : '') + '" onclick="setSortBy(\'room\')"><i class="fas fa-door-open"></i> القاعة</button>';
+    } else {
+        html += '<button class="filter-pill ' + (currentSortBy === 'teacher' ? 'active' : '') + '" onclick="setSortBy(\'teacher\')"><i class="fas fa-user-tie"></i> الاستاد</button>';
+    }
+    
+    // Divider
+    html += '<div class="filter-divider"></div>';
+    
+    // Event type filter
+    html += '<span class="filter-label"><i class="fas fa-tags me-1"></i>النوع:</span>';
+    html += '<button class="filter-pill ' + (currentEventTypeFilter === 'all' ? 'active' : '') + '" onclick="setEventTypeFilter(\'all\')"><i class="fas fa-layer-group"></i> الكل</button>';
+    html += '<button class="filter-pill ' + (currentEventTypeFilter === 'محاضرة' ? 'active' : '') + '" onclick="setEventTypeFilter(\'محاضرة\')"><i class="fas fa-chalkboard-teacher"></i> محاضرات</button>';
+    html += '<button class="filter-pill ' + (currentEventTypeFilter === 'امتحان' ? 'active' : '') + '" onclick="setEventTypeFilter(\'امتحان\')"><i class="fas fa-file-alt"></i> امتحانات</button>';
+    
+    // Divider
+    html += '<div class="filter-divider"></div>';
+    
+    // Teacher filter dropdown
+    html += '<select class="filter-select" onchange="setTeacherFilter(parseInt(this.value))" title="تصفية حسب المدرس">';
+    html += '<option value="0">كل المدرسين</option>';
+    allTeachers.forEach(t => {
+        html += '<option value="' + t.id + '" ' + (currentTeacherFilter === t.id ? 'selected' : '') + '>' + escapeHtml(t.name) + '</option>';
+    });
+    html += '</select>';
+    
+    // Day filter dropdown (only when viewing all rooms)
+    if (isAllRooms) {
+        html += '<select class="filter-select" onchange="setDayFilter(this.value)" title="تصفية حسب اليوم">';
+        html += '<option value="all">كل الأيام</option>';
+        DAYS.forEach(day => {
+            html += '<option value="' + day + '" ' + (currentDayFilter === day ? 'selected' : '') + '>' + day + '</option>';
+        });
+        html += '</select>';
+    }
+    
+    toolbar.innerHTML = html;
+}
+
+// ===== Sort/Filter Setters =====
+function setSortBy(sortType) {
+    currentSortBy = sortType;
+    if (sortType === 'time') {
+        currentViewMode = 'grid';
+    } else {
+        currentViewMode = 'list';
+    }
+    renderFilterToolbar();
+    renderCurrentView();
+}
+
+function setEventTypeFilter(filterType) {
+    currentEventTypeFilter = filterType;
+    renderFilterToolbar();
+    renderCurrentView();
+}
+
+function setTeacherFilter(teacherId) {
+    currentTeacherFilter = teacherId;
+    renderCurrentView();
+}
+
+function setDayFilter(day) {
+    currentDayFilter = day;
+    renderCurrentView();
+}
+
+// ===== Get Filtered Events =====
+function getFilteredEvents() {
+    let events = [...allSchedule];
+    
+    // Room filter
+    if (currentRoomFilter !== 'all') {
+        events = events.filter(ev => ev.room_id === currentRoomFilter);
+    }
+    
+    // Event type filter
+    if (currentEventTypeFilter !== 'all') {
+        events = events.filter(ev => ev.event_type === currentEventTypeFilter);
+    }
+    
+    // Teacher filter
+    if (currentTeacherFilter > 0) {
+        events = events.filter(ev => ev.teacher_id === currentTeacherFilter);
+    }
+    
+    // Day filter
+    if (currentDayFilter !== 'all') {
+        events = events.filter(ev => ev.day_of_week === currentDayFilter);
+    }
+    
+    return events;
+}
+
+// ===== Render Current View =====
+function renderCurrentView() {
+    const gridWrapper = document.getElementById('scheduleGridWrapper');
+    const listWrapper = document.getElementById('scheduleListWrapper');
+    
+    if (currentViewMode === 'grid') {
+        gridWrapper.classList.remove('hidden');
+        listWrapper.classList.remove('active');
+        renderScheduleGrid();
+    } else {
+        gridWrapper.classList.add('hidden');
+        listWrapper.classList.add('active');
+        renderScheduleList();
+    }
 }
 
 // ===== Helper: Check if a time slot is blocked =====
 function isSlotBlocked(roomId, day, time) {
     if (currentRoomFilter === 'all') {
-        // When viewing all rooms, check if ANY room has an event at this time for the day
-        // We don't show blocked cells in "all" view since rooms are mixed
         return false;
     }
     const roomEvents = allSchedule.filter(ev => ev.room_id === roomId && ev.day_of_week === day);
@@ -781,6 +1196,167 @@ function isSlotOccupied(roomId, day, time) {
     return allSchedule.some(ev => {
         return ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
     });
+}
+
+// ===== Schedule List View =====
+function renderScheduleList() {
+    const container = document.getElementById('scheduleListContent');
+    const events = getFilteredEvents();
+    const dayOrder = {'الإثنين': 1, 'الثلاثاء': 2, 'الأربعاء': 3, 'الخميس': 4, 'الجمعة': 5, 'السبت': 6, 'الأحد': 7};
+    
+    if (events.length === 0) {
+        container.innerHTML = '<div class="list-empty-state"><i class="fas fa-calendar-times"></i><p>لا توجد فعاليات مطابقة للتصفية المحددة</p></div>';
+        return;
+    }
+    
+    let html = '';
+    
+    if (currentSortBy === 'teacher') {
+        // Group by teacher
+        const teacherGroups = {};
+        events.forEach(ev => {
+            const key = ev.teacher_name || 'غير محدد';
+            if (!teacherGroups[key]) teacherGroups[key] = [];
+            teacherGroups[key].push(ev);
+        });
+        
+        // Sort teachers alphabetically, then sort events within each group by day and time
+        const sortedTeacherNames = Object.keys(teacherGroups).sort((a, b) => a.localeCompare(b, 'ar'));
+        
+        sortedTeacherNames.forEach(teacherName => {
+            const groupEvents = teacherGroups[teacherName].sort((a, b) => {
+                const dayA = dayOrder[a.day_of_week] || 99;
+                const dayB = dayOrder[b.day_of_week] || 99;
+                if (dayA !== dayB) return dayA - dayB;
+                return a.start_time.localeCompare(b.start_time);
+            });
+            
+            const teacher = allTeachers.find(t => t.name === teacherName);
+            const subject = teacher ? teacher.subject : '';
+            
+            html += '<div class="list-group-section">';
+            html += '<div class="list-group-header">';
+            html += '<div class="group-icon"><i class="fas fa-user-tie"></i></div>';
+            html += '<span>' + escapeHtml(teacherName) + (subject ? ' (' + escapeHtml(subject) + ')' : '') + '</span>';
+            html += '<span class="group-count">' + groupEvents.length + ' فعالية</span>';
+            html += '</div>';
+            html += '<div class="list-group-body">';
+            groupEvents.forEach(ev => {
+                html += renderListEventCard(ev);
+            });
+            html += '</div>';
+            html += '</div>';
+        });
+        
+    } else if (currentSortBy === 'room') {
+        // Group by room
+        const roomGroups = {};
+        events.forEach(ev => {
+            const key = ev.room_name || 'غير محدد';
+            if (!roomGroups[key]) roomGroups[key] = [];
+            roomGroups[key].push(ev);
+        });
+        
+        const sortedRoomNames = Object.keys(roomGroups).sort((a, b) => a.localeCompare(b, 'ar'));
+        
+        sortedRoomNames.forEach(roomName => {
+            const groupEvents = roomGroups[roomName].sort((a, b) => {
+                const dayA = dayOrder[a.day_of_week] || 99;
+                const dayB = dayOrder[b.day_of_week] || 99;
+                if (dayA !== dayB) return dayA - dayB;
+                return a.start_time.localeCompare(b.start_time);
+            });
+            
+            html += '<div class="list-group-section">';
+            html += '<div class="list-group-header">';
+            html += '<div class="group-icon"><i class="fas fa-door-open"></i></div>';
+            html += '<span>' + escapeHtml(roomName) + '</span>';
+            html += '<span class="group-count">' + groupEvents.length + ' فعالية</span>';
+            html += '</div>';
+            html += '<div class="list-group-body">';
+            groupEvents.forEach(ev => {
+                html += renderListEventCard(ev);
+            });
+            html += '</div>';
+            html += '</div>';
+        });
+        
+    } else if (currentSortBy === 'day') {
+        // Group by day
+        const dayGroups = {};
+        events.forEach(ev => {
+            const key = ev.day_of_week || 'غير محدد';
+            if (!dayGroups[key]) dayGroups[key] = [];
+            dayGroups[key].push(ev);
+        });
+        
+        // Sort days by order
+        const sortedDays = Object.keys(dayGroups).sort((a, b) => {
+            return (dayOrder[a] || 99) - (dayOrder[b] || 99);
+        });
+        
+        const dayIcons = {
+            'الإثنين': 'fa-calendar-day',
+            'الثلاثاء': 'fa-calendar-day',
+            'الأربعاء': 'fa-calendar-day',
+            'الخميس': 'fa-calendar-day',
+            'الجمعة': 'fa-calendar-day',
+            'السبت': 'fa-calendar-day',
+            'الأحد': 'fa-calendar-day'
+        };
+        
+        sortedDays.forEach(day => {
+            const groupEvents = dayGroups[day].sort((a, b) => {
+                return a.start_time.localeCompare(b.start_time);
+            });
+            
+            html += '<div class="list-group-section">';
+            html += '<div class="list-group-header">';
+            html += '<div class="group-icon"><i class="fas ' + (dayIcons[day] || 'fa-calendar-day') + '"></i></div>';
+            html += '<span>' + escapeHtml(day) + '</span>';
+            html += '<span class="group-count">' + groupEvents.length + ' فعالية</span>';
+            html += '</div>';
+            html += '<div class="list-group-body">';
+            groupEvents.forEach(ev => {
+                html += renderListEventCard(ev);
+            });
+            html += '</div>';
+            html += '</div>';
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+function renderListEventCard(ev) {
+    const isExam = (ev.event_type === 'امتحان');
+    const cardClass = isExam ? 'exam-list-card' : 'lecture-list-card';
+    const evTypeLabel = isExam ? 'امتحان' : 'محاضرة';
+    
+    let html = '';
+    html += '<div class="list-event-card ' + cardClass + '">';
+    html += '<div class="lec-type-indicator"></div>';
+    html += '<div class="lec-info">';
+    html += '<div class="lec-subject">' + escapeHtml(ev.subject) + '</div>';
+    html += '<div class="lec-meta">';
+    html += '<span><i class="fas fa-clock"></i> ' + ev.start_time + ' - ' + ev.end_time + '</span>';
+    html += '<span><i class="fas fa-calendar-day"></i> ' + escapeHtml(ev.day_of_week) + '</span>';
+    html += '<span><i class="fas fa-user-tie"></i> ' + escapeHtml(ev.teacher_name) + '</span>';
+    if (currentRoomFilter === 'all' || currentSortBy === 'teacher') {
+        html += '<span><i class="fas fa-door-open"></i> ' + escapeHtml(ev.room_name) + '</span>';
+    }
+    if (ev.notes) {
+        html += '<span><i class="fas fa-sticky-note"></i> ' + escapeHtml(ev.notes) + '</span>';
+    }
+    html += '</div>';
+    html += '</div>';
+    html += '<span class="lec-type-badge">' + evTypeLabel + '</span>';
+    html += '<div class="lec-actions">';
+    html += '<button class="btn-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+    html += '<button class="btn-delete" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
+    html += '</div>';
+    html += '</div>';
+    return html;
 }
 
 // ===== Rooms List =====
@@ -1180,7 +1756,10 @@ async function autoSortSchedule() {
     
     // Update local data and re-render
     allSchedule = sortedSchedule;
-    renderScheduleGrid();
+    currentSortBy = 'time';
+    currentViewMode = 'grid';
+    renderFilterToolbar();
+    renderCurrentView();
     showAlert('تم ترتيب الجدول بنجاح حسب القاعة واليوم والوقت', 'success');
 }
 
@@ -1220,7 +1799,8 @@ async function refreshData() {
         allRooms = roomsRes.data || [];
         allSchedule = scheduleRes.data || [];
         renderRoomTabs();
-        renderScheduleGrid();
+        renderFilterToolbar();
+        renderCurrentView();
         renderRoomsList();
         populateModalSelects();
     } catch(e) {
