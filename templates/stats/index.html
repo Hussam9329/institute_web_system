@@ -304,6 +304,11 @@
             </h4>
             <p class="mb-0 small" style="color: var(--muted); line-height: 1.6;">نظرة شاملة على أداء المعهد</p>
         </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#printStatsModal" title="طباعة تقرير">
+                <i class="fas fa-print me-1"></i>طباعة تقرير
+            </button>
+        </div>
     </div>
 
     <!-- ===== بطاقات الإحصائيات الرئيسية ===== -->
@@ -586,4 +591,104 @@
     </div>
 
 </div>
+
+<!-- ===== Modal طباعة تقرير الإحصائيات ===== -->
+<div class="modal fade" id="printStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-gradient-purple text-white border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-print me-2"></i>خيارات الطباعة
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4">
+                <p class="fw-bold mb-3"><i class="fas fa-sliders-h me-1 text-purple"></i>حدد المعلومات التي تريد طباعتها:</p>
+                
+                <!-- Main sections -->
+                <div class="form-check mb-2">
+                    <input class="form-check-input print-select-cb" type="checkbox" id="print_cb_kpis" checked>
+                    <label class="form-check-label fw-bold" for="print_cb_kpis">
+                        <i class="fas fa-chart-bar me-1 text-primary"></i>بطاقات الإحصائيات الرئيسية
+                    </label>
+                </div>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input print-select-cb" type="checkbox" id="print_cb_detail" checked onchange="toggleDetailCheckboxes(this.checked)">
+                    <label class="form-check-label fw-bold" for="print_cb_detail">
+                        <i class="fas fa-table me-1 text-secondary"></i>جدول الإحصائيات التفصيلية
+                    </label>
+                </div>
+                <div id="detailCheckboxes" class="ms-4 mb-2" style="border-right:3px solid #c7d2fe;padding-right:12px;">
+                    <!-- These will be populated dynamically based on the stats-detail-table rows -->
+                </div>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input print-select-cb" type="checkbox" id="print_cb_financial" checked onchange="toggleFinCheckboxes(this.checked)">
+                    <label class="form-check-label fw-bold" for="print_cb_financial">
+                        <i class="fas fa-coins me-1 text-warning"></i>الملخص المالي
+                    </label>
+                </div>
+                <div id="finCheckboxes" class="ms-4 mb-2" style="border-right:3px solid #fde68a;padding-right:12px;">
+                    <!-- Financial detail checkboxes -->
+                </div>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input print-select-cb" type="checkbox" id="print_cb_net" checked>
+                    <label class="form-check-label fw-bold" for="print_cb_net">
+                        <i class="fas fa-chart-line me-1 text-success"></i>صافي الإيرادات
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="PrintUtils.printStats()">
+                    <i class="fas fa-print me-1"></i>طباعة التقرير
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/print-utils.js"></script>
+<script>
+// Populate detail and financial checkboxes dynamically
+document.addEventListener('DOMContentLoaded', function() {
+    // Detail table checkboxes
+    const detailRows = document.querySelectorAll('.stats-detail-table tbody tr');
+    const detailContainer = document.getElementById('detailCheckboxes');
+    if (detailContainer && detailRows.length > 0) {
+        detailRows.forEach((row, i) => {
+            const label = row.querySelector('td:first-child')?.textContent?.trim() || '';
+            const cb = document.createElement('div');
+            cb.className = 'form-check';
+            cb.innerHTML = `<input class="form-check-input print-select-cb" type="checkbox" id="print_cb_detail_${i}" checked>
+                <label class="form-check-label small" for="print_cb_detail_${i}">${label}</label>`;
+            detailContainer.appendChild(cb);
+        });
+    }
+    
+    // Financial checkboxes
+    const finItems = document.querySelectorAll('.fin-stat-item');
+    const finContainer = document.getElementById('finCheckboxes');
+    if (finContainer && finItems.length > 0) {
+        finItems.forEach((item, i) => {
+            const label = item.querySelector('.fin-stat-label')?.textContent?.trim() || '';
+            const cb = document.createElement('div');
+            cb.className = 'form-check';
+            cb.innerHTML = `<input class="form-check-input print-select-cb" type="checkbox" id="print_cb_fin_${i}" checked>
+                <label class="form-check-label small" for="print_cb_fin_${i}">${label}</label>`;
+            finContainer.appendChild(cb);
+        });
+    }
+});
+
+function toggleDetailCheckboxes(checked) {
+    document.querySelectorAll('#detailCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = checked);
+}
+
+function toggleFinCheckboxes(checked) {
+    document.querySelectorAll('#finCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = checked);
+}
+</script>
 {% endblock %}

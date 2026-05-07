@@ -86,6 +86,9 @@
                     <option value="amount-asc">المبلغ (الأقل)</option>
                 </select>
             </div>
+            <button class="btn btn-outline-info btn-sm" onclick="PrintUtils.printWithdrawals()" title="طباعة القائمة">
+                <i class="fas fa-print me-1"></i><span class="d-none d-sm-inline">طباعة</span>
+            </button>
             <button class="btn btn-success btn-sm" onclick="openAddWithdrawalModal()">
                 <i class="fas fa-plus me-1"></i>سحب جديد
             </button>
@@ -567,4 +570,5 @@ async function submitAddWithdrawal(event) {
     }
 }
 </script>
+<script src="/static/js/print-utils.js"></script>
 {% endblock %}
