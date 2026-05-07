@@ -196,11 +196,25 @@
                                                                     <label class="form-check-label small" for="disc_pct_{{ teacher.id }}"><i class="fas fa-percent text-warning me-1"></i>نسبة</label>
                                                                 </div>
                                                                 <div class="form-check">
+                                                                    <input class="form-check-input" type="radio" name="discount_type_{{ teacher.id }}" id="disc_fixed_{{ teacher.id }}" value="fixed"
+                                                                           onchange="onDiscountTypeChange({{ teacher.id }})"
+                                                                           {% if current_discount_type == 'fixed' %}checked{% endif %}>
+                                                                    <label class="form-check-label small" for="disc_fixed_{{ teacher.id }}"><i class="fas fa-coins text-orange me-1"></i>مبلغ</label>
+                                                                </div>
+                                                                <div class="form-check">
                                                                     <input class="form-check-input" type="radio" name="discount_type_{{ teacher.id }}" id="disc_free_{{ teacher.id }}" value="free"
                                                                            onchange="onDiscountTypeChange({{ teacher.id }})"
                                                                            {% if current_discount_type == 'free' %}checked{% endif %}>
                                                                     <label class="form-check-label small" for="disc_free_{{ teacher.id }}"><i class="fas fa-gift text-success me-1"></i>مجاني</label>
                                                                 </div>
+                                                                <!-- أنواع خصم مخصصة -->
+                                                                <div id="custom_discount_radios_{{ teacher.id }}">
+                                                                </div>
+                                                                <!-- زر اضافة نوع خصم مخصص -->
+                                                                <button type="button" class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:0.7rem;border-radius:4px;"
+                                                                        onclick="addCustomDiscountType({{ teacher.id }})" title="إضافة نوع خصم خاص">
+                                                                    <i class="fas fa-plus me-1"></i>خصم خاص
+                                                                </button>
                                                             </div>
                                                             <!-- نسبة الخصم -->
                                                             <div class="d-none mb-2" id="disc_pct_section_{{ teacher.id }}">
@@ -212,6 +226,17 @@
                                                                     <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f0a500,#e6960a);color:#fff;border-color:#f0a500;">%</span>
                                                                 </div>
                                                                 <small class="text-muted d-none mt-1" id="disc_pct_preview_{{ teacher.id }}"></small>
+                                                            </div>
+                                                            <!-- مبلغ الخصم الثابت -->
+                                                            <div class="d-none mb-2" id="disc_fixed_section_{{ teacher.id }}">
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" class="form-control" name="discount_fixed_value_{{ teacher.id }}" id="disc_fixed_val_{{ teacher.id }}"
+                                                                           min="1" placeholder="مبلغ الخصم (بالألف د.ع)"
+                                                                           value="{{ (current_discount_value // 1000) if current_discount_type == 'fixed' and current_discount_value else '' }}"
+                                                                           oninput="onDiscountFixedChange({{ teacher.id }})">
+                                                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border-color:#f97316;">ألف د.ع</span>
+                                                                </div>
+                                                                <small class="text-muted d-none mt-1" id="disc_fixed_preview_{{ teacher.id }}"></small>
                                                             </div>
                                                             <!-- خيار مجاني -->
                                                             <div class="d-none" id="disc_free_section_{{ teacher.id }}">
@@ -427,18 +452,32 @@ function onDiscountTypeChange(teacherId) {
 
     const discountType = selectedType.value;
     const pctSection = document.getElementById('disc_pct_section_' + teacherId);
+    const fixedSection = document.getElementById('disc_fixed_section_' + teacherId);
     const freeSection = document.getElementById('disc_free_section_' + teacherId);
+    const customSection = document.getElementById('disc_custom_section_' + teacherId);
 
     // إخفاء الكل
     if (pctSection) pctSection.classList.add('d-none');
+    if (fixedSection) fixedSection.classList.add('d-none');
     if (freeSection) freeSection.classList.add('d-none');
+    if (customSection) customSection.classList.add('d-none');
 
     if (discountType === 'percentage') {
         if (pctSection) pctSection.classList.remove('d-none');
         onDiscountValueChange(teacherId);
+    } else if (discountType === 'fixed') {
+        if (fixedSection) fixedSection.classList.remove('d-none');
+        onDiscountFixedChange(teacherId);
     } else if (discountType === 'free') {
         if (freeSection) freeSection.classList.remove('d-none');
         onWaiverChange(teacherId);
+    } else if (discountType.startsWith('custom_')) {
+        // خصم مخصص - عرض القسم المخصص
+        if (customSection) customSection.classList.remove('d-none');
+        var customData = getCustomDiscountData(teacherId, discountType);
+        if (customData && customData.isPercentage) {
+            onDiscountValueChange(teacherId);
+        }
     }
 
     updateDiscountBtn(teacherId, discountType);
@@ -481,6 +520,43 @@ function onDiscountValueChange(teacherId) {
     }
 }
 
+function onDiscountFixedChange(teacherId) {
+    const valInput = document.getElementById('disc_fixed_val_' + teacherId);
+    const preview = document.getElementById('disc_fixed_preview_' + teacherId);
+    const discountValue = parseInt(valInput?.value) || 0;
+
+    if (!preview) return;
+
+    if (discountValue <= 0) {
+        preview.classList.add('d-none');
+        return;
+    }
+
+    // حساب القسط بعد الخصم
+    const t = teachersMap[teacherId];
+    if (t) {
+        const studyTypeSelect = document.querySelector('select[name="study_type_' + teacherId + '"]');
+        const hiddenStudyType = document.querySelector('input[name="study_type_' + teacherId + '"]');
+        let studyType = 'حضوري';
+        if (studyTypeSelect) studyType = studyTypeSelect.value;
+        else if (hiddenStudyType) studyType = hiddenStudyType.value;
+
+        let totalFee = t.total_fee;
+        if (studyType === 'الكتروني' && t.fee_electronic > 0) totalFee = t.fee_electronic;
+        else if (studyType === 'مدمج' && t.fee_blended > 0) totalFee = t.fee_blended;
+        else if (studyType === 'حضوري' && t.fee_in_person > 0) totalFee = t.fee_in_person;
+
+        const fixedAmount = discountValue * 1000; // تحويل من ألف إلى القيمة الكاملة
+        if (totalFee > 0) {
+            const newFee = Math.max(0, totalFee - fixedAmount);
+            preview.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>القسط: ' + formatCurrency(totalFee) + ' ← بعد الخصم: ' + formatCurrency(newFee) + ' (خصم ' + formatCurrency(fixedAmount) + ')';
+            preview.classList.remove('d-none');
+        } else {
+            preview.classList.add('d-none');
+        }
+    }
+}
+
 function onWaiverChange(teacherId) {
     const waiverCheck = document.getElementById('disc_waiver_' + teacherId);
     const waiverInfo = document.getElementById('disc_waiver_info_' + teacherId);
@@ -509,11 +585,34 @@ function updateDiscountBtn(teacherId, discountType) {
         const val = document.getElementById('disc_pct_val_' + teacherId)?.value || '';
         btn.classList.add('btn-warning');
         btn.innerHTML = '<i class="fas fa-percent" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> ' + val + '%</span>';
+    } else if (discountType === 'fixed') {
+        const val = document.getElementById('disc_fixed_val_' + teacherId)?.value || '';
+        btn.classList.add('btn-warning');
+        btn.innerHTML = '<i class="fas fa-coins" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> ' + val + 'K</span>';
     } else if (discountType === 'free') {
         btn.classList.add('btn-warning');
         btn.innerHTML = '<i class="fas fa-gift" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>';
+    } else if (discountType.startsWith('custom_')) {
+        var customData = getCustomDiscountData(teacherId, discountType);
+        btn.classList.add('btn-warning');
+        if (customData) {
+            btn.innerHTML = '<i class="fas fa-tag" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> ' + escapeHtmlSimple(customData.name) + '</span>';
+        } else {
+            btn.innerHTML = '<i class="fas fa-tag" style="font-size:0.7rem;"></i>';
+        }
     }
 }
+
+// تحديث زر الخصم عند تغيير قيمة المبلغ الثابت
+document.addEventListener('input', function(e) {
+    if (e.target.name && e.target.name.startsWith('discount_fixed_value_')) {
+        const teacherId = e.target.name.replace('discount_fixed_value_', '');
+        const selectedType = document.querySelector('input[name="discount_type_' + teacherId + '"]:checked');
+        if (selectedType && selectedType.value === 'fixed') {
+            updateDiscountBtn(teacherId, 'fixed');
+        }
+    }
+});
 
 // تحديث زر الخصم عند تغيير قيمة النسبة
 document.addEventListener('input', function(e) {
@@ -525,6 +624,125 @@ document.addEventListener('input', function(e) {
         }
     }
 });
+
+// ===== أنواع الخصم المخصصة =====
+var customDiscountTypes = {}; // {teacherId: [{id, name, value, isPercentage}]}
+
+function getCustomDiscountData(teacherId, typeValue) {
+    var types = customDiscountTypes[teacherId] || [];
+    for (var i = 0; i < types.length; i++) {
+        if ('custom_' + types[i].id === typeValue) return types[i];
+    }
+    return null;
+}
+
+function addCustomDiscountType(teacherId) {
+    // عرض نافذة صغيرة لإدخال اسم وقيمة الخصم المخصص
+    var modal = document.getElementById('customDiscountModal');
+    if (!modal) {
+        // إنشاء المودال مرة واحدة
+        var modalHtml = '<div class="modal fade" id="customDiscountModal" tabindex="-1">' +
+            '<div class="modal-dialog modal-dialog-centered modal-sm">' +
+            '<div class="modal-content border-0 shadow-lg">' +
+            '<div class="modal-header bg-gradient-orange text-white border-0 py-2">' +
+            '<h6 class="modal-title" style="font-size:0.9rem;"><i class="fas fa-tag me-2"></i>إضافة نوع خصم خاص</h6>' +
+            '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>' +
+            '</div>' +
+            '<div class="modal-body p-3">' +
+            '<input type="hidden" id="cdm_teacher_id">' +
+            '<div class="mb-2">' +
+            '<label class="form-label small fw-bold">اسم الخصم:</label>' +
+            '<input type="text" class="form-control form-control-sm" id="cdm_name" placeholder="مثال: خصم رمضان" required>' +
+            '</div>' +
+            '<div class="mb-2">' +
+            '<label class="form-label small fw-bold">نوع القيمة:</label>' +
+            '<div class="d-flex gap-2">' +
+            '<div class="form-check"><input class="form-check-input" type="radio" name="cdm_val_type" id="cdm_pct" value="percentage" checked><label class="form-check-label small" for="cdm_pct">نسبة %</label></div>' +
+            '<div class="form-check"><input class="form-check-input" type="radio" name="cdm_val_type" id="cdm_fixed" value="fixed"><label class="form-check-label small" for="cdm_fixed">مبلغ ثابت</label></div>' +
+            '</div></div>' +
+            '<div class="mb-2">' +
+            '<label class="form-label small fw-bold">القيمة:</label>' +
+            '<input type="number" class="form-control form-control-sm" id="cdm_value" placeholder="مثال: 25" min="1" required>' +
+            '</div>' +
+            '</div>' +
+            '<div class="modal-footer border-0 py-2">' +
+            '<button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">إلغاء</button>' +
+            '<button type="button" class="btn btn-warning btn-sm" onclick="saveCustomDiscountType()"><i class="fas fa-plus me-1"></i>إضافة</button>' +
+            '</div></div></div></div>';
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modal = document.getElementById('customDiscountModal');
+    }
+    document.getElementById('cdm_teacher_id').value = teacherId;
+    document.getElementById('cdm_name').value = '';
+    document.getElementById('cdm_value').value = '';
+    document.getElementById('cdm_pct').checked = true;
+    var bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+function saveCustomDiscountType() {
+    var teacherId = document.getElementById('cdm_teacher_id').value;
+    var name = document.getElementById('cdm_name').value.trim();
+    var value = parseInt(document.getElementById('cdm_value').value) || 0;
+    var valType = document.querySelector('input[name="cdm_val_type"]:checked')?.value || 'percentage';
+
+    if (!name || value <= 0) {
+        showAlert('يرجى إدخال اسم وقيمة الخصم', 'warning');
+        return;
+    }
+
+    if (!customDiscountTypes[teacherId]) customDiscountTypes[teacherId] = [];
+    var id = 'custom_' + Date.now();
+    var isPercentage = valType === 'percentage';
+    customDiscountTypes[teacherId].push({
+        id: id,
+        name: name,
+        value: isPercentage ? value : value * 1000, // المبلغ الثابت يحفظ بالقيمة الكاملة
+        displayValue: value,
+        isPercentage: isPercentage
+    });
+
+    // إضافة radio button جديد
+    var container = document.getElementById('custom_discount_radios_' + teacherId);
+    if (container) {
+        var radioId = 'disc_' + id + '_' + teacherId;
+        var fullTypeValue = id; // custom_timestamp
+        var div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML = '<input class="form-check-input" type="radio" name="discount_type_' + teacherId + '" id="' + radioId + '" value="' + fullTypeValue + '" onchange="onDiscountTypeChange(' + teacherId + ')">' +
+            '<label class="form-check-label small" for="' + radioId + '"><i class="fas fa-tag text-orange me-1"></i>' + escapeHtmlSimple(name) + ' <span class=\'text-muted\'>(\u0666' + value + (isPercentage ? '%' : ' K') + ')</span></label>';
+        container.appendChild(div);
+    }
+
+    // إضافة قسم مخصص للقيمة
+    var customSection = document.getElementById('disc_custom_section_' + teacherId);
+    if (!customSection) {
+        var freeSection = document.getElementById('disc_free_section_' + teacherId);
+        var newSection = document.createElement('div');
+        newSection.id = 'disc_custom_section_' + teacherId;
+        newSection.className = 'd-none mb-2';
+        newSection.innerHTML = '<div class="alert alert-warning py-1 px-2 mb-0 small" id="disc_custom_info_' + teacherId + '"></div>' +
+            '<input type="hidden" name="discount_custom_value_' + teacherId + '" id="disc_custom_val_' + teacherId + '">';
+        freeSection.parentNode.insertBefore(newSection, freeSection.nextSibling);
+    }
+
+    // إغلاق المودال واختيار النوع الجديد
+    var modal = bootstrap.Modal.getInstance(document.getElementById('customDiscountModal'));
+    if (modal) modal.hide();
+
+    // اختيار النوع المخصص تلقائياً
+    var newRadio = document.getElementById('disc_' + id + '_' + teacherId);
+    if (newRadio) {
+        newRadio.checked = true;
+        onDiscountTypeChange(teacherId);
+    }
+}
+
+function escapeHtmlSimple(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 // تنسيق العملة
 function formatCurrency(amount) {
@@ -554,6 +772,27 @@ document.getElementById('studentForm')?.addEventListener('submit', function(e) {
             // إذا لم يتم اختيار نوع خصم، تعيين "بدون" كافتراضي
             const noneRadio = document.getElementById('disc_none_' + teacherId);
             if (noneRadio) noneRadio.checked = true;
+        }
+
+        // معالجة أنواع الخصم المختلفة - تعيين القيم الصحيحة
+        var type = selectedType ? selectedType.value : 'none';
+        // الخصم الثابت: نقل القيمة من حقل المبلغ الثابت إلى حقل discount_value
+        if (type === 'fixed') {
+            var fixedVal = document.getElementById('disc_fixed_val_' + teacherId);
+            var pctVal = document.querySelector('input[name="discount_value_' + teacherId + '"]');
+            if (fixedVal && pctVal) {
+                pctVal.value = (parseInt(fixedVal.value) || 0) * 1000;
+            }
+        }
+        // الخصم المخصص: نقل القيمة
+        if (type && type.startsWith('custom_')) {
+            var customData = getCustomDiscountData(teacherId, type);
+            var pctVal = document.querySelector('input[name="discount_value_' + teacherId + '"]');
+            if (customData && pctVal) {
+                pctVal.value = customData.value;
+                // تغيير قيمة radio إلى 'custom' حتى يفهمها السيرفر
+                selectedType.value = 'custom';
+            }
         }
     });
 });

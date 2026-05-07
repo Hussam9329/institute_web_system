@@ -75,6 +75,13 @@ class FinanceService:
         elif discount_type == 'percentage' and discount_value > 0:
             discount_amount = round(total_fee * discount_value / 100)
             return max(0, total_fee - discount_amount)
+        elif discount_type == 'fixed' and discount_value > 0:
+            # خصم مبلغ ثابت (القيمة محفوظة بالألف - نفس وحدة الأقساط)
+            return max(0, total_fee - discount_value)
+        elif discount_type == 'custom' and discount_value > 0:
+            # خصم مخصص (نسبة مئوية محفوظة كعدد - نفس منطق percentage)
+            discount_amount = round(total_fee * discount_value / 100)
+            return max(0, total_fee - discount_amount)
         return total_fee
     
     def calculate_student_teacher_balance(self, student_id: int, teacher_id: int) -> Dict[str, Any]:
