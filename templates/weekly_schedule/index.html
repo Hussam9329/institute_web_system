@@ -732,9 +732,10 @@
                         <select id="lecTeacher" class="form-select form-select-sm" required></select>
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">المادة</label>
-                        <input type="text" id="lecSubject" class="form-control form-control-sm"
-                            placeholder="تُملأ تلقائياً من مادة المدرس">
+                        <label class="ws-fld-label">المادة <small class="text-muted">(تلقائي من الاستاد)</small></label>
+                        <input type="text" id="lecSubject" class="form-control form-control-sm" readonly
+                            style="background:#f8fafc; cursor:not-allowed;"
+                            placeholder="اختر الاستاد أولاً">
                     </div>
                     <div class="col-12">
                         <label class="ws-fld-label">اليوم</label>
@@ -1411,11 +1412,13 @@ function populateModalSelects() {
     allTeachers.forEach(t => { thtml += '<option value="' + t.id + '" data-subject="' + escapeHtml(t.subject) + '">' + escapeHtml(t.name) + ' (' + escapeHtml(t.subject) + ')</option>'; });
     teacherSelect.innerHTML = thtml;
 
-    // Auto-fill subject from teacher
+    // Auto-fill subject from teacher (read-only field)
     document.getElementById('lecTeacher').addEventListener('change', function() {
         const opt = this.options[this.selectedIndex];
         if (opt && opt.dataset.subject) {
             document.getElementById('lecSubject').value = opt.dataset.subject;
+        } else {
+            document.getElementById('lecSubject').value = '';
         }
     });
 
@@ -1498,8 +1501,8 @@ async function saveEvent() {
         notes: document.getElementById('lecNotes').value.trim()
     };
     const errorEl = document.getElementById('lecError');
-    if (!data.room_id || !data.teacher_id || !data.day_of_week || !data.start_time || !data.end_time) {
-        errorEl.textContent = 'يرجى ملء جميع الحقول المطلوبة';
+    if (!data.room_id || !data.teacher_id || !data.subject || !data.day_of_week || !data.start_time || !data.end_time) {
+        errorEl.textContent = 'يرجى اختيار القاعة والاستاد (المادة تُملأ تلقائياً) واليوم والوقت';
         errorEl.style.display = 'block'; return;
     }
     try {
