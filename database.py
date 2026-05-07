@@ -124,9 +124,41 @@ def init_db():
                 payment_date TEXT NOT NULL,
                 installment_type VARCHAR(30) NOT NULL DEFAULT 'القسط الأول',
                 notes TEXT DEFAULT '',
+                created_at TEXT NOT NULL,
                 FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                 FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE
             )
+        ''')
+        
+        # قيد CHECK على installment_type - يسمح فقط بالقيم الثلاث المحددة
+        cursor.execute('''
+            CREATE OR REPLACE FUNCTION check_installment_type()
+            RETURNS BOOLEAN AS $$
+            BEGIN
+                RETURN EXISTS (
+                    SELECT 1 WHERE $1 IN ('القسط الأول', 'القسط الثاني', 'دفع كامل')
+                );
+            END;
+            $$ LANGUAGE plpgsql
+        ''')
+        
+        # قيد فريد لمنع تكرار نوع القسط لكل طالب-مدرس
+        # أولاً: تنظيف البيانات المكررة إذا وُجدت (الاحتفاظ بأحدث قسط لكل نوع)
+        try:
+            cursor.execute('''
+                DELETE FROM installments a USING installments b
+                WHERE a.id < b.id
+                AND a.student_id = b.student_id
+                AND a.teacher_id = b.teacher_id
+                AND a.installment_type = b.installment_type
+            ''')
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        cursor.execute('''
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_installment_unique_type
+            ON installments (student_id, teacher_id, installment_type)
         ''')
         
         cursor.execute('''
@@ -422,6 +454,15 @@ def init_db():
             "ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS institute_waiver INTEGER DEFAULT 0",
             # عمود نوع الحدث للجدول الأسبوعي (محاضرة / امتحان)
             "ALTER TABLE weekly_schedule ADD COLUMN IF NOT EXISTS event_type VARCHAR(20) DEFAULT 'محاضرة'",
+            # ===== أعمدة التدقيق والحماية للأقساط =====
+            # عمود created_at للأقساط - لتتبع تاريخ الإنشاء
+            "ALTER TABLE installments ADD COLUMN IF NOT EXISTS created_at TEXT DEFAULT ''",
+            # قيد CHECK على installment_type
+            "ALTER TABLE installments DROP CONSTRAINT IF EXISTS installments_installment_type_check",
+            "ALTER TABLE installments ADD CONSTRAINT installments_installment_type_check CHECK(installment_type IN ('القسط الأول', 'القسط الثاني', 'دفع كامل'))",
+            # قيد CHECK على institute_waiver - فقط 0 أو 1
+            "ALTER TABLE student_teacher DROP CONSTRAINT IF EXISTS student_teacher_institute_waiver_check",
+            "ALTER TABLE student_teacher ADD CONSTRAINT student_teacher_institute_waiver_check CHECK(institute_waiver IN (0, 1))",
         ]
         
         # ===== جداول الجدول الأسبوعي =====

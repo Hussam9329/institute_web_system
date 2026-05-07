@@ -621,17 +621,22 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                     "message": "لا يمكن تسجيل القسط الثاني! يوجد دفع كامل مسجل مسبقاً"
                 }
         
-        # 3. "القسط الأول" → مسموح فقط إذا لم يُسجل "دفع كامل" أو "القسط الثاني"
+        # 3. "القسط الأول" → مسموح فقط إذا لم يُسجل مسبقاً ولم يُسجل "دفع كامل" أو "القسط الثاني"
         if new_type == 'القسط الأول':
+            if has_existing_first:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل القسط الأول مرتين! القسط الأول مسجل مسبقاً"
+                }
             if has_existing_full:
                 return {
                     "success": False,
                     "message": "لا يمكن تسجيل القسط الأول! يوجد دفع كامل مسجل مسبقاً"
                 }
-            if has_existing_second and not has_existing_first:
+            if has_existing_second:
                 return {
                     "success": False,
-                    "message": "لا يمكن تسجيل القسط الأول! يوجد قسط ثاني مسجل بدون قسط أول"
+                    "message": "لا يمكن تسجيل القسط الأول! يوجد قسط ثاني مسجل مسبقاً"
                 }
 
         # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
@@ -655,9 +660,11 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                 "message": f"المبلغ يتجاوز القسط الكلي! القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)}، المتبقي {format_currency(remaining)}"
             }
 
+        from config import get_current_date as _get_current_date
+        
         insert_query = '''
-            INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, notes)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, notes, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         '''
         
@@ -667,7 +674,8 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             installment.amount,
             installment.payment_date,
             installment.installment_type,
-            installment.notes
+            installment.notes,
+            _get_current_date()
         ))
         installment_id = result[0]['id'] if result else None
         
@@ -745,11 +753,11 @@ async def api_get_allowed_installment_types(request: Request, student_id: int, t
         
         allowed = []
         
-        # القسط الأول: مسموح إذا لم يوجد دفع كامل
-        if not has_full:
+        # القسط الأول: مسموح فقط إذا لم يُسجل أي قسط من قبل
+        if not has_first and not has_second and not has_full:
             allowed.append('القسط الأول')
         
-        # القسط الثاني: مسموح فقط إذا وُجد القسط الأول ولم يُسجل القسط الثاني بعد
+        # القسط الثاني: مسموح فقط إذا وُجد القسط الأول ولم يُسجل القسط الثاني أو دفع كامل بعد
         if has_first and not has_second and not has_full:
             allowed.append('القسط الثاني')
         
