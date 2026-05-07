@@ -194,7 +194,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-transition">
+<div class="page-transition" data-user-role="{{ request.state.user.role_name if request.state.user else '' }}">
     <div class="container-fluid">
 
         <!-- ===== رأس الصفحة ===== -->

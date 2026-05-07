@@ -139,7 +139,7 @@ async function unlinkTeacher(studentId, teacherId, teacherName) {
 /**
  * فتح نموذج إضافة قسط
  */
-function openInstallmentModal(studentId, teacherId, teacherName, studyType, totalFee) {
+async function openInstallmentModal(studentId, teacherId, teacherName, studyType, totalFee) {
     const elStudentId = document.getElementById('inst_student_id');
     const elTeacherId = document.getElementById('inst_teacher_id');
     const elTeacherName = document.getElementById('inst_teacher_name');
@@ -159,7 +159,6 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
     if (elTeacherName) elTeacherName.textContent = teacherName;
     if (elAmount) elAmount.value = '';
     if (elDate) elDate.value = getTodayDate();
-    if (elType) elType.selectedIndex = 0;
     if (elNotes) elNotes.value = '';
 
     // تعيين نوع الدراسة تلقائياً (الحقل معطل ولا يمكن تغييره)
@@ -170,7 +169,6 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
                 break;
             }
         }
-        // تأكيد التعطيل - لا يمكن للمستخدم تغيير نوع الدراسة
         elStudyType.disabled = true;
     }
 
@@ -190,6 +188,51 @@ function openInstallmentModal(studentId, teacherId, teacherName, studyType, tota
     
     // تحميل الخصم الحالي من الخادم
     loadCurrentDiscount(studentId, teacherId);
+
+    // ===== تحميل أنواع الأقساط المسموحة من الخادم =====
+    if (elType) {
+        // تعطيل القائمة أثناء التحميل
+        elType.disabled = true;
+        elType.innerHTML = '<option value="">جاري التحميل...</option>';
+        
+        try {
+            const result = await apiRequest(`/api/installments/allowed-types/${studentId}/${teacherId}`);
+            if (result.success && result.allowed_types) {
+                elType.innerHTML = '';
+                const allowedTypes = result.allowed_types;
+                
+                if (allowedTypes.length === 0) {
+                    // لا توجد أنواع مسموحة - الطالب أكمل جميع أقساطه
+                    elType.innerHTML = '<option value="">تم تسجيل جميع الأقساط</option>';
+                    elType.disabled = true;
+                } else {
+                    allowedTypes.forEach(function(typeName) {
+                        const option = document.createElement('option');
+                        option.value = typeName;
+                        option.textContent = typeName;
+                        elType.appendChild(option);
+                    });
+                    elType.disabled = false;
+                }
+            } else {
+                // في حالة الخطأ، نسمح بالقسط الأول فقط كافتراضي
+                elType.innerHTML = '';
+                const option = document.createElement('option');
+                option.value = 'القسط الأول';
+                option.textContent = 'القسط الأول';
+                elType.appendChild(option);
+                elType.disabled = false;
+            }
+        } catch (error) {
+            // في حالة الخطأ، نسمح بالقسط الأول فقط كافتراضي
+            elType.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = 'القسط الأول';
+            option.textContent = 'القسط الأول';
+            elType.appendChild(option);
+            elType.disabled = false;
+        }
+    }
 
     if (installmentModal) {
         installmentModal.show();
@@ -401,6 +444,15 @@ async function viewInstallments(studentId, teacherId) {
     try {
         const result = await apiRequest(`/api/installments/student/${studentId}/teacher/${teacherId}`);
         
+        // فحص هل المستخدم مدير عام لإظهار زر الحذف
+        let isAdmin = false;
+        try {
+            const userInfo = document.querySelector('[data-user-role]');
+            if (userInfo && userInfo.dataset.userRole === 'مدير عام') {
+                isAdmin = true;
+            }
+        } catch(e) {}
+        
         let html = `
             <h6 class="mb-3">إجمالي المدفوع: <strong class="text-success">${formatCurrency(result.total_paid)}</strong></h6>
             <div class="table-responsive">
@@ -432,9 +484,9 @@ async function viewInstallments(studentId, teacherId) {
                                 <a href="/reports/receipt/${inst.id}" target="_blank" class="btn btn-outline-success btn-xs" title="طباعة الوصل">
                                     <i class="fas fa-print"></i>
                                 </a>
-                                <button class="btn btn-outline-danger btn-xs" onclick="deleteInstallment(${inst.id})" title="حذف">
+                                ${isAdmin ? `<button class="btn btn-outline-danger btn-xs" onclick="deleteInstallment(${inst.id})" title="حذف (مدير فقط)">
                                     <i class="fas fa-trash"></i>
-                                </button>
+                                </button>` : ''}
                             </div>
                         </td>
                     </tr>

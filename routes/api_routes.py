@@ -576,6 +576,64 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                 "message": "الطالب مجاني - لا يمكن تسجيل أقساط له"
             }
 
+        # ===== التحقق من نوع القسط والتعارض مع الأقساط الموجودة =====
+        existing_types_query = db.execute_query(
+            "SELECT DISTINCT installment_type FROM installments WHERE student_id = %s AND teacher_id = %s",
+            (installment.student_id, installment.teacher_id)
+        )
+        existing_types = set()
+        if existing_types_query:
+            for row in existing_types_query:
+                itype = row.get('installment_type', '')
+                if itype:
+                    existing_types.add(itype)
+        
+        has_existing_first = 'القسط الأول' in existing_types
+        has_existing_second = 'القسط الثاني' in existing_types
+        has_existing_full = 'دفع كامل' in existing_types
+        has_any_existing = len(existing_types) > 0
+        
+        new_type = installment.installment_type
+        
+        # القواعد:
+        # 1. "دفع كامل" → مسموح فقط إذا لم توجد أي أقساط سابقة
+        if new_type == 'دفع كامل' and has_any_existing:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل دفع كامل! يوجد أقساط مسجلة مسبقاً لهذا الطالب عند هذا المدرس"
+            }
+        
+        # 2. "القسط الثاني" → مسموح فقط إذا وُجد "القسط الأول" ولم يُسجل "القسط الثاني" سابقاً
+        if new_type == 'القسط الثاني':
+            if not has_existing_first:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل القسط الثاني! يجب تسجيل القسط الأول أولاً"
+                }
+            if has_existing_second:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل القسط الثاني مرتين! القسط الثاني مسجل مسبقاً"
+                }
+            if has_existing_full:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل القسط الثاني! يوجد دفع كامل مسجل مسبقاً"
+                }
+        
+        # 3. "القسط الأول" → مسموح فقط إذا لم يُسجل "دفع كامل" أو "القسط الثاني"
+        if new_type == 'القسط الأول':
+            if has_existing_full:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل القسط الأول! يوجد دفع كامل مسجل مسبقاً"
+                }
+            if has_existing_second and not has_existing_first:
+                return {
+                    "success": False,
+                    "message": "لا يمكن تسجيل القسط الأول! يوجد قسط ثاني مسجل بدون قسط أول"
+                }
+
         # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
         current_balance = finance_service.calculate_student_teacher_balance(
             installment.student_id, installment.teacher_id
@@ -647,11 +705,65 @@ async def api_get_installments(request: Request, student_id: int, teacher_id: in
     results = db.execute_query(query, (student_id, teacher_id))
     total_paid = finance_service.get_student_paid_total(student_id, teacher_id)
     
+    # حساب أنواع الأقساط الموجودة للاستخدام في الواجهة
+    existing_types = set()
+    if results:
+        for r in results:
+            itype = r.get('installment_type', '')
+            if itype:
+                existing_types.add(itype)
+    
     return {
         "success": True,
         "data": [dict(r) for r in results] if results else [],
-        "total_paid": total_paid
+        "total_paid": total_paid,
+        "existing_types": list(existing_types)
     }
+
+
+@router.get("/installments/allowed-types/{student_id}/{teacher_id}")
+async def api_get_allowed_installment_types(request: Request, student_id: int, teacher_id: int):
+    """الحصول على أنواع الأقساط المسموحة لطالب عند مدرس معين"""
+    check_permission(request, 'view_payments_list')
+    db = Database()
+    
+    try:
+        existing_types_query = db.execute_query(
+            "SELECT DISTINCT installment_type FROM installments WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
+        )
+        existing_types = set()
+        if existing_types_query:
+            for row in existing_types_query:
+                itype = row.get('installment_type', '')
+                if itype:
+                    existing_types.add(itype)
+        
+        has_first = 'القسط الأول' in existing_types
+        has_second = 'القسط الثاني' in existing_types
+        has_full = 'دفع كامل' in existing_types
+        
+        allowed = []
+        
+        # القسط الأول: مسموح إذا لم يوجد دفع كامل
+        if not has_full:
+            allowed.append('القسط الأول')
+        
+        # القسط الثاني: مسموح فقط إذا وُجد القسط الأول ولم يُسجل القسط الثاني بعد
+        if has_first and not has_second and not has_full:
+            allowed.append('القسط الثاني')
+        
+        # دفع كامل: مسموح فقط إذا لم توجد أي أقساط
+        if not existing_types:
+            allowed.append('دفع كامل')
+        
+        return {
+            "success": True,
+            "allowed_types": allowed,
+            "existing_types": list(existing_types)
+        }
+    except Exception as e:
+        return {"success": False, "message": f"خطأ: {str(e)}"}
 
 
 @router.get("/installments/recent")
@@ -673,7 +785,7 @@ async def api_get_recent_installments(request: Request, limit: int = 20):
 
 @router.delete("/installments/{installment_id}")
 async def api_delete_installment(request: Request, installment_id: int):
-    """حذف قسط - مع إرجاع تفاصيل القسط المحذوف"""
+    """حذف قسط - مسموح فقط لمدير النظام، مع إرجاع تفاصيل القسط المحذوف"""
     check_permission(request, 'delete_payments')
     db = Database()
     
@@ -682,6 +794,18 @@ async def api_delete_installment(request: Request, installment_id: int):
         
         if not installment:
             return {"success": False, "message": "القسط غير موجود"}
+        
+        # ===== التحقق: فقط مدير النظام يمكنه حذف الأقساط المدفوعة =====
+        user = getattr(request.state, 'user', None)
+        if user:
+            user_role = user.get('role_name', '')
+            if user_role != 'مدير عام':
+                return {
+                    "success": False,
+                    "message": "لا يمكن حذف القسط! فقط مدير النظام يمكنه حذف الأقساط المدفوعة"
+                }
+        else:
+            return {"success": False, "message": "يجب تسجيل الدخول"}
         
         inst_data = dict(installment[0])
         db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))

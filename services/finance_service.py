@@ -303,13 +303,11 @@ class FinanceService:
         total_deduction = 0
         
         for student_id, payments in student_payments.items():
-            # عدّ الأقساط حسب النوع (بدلاً من boolean) للتعامل مع الأقساط المتكررة
-            first_count = 0
-            second_count = 0
-            full_count = 0
-            first_amount = 0
-            second_amount = 0
-            full_amount = 0
+            # تحديد أنواع الأقساط الموجودة (presence flags) بدلاً من العد
+            # القسط الأول → نصف النسبة | القسط الثاني → النصف الثاني | دفع كامل → النسبة كاملة
+            has_first = False
+            has_second = False
+            has_full = False
             study_type = 'حضوري'
             discount_type = 'none'
             institute_waiver = 0
@@ -319,16 +317,12 @@ class FinanceService:
                 discount_type = p.get('discount_type', 'none') or 'none'
                 institute_waiver = p.get('institute_waiver', 0) or 0
                 itype = p['installment_type']
-                amt = p['amount'] or 0
                 if itype == 'القسط الأول':
-                    first_count += 1
-                    first_amount += amt
+                    has_first = True
                 elif itype == 'القسط الثاني':
-                    second_count += 1
-                    second_amount += amt
+                    has_second = True
                 elif itype == 'دفع كامل':
-                    full_count += 1
-                    full_amount += amt
+                    has_full = True
             
             # Determine deduction type and value based on study type
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
@@ -348,42 +342,31 @@ class FinanceService:
                     else:
                         total_deduction += round((student_total_fee * ded_value) / 100)
                 continue
-            
-            # إذا كان القسط الأول يساوي القسط الكلي → اعتبره دفع كامل
-            student_total_fee = self._get_fee_for_study_type(t, study_type)
-            if first_count > 0 and full_count == 0 and second_count == 0 and first_amount >= student_total_fee and student_total_fee > 0:
-                full_count = first_count
-                full_amount = first_amount
-                first_count = 0
-                first_amount = 0
-
-            # تأكد أن المبلغ المدفوع لا يتجاوز القسط الكلي (حماية من الأخطاء)
-            student_paid_total = first_amount + second_amount + full_amount
-            if student_paid_total > student_total_fee and student_total_fee > 0:
-                # إذا تجاوز المدفوع القسط، اعتبره دفع كامل فقط
-                full_count = 1
-                full_amount = min(full_amount, student_total_fee)
-                first_count = 0
-                first_amount = 0
-                second_count = 0
-                second_amount = 0
 
             if ded_value <= 0:
                 continue
             
             # حساب القسط الفعلي (بعد الخصم) للاستقطاع
             # نسبة المعهد تُحسب من القسط الأصلي (قبل الخصم) لأن الخصم خصم للطالب وليس للمعهد
-            fee_for_deduction = student_total_fee  # القسط الأصلي بدون خصم
+            fee_for_deduction = self._get_fee_for_study_type(t, study_type)  # القسط الأصلي بدون خصم
             
             if ded_type == 'manual':
                 # مبلغ يدوي: يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً
-                total_installments = first_count + second_count + (full_count * 2)
-                if total_installments > 0:
-                    # تقريب عادل: يضمن أن مجموع النصفين = القيمة الكاملة
-                    half_ded = ded_value // 2
-                    other_half_ded = ded_value - half_ded
-                    # القسط الأول يأخذ النصف الأول، القسط الثاني يأخذ النصف الثاني
-                    total_deduction += (full_count * ded_value) + (first_count * half_ded) + (second_count * other_half_ded)
+                half_ded = ded_value // 2
+                other_half_ded = ded_value - half_ded
+                
+                if has_full:
+                    # دفع كامل → الخصم الكامل
+                    total_deduction += ded_value
+                elif has_first and has_second:
+                    # قسط أول + قسط ثاني → الخصم الكامل (نصف + نصف = كامل)
+                    total_deduction += ded_value
+                elif has_first:
+                    # قسط أول فقط → نصف الخصم
+                    total_deduction += half_ded
+                elif has_second:
+                    # قسط ثاني فقط → النصف الثاني
+                    total_deduction += other_half_ded
             else:
                 # نسبة مئوية: تُحسب من القسط الكلي (ليس من مبلغ الدفعة)
                 full_deduction = round((fee_for_deduction * ded_value) / 100)
@@ -391,8 +374,18 @@ class FinanceService:
                 half_deduction = full_deduction // 2
                 other_half_deduction = full_deduction - half_deduction
                 
-                # القسط الأول يأخذ النصف الأول، القسط الثاني يأخذ النصف الثاني
-                total_deduction += (full_count * full_deduction) + (first_count * half_deduction) + (second_count * other_half_deduction)
+                if has_full:
+                    # دفع كامل → الخصم الكامل
+                    total_deduction += full_deduction
+                elif has_first and has_second:
+                    # قسط أول + قسط ثاني → الخصم الكامل (نصف + نصف = كامل)
+                    total_deduction += full_deduction
+                elif has_first:
+                    # قسط أول فقط → نصف الخصم
+                    total_deduction += half_deduction
+                elif has_second:
+                    # قسط ثاني فقط → النصف الثاني
+                    total_deduction += other_half_deduction
         
         # معالجة الطلاب "مجاني بدون تنازل المعهد" الذين ليس لديهم أقساط مدفوعة
         # هؤلاء الطلاب مجانيين لكن المدرس لا يزال ملزماً بدفع نسبته للمعهد
