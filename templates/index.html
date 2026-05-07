@@ -64,9 +64,46 @@
 .dash-stats .stat-card {
     border: none;
     padding: 0;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    color: white;
+}
+.dash-stats .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    text-decoration: none;
+    color: white;
 }
 .dash-stats .stat-card .card-body {
     padding: 1.25rem;
+}
+.dash-stats .stat-card .stat-detail i,
+.dash-stats .stat-card .stat-detail span {
+    color: inherit;
+}
+.dash-stats .stat-card .stat-go {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 22px;
+    height: 22px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+    transition: all 0.2s;
+}
+.dash-stats .stat-card:hover .stat-go {
+    background: rgba(255,255,255,0.35);
+    color: white;
+    transform: translateX(-2px);
+}
+.dash-stats .stat-card {
+    position: relative;
 }
 .dash-stats .stat-icon {
     width: 50px;
@@ -114,6 +151,7 @@
 .dash-net-card:hover {
     box-shadow: var(--shadow-md);
     border-color: var(--success);
+    transform: translateY(-2px);
 }
 .dash-net-icon {
     width: 48px;
@@ -499,7 +537,8 @@
     <div class="row g-2 g-md-3 mb-3 dash-stats">
         <!-- الطلاب -->
         <div class="col-6 col-md-4 dash-animate dash-delay-1">
-            <div class="card stat-card bg-gradient-blue text-white">
+            <a href="/students" class="card stat-card bg-gradient-blue text-white">
+                <span class="stat-go"><i class="fas fa-arrow-left"></i></span>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
@@ -520,12 +559,13 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- المدرسين -->
         <div class="col-6 col-md-4 dash-animate dash-delay-2">
-            <div class="card stat-card bg-gradient-emerald text-white">
+            <a href="/teachers" class="card stat-card bg-gradient-emerald text-white">
+                <span class="stat-go"><i class="fas fa-arrow-left"></i></span>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
@@ -541,12 +581,13 @@
                         <span>{{ stats.total_subjects }} مواد دراسية</span>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- المدفوعات -->
         <div class="col-6 col-md-4 dash-animate dash-delay-3">
-            <div class="card stat-card bg-gradient-purple text-white">
+            <a href="/payments" class="card stat-card bg-gradient-purple text-white">
+                <span class="stat-go"><i class="fas fa-arrow-left"></i></span>
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="stat-icon">
@@ -562,14 +603,14 @@
                         <span>{{ format_currency(stats.total_amount_paid) }}</span>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
     </div>
 
     <!-- ===== صافي الإيرادات ===== -->
     {% set net_revenue = stats.total_institute_deduction or 0 %}
-    <div class="dash-net-card dash-animate dash-delay-5">
+    <a href="/accounting" class="dash-net-card dash-animate dash-delay-5" style="text-decoration:none;color:inherit;">
         <div class="dash-net-icon" style="background: var(--success-glow); color: var(--success);">
             <i class="fas fa-chart-line"></i>
         </div>
@@ -590,7 +631,7 @@
                 <div class="lbl">السحوبات</div>
             </div>
         </div>
-    </div>
+    </a>
 
 
 
