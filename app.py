@@ -77,7 +77,7 @@ app = FastAPI(
 )
 
 # ===== تحسين السرعة: ضغط GZip =====
-app.add_middleware(GZipMiddleware, minimum_size=500)
+app.add_middleware(GZipMiddleware, minimum_size=300)
 
 # ===== وسيط المصادقة (تم تعطيل تسجيل الدخول) =====
 app.middleware("http")(auth_middleware)

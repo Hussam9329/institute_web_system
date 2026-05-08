@@ -20,7 +20,7 @@ const PrintUtils = {
             }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-                font-family: 'Cairo', 'Segoe UI', system-ui, -apple-system, sans-serif;
+                font-family: 'NotoArabic', 'Segoe UI', system-ui, -apple-system, sans-serif;
                 background: var(--light); color: var(--dark); line-height: 1.7; direction: rtl;
             }
             .report-toolbar {
@@ -36,14 +36,14 @@ const PrintUtils = {
             .btn-print {
                 background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
                 color: var(--white); border: none; padding: 8px 20px; border-radius: 10px;
-                font-family: 'Cairo', sans-serif; font-weight: 600; font-size: 14px;
+                font-family: 'NotoArabic', sans-serif; font-weight: 600; font-size: 14px;
                 cursor: pointer; display: flex; align-items: center; gap: 8px;
             }
             .btn-print:hover { box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); }
             .btn-close-report {
                 background: rgba(255, 255, 255, 0.1); color: var(--white);
                 border: 1px solid rgba(255, 255, 255, 0.15); padding: 8px 16px;
-                border-radius: 10px; font-family: 'Cairo', sans-serif; font-weight: 500;
+                border-radius: 10px; font-family: 'NotoArabic', sans-serif; font-weight: 500;
                 font-size: 14px; cursor: pointer; text-decoration: none;
                 display: flex; align-items: center; gap: 6px;
             }
@@ -161,8 +161,7 @@ const PrintUtils = {
                 .kpi-grid { grid-template-columns: repeat(2, 1fr); }
             }
         </style>
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">`;
+        <link href="/static/vendor/fontawesome-all.min.css" rel="stylesheet">`;
     },
 
     /**

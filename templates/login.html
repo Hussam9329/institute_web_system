@@ -4,11 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - {{ app_title }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="/static/vendor/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="/static/vendor/fontawesome-all.min.css" rel="stylesheet">
     <style>
-        * { font-family: 'Cairo', sans-serif; }
+        @font-face {
+            font-family: 'NotoArabic';
+            src: url('/static/fonts/NotoSansArabic-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'NotoArabic';
+            src: url('/static/fonts/NotoSansArabic-Bold.ttf') format('truetype');
+            font-weight: 700;
+            font-display: swap;
+        }
+        * { font-family: 'NotoArabic', 'Segoe UI', Tahoma, Arial, sans-serif; }
         body {
             background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
             min-height: 100vh;

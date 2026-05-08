@@ -1,40 +1,99 @@
 # ============================================
 # database.py - إدارة قاعدة البيانات PostgreSQL (Neon)
-# محسّن لبيئة Vercel Serverless
+# محسّن لبيئة Vercel Serverless مع Connection Pooling
 # ============================================
 
 import psycopg2
 import psycopg2.extras
+import psycopg2.pool
 import os
+import threading
 from config import DATABASE_URL, IS_VERCEL
 
 # ===== علامة تهيئة قاعدة البيانات =====
 _db_initialized = False
 
-class Database:
-    """إدارة اتصال وقاعدة البيانات PostgreSQL - محسّن لـ Serverless"""
+# ===== Connection Pool =====
+_connection_pool = None
+_pool_lock = threading.Lock()
+
+def _get_pool():
+    """الحصول على أو إنشاء Connection Pool"""
+    global _connection_pool
+    if _connection_pool is not None:
+        return _connection_pool
     
-    def get_connection(self):
-        """الحصول على اتصال بقاعدة البيانات PostgreSQL"""
+    with _pool_lock:
+        if _connection_pool is not None:
+            return _connection_pool
+        
         if not DATABASE_URL:
             raise ConnectionError(
                 "رابط قاعدة البيانات (DATABASE_URL) غير معين! "
                 "يرجى تعيينه كمتغير بيئة."
             )
         try:
-            # إعدادات محسّنة لـ Neon Serverless
-            connection = psycopg2.connect(
-                DATABASE_URL,
-                connect_timeout=10,
+            _connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=5,
+                dsn=DATABASE_URL,
+                connect_timeout=8,
                 keepalives=1,
                 keepalives_idle=30,
                 keepalives_interval=10,
                 keepalives_count=5
             )
-            connection.autocommit = False
-            return connection
-        except psycopg2.OperationalError as e:
-            raise ConnectionError(f"فشل الاتصال بقاعدة البيانات: {e}")
+            return _connection_pool
+        except Exception as e:
+            # إذا فشل Pool، نعيد تعيينه للمحاولة لاحقاً
+            _connection_pool = None
+            raise ConnectionError(f"فشل إنشاء Connection Pool: {e}")
+
+class Database:
+    """إدارة اتصال وقاعدة البيانات PostgreSQL - محسّن مع Connection Pooling"""
+    
+    def get_connection(self):
+        """الحصول على اتصال من Connection Pool"""
+        if not DATABASE_URL:
+            raise ConnectionError(
+                "رابط قاعدة البيانات (DATABASE_URL) غير معين! "
+                "يرجى تعيينه كمتغير بيئة."
+            )
+        try:
+            pool = _get_pool()
+            conn = pool.getconn()
+            conn.autocommit = False
+            return conn
+        except Exception as e:
+            # إذا فشل Pool، نحاول اتصال مباشر
+            try:
+                connection = psycopg2.connect(
+                    DATABASE_URL,
+                    connect_timeout=8,
+                    keepalives=1,
+                    keepalives_idle=30,
+                    keepalives_interval=10,
+                    keepalives_count=5
+                )
+                connection.autocommit = False
+                return connection
+            except psycopg2.OperationalError as oe:
+                raise ConnectionError(f"فشل الاتصال بقاعدة البيانات: {oe}")
+    
+    def return_connection(self, conn):
+        """إرجاع الاتصال إلى Pool"""
+        global _connection_pool
+        if _connection_pool is not None:
+            try:
+                _connection_pool.putconn(conn)
+                return
+            except Exception:
+                pass
+        # Fallback: إغلاق الاتصال مباشر
+        try:
+            conn.close()
+        except Exception:
+            pass
     
     def execute_query(self, query: str, params: tuple = ()) -> list:
         """تنفيذ استعلام وإرجاع النتائج"""
@@ -67,10 +126,7 @@ class Database:
                 cursor.close()
             except:
                 pass
-            try:
-                conn.close()
-            except:
-                pass
+            self.return_connection(conn)
 
 
 def init_db():
