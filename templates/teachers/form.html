@@ -45,6 +45,13 @@
                     </div>
                     {% endif %}
 
+                    {% if error == 'db_error' %}
+                    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-database me-2"></i>
+                        <div><strong>خطأ في قاعدة البيانات!</strong> لم يتم حفظ المدرس. {{ request.args.get('detail', 'خطأ غير معروف') }}</div>
+                    </div>
+                    {% endif %}
+
                     {% if has_linked_students %}
                     <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-lock me-2"></i>
@@ -58,9 +65,9 @@
                     {% endif %}
 
                     {% if mode == 'add' %}
-                    <form method="POST" action="/teachers/add" id="teacherForm">
+                    <form method="POST" action="/teachers/add" id="teacherForm" novalidate>
                     {% else %}
-                    <form method="POST" action="/teachers/{{ teacher.id }}/edit" id="teacherForm">
+                    <form method="POST" action="/teachers/{{ teacher.id }}/edit" id="teacherForm" novalidate>
                     {% endif %}
 
                         <!-- اسم المدرس -->
@@ -145,8 +152,8 @@
                                     <div class="row g-2">
                                         <div class="col-6" id="ded_pct_in_person">
                                             <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
-                                            <input type="number" class="form-control form-control-sm" name="institute_pct_in_person" min="1" max="99" step="1" placeholder="15"
-                                                   value="{{ teacher.institute_pct_in_person if teacher else 0 }}"
+                                            <input type="number" class="form-control form-control-sm" name="institute_pct_in_person" min="0" max="99" step="1" placeholder="15"
+                                                   value="{{ teacher.institute_pct_in_person if teacher and teacher.institute_pct_in_person else '' }}"
                                                    oninput="validatePct(this)"
                                                    {% if has_linked_students and teacher and ('حضوري' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
                                             <div class="invalid-feedback" id="pct_err_in_person"></div>
@@ -194,8 +201,8 @@
                                     <div class="row g-2">
                                         <div class="col-6" id="ded_pct_electronic">
                                             <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
-                                            <input type="number" class="form-control form-control-sm" name="institute_pct_electronic" min="1" max="99" step="1" placeholder="10"
-                                                   value="{{ teacher.institute_pct_electronic if teacher else 0 }}"
+                                            <input type="number" class="form-control form-control-sm" name="institute_pct_electronic" min="0" max="99" step="1" placeholder="10"
+                                                   value="{{ teacher.institute_pct_electronic if teacher and teacher.institute_pct_electronic else '' }}"
                                                    oninput="validatePct(this)"
                                                    {% if has_linked_students and teacher and ('الكتروني' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
                                             <div class="invalid-feedback" id="pct_err_electronic"></div>
@@ -243,8 +250,8 @@
                                     <div class="row g-2">
                                         <div class="col-6" id="ded_pct_blended">
                                             <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
-                                            <input type="number" class="form-control form-control-sm" name="institute_pct_blended" min="1" max="99" step="1" placeholder="12"
-                                                   value="{{ teacher.institute_pct_blended if teacher else 0 }}"
+                                            <input type="number" class="form-control form-control-sm" name="institute_pct_blended" min="0" max="99" step="1" placeholder="12"
+                                                   value="{{ teacher.institute_pct_blended if teacher and teacher.institute_pct_blended else '' }}"
                                                    oninput="validatePct(this)"
                                                    {% if has_linked_students and teacher and ('مدمج' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
                                             <div class="invalid-feedback" id="pct_err_blended"></div>
@@ -421,6 +428,20 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('يرجى اختيار أو إدخال اسم المادة', 'warning');
             return;
         }
+
+        // ===== تعطيل حقول الأنواع غير المختارة حتى لا تتداخل مع الإرسال =====
+        const allTypes = ['in_person', 'electronic', 'blended'];
+        allTypes.forEach(type => {
+            const checkbox = document.getElementById('type_' + type);
+            if (checkbox && !checkbox.checked) {
+                const fieldsDiv = document.getElementById('type_fields_' + type);
+                if (fieldsDiv) {
+                    fieldsDiv.querySelectorAll('input, select').forEach(el => {
+                        el.setAttribute('disabled', 'disabled');
+                    });
+                }
+            }
+        });
 
         // إذا كان هناك طلاب مرتبطون - نعيد تفعيل الحقول المعطلة قبل الإرسال
         // الخلفية ستحافظ على القيم القديمة وتقبل فقط الأنواع الجديدة المضافة

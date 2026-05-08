@@ -54,13 +54,14 @@ async def subjects_list(request: Request):
     check_permission(request, 'view_subjects')
     db = Database()
     try:
-        subjects = db.execute_query("SELECT * FROM subjects ORDER BY name")
-        subjects_with_count = []
-        for s in subjects:
-            sd = dict(s)
-            teachers = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = %s", (sd['name'],))
-            sd['teachers_count'] = teachers[0]['cnt'] if teachers else 0
-            subjects_with_count.append(sd)
+        # استعلام واحد يجلب المواد مع عدد المدرسين لكل مادة (بدلاً من N+1 استعلام)
+        subjects = db.execute_query('''
+            SELECT s.*, COALESCE(t.cnt, 0) as teachers_count
+            FROM subjects s
+            LEFT JOIN (SELECT subject, COUNT(*) as cnt FROM teachers GROUP BY subject) t ON s.name = t.subject
+            ORDER BY s.name
+        ''')
+        subjects_with_count = [dict(s) for s in subjects] if subjects else []
     except:
         subjects_with_count = []
 
@@ -640,7 +641,7 @@ def _build_institute_rate_display(teacher: dict) -> str:
 
 @router.get("/teachers", response_class=HTMLResponse)
 async def teachers_list(request: Request, subject: str = "", search: str = ""):
-    """صفحة قائمة المدرسين"""
+    """صفحة قائمة المدرسين - محسّنة باستعلامات مجمعة"""
     check_permission(request, 'view_teachers_list')
     db = Database()
 
@@ -655,49 +656,120 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
             query = "SELECT * FROM teachers ORDER BY subject, name"
             teachers = db.execute_query(query)
 
-        # عدد الطلاب لكل مدرس + البيانات المالية الكاملة
-        for t in teachers:
-            cnt = db.execute_query("SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s", (t['id'],))
-            t['students_count'] = cnt[0]['cnt'] if cnt else 0
+        if not teachers:
+            teachers = []
+        else:
+            # ===== تحسين الأداء: استعلامات مجمعة بدلاً من N+1 =====
+            teacher_ids = [t['id'] for t in teachers]
+            
+            # عدد الطلاب لكل مدرس - استعلام واحد
             try:
-                balance_info = finance_service.calculate_teacher_balance(t['id'])
-                t['total_received'] = balance_info.get('total_received', 0)
-                t['total_remaining'] = balance_info.get('remaining_balance', 0)
-                t['institute_deduction'] = balance_info.get('institute_deduction', 0)
-                t['teacher_due'] = balance_info.get('teacher_due', 0)
-                t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
-                t['remaining_balance'] = balance_info.get('remaining_balance', 0)
-                # حساب المطلوب الكلي - مجموع أقساط المدرس مع تطبيق الخصم (مستمر فقط)
-                try:
-                    students_list = finance_service.get_teacher_students_list(t['id'])
-                    t['total_fees'] = sum(s['total_fee'] for s in students_list if s.get('status') == 'مستمر')
-                except:
-                    t['total_fees'] = 0
-                # حساب عرض نسبة المعهد حسب أنواع التدريس
-                t['institute_rate_display'] = _build_institute_rate_display(t)
+                students_count_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    cnt_results = db.execute_query(
+                        f"SELECT teacher_id, COUNT(*) as cnt FROM student_teacher WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if cnt_results:
+                        students_count_map = {r['teacher_id']: r['cnt'] for r in cnt_results}
+                for t in teachers:
+                    t['students_count'] = students_count_map.get(t['id'], 0)
             except:
-                t['total_received'] = 0
-                t['total_remaining'] = 0
-                t['institute_deduction'] = 0
-                t['teacher_due'] = 0
-                t['withdrawn_total'] = 0
-                t['remaining_balance'] = 0
-                t['total_fees'] = 0
-                t['institute_rate_display'] = ''
+                for t in teachers:
+                    t['students_count'] = 0
+
+            # البيانات المالية - استعلامات مجمعة
+            try:
+                # إجمالي المدفوعات لكل مدرس
+                received_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    recv_results = db.execute_query(
+                        f"SELECT teacher_id, COALESCE(SUM(amount), 0) as total FROM installments WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if recv_results:
+                        received_map = {r['teacher_id']: r['total'] for r in recv_results}
+
+                # إجمالي السحوبات لكل مدرس
+                withdrawn_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    with_results = db.execute_query(
+                        f"SELECT teacher_id, COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if with_results:
+                        withdrawn_map = {r['teacher_id']: r['total'] for r in with_results}
+
+                # عدد الطلاب الدافعين لكل مدرس
+                paying_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    paying_results = db.execute_query(
+                        f"SELECT teacher_id, COUNT(DISTINCT student_id) as cnt FROM installments WHERE teacher_id IN ({placeholders}) AND amount > 0 GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if paying_results:
+                        paying_map = {r['teacher_id']: r['cnt'] for r in paying_results}
+
+                for t in teachers:
+                    total_received = received_map.get(t['id'], 0)
+                    withdrawn_total = withdrawn_map.get(t['id'], 0)
+                    
+                    # حساب خصم المعهد (مبسط - بدون تفاصيل كل طالب)
+                    try:
+                        institute_deduction = finance_service.calculate_institute_deduction(t['id'], total_received)
+                    except:
+                        institute_deduction = 0
+                    
+                    teacher_due = total_received - institute_deduction
+                    remaining_balance = max(0, teacher_due - withdrawn_total)
+                    
+                    t['total_received'] = total_received
+                    t['institute_deduction'] = institute_deduction
+                    t['teacher_due'] = teacher_due
+                    t['withdrawn_total'] = withdrawn_total
+                    t['remaining_balance'] = remaining_balance
+                    t['total_remaining'] = remaining_balance
+                    
+                    # حساب المطلوب الكلي
+                    try:
+                        students_list = finance_service.get_teacher_students_list(t['id'])
+                        t['total_fees'] = sum(s['total_fee'] for s in students_list if s.get('status') == 'مستمر')
+                    except:
+                        t['total_fees'] = 0
+                    
+                    # حساب عرض نسبة المعهد
+                    t['institute_rate_display'] = _build_institute_rate_display(t)
+            except:
+                for t in teachers:
+                    t['total_received'] = 0
+                    t['total_remaining'] = 0
+                    t['institute_deduction'] = 0
+                    t['teacher_due'] = 0
+                    t['withdrawn_total'] = 0
+                    t['remaining_balance'] = 0
+                    t['total_fees'] = 0
+                    t['institute_rate_display'] = ''
     except:
         teachers = []
 
-    # الحصول على المواد من جدول المواد + المواد الموجودة في المدرسين
-    subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
-    subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
+    # الحصول على المواد - استعلام واحد
+    try:
+        subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
+        subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
 
-    all_subjects = set()
-    if subjects_from_table:
-        all_subjects.update(s['name'] for s in subjects_from_table)
-    if subjects_from_teachers:
-        all_subjects.update(s['name'] for s in subjects_from_teachers)
+        all_subjects = set()
+        if subjects_from_table:
+            all_subjects.update(s['name'] for s in subjects_from_table)
+        if subjects_from_teachers:
+            all_subjects.update(s['name'] for s in subjects_from_teachers)
 
-    subjects_list = sorted(all_subjects)
+        subjects_list = sorted(all_subjects)
+    except:
+        subjects_list = []
 
     return templates.TemplateResponse("teachers/list.html", {
         "request": request,
@@ -766,27 +838,35 @@ async def teacher_add(
 
     db = Database()
 
-    existing_subject = db.execute_query("SELECT id FROM subjects WHERE name = %s", (subject,))
-    if not existing_subject:
-        try:
-            db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date()))
-        except:
-            pass
+    try:
+        existing_subject = db.execute_query("SELECT id FROM subjects WHERE name = %s", (subject,))
+        if not existing_subject:
+            try:
+                db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date()))
+            except Exception as sub_e:
+                print(f"تحذير: فشل إضافة المادة: {sub_e}")
 
-    insert_query = '''
-        INSERT INTO teachers (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, created_at,
+        insert_query = '''
+            INSERT INTO teachers (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, created_at,
+                teaching_types, fee_in_person, fee_electronic, fee_blended,
+                institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+                inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+                inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        '''
+
+        db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(),
             teaching_types, fee_in_person, fee_electronic, fee_blended,
             institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
             inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
-            inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    '''
+            inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended))
 
-    db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(),
-        teaching_types, fee_in_person, fee_electronic, fee_blended,
-        institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
-        inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
-        inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended))
+        print(f"تم إضافة المدرس بنجاح: {name} - {subject}")
+    except Exception as e:
+        print(f"خطأ في إضافة المدرس: {e}")
+        import urllib.parse
+        error_msg = urllib.parse.quote(str(e))
+        return RedirectResponse(url=f"/teachers/add?error=db_error&detail={error_msg}", status_code=303)
 
     return RedirectResponse(url="/teachers?msg=added", status_code=303)
 

@@ -467,30 +467,7 @@
             <i class="fas fa-graduation-cap"></i>
         </div>
         <h5>نظام إدارة المعهد</h5>
-        <div class="sidebar-countdown">
-            <div class="countdown-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>هذه الفترة المتبقية لانتهاء اشتراكك بالبرنامج</span>
-            </div>
-            <div class="countdown-boxes">
-                <div class="countdown-unit">
-                    <div class="cd-value" id="cd-days">---</div>
-                    <div class="cd-label">يوم</div>
-                </div>
-                <div class="countdown-unit">
-                    <div class="cd-value" id="cd-hours">--</div>
-                    <div class="cd-label">ساعة</div>
-                </div>
-                <div class="countdown-unit">
-                    <div class="cd-value" id="cd-minutes">--</div>
-                    <div class="cd-label">دقيقة</div>
-                </div>
-                <div class="countdown-unit">
-                    <div class="cd-value" id="cd-seconds">--</div>
-                    <div class="cd-label">ثانية</div>
-                </div>
-            </div>
-        </div>
+        <small>نظام محاسبي متكامل</small>
     </div>
 
     <!-- Navigation -->
@@ -653,53 +630,6 @@
     }
     updateSidebarDateTime();
     setInterval(updateSidebarDateTime, 1000);
-    </script>
-    
-    <!-- عد تنازلي الاشتراك - 356 يوم من الآن -->
-    <script>
-    (function() {
-        // تاريخ انتهاء الاشتراك: 356 يوم من الآن
-        var subscriptionEnd = new Date();
-        subscriptionEnd.setDate(subscriptionEnd.getDate() + 356);
-        // حفظ تاريخ الانتهاء في localStorage لضمان الاتساق عبر الصفحات
-        var storedEnd = localStorage.getItem('subscription_end_date');
-        if (!storedEnd) {
-            localStorage.setItem('subscription_end_date', subscriptionEnd.toISOString());
-        } else {
-            subscriptionEnd = new Date(storedEnd);
-        }
-
-        function updateCountdown() {
-            var now = new Date();
-            var diff = subscriptionEnd - now;
-
-            if (diff <= 0) {
-                document.getElementById('cd-days').textContent = '0';
-                document.getElementById('cd-hours').textContent = '00';
-                document.getElementById('cd-minutes').textContent = '00';
-                document.getElementById('cd-seconds').textContent = '00';
-                return;
-            }
-
-            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            var seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            var daysEl = document.getElementById('cd-days');
-            var hoursEl = document.getElementById('cd-hours');
-            var minutesEl = document.getElementById('cd-minutes');
-            var secondsEl = document.getElementById('cd-seconds');
-
-            if (daysEl) daysEl.textContent = days;
-            if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
-            if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
-            if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
-        }
-
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
-    })();
     </script>
     
     <!-- البحث الشامل -->
