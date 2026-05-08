@@ -83,21 +83,18 @@
                             <div class="input-group">
                                 <select class="form-select form-select-lg" id="subject_select" onchange="handleSubjectChange()"
                                         {% if has_linked_students %}disabled{% endif %}>
-                                    <option value="">-- اختر مادة أو أدخل جديدة --</option>
+                                    <option value="">-- اختر مادة --</option>
                                     {% for subject in subjects %}
                                     <option value="{{ subject.name }}" {% if teacher and teacher.subject == subject.name %}selected{% endif %}>
                                         {{ subject.name }}
                                     </option>
                                     {% endfor %}
-                                    <option value="__new__">+ إضافة مادة جديدة...</option>
                                 </select>
                             </div>
-                            <input type="text" class="form-control form-control-lg mt-2 d-none" id="subject_new"
-                                   placeholder="أدخل اسم المادة الجديدة" maxlength="100">
                             <input type="hidden" name="subject" id="subject_hidden" value="{{ teacher.subject if teacher else '' }}">
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
-                                {% if has_linked_students %}<strong class="text-danger">لا يمكن تغيير المادة بعد ارتباط الطلاب.</strong>{% else %}اختر من المواد المسجلة أو أضف مادة جديدة. <a href="/subjects" class="text-success">إدارة المواد</a>{% endif %}
+                                {% if has_linked_students %}<strong class="text-danger">لا يمكن تغيير المادة بعد ارتباط الطلاب.</strong>{% else %}اختر من المواد المسجلة. <a href="/subjects" class="text-success">إدارة المواد</a>{% endif %}
                             </div>
                         </div>
 
@@ -306,20 +303,8 @@
 <script>
 function handleSubjectChange() {
     const select = document.getElementById('subject_select');
-    const newInput = document.getElementById('subject_new');
     const hidden = document.getElementById('subject_hidden');
-    
-    if (select.value === '__new__') {
-        newInput.classList.remove('d-none');
-        newInput.focus();
-        hidden.value = '';
-        newInput.oninput = function() {
-            hidden.value = this.value;
-        };
-    } else {
-        newInput.classList.add('d-none');
-        hidden.value = select.value;
-    }
+    hidden.value = select.value;
 }
 
 function toggleTypeFields(type, checked) {
@@ -407,7 +392,7 @@ function validateAllPctFields() {
 document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('subject_select');
     const hidden = document.getElementById('subject_hidden');
-    if (select.value && select.value !== '__new__') {
+    if (select.value) {
         hidden.value = select.value;
     }
 
