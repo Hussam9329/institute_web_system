@@ -45,6 +45,13 @@
                     </div>
                     {% endif %}
 
+                    {% if error == 'invalid_manual_ded' %}
+                    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <div><strong>مبلغ خصم غير صالح!</strong> مبلغ خصم المعهد لنوع التدريس "{{ request.args.get('label', '') }}" هو {{ request.args.get('val', '') }} وهو أعلى من القسط الكلي ({{ request.args.get('fee', '') }}). لا يمكن أن يتجاوز مبلغ خصم المعهد القسط الكلي.</div>
+                    </div>
+                    {% endif %}
+
                     {% if error == 'db_error' %}
                     <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-database me-2"></i>
@@ -162,7 +169,9 @@
                                             <label class="form-label small">المبلغ (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="inst_ded_manual_in_person" min="0" placeholder="50"
                                                    value="{% if teacher and teacher.inst_ded_manual_in_person %}{{ (teacher.inst_ded_manual_in_person // 1000) }}{% endif %}"
+                                                   oninput="validateManualDed(this)"
                                                    {% if has_linked_students and teacher and ('حضوري' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <div class="invalid-feedback" id="manual_err_in_person"></div>
                                             <div class="form-text" style="font-size:0.7rem">يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً</div>
                                         </div>
                                     </div>
@@ -211,7 +220,9 @@
                                             <label class="form-label small">المبلغ (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="inst_ded_manual_electronic" min="0" placeholder="30"
                                                    value="{% if teacher and teacher.inst_ded_manual_electronic %}{{ (teacher.inst_ded_manual_electronic // 1000) }}{% endif %}"
+                                                   oninput="validateManualDed(this)"
                                                    {% if has_linked_students and teacher and ('الكتروني' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <div class="invalid-feedback" id="manual_err_electronic"></div>
                                             <div class="form-text" style="font-size:0.7rem">يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً</div>
                                         </div>
                                     </div>
@@ -260,7 +271,9 @@
                                             <label class="form-label small">المبلغ (بالألف):</label>
                                             <input type="number" class="form-control form-control-sm" name="inst_ded_manual_blended" min="0" placeholder="40"
                                                    value="{% if teacher and teacher.inst_ded_manual_blended %}{{ (teacher.inst_ded_manual_blended // 1000) }}{% endif %}"
+                                                   oninput="validateManualDed(this)"
                                                    {% if has_linked_students and teacher and ('مدمج' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <div class="invalid-feedback" id="manual_err_blended"></div>
                                             <div class="form-text" style="font-size:0.7rem">يقسم بالتساوي على القسطين، دفع كامل يأخذه كاملاً</div>
                                         </div>
                                     </div>
@@ -369,6 +382,43 @@ function validatePct(input) {
     return true;
 }
 
+// ===== التحقق من أن المبلغ اليدوي للخصم لا يتجاوز القسط =====
+function validateManualDed(input) {
+    const rawVal = input.value.trim();
+    const val = parseInt(rawVal);
+    const typeKey = input.name.replace('inst_ded_manual_', '');
+    const errEl = document.getElementById('manual_err_' + typeKey);
+    const feeInput = document.querySelector('input[name="fee_' + typeKey + '"]');
+    const feeVal = feeInput ? parseInt(feeInput.value) || 0 : 0;
+    
+    // إزالة تنبيهات سابقة
+    input.classList.remove('is-invalid', 'is-valid');
+    if (errEl) errEl.textContent = '';
+    
+    if (rawVal === '' || isNaN(val)) {
+        return true; // الحقل فارغ - لا تحقق
+    }
+    
+    if (val < 0) {
+        input.classList.add('is-invalid');
+        if (errEl) errEl.textContent = 'المبلغ لا يمكن أن يكون سالباً';
+        showAlert('مبلغ خصم المعهد لا يمكن أن يكون سالباً!', 'error');
+        return false;
+    }
+    
+    if (feeVal > 0 && val > feeVal) {
+        input.classList.add('is-invalid');
+        if (errEl) errEl.textContent = 'مبلغ خصم المعهد لا يمكن أن يتجاوز القسط (' + feeVal + ')';
+        showAlert('مبلغ خصم المعهد (' + val + ') لا يمكن أن يتجاوز القسط الكلي (' + feeVal + ')!', 'error');
+        return false;
+    }
+    
+    if (val > 0) {
+        input.classList.add('is-valid');
+    }
+    return true;
+}
+
 // التحقق من جميع حقول النسبة
 function validateAllPctFields() {
     let allValid = true;
@@ -388,6 +438,33 @@ function validateAllPctFields() {
         // تحقق فقط إذا كان نوع التدريس مختار وخصم المعهد نسبة مئوية
         if (input && checkbox && checkbox.checked && dedTypeSelect && dedTypeSelect.value === 'percentage') {
             if (!validatePct(input)) {
+                allValid = false;
+            }
+        }
+    });
+    
+    return allValid;
+}
+
+// التحقق من جميع حقول المبلغ اليدوي
+function validateAllManualDedFields() {
+    let allValid = true;
+    const manualFields = ['inst_ded_manual_in_person', 'inst_ded_manual_electronic', 'inst_ded_manual_blended'];
+    const typeCheckboxes = {
+        'inst_ded_manual_in_person': 'type_in_person',
+        'inst_ded_manual_electronic': 'type_electronic',
+        'inst_ded_manual_blended': 'type_blended'
+    };
+    
+    manualFields.forEach(fieldName => {
+        const input = document.querySelector('input[name="' + fieldName + '"]');
+        const checkbox = document.getElementById(typeCheckboxes[fieldName]);
+        const typeKey = fieldName.replace('inst_ded_manual_', '');
+        const dedTypeSelect = document.querySelector('select[name="inst_ded_type_' + typeKey + '"]');
+        
+        // تحقق فقط إذا كان نوع التدريس مختار وخصم المعهد مبلغ يدوي
+        if (input && checkbox && checkbox.checked && dedTypeSelect && dedTypeSelect.value === 'manual') {
+            if (!validateManualDed(input)) {
                 allValid = false;
             }
         }
@@ -419,6 +496,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!validateAllPctFields()) {
             e.preventDefault();
             showAlert('يرجى تصحيح حقول النسبة المئوية قبل الحفظ!', 'error');
+            return;
+        }
+
+        // التحقق من حقول المبلغ اليدوي للخصم
+        if (!validateAllManualDedFields()) {
+            e.preventDefault();
+            showAlert('يرجى تصحيح حقول مبلغ خصم المعهد قبل الحفظ! لا يمكن أن يتجاوز المبلغ القسط الكلي.', 'error');
             return;
         }
 

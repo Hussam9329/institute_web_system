@@ -855,6 +855,15 @@ async def teacher_add(
         if pct_val != 0 and (pct_val < 1 or pct_val > 99):
             return RedirectResponse(url=f"/teachers/add?error=invalid_pct&label={pct_label}&val={pct_val}", status_code=303)
 
+    # التحقق من أن المبلغ اليدوي للخصم لا يتجاوز القسط الكلي
+    for manual_val, fee_val, ded_type, type_label in [
+        (inst_ded_manual_in_person, fee_in_person, inst_ded_type_in_person, 'حضوري'),
+        (inst_ded_manual_electronic, fee_electronic, inst_ded_type_electronic, 'الكتروني'),
+        (inst_ded_manual_blended, fee_blended, inst_ded_type_blended, 'مدمج')
+    ]:
+        if ded_type == 'manual' and manual_val > 0 and fee_val > 0 and manual_val > fee_val:
+            return RedirectResponse(url=f"/teachers/add?error=invalid_manual_ded&label={type_label}&val={manual_val}&fee={fee_val}", status_code=303)
+
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url="/teachers/add?error=no_teaching_type", status_code=303)
 
@@ -967,6 +976,15 @@ async def teacher_update(
     ]:
         if pct_val != 0 and (pct_val < 1 or pct_val > 99):
             return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=invalid_pct&label={pct_label}&val={pct_val}", status_code=303)
+
+    # التحقق من أن المبلغ اليدوي للخصم لا يتجاوز القسط الكلي
+    for manual_val, fee_val, ded_type, type_label in [
+        (inst_ded_manual_in_person, fee_in_person, inst_ded_type_in_person, 'حضوري'),
+        (inst_ded_manual_electronic, fee_electronic, inst_ded_type_electronic, 'الكتروني'),
+        (inst_ded_manual_blended, fee_blended, inst_ded_type_blended, 'مدمج')
+    ]:
+        if ded_type == 'manual' and manual_val > 0 and fee_val > 0 and manual_val > fee_val:
+            return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=invalid_manual_ded&label={type_label}&val={manual_val}&fee={fee_val}", status_code=303)
     
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=no_teaching_type", status_code=303)
