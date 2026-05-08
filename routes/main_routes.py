@@ -160,17 +160,21 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         students = []
         print(f"Error loading students: {e}")
 
-    # حساب المتبقي لكل طالب باستخدام finance_service (يدعم الخصم)
-    for s in students:
+    # حساب المتبقي لكل طالب - استعلام مجمّع بدلاً من N+1
+    if students:
         try:
-            summary = finance_service.get_student_all_teachers_summary(s['id'])
-            s['total_fees'] = sum(ts['total_fee'] for ts in summary) if summary else 0
-            s['total_paid'] = sum(ts['paid_total'] for ts in summary) if summary else 0
-            s['total_remaining'] = sum(ts['remaining_balance'] for ts in summary) if summary else 0
+            student_ids = [s['id'] for s in students]
+            balances_map = finance_service.get_students_balances_batch(student_ids)
+            for s in students:
+                bal = balances_map.get(s['id'], {'total_fees': 0, 'total_paid': 0, 'total_remaining': 0})
+                s['total_fees'] = bal['total_fees']
+                s['total_paid'] = bal['total_paid']
+                s['total_remaining'] = bal['total_remaining']
         except Exception:
-            s['total_fees'] = 0
-            s['total_paid'] = 0
-            s['total_remaining'] = 0
+            for s in students:
+                s['total_fees'] = 0
+                s['total_paid'] = 0
+                s['total_remaining'] = 0
 
     # فلتر حالة الدفع (بعد حساب المبالغ)
     if payment_filter:
@@ -714,15 +718,16 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                     if paying_results:
                         paying_map = {r['teacher_id']: r['cnt'] for r in paying_results}
 
+                # حساب خصم المعهد لكل المدرسين دفعة واحدة
+                deduction_map = finance_service.calculate_institute_deduction_batch(teacher_ids)
+                
+                # حساب المطلوب الكلي لكل المدرسين دفعة واحدة
+                total_fees_map = finance_service.get_teachers_total_fees_batch(teacher_ids)
+                
                 for t in teachers:
                     total_received = received_map.get(t['id'], 0)
                     withdrawn_total = withdrawn_map.get(t['id'], 0)
-                    
-                    # حساب خصم المعهد (مبسط - بدون تفاصيل كل طالب)
-                    try:
-                        institute_deduction = finance_service.calculate_institute_deduction(t['id'], total_received)
-                    except:
-                        institute_deduction = 0
+                    institute_deduction = deduction_map.get(t['id'], 0)
                     
                     teacher_due = total_received - institute_deduction
                     remaining_balance = max(0, teacher_due - withdrawn_total)
@@ -733,13 +738,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                     t['withdrawn_total'] = withdrawn_total
                     t['remaining_balance'] = remaining_balance
                     t['total_remaining'] = remaining_balance
-                    
-                    # حساب المطلوب الكلي
-                    try:
-                        students_list = finance_service.get_teacher_students_list(t['id'])
-                        t['total_fees'] = sum(s['total_fee'] for s in students_list if s.get('status') == 'مستمر')
-                    except:
-                        t['total_fees'] = 0
+                    t['total_fees'] = total_fees_map.get(t['id'], 0)
                     
                     # حساب عرض نسبة المعهد
                     t['institute_rate_display'] = _build_institute_rate_display(t)

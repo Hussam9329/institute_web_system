@@ -1,84 +1,95 @@
 # ============================================
-# database.py - إدارة قاعدة البيانات SQLite (محلية)
-# قاعدة بيانات محلية مضمنة داخل ملفات النظام
+# database.py - إدارة قاعدة البيانات PostgreSQL (سحابية)
+# قاعدة بيانات سحابية سريعة مع تجمع اتصالات
 # ============================================
 
-import sqlite3
 import os
 import re
 import threading
-from config import BASE_DIR, IS_VERCEL
+import psycopg2
+import psycopg2.extras
+from psycopg2.pool import ThreadedConnectionPool
 
-# ===== مسار قاعدة البيانات =====
-if IS_VERCEL:
-    DB_DIR = "/tmp"
-else:
-    DB_DIR = BASE_DIR
+# ===== إعدادات قاعدة البيانات =====
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-DB_PATH = os.path.join(DB_DIR, "institute.db")
-
-# ===== علامة تهيئة قاعدة البيانات =====
+# ===== تجمع الاتصالات =====
+_pool = None
+_pool_lock = threading.Lock()
 _db_initialized = False
-_db_lock = threading.Lock()
+_db_init_lock = threading.Lock()
 
 
-def _ensure_db_dir():
-    """التأكد من وجود مجلد قاعدة البيانات"""
-    db_dir = os.path.dirname(DB_PATH)
-    if db_dir and not os.path.exists(db_dir):
-        try:
-            os.makedirs(db_dir, exist_ok=True)
-        except OSError:
-            pass
+def _get_pool():
+    """الحصول على تجمع الاتصالات (Singleton)"""
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                try:
+                    _pool = ThreadedConnectionPool(
+                        minconn=1,
+                        maxconn=10,
+                        dsn=DATABASE_URL,
+                        sslmode='require' if 'sslmode' not in DATABASE_URL else None
+                    )
+                except Exception:
+                    # إذا فشل تجمع الاتصالات، نستخدم اتصال مباشر
+                    _pool = None
+    return _pool
 
 
 class Database:
-    """إدارة اتصال قاعدة البيانات SQLite - محلية"""
+    """إدارة اتصال قاعدة البيانات PostgreSQL - سحابية محسّنة"""
     
     def _get_connection(self):
-        """الحصول على اتصال SQLite"""
-        _ensure_db_dir()
-        conn = sqlite3.connect(DB_PATH, timeout=15)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA foreign_keys=ON")
-        conn.execute("PRAGMA busy_timeout=5000")
+        """الحصول على اتصال PostgreSQL من التجمع أو مباشر"""
+        pool = _get_pool()
+        if pool:
+            try:
+                conn = pool.getconn()
+                conn.autocommit = False
+                return conn
+            except Exception:
+                pass
+        
+        # اتصال مباشر إذا لم يعمل التجمع
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        conn.autocommit = False
         return conn
     
-    def _convert_query(self, query: str, params) -> tuple:
-        """تحويل استعلام PostgreSQL إلى SQLite"""
-        # تحويل %s إلى ?
-        sqlite_query = query.replace('%s', '?')
-        return sqlite_query, params
+    def _return_connection(self, conn):
+        """إرجاع الاتصال إلى التجمع"""
+        pool = _get_pool()
+        if pool:
+            try:
+                pool.putconn(conn)
+                return
+            except Exception:
+                pass
+        # إغلاق مباشر إذا لم يكن هناك تجمع
+        try:
+            conn.close()
+        except:
+            pass
     
     def execute_query(self, query: str, params=None) -> list:
         """تنفيذ استعلام وإرجاع النتائج"""
         if params is None:
             params = ()
         
-        # تحويل الاستعلام
-        sqlite_query, sqlite_params = self._convert_query(query, params)
-        
-        # معالجة RETURNING
-        has_returning = bool(re.search(r'\bRETURNING\b', sqlite_query, re.IGNORECASE))
-        
-        if has_returning:
-            # إزالة RETURNING clause
-            sqlite_query = re.sub(r'\s+RETURNING\s+\w+', '', sqlite_query, flags=re.IGNORECASE)
-        
         conn = self._get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         try:
-            cursor.execute(sqlite_query, sqlite_params)
+            cursor.execute(query, params)
             
-            query_upper = sqlite_query.strip().upper()
-            if query_upper.startswith('SELECT'):
+            query_upper = query.strip().upper()
+            if query_upper.startswith('SELECT') or 'RETURNING' in query_upper:
                 results = [dict(row) for row in cursor.fetchall()]
+                if not query_upper.startswith('SELECT') and 'RETURNING' in query_upper:
+                    conn.commit()
                 return results
-            elif has_returning:
-                conn.commit()
-                return [{'id': cursor.lastrowid}]
             else:
                 conn.commit()
                 return []
@@ -94,21 +105,15 @@ class Database:
                 cursor.close()
             except:
                 pass
-            try:
-                conn.close()
-            except:
-                pass
+            self._return_connection(conn)
     
     def get_connection(self):
         """الحصول على اتصال مباشر - للاستخدام المتقدم"""
         return self._get_connection()
     
     def return_connection(self, conn):
-        """إغلاق الاتصال"""
-        try:
-            conn.close()
-        except:
-            pass
+        """إرجاع الاتصال إلى التجمع"""
+        self._return_connection(conn)
 
 
 def init_db():
@@ -118,7 +123,7 @@ def init_db():
     if _db_initialized:
         return
     
-    with _db_lock:
+    with _db_init_lock:
         if _db_initialized:
             return
         
@@ -130,7 +135,7 @@ def init_db():
             # جدول المواد الدراسية
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS subjects (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL UNIQUE,
                     created_at TEXT NOT NULL
                 )
@@ -138,7 +143,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS students (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL,
                     study_type TEXT NOT NULL DEFAULT 'حضوري',
                     has_badge INTEGER NOT NULL DEFAULT 0,
@@ -151,7 +156,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS teachers (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL,
                     subject TEXT NOT NULL,
                     total_fee INTEGER NOT NULL DEFAULT 0,
@@ -193,7 +198,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS installments (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     student_id INTEGER NOT NULL,
                     teacher_id INTEGER NOT NULL,
                     amount INTEGER NOT NULL,
@@ -209,7 +214,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS teacher_withdrawals (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     teacher_id INTEGER NOT NULL,
                     amount INTEGER NOT NULL,
                     withdrawal_date TEXT NOT NULL,
@@ -221,7 +226,7 @@ def init_db():
             # ===== جداول نظام الصلاحيات =====
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS roles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL UNIQUE,
                     description TEXT DEFAULT '',
                     is_default INTEGER NOT NULL DEFAULT 0,
@@ -231,7 +236,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS permissions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     code TEXT NOT NULL UNIQUE,
                     name TEXT NOT NULL,
                     category TEXT NOT NULL,
@@ -252,7 +257,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     username TEXT NOT NULL UNIQUE,
                     full_name TEXT NOT NULL,
                     password_hash TEXT NOT NULL,
@@ -266,7 +271,7 @@ def init_db():
             # جداول الجدول الأسبوعي
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS rooms (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL UNIQUE,
                     capacity INTEGER DEFAULT 0,
                     notes TEXT DEFAULT '',
@@ -276,7 +281,7 @@ def init_db():
             
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS weekly_schedule (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id SERIAL PRIMARY KEY,
                     room_id INTEGER NOT NULL,
                     teacher_id INTEGER NOT NULL,
                     subject TEXT NOT NULL DEFAULT '',
@@ -312,8 +317,8 @@ def init_db():
                 conn.rollback()
             
             # ===== إدراج البيانات الافتراضية =====
-            existing_perms = cursor.execute("SELECT COUNT(*) as cnt FROM permissions")
-            perm_count = existing_perms.fetchone()
+            existing_perms = cursor.execute("SELECT COUNT(*) FROM permissions")
+            perm_count = cursor.fetchone()
             
             if perm_count and perm_count[0] == 0:
                 # إدراج الصلاحيات الافتراضية
@@ -363,7 +368,7 @@ def init_db():
                 for perm in default_permissions:
                     try:
                         cursor.execute(
-                            'INSERT OR IGNORE INTO permissions (code, name, category, description, level) VALUES (?, ?, ?, ?, ?)',
+                            'INSERT INTO permissions (code, name, category, description, level) VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING',
                             perm
                         )
                     except Exception:
@@ -385,7 +390,7 @@ def init_db():
                 for role_name, role_desc, is_default in default_roles:
                     try:
                         cursor.execute(
-                            'INSERT OR IGNORE INTO roles (name, description, is_default, created_at) VALUES (?, ?, ?, ?)',
+                            'INSERT INTO roles (name, description, is_default, created_at) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING',
                             (role_name, role_desc, is_default, now)
                         )
                     except Exception:
@@ -396,9 +401,10 @@ def init_db():
                 # إعطاء جميع الصلاحيات للمدير العام
                 try:
                     cursor.execute('''
-                        INSERT OR IGNORE INTO role_permissions (role_id, permission_id)
+                        INSERT INTO role_permissions (role_id, permission_id)
                         SELECT r.id, p.id FROM roles r, permissions p
                         WHERE r.name = 'مدير عام'
+                        ON CONFLICT DO NOTHING
                     ''')
                     conn.commit()
                 except Exception:
@@ -414,9 +420,10 @@ def init_db():
 
                 try:
                     cursor.execute('''
-                        INSERT OR IGNORE INTO users (username, full_name, password_hash, role_id, is_active, created_at)
-                        SELECT 'admin', 'المدير العام', ?, r.id, 1, ?
+                        INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
+                        SELECT 'admin', 'المدير العام', %s, r.id, 1, %s
                         FROM roles r WHERE r.name = 'مدير عام'
+                        ON CONFLICT DO NOTHING
                     ''', (admin_pass_hash, now))
                     conn.commit()
                 except Exception:
@@ -435,7 +442,4 @@ def init_db():
                 cursor.close()
             except:
                 pass
-            try:
-                conn.close()
-            except:
-                pass
+            db.return_connection(conn)

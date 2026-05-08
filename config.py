@@ -7,7 +7,7 @@ from datetime import datetime
 
 # ===== إعدادات التطبيق =====
 APP_TITLE = "نظام إدارة المعهد المتكامل"
-APP_VERSION = "2.0.0"
+APP_VERSION = "2.1.0"
 APP_DESCRIPTION = "نظام محاسبي وإداري متكامل للمعاهد التعليمية"
 
 # ===== إعدادات السيرفر =====
@@ -16,8 +16,8 @@ PORT = 8000
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
 # ===== إعدادات قاعدة البيانات =====
-# قاعدة بيانات SQLite محلية - مضمنة داخل ملفات النظام
-DATABASE_URL = ""
+# قاعدة بيانات سحابية PostgreSQL
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 # ===== مفتاح التشفير للجلسات =====
 SECRET_KEY = os.environ.get("SECRET_KEY", "institute-system-change-in-production-2024")
