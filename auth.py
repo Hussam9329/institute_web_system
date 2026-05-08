@@ -147,51 +147,32 @@ def user_has_permission(user: dict, permission_code: str) -> bool:
 
 def check_permission(request: Request, permission_code: str):
     """
-    فحص صلاحية المستخدم - يُستخدم في بداية كل مسار
-    يرفع HTTPException إذا لم يكن المستخدم يملك الصلاحية
+    فحص صلاحية المستخدم - تم تعطيله
+    جميع المستخدمين يملكون جميع الصلاحيات
     """
-    user = getattr(request.state, 'user', None)
-    if not user:
-        raise HTTPException(status_code=401, detail="يجب تسجيل الدخول")
-    if not user_has_permission(user, permission_code):
-        raise HTTPException(status_code=403, detail="ليس لديك صلاحية لهذا الإجراء")
+    pass  # تم تعطيل نظام الصلاحيات
 
 
-# ===== وسيط المصادقة (Middleware) =====
+# ===== وسيط المصادقة (Middleware) - تم تعطيل تسجيل الدخول =====
+
+# المستخدم الافتراضي (بدون تسجيل دخول)
+_DEFAULT_USER = {
+    'id': 1,
+    'username': 'admin',
+    'full_name': 'المدير العام',
+    'role_id': 1,
+    'is_active': 1,
+    'role_name': 'مدير عام',
+}
 
 async def auth_middleware(request: Request, call_next):
     """
-    وسيط المصادقة - يتحقق من تسجيل الدخول قبل كل طلب
+    وسيط المصادقة - تم تعطيل تسجيل الدخول
+    جميع المستخدمين يُعاملون كمدير عام
     """
-    path = request.url.path
-
-    # صفحات لا تحتاج مصادقة
-    public_paths = ['/login', '/api/login', '/api/logout', '/health']
-    if path in public_paths or path.startswith('/static'):
-        return await call_next(request)
-
-    # التحقق من الجلسة
-    user = get_current_user(request)
-    request.state.user = user
-
-    if user:
-        # ترحيل كلمة المرور من SHA-256 إلى bcrypt يتم عند تسجيل الدخول الفعلي فقط
-        # لا نهاش هنا لأننا لا نعرف كلمة المرور الأصلية
-        pass
-
-        # تحميل صلاحيات المستخدم
-        request.state.user_permissions = get_user_permissions(user['id'])
-    else:
-        request.state.user = None
-        request.state.user_permissions = []
-
-        # إعادة توجيه إلى صفحة تسجيل الدخول
-        if path.startswith('/api/'):
-            return JSONResponse(
-                status_code=401,
-                content={"success": False, "message": "يجب تسجيل الدخول"}
-            )
-        return RedirectResponse(url='/login', status_code=303)
+    # تعيين المستخدم الافتراضي مباشرة بدون أي تحقق
+    request.state.user = _DEFAULT_USER
+    request.state.user_permissions = ['all']  # جميع الصلاحيات
 
     response = await call_next(request)
     return response

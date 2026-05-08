@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request as StarletteRequest
+from starlette.middleware.gzip import GZipMiddleware
 
 # ===== توافقية Flask: جعل request.args يعمل في FastAPI =====
 if not hasattr(StarletteRequest, 'args'):
@@ -24,7 +25,7 @@ from config import (
     BASE_DIR
 )
 from database import init_db
-from auth import auth_middleware, login_user, create_session_token, SESSION_COOKIE
+from auth import auth_middleware
 
 # استيراد المسارات
 from routes.main_routes import router as main_router
@@ -73,8 +74,32 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# ===== وسيط المصادقة =====
+# ===== تحسين السرعة: ضغط GZip =====
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# ===== وسيط المصادقة (تم تعطيل تسجيل الدخول) =====
 app.middleware("http")(auth_middleware)
+
+# ===== تحسين السرعة: Cache Headers للملفات الثابتة =====
+@app.middleware("http")
+async def cache_control_middleware(request: Request, call_next):
+    """إضافة headers تخزين مؤقت للملفات الثابتة و API"""
+    response = await call_next(request)
+    path = request.url.path
+
+    # تخزين مؤقت طويل للملفات الثابتة (CSS, JS, صور, خطوط)
+    if path.startswith('/static/'):
+        # التحقق من نوع الملف
+        if any(path.endswith(ext) for ext in ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2', '.ttf', '.eot']):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "public, max-age=86400"
+
+    # تخزين مؤقت قصير لصفحات HTML
+    elif response.headers.get("content-type", "").startswith("text/html"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+
+    return response
 
 # ===== تسجيل المسارات =====
 app.include_router(main_router)
@@ -91,62 +116,12 @@ static_dir = os.path.join(BASE_DIR, "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# ===== مسارات تسجيل الدخول والخروج =====
+# ===== تم إلغاء مسارات تسجيل الدخول والخروج =====
 
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, error: str = ""):
-    """صفحة تسجيل الدخول"""
-    # إذا كان المستخدم مسجل الدخول بالفعل، وجّهه للرئيسية
-    from auth import get_current_user
-    user = get_current_user(request)
-    if user:
-        return RedirectResponse(url='/', status_code=303)
-
-    return templates.TemplateResponse("login.html", {
-        "request": request,
-        "error": error,
-        "app_title": APP_TITLE,
-    })
-
-
-@app.post("/api/login")
-async def api_login(request: Request, username: str = Form(...), password: str = Form("")):
-    """تسجيل الدخول - API"""
-    user = login_user(username, password)
-    if not user:
-        # تحقق هل كان الطلب من نموذج HTML
-        content_type = request.headers.get('content-type', '')
-        if 'application/json' in content_type:
-            return JSONResponse(
-                status_code=401,
-                content={"success": False, "message": "اسم المستخدم أو كلمة المرور غير صحيحة"}
-            )
-        return RedirectResponse(url='/login?error=invalid', status_code=303)
-
-    # إنشاء جلسة
-    token = create_session_token(user['id'])
-    response = RedirectResponse(url='/', status_code=303)
-    
-    # تحديد إذا كنا في بيئة إنتاج (HTTPS)
-    is_secure = request.url.scheme == 'https'
-    
-    response.set_cookie(
-        key=SESSION_COOKIE,
-        value=token,
-        max_age=86400 * 7,  # 7 أيام
-        httponly=True,
-        samesite="lax",
-        secure=is_secure,
-    )
-    return response
-
-
-@app.get("/api/logout")
-async def api_logout(request: Request):
-    """تسجيل الخروج"""
-    response = RedirectResponse(url='/login', status_code=303)
-    response.delete_cookie(SESSION_COOKIE)
-    return response
+@app.get("/login")
+async def login_redirect():
+    """إعادة توجيه من صفحة تسجيل الدخول إلى الرئيسية"""
+    return RedirectResponse(url='/', status_code=303)
 
 
 # ===== الصفحة الرئيسية للـ API =====

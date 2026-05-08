@@ -7,11 +7,28 @@ import psycopg2.extras
 import os
 from config import DATABASE_URL
 
+# ===== Connection Pooling لتحسين السرعة =====
+_connection_pool = None
+
+def _get_pool():
+    """الحصول على تجمع الاتصالات (Connection Pool)"""
+    global _connection_pool
+    if _connection_pool is None and DATABASE_URL:
+        try:
+            from psycopg2 import pool
+            _connection_pool = pool.ThreadedConnectionPool(
+                minconn=1,
+                maxconn=10,
+                dsn=DATABASE_URL,
+                connect_timeout=10
+            )
+        except Exception:
+            # إذا فشل إنشاء pool، نستخدم الاتصال المباشر
+            _connection_pool = None
+    return _connection_pool
+
 class Database:
-    """إدارة اتصال وقاعدة البيانات PostgreSQL"""
-    
-    # لا نستخدم Singleton لأن serverless يحتاج اتصالات جديدة
-    # كل طلب يحصل على كائن Database خاص به
+    """إدارة اتصال وقاعدة البيانات PostgreSQL مع Connection Pooling"""
     
     def get_connection(self):
         """الحصول على اتصال بقاعدة البيانات PostgreSQL"""
@@ -21,12 +38,37 @@ class Database:
                 "يرجى تعيينه كمتغير بيئة. "
                 "مثال: export DATABASE_URL=\"postgresql://user:pass@host/db\""
             )
+        # محاولة استخدام Connection Pool أولاً
+        pool = _get_pool()
+        if pool:
+            try:
+                conn = pool.getconn()
+                conn.autocommit = False
+                return conn
+            except Exception:
+                pass
+        # fallback للاتصال المباشر
         try:
             connection = psycopg2.connect(DATABASE_URL, connect_timeout=10)
             connection.autocommit = False
             return connection
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"فشل الاتصال بقاعدة البيانات: {e}")
+    
+    def _return_connection(self, conn):
+        """إرجاع الاتصال إلى التجمع"""
+        pool = _get_pool()
+        if pool:
+            try:
+                pool.putconn(conn)
+                return
+            except Exception:
+                pass
+        # إذا لا يوجد pool، أغلق الاتصال مباشرة
+        try:
+            conn.close()
+        except Exception:
+            pass
     
     def execute_query(self, query: str, params: tuple = ()) -> list:
         """تنفيذ استعلام وإرجاع النتائج"""
@@ -55,7 +97,7 @@ class Database:
             raise e
         finally:
             cursor.close()
-            conn.close()
+            self._return_connection(conn)
 
 
 def init_db():
