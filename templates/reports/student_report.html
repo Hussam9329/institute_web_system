@@ -14,8 +14,12 @@
 <!-- KPI -->
 <div class="kpi-grid">
     <div class="kpi-card kpi-accent">
+        <div class="kpi-value">{{ total_original_fee }}</div>
+        <div class="kpi-label">إجمالي الأقساط قبل الخصم</div>
+    </div>
+    <div class="kpi-card kpi-accent">
         <div class="kpi-value">{{ total_fee }}</div>
-        <div class="kpi-label">إجمالي الأجور</div>
+        <div class="kpi-label">إجمالي الأقساط بعد الخصم</div>
     </div>
     <div class="kpi-card kpi-success">
         <div class="kpi-value">{{ total_paid }}</div>
@@ -29,6 +33,12 @@
         <div class="kpi-value">{{ payment_pct }}%</div>
         <div class="kpi-label">نسبة الدفع</div>
     </div>
+    {% if total_discount_raw > 0 %}
+    <div class="kpi-card kpi-warning">
+        <div class="kpi-value">-{{ total_discount }}</div>
+        <div class="kpi-label">إجمالي الخصم</div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- معلومات الطالب -->
@@ -47,9 +57,27 @@
             <div class="info-value">{{ student.barcode }}</div>
         </div>
         <div class="info-card">
+            <div class="info-label">الحالة</div>
+            <div class="info-value">
+                {% if student.status == 'مستمر' or not student.status %}
+                مستمر
+                {% elif student.status == 'منسحب' %}
+                منسحب
+                {% else %}
+                {{ student.status }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="info-card">
             <div class="info-label">عدد المدرسين</div>
             <div class="info-value">{{ num_teachers }}</div>
         </div>
+        {% if student.created_at %}
+        <div class="info-card">
+            <div class="info-label">تاريخ التسجيل</div>
+            <div class="info-value">{{ student.created_at }}</div>
+        </div>
+        {% endif %}
         <div class="info-card">
             <div class="info-label">ملاحظات</div>
             <div class="info-value">{{ student.notes or 'لا توجد ملاحظات' }}</div>
@@ -72,7 +100,9 @@
                     <th>المدرس</th>
                     <th>المادة</th>
                     <th style="text-align:center">نوع الدراسة</th>
-                    <th style="text-align:center">الأجر</th>
+                    <th style="text-align:center">الحالة</th>
+                    <th style="text-align:center">القسط قبل الخصم</th>
+                    <th style="text-align:center">القسط بعد الخصم</th>
                     <th style="text-align:center">المدفوع</th>
                     <th style="text-align:center">المتبقي</th>
                     <th style="text-align:center">النسبة</th>
@@ -87,7 +117,27 @@
                     <td style="text-align:center">
                         <span class="badge-continue">{{ ts.get('study_type', 'حضوري') }}</span>
                     </td>
-                    <td style="text-align:center; font-weight:600">{{ format_currency(ts.total_fee) }}</td>
+                    <td style="text-align:center">
+                        <span class="badge-continue">{{ ts.get('status', 'مستمر') }}</span>
+                    </td>
+                    <td style="text-align:center{% if ts.discount_info and ts.discount_info.discount_type not in ['none', ''] %}; text-decoration:line-through; color:var(--muted){% endif %}">{{ format_currency(ts.original_fee) }}</td>
+                    <td style="text-align:center; font-weight:600">
+                        {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
+                            {{ format_currency(ts.total_fee) }}
+                            <br><small style="color:#f0a500">{{ ts.discount_info.discount_value }}% خصم</small>
+                        {% elif ts.discount_info and ts.discount_info.discount_type == 'fixed' %}
+                            {{ format_currency(ts.total_fee) }}
+                            <br><small style="color:#f0a500">خصم ثابت</small>
+                        {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
+                            مجاني
+                            {% if ts.discount_info.institute_waiver %}<br><small style="color:#f0a500">تنازل المعهد</small>{% endif %}
+                        {% elif ts.discount_info and ts.discount_info.discount_type == 'custom' %}
+                            {{ format_currency(ts.total_fee) }}
+                            <br><small style="color:#f0a500">خصم مخصص</small>
+                        {% else %}
+                            {{ format_currency(ts.total_fee) }}
+                        {% endif %}
+                    </td>
                     <td style="text-align:center; font-weight:600; color:var(--success)">{{ format_currency(ts.paid_total) }}</td>
                     <td style="text-align:center; font-weight:600; color:{% if ts.remaining_balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
                         {{ format_currency(ts.remaining_balance) }}
@@ -96,7 +146,8 @@
                 </tr>
                 {% endfor %}
                 <tr class="total-row">
-                    <td colspan="4" style="text-align:center">الإجمالي</td>
+                    <td colspan="5" style="text-align:center">الإجمالي</td>
+                    <td style="text-align:center">{{ format_currency(total_original_fee_raw) }}</td>
                     <td style="text-align:center">{{ format_currency(total_fee_raw) }}</td>
                     <td style="text-align:center; color:var(--success)">{{ format_currency(total_paid_raw) }}</td>
                     <td style="text-align:center; color:{% if remaining_raw > 0 %}var(--danger){% else %}var(--success){% endif %}">{{ format_currency(remaining_raw) }}</td>

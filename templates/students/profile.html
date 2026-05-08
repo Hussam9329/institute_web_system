@@ -237,30 +237,71 @@
             <!-- ===== معلومات الطالب الأساسية ===== -->
             <div class="col-12 col-lg-4">
                 <div class="card mb-4">
+                    <div class="card-header bg-white border-bottom">
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-user me-2 text-primary"></i>معلومات الطالب</h6>
+                    </div>
                     <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="profile-info-list">
-                                    <div class="profile-info-item">
-                                        <small class="text-muted">الاسم</small>
-                                        <span class="fw-semibold">{{ student.name }}</span>
-                                    </div>
-                                    <div class="profile-info-item">
-                                        <small class="text-muted">الباركود</small>
-                                        <span class="fw-semibold">{{ student.barcode }}</span>
-                                    </div>
-                                </div>
+                        <div class="profile-info-list">
+                            <div class="profile-info-item">
+                                <small class="text-muted">الاسم</small>
+                                <span class="fw-semibold">{{ student.name }}</span>
                             </div>
-                            <div class="col-md-6">
-                                <div class="profile-info-list">
-                                    {% if student.notes %}
-                                    <div class="profile-info-item">
-                                        <small class="text-muted">ملاحظات</small>
-                                        <span>{{ student.notes }}</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">الباركود</small>
+                                <span class="fw-semibold">{{ student.barcode }}</span>
                             </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">الحالة</small>
+                                {% if student.status == 'مستمر' or not student.status %}
+                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>مستمر</span>
+                                {% elif student.status == 'منسحب' %}
+                                <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>منسحب</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ student.status }}</span>
+                                {% endif %}
+                            </div>
+                            {% if student.created_at %}
+                            <div class="profile-info-item">
+                                <small class="text-muted">تاريخ التسجيل</small>
+                                <span class="fw-semibold">{{ student.created_at }}</span>
+                            </div>
+                            {% endif %}
+                            {% if student.notes %}
+                            <div class="profile-info-item">
+                                <small class="text-muted">ملاحظات</small>
+                                <span>{{ student.notes }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="profile-info-item">
+                                <small class="text-muted">عدد المدرسين</small>
+                                <span class="fw-semibold">{{ teachers_summary|length if teachers_summary else 0 }}</span>
+                            </div>
+                            {% if teachers_summary %}
+                            <div class="profile-info-item">
+                                <small class="text-muted">إجمالي الأقساط قبل الخصم</small>
+                                <span class="fw-semibold">{{ format_currency(teachers_summary|sum(attribute='original_fee')) }}</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">إجمالي الأقساط بعد الخصم</small>
+                                <span class="fw-semibold text-primary">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">إجمالي المدفوع</small>
+                                <span class="fw-semibold text-success">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">إجمالي المتبقي</small>
+                                {% set total_remaining = teachers_summary|sum(attribute='remaining_balance') %}
+                                <span class="fw-semibold {% if total_remaining > 0 %}text-danger{% else %}text-success{% endif %}">{{ format_currency(total_remaining) }}</span>
+                            </div>
+                            {% set total_discount = teachers_summary|sum(attribute='original_fee') - teachers_summary|sum(attribute='total_fee') %}
+                            {% if total_discount > 0 %}
+                            <div class="profile-info-item">
+                                <small class="text-muted">إجمالي الخصم</small>
+                                <span class="fw-semibold text-warning">-{{ format_currency(total_discount) }}</span>
+                            </div>
+                            {% endif %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -291,7 +332,8 @@
                                         <th>المادة</th>
                                         <th class="text-center d-none d-sm-table-cell">نوع الدراسة</th>
                                         <th class="text-center d-none d-sm-table-cell">الحالة</th>
-                                        <th class="text-center d-none d-md-table-cell">الأجر</th>
+                                        <th class="text-center d-none d-md-table-cell">القسط قبل الخصم</th>
+                                        <th class="text-center">القسط بعد الخصم</th>
                                         <th class="text-center">المدفوع</th>
                                         <th class="text-center d-none d-sm-table-cell">المتبقي</th>
                                         <th class="text-center">الإجراءات</th>
@@ -321,22 +363,30 @@
                                                 {{ ts.status }}
                                             </span>
                                         </td>
-                                        <td class="text-center d-none d-md-table-cell fw-bold">
+                                        <td class="text-center d-none d-md-table-cell">
+                                            {% if ts.discount_info and ts.discount_info.discount_type not in ['none', ''] %}
+                                                <span class="text-decoration-line-through text-muted">{{ format_currency(ts.original_fee) }}</span>
+                                            {% else %}
+                                                <span class="fw-semibold">{{ format_currency(ts.original_fee) }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center fw-bold">
                                             {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
-                                                <span class="text-decoration-line-through text-muted">{{ format_currency(ts.original_fee) }}</span>
-                                                <br>
-                                                <span class="text-warning"><i class="fas fa-percent me-1" style="font-size:0.7em"></i>{{ ts.discount_info.discount_value }}%</span>
-                                                <br>
                                                 <span>{{ format_currency(ts.total_fee) }}</span>
+                                                <br><small class="text-warning"><i class="fas fa-percent me-1" style="font-size:0.65em"></i>{{ ts.discount_info.discount_value }}%</small>
+                                            {% elif ts.discount_info and ts.discount_info.discount_type == 'fixed' %}
+                                                <span>{{ format_currency(ts.total_fee) }}</span>
+                                                <br><small class="text-warning"><i class="fas fa-coins me-1" style="font-size:0.65em"></i>خصم {{ format_currency(ts.discount_info.discount_value) }}</small>
                                             {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
-                                                <span class="text-decoration-line-through text-muted">{{ format_currency(ts.original_fee) }}</span>
-                                                <br>
                                                 <span class="badge bg-success"><i class="fas fa-gift me-1"></i>مجاني</span>
                                                 {% if ts.discount_info.institute_waiver %}
                                                     <br><small class="text-warning"><i class="fas fa-building me-1"></i>تنازل المعهد</small>
                                                 {% endif %}
+                                            {% elif ts.discount_info and ts.discount_info.discount_type == 'custom' %}
+                                                <span>{{ format_currency(ts.total_fee) }}</span>
+                                                <br><small class="text-warning"><i class="fas fa-tag me-1" style="font-size:0.65em"></i>خصم مخصص {{ ts.discount_info.discount_value }}%</small>
                                             {% else %}
-                                                {{ format_currency(ts.total_fee) }}
+                                                <span>{{ format_currency(ts.total_fee) }}</span>
                                             {% endif %}
                                         </td>
                                         <td class="text-center">
@@ -366,6 +416,7 @@
                                     <!-- صف الإجمالي -->
                                     <tr class="table-active fw-bold">
                                         <td colspan="5" class="text-end">الإجمالي:</td>
+                                        <td class="text-center d-none d-md-table-cell">{{ format_currency(teachers_summary|sum(attribute='original_fee')) }}</td>
                                         <td class="text-center">{{ format_currency(teachers_summary|sum(attribute='total_fee')) }}</td>
                                         <td class="text-center text-success">{{ format_currency(teachers_summary|sum(attribute='paid_total')) }}</td>
                                         <td class="text-center {% if teachers_summary|sum(attribute='remaining_balance') > 0 %}text-danger{% else %}text-success{% endif %}">{{ format_currency(teachers_summary|sum(attribute='remaining_balance')) }}</td>

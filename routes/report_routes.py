@@ -37,6 +37,7 @@ async def student_report(request: Request, student_id: int):
 
     teachers_summary = finance_service.get_student_all_teachers_summary(student_id)
 
+    total_original_fee_all = sum(ts['original_fee'] for ts in teachers_summary) if teachers_summary else 0
     total_fee_all = sum(ts['total_fee'] for ts in teachers_summary) if teachers_summary else 0
     total_paid_all = sum(ts['paid_total'] for ts in teachers_summary) if teachers_summary else 0
     remaining_all = sum(ts['remaining_balance'] for ts in teachers_summary) if teachers_summary else 0
@@ -59,9 +60,13 @@ async def student_report(request: Request, student_id: int):
         "student": student,
         "teachers_summary": teachers_summary,
         "num_teachers": len(teachers_summary),
+        "total_original_fee": format_currency(total_original_fee_all),
+        "total_original_fee_raw": total_original_fee_all,
         "total_fee": format_currency(total_fee_all),
         "total_paid": format_currency(total_paid_all),
         "remaining": format_currency(remaining_all),
+        "total_discount": format_currency(total_original_fee_all - total_fee_all),
+        "total_discount_raw": total_original_fee_all - total_fee_all,
         "total_fee_raw": total_fee_all,
         "total_paid_raw": total_paid_all,
         "remaining_raw": remaining_all,
