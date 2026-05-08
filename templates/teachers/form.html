@@ -55,7 +55,7 @@
                     {% if has_linked_students %}
                     <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-lock me-2"></i>
-                        <div><strong>لا يمكن تغيير أي بيانات!</strong> يوجد طلاب مرتبطون بهذا المدرس، وتغيير البيانات سيؤثر على حسابات الطلاب. <strong>يمكنك فقط إضافة نوع تدريسي جديد</strong> لم يكن مفعلاً سابقاً.</div>
+                        <div><strong>لا يمكن تغيير أي بيانات!</strong> يوجد طلاب مرتبطون بهذا المدرس، وتغيير البيانات سيؤثر على حسابات الطلاب. <strong>يمكنك فقط إضافة نوع تدريسي جديد</strong> لم يكن مفعلاً سابقاً <strong>أو تعديل الملاحظات</strong>.</div>
                     </div>
                     {% elif has_payments %}
                     <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
@@ -276,10 +276,10 @@
                         <div class="mb-4">
                             <label for="notes" class="form-label fw-bold">
                                 <i class="fas fa-sticky-note me-1 text-success"></i>ملاحظات (اختياري)
+                                {% if has_linked_students %}<span class="badge bg-info ms-2" style="font-size:0.65rem"><i class="fas fa-edit me-1"></i>يمكن تعديل الملاحظات</span>{% endif %}
                             </label>
                             <textarea class="form-control" id="notes" name="notes" rows="3"
-                                      placeholder="أي ملاحظات إضافية..."
-                                      {% if has_linked_students %}readonly{% endif %}>{{ teacher.notes if teacher else '' }}</textarea>
+                                      placeholder="أي ملاحظات إضافية...">{{ teacher.notes if teacher else '' }}</textarea>
                         </div>
 
                         <!-- أزرار الإجراءات -->

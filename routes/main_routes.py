@@ -982,13 +982,14 @@ async def teacher_update(
         if removed_types:
             return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=cannot_remove_type", status_code=303)
 
-        # الحفاظ على جميع البيانات القديمة
+        # الحفاظ على جميع البيانات القديمة - باستثناء الملاحظات (يمكن تعديلها دائماً)
         name = c['name']
         subject = c['subject']
         total_fee = c['total_fee']
         institute_deduction_type = c['institute_deduction_type']
         institute_deduction_value = c['institute_deduction_value']
-        notes = c['notes']
+        # notes: السماح بتعديل الملاحظات حتى مع وجود طلاب مرتبطين
+        # لأن الملاحظات لا تؤثر على الحسابات المالية
         fee_in_person = c['fee_in_person']
         fee_electronic = c['fee_electronic']
         fee_blended = c['fee_blended']
@@ -1030,14 +1031,14 @@ async def teacher_update(
 
         update_query = '''
             UPDATE teachers
-            SET teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
+            SET notes=%s, teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
                 institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s,
                 inst_ded_type_in_person=%s, inst_ded_type_electronic=%s, inst_ded_type_blended=%s,
                 inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s
             WHERE id = %s
         '''
         db.execute_query(update_query, (
-            teaching_types, fee_in_person, fee_electronic, fee_blended,
+            notes, teaching_types, fee_in_person, fee_electronic, fee_blended,
             institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
             inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
             inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
