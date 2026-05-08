@@ -4,13 +4,17 @@
 # ============================================
 
 import os
+import logging
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database import Database
 from services.finance_service import finance_service, sync_student_status
+from services.cache_service import cache_service
 from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
 from auth import check_permission
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
@@ -22,21 +26,40 @@ templates.env.globals['format_currency'] = format_currency
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """الصفحة الرئيسية - Dashboard"""
-    stats = finance_service.get_system_statistics()
+    """الصفحة الرئيسية - Dashboard مع التخزين المؤقت ومعالجة الأخطاء"""
+    
+    # محاولة الحصول على الإحصائيات من التخزين المؤقت
+    stats = cache_service.get('dashboard_stats')
+    if stats is None:
+        try:
+            stats = finance_service.get_system_statistics()
+            cache_service.set('dashboard_stats', stats, ttl=30)
+        except Exception as e:
+            logger.error(f"خطأ في تحميل إحصائيات لوحة التحكم: {e}")
+            # بيانات افتراضية عند الفشل - عرض جزئي
+            stats = {
+                'total_students': 0, 'active_students': 0, 'withdrawn_students': 0,
+                'unlinked_students': 0, 'total_teachers': 0, 'total_subjects': 0,
+                'total_installments': 0, 'total_amount_paid': 0, 'total_withdrawals': 0,
+                'total_institute_deduction': 0, '_error': True
+            }
 
-    # آخر الأقساط
-    db = Database()
-    try:
-        recent_installments = db.execute_query('''
-            SELECT i.*, s.name as student_name, t.name as teacher_name, t.subject
-            FROM installments i
-            JOIN students s ON i.student_id = s.id
-            JOIN teachers t ON i.teacher_id = t.id
-            ORDER BY i.id DESC LIMIT 5
-        ''')
-    except:
-        recent_installments = []
+    # آخر الأقساط - مع معالجة الأخطاء والتحميل الجزئي
+    recent_installments = cache_service.get('dashboard_recent_installments')
+    if recent_installments is None:
+        db = Database()
+        try:
+            recent_installments = db.execute_query('''
+                SELECT i.*, s.name as student_name, t.name as teacher_name, t.subject
+                FROM installments i
+                JOIN students s ON i.student_id = s.id
+                JOIN teachers t ON i.teacher_id = t.id
+                ORDER BY i.id DESC LIMIT 5
+            ''')
+            cache_service.set('dashboard_recent_installments', recent_installments or [], ttl=30)
+        except Exception as e:
+            logger.error(f"خطأ في تحميل آخر الأقساط: {e}")
+            recent_installments = []
 
     return templates.TemplateResponse("index.html", {
         "request": request,

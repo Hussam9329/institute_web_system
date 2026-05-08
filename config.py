@@ -7,7 +7,7 @@ from datetime import datetime
 
 # ===== إعدادات التطبيق =====
 APP_TITLE = "نظام إدارة المعهد المتكامل"
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.2.0"
 APP_DESCRIPTION = "نظام محاسبي وإداري متكامل للمعاهد التعليمية"
 
 # ===== إعدادات السيرفر =====

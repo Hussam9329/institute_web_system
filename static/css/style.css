@@ -87,7 +87,7 @@
     --transition-slow: all 0s;
     
     /* Fonts */
-    --font-family: 'NotoArabic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-family: 'Cairo', 'Tajawal', 'NotoArabic', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 /* ===== Reset & Base ===== */

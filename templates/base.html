@@ -14,8 +14,74 @@
     <!-- Font Awesome - ملف محلي -->
     <link rel="stylesheet" href="/static/vendor/fontawesome-all.min.css">
     
-    <!-- خط عربي محلي -->
+    <!-- خطوط عربية احترافية محلية -->
     <style>
+    /* ===== Cairo Font - الخط الرئيسي ===== */
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-Light.ttf') format('truetype');
+        font-weight: 300;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-Medium.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-SemiBold.ttf') format('truetype');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Cairo';
+        src: url('/static/fonts/Cairo-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+    /* ===== Tajawal Font - خط بديل ===== */
+    @font-face {
+        font-family: 'Tajawal';
+        src: url('/static/fonts/Tajawal-Light.ttf') format('truetype');
+        font-weight: 300;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Tajawal';
+        src: url('/static/fonts/Tajawal-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Tajawal';
+        src: url('/static/fonts/Tajawal-Medium.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Tajawal';
+        src: url('/static/fonts/Tajawal-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+    /* ===== NotoArabic Font - خط احتياطي ===== */
     @font-face {
         font-family: 'NotoArabic';
         src: url('/static/fonts/NotoSansArabic-Regular.ttf') format('truetype');
@@ -51,7 +117,7 @@
         font-style: normal;
         font-display: swap;
     }
-    body { font-family: 'NotoArabic', 'Segoe UI', Tahoma, Arial, sans-serif !important; }
+    body { font-family: 'Cairo', 'Tajawal', 'NotoArabic', 'Segoe UI', Tahoma, Arial, sans-serif !important; }
     </style>
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
     <meta name="mobile-web-app-capable" content="yes">
@@ -151,14 +217,14 @@
 
     /* Subscription Countdown */
     .sidebar-countdown {
-        margin-top: 8px;
-        background: rgba(239, 68, 68, 0.15);
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        margin-top: 10px;
+        background: rgba(251, 191, 36, 0.1);
+        border: 1px solid rgba(251, 191, 36, 0.25);
         border-radius: 10px;
-        padding: 8px 6px 6px;
+        padding: 8px 8px 6px;
         text-align: center;
     }
-    .sidebar-countdown .countdown-warning {
+    .sidebar-countdown .countdown-label {
         font-size: 9px;
         color: #fbbf24;
         font-weight: 600;
@@ -169,7 +235,7 @@
         margin-bottom: 6px;
         line-height: 1.4;
     }
-    .sidebar-countdown .countdown-warning i {
+    .sidebar-countdown .countdown-label i {
         font-size: 10px;
     }
     .countdown-boxes {
@@ -179,22 +245,35 @@
         direction: ltr;
     }
     .countdown-unit {
-        background: rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.1);
         border-radius: 6px;
-        padding: 4px 2px;
-        min-width: 40px;
+        padding: 4px 3px;
+        min-width: 38px;
         text-align: center;
     }
     .countdown-unit .cd-value {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 800;
         color: #fbbf24;
         line-height: 1.2;
+        font-family: 'Cairo', 'Tajawal', sans-serif;
     }
     .countdown-unit .cd-label {
-        font-size: 8px;
-        color: rgba(255,255,255,0.6);
+        font-size: 7.5px;
+        color: rgba(255,255,255,0.55);
         font-weight: 500;
+    }
+    .countdown-expired {
+        color: #ef4444 !important;
+        font-size: 10px;
+        font-weight: 700;
+    }
+    .countdown-separator {
+        color: rgba(251, 191, 36, 0.6);
+        font-size: 14px;
+        font-weight: 700;
+        align-self: flex-start;
+        padding-top: 4px;
     }
 
     /* Sidebar Nav */
@@ -467,7 +546,34 @@
             <i class="fas fa-graduation-cap"></i>
         </div>
         <h5>نظام إدارة المعهد</h5>
-        <small>نظام محاسبي متكامل</small>
+        <!-- عد تنازلي للاشتراك -->
+        <div class="sidebar-countdown" id="subscriptionCountdown">
+            <div class="countdown-label">
+                <i class="fas fa-clock"></i>
+                المدة المتبقية من اشتراكك
+            </div>
+            <div class="countdown-boxes" id="countdownBoxes">
+                <div class="countdown-unit">
+                    <div class="cd-value" id="cd-days">---</div>
+                    <div class="cd-label">يوم</div>
+                </div>
+                <span class="countdown-separator">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="cd-hours">--</div>
+                    <div class="cd-label">ساعة</div>
+                </div>
+                <span class="countdown-separator">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="cd-minutes">--</div>
+                    <div class="cd-label">دقيقة</div>
+                </div>
+                <span class="countdown-separator">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="cd-seconds">--</div>
+                    <div class="cd-label">ثانية</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Navigation -->
@@ -630,6 +736,54 @@
     }
     updateSidebarDateTime();
     setInterval(updateSidebarDateTime, 1000);
+    </script>
+
+    <!-- عد تنازلي للاشتراك -->
+    <script>
+    (function() {
+        // تاريخ انتهاء الاشتراك - يُعدّل حسب الحاجة
+        // ضع تاريخ الانتهاء هنا بصيغة YYYY-MM-DD
+        const SUBSCRIPTION_END = new Date('2026-08-08T23:59:59');
+        
+        function updateCountdown() {
+            const now = new Date();
+            const diff = SUBSCRIPTION_END - now;
+            
+            const daysEl = document.getElementById('cd-days');
+            const hoursEl = document.getElementById('cd-hours');
+            const minutesEl = document.getElementById('cd-minutes');
+            const secondsEl = document.getElementById('cd-seconds');
+            const boxesEl = document.getElementById('countdownBoxes');
+            
+            if (diff <= 0) {
+                // انتهى الاشتراك
+                if (daysEl) daysEl.textContent = '0';
+                if (hoursEl) hoursEl.textContent = '0';
+                if (minutesEl) minutesEl.textContent = '0';
+                if (secondsEl) secondsEl.textContent = '0';
+                const label = document.querySelector('.countdown-label');
+                if (label) {
+                    label.innerHTML = '<i class="fas fa-exclamation-triangle"></i> انتهت مدة الاشتراك';
+                    label.classList.add('countdown-expired');
+                    label.style.color = '#ef4444';
+                }
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            if (daysEl) daysEl.textContent = days;
+            if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
+            if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
+            if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+        }
+        
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    })();
     </script>
     
     <!-- البحث الشامل -->

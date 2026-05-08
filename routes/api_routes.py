@@ -8,10 +8,16 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from database import Database
 from services.finance_service import finance_service, sync_student_status
+from services.cache_service import cache_service
 from config import get_current_date, format_currency
 from auth import check_permission
 
 router = APIRouter(prefix="/api")
+
+
+def _invalidate_dashboard_cache():
+    """إلغاء التخزين المؤقت للوحة التحكم عند تغيير البيانات"""
+    cache_service.invalidate_pattern('dashboard_')
 
 
 # ===== نماذج API =====
@@ -75,6 +81,7 @@ async def api_add_subject(request: Request, subject: SubjectCreate):
             "INSERT INTO subjects (name, created_at) VALUES (%s, %s)",
             (subject.name, get_current_date())
         )
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم إضافة المادة بنجاح"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -95,6 +102,7 @@ async def api_update_subject(request: Request, subject_id: int, subject: Subject
             return {"success": False, "message": "اسم المادة موجود مسبقاً"}
         
         db.execute_query("UPDATE subjects SET name = %s WHERE id = %s", (subject.name, subject_id))
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم تحديث المادة بنجاح"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -119,6 +127,7 @@ async def api_delete_subject(request: Request, subject_id: int):
             return {"success": False, "message": f"لا يمكن حذف المادة - يوجد {teachers_count[0]['cnt']} مدرس مرتبط بها"}
         
         db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف المادة"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -242,7 +251,7 @@ async def api_link_student_teacher(request: Request, link: LinkStudentTeacher):
         )
         
         sync_student_status(link.student_id)
-        
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم الربط بنجاح"}
         
     except HTTPException:
@@ -300,7 +309,7 @@ async def api_link_student_teachers(request: Request, data: dict):
             linked += 1
         
         sync_student_status(int(student_id))
-        
+        _invalidate_dashboard_cache()
         return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -403,7 +412,7 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         
         # حساب الرصيد الجديد
         new_balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
-        
+        _invalidate_dashboard_cache()
         return {
             "success": True, 
             "message": "تم تحديث الخصم بنجاح",
@@ -464,7 +473,7 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
             )
         
         sync_student_status(student_id)
-        
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم التحديث بنجاح"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -510,8 +519,8 @@ async def api_unlink_student_teacher(request: Request, student_id: int, teacher_
         if count > 0:
             msg = f"تم إلغاء الربط مع الحفاظ على {count} سجل مالي (قسط)"
         
+        _invalidate_dashboard_cache()
         return {"success": True, "message": msg, "preserved_installments": count}
-        
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 
@@ -737,6 +746,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         elif amount_warning:
             message = f"تم إضافة القسط بنجاح. {amount_warning}"
         
+        _invalidate_dashboard_cache()
         return {
             "success": True, 
             "message": message,

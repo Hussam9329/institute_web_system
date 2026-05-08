@@ -125,10 +125,13 @@ async def login_redirect():
 @app.get("/health")
 async def health_check():
     """فحص صحة التطبيق"""
+    from services.cache_service import cache_service
+    cache_stats = cache_service.stats()
     return {
         "status": "ok",
         "app": APP_TITLE,
-        "version": APP_VERSION
+        "version": APP_VERSION,
+        "cache": cache_stats
     }
 
 
