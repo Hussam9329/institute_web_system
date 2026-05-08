@@ -260,6 +260,18 @@
                                 <span class="badge bg-secondary">{{ student.status }}</span>
                                 {% endif %}
                             </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">نوع الدراسة</small>
+                                <span class="badge bg-{% if student.study_type == 'حضوري' or not student.study_type %}primary{% elif student.study_type == 'الكتروني' %}info{% else %}warning{% endif %}">{{ student.study_type or 'حضوري' }}</span>
+                            </div>
+                            <div class="profile-info-item">
+                                <small class="text-muted">الشارة</small>
+                                {% if student.has_badge %}
+                                <span class="badge bg-success"><i class="fas fa-id-badge me-1"></i>نعم</span>
+                                {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-id-badge me-1"></i>لا</span>
+                                {% endif %}
+                            </div>
                             {% if student.created_at %}
                             <div class="profile-info-item">
                                 <small class="text-muted">تاريخ التسجيل</small>

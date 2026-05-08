@@ -1306,10 +1306,12 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
     max-width: 100%;
 }
 
-/* Modal لا يخرج عن الشاشة */
-.modal-dialog {
-    max-width: calc(100vw - 2rem);
-    margin: 1rem auto;
+/* Modal لا يخرج عن الشاشة - فقط على الشاشات الصغيرة */
+@media (max-width: 575px) {
+    .modal-dialog {
+        max-width: calc(100vw - 2rem);
+        margin: 0.5rem auto;
+    }
 }
 
 /* تحسين عند التكبير جداً (Zoom In) */

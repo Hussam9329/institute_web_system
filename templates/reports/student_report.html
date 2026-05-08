@@ -69,6 +69,14 @@
             </div>
         </div>
         <div class="info-card">
+            <div class="info-label">نوع الدراسة</div>
+            <div class="info-value">{{ student.study_type or 'حضوري' }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">الشارة</div>
+            <div class="info-value">{{ 'نعم' if student.has_badge else 'لا' }}</div>
+        </div>
+        <div class="info-card">
             <div class="info-label">عدد المدرسين</div>
             <div class="info-value">{{ num_teachers }}</div>
         </div>

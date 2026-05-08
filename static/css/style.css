@@ -846,6 +846,10 @@ table .btn-group.btn-group-sm {
     box-shadow: var(--shadow-xl);
 }
 
+.modal-dialog.modal-lg {
+    max-width: 800px;
+}
+
 .modal-header {
     border-bottom: 1px solid var(--border-light);
     padding: 1.25rem 1.5rem;
@@ -2488,8 +2492,8 @@ textarea:focus-visible {
     }
     .form-control-lg, .form-select-lg { padding: 0.8rem 1rem; font-size: 16px; min-height: 50px; }
     .form-label { font-size: 0.82rem; margin-bottom: 0.4rem; }
-    .modal-dialog { margin: 0.5rem; max-width: calc(100% - 1rem); }
-    .modal-dialog.modal-lg { max-width: 100%; margin: 0; }
+    .modal-dialog { margin: 0.5rem auto; max-width: calc(100% - 1rem); }
+    .modal-dialog.modal-lg { max-width: 95%; margin: 0.5rem auto; }
     .modal-content { border-radius: 16px; max-height: none; overflow: visible; }
     .modal-body { padding: 1rem; max-height: 80vh; overflow-y: auto; }
     .modal-header { padding: 1rem; }
@@ -2525,10 +2529,10 @@ textarea:focus-visible {
     .btn-sm { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
     .input-group-text { padding: 0.5rem 0.65rem; font-size: 0.82rem; }
     .form-control { padding: 0.6rem 0.85rem; min-height: 42px; }
-    .modal-dialog { margin: 0; max-width: 100%; }
-    .modal-content { border-radius: 0; border: none; overflow: visible; }
-    .modal-body { max-height: calc(100vh - 120px); overflow-y: auto; }
-    .modal-dialog-centered { margin-top: 0; align-items: stretch; }
+    .modal-dialog { margin: 0.5rem auto; max-width: calc(100% - 1rem); }
+    .modal-content { border-radius: 16px; overflow: visible; }
+    .modal-body { max-height: calc(100vh - 140px); overflow-y: auto; }
+    .modal-dialog-centered { margin-top: 0.5rem; align-items: flex-start; }
     .empty-state { padding: 2rem 1rem !important; }
     .empty-state i { font-size: 2.5rem !important; }
 }
