@@ -112,16 +112,16 @@
         <div class="card-body py-2 py-md-3">
             <form method="GET" action="/teachers" class="row g-2 g-md-3 align-items-center">
                 <div class="col-12 col-md-5 col-lg-6">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-transparent border-end-0">
-                            <i class="fas fa-search text-muted"></i>
-                        </span>
-                        <input type="text" name="search" class="form-control border-start-0 ps-0" 
-                               placeholder="بحث بالاسم أو المادة أو الرمز..." id="teacherLiveSearch"
-                               value="{{ request.args.get('search', '') }}">
-                        <button type="button" class="btn btn-outline-secondary" title="بحث بالرمز" onclick="openTeacherBarcodeSearch()">
-                            <i class="fas fa-qrcode"></i>
-                        </button>
+                    <div class="search-bar-container">
+                        <div class="search-bar-inner">
+                            <i class="fas fa-search search-bar-icon"></i>
+                            <input type="text" name="search" class="search-bar-input" 
+                                   placeholder="بحث بالاسم أو المادة أو الرمز..." id="teacherLiveSearch"
+                                   value="{{ request.args.get('search', '') }}">
+                            <button type="button" class="search-bar-btn-qr" title="مسح بالباركود" onclick="openTeacherBarcodeSearch()">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
                     </div>
                     <!-- نتيجة بحث الباركود -->
                     <div id="teacherBarcodeResult" class="mt-2 d-none">
@@ -407,6 +407,8 @@ document.addEventListener('click', function(e) {
 });
 
 // ===== بحث بالباركود / QR للمدرسين =====
+let teacherQrStream = null;
+
 function openTeacherBarcodeSearch() {
     let modal = document.getElementById('teacherBarcodeModal');
     if (!modal) {
@@ -416,20 +418,26 @@ function openTeacherBarcodeSearch() {
         modal.setAttribute('tabindex', '-1');
         modal.innerHTML = `
             <div class="modal-dialog modal-dialog-centered modal-sm">
-                <div class="modal-content">
-                    <div class="modal-header py-2">
-                        <h6 class="modal-title"><i class="fas fa-qrcode me-2"></i>بحث بالرمز</h6>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-content border-0 shadow-lg" style="border-radius:20px; overflow:hidden;">
+                    <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;">
+                        <h6 class="modal-title"><i class="fas fa-camera me-2"></i>مسح الباركود</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeTeacherQrScanner()"></button>
                     </div>
-                    <div class="modal-body p-3">
-                        <label class="form-label small fw-bold">أدخل الرمز أو رقم المدرس:</label>
-                        <div class="input-group input-group-sm">
-                            <input type="text" class="form-control" id="teacherBarcodeInput" placeholder="رقم المدرس أو الاسم..." autofocus>
-                            <button class="btn btn-success" type="button" onclick="lookupTeacherBarcode(document.getElementById('teacherBarcodeInput').value)">
-                                <i class="fas fa-search"></i>
-                            </button>
+                    <div class="modal-body text-center p-3" style="background:#1a1a2e;">
+                        <div id="teacherQrVideoContainer" style="position:relative; width:100%; max-width:280px; margin:0 auto; border-radius:16px; overflow:hidden; background:#000; aspect-ratio:1/1;">
+                            <video id="teacherQrVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:65%; height:65%; border:3px solid rgba(99,102,241,0.9); border-radius:16px; pointer-events:none; box-shadow:0 0 20px rgba(99,102,241,0.3);"></div>
+                            <div style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.7); font-size:0.7rem; white-space:nowrap;">
+                                <i class="fas fa-crosshairs me-1"></i>وجّه الكاميرا نحو الباركود
+                            </div>
                         </div>
-                        <small class="text-muted d-block mt-2">يمكنك إدخال رقم المدرس أو جزء من الاسم</small>
+                        <div id="teacherQrCameraError" class="d-none mt-3">
+                            <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:20px;">
+                                <i class="fas fa-camera fa-2x d-block mb-2" style="color:#6366f1;"></i>
+                                <p style="color:rgba(255,255,255,0.6); margin:0; font-size:0.85rem;">لا يمكن الوصول إلى الكاميرا</p>
+                                <small style="color:rgba(255,255,255,0.4);">تأكد من منح إذن الكاميرا للمتصفح</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -438,11 +446,72 @@ function openTeacherBarcodeSearch() {
     }
     const bsModal = new bootstrap.Modal(modal);
     bsModal.show();
-    const inp = document.getElementById('teacherBarcodeInput');
-    if (inp) {
-        inp.onkeydown = function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); lookupTeacherBarcode(this.value); }
+    startTeacherCamera();
+}
+
+function startTeacherCamera() {
+    const video = document.getElementById('teacherQrVideo');
+    const container = document.getElementById('teacherQrVideoContainer');
+    const errorDiv = document.getElementById('teacherQrCameraError');
+    
+    if (!video || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (container) container.style.display = 'none';
+        if (errorDiv) errorDiv.classList.remove('d-none');
+        return;
+    }
+    
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+            teacherQrStream = stream;
+            video.srcObject = stream;
+            video.play();
+            container.style.display = '';
+            errorDiv.classList.add('d-none');
+            scanTeacherQrFrame();
+        })
+        .catch(err => {
+            console.log('Camera not available:', err);
+            container.style.display = 'none';
+            errorDiv.classList.remove('d-none');
+        });
+}
+
+function closeTeacherQrScanner() {
+    if (teacherQrStream) {
+        teacherQrStream.getTracks().forEach(t => t.stop());
+        teacherQrStream = null;
+    }
+}
+
+document.addEventListener('hidden.bs.modal', function(e) {
+    if (e.target.id === 'teacherBarcodeModal') {
+        closeTeacherQrScanner();
+    }
+});
+
+function scanTeacherQrFrame() {
+    const video = document.getElementById('teacherQrVideo');
+    if (!video || !teacherQrStream) return;
+    
+    if ('BarcodeDetector' in window) {
+        const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
+        const detect = () => {
+            if (!teacherQrStream) return;
+            detector.detect(video).then(barcodes => {
+                if (barcodes.length > 0) {
+                    const code = barcodes[0].rawValue;
+                    closeTeacherQrScanner();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('teacherBarcodeModal'));
+                    if (modal) modal.hide();
+                    lookupTeacherBarcode(code);
+                    return;
+                }
+                requestAnimationFrame(detect);
+            }).catch(() => {
+                requestAnimationFrame(detect);
+            });
         };
+        detect();
     }
 }
 

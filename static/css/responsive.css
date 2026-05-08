@@ -375,6 +375,21 @@
 
 /* ===== Mobile Small (375px - 575px) ===== */
 @media (max-width: 575px) {
+    /* Search bar */
+    .search-bar-inner {
+        padding: 1px;
+    }
+    .search-bar-input {
+        padding: 7px 4px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    .search-bar-btn-qr,
+    .search-bar-btn-search {
+        width: 34px;
+        height: 34px;
+        font-size: 0.85rem;
+    }
+
     /* Tighter padding */
     .main-content-area {
         padding: 8px;

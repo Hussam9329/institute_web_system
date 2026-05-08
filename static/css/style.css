@@ -1405,6 +1405,109 @@ footer::before {
     box-shadow: var(--shadow-primary);
 }
 
+/* ===== Search Bar (Unified Design) ===== */
+.search-bar-container {
+    width: 100%;
+}
+
+.search-bar-inner {
+    display: flex;
+    align-items: center;
+    background: var(--light-bg, #f8f9fa);
+    border: 1.5px solid var(--border, #e5e7eb);
+    border-radius: var(--radius-lg, 12px);
+    padding: 2px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    gap: 0;
+}
+
+.search-bar-inner:focus-within {
+    border-color: var(--primary, #4f46e5);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    background: #fff;
+}
+
+.search-bar-icon {
+    padding: 0 10px 0 6px;
+    color: var(--text-muted, #999);
+    font-size: 0.85rem;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.search-bar-inner:focus-within .search-bar-icon {
+    color: var(--primary, #4f46e5);
+}
+
+.search-bar-input {
+    flex: 1;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 8px 4px;
+    font-size: 0.88rem;
+    direction: rtl;
+    min-width: 0;
+    border-radius: 0;
+}
+
+.search-bar-input::placeholder {
+    color: var(--text-muted, #aaa);
+}
+
+.search-bar-btn-qr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.search-bar-btn-qr:hover {
+    background: linear-gradient(135deg, #4338ca, #4f46e5);
+    transform: scale(1.05);
+    box-shadow: 0 2px 10px rgba(79, 70, 229, 0.35);
+}
+
+.search-bar-btn-qr:active {
+    transform: scale(0.97);
+}
+
+.search-bar-btn-search {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary, #4f46e5);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    margin-right: 4px;
+}
+
+.search-bar-btn-search:hover {
+    background: #4338ca;
+    transform: scale(1.05);
+}
+
+.search-bar-btn-search:active {
+    transform: scale(0.97);
+}
+
 /* ===== Input Groups ===== */
 .input-group-text {
     border-radius: var(--radius-md);
