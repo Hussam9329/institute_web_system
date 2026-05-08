@@ -1472,21 +1472,31 @@ function renderRoomsList() {
         el.innerHTML = '<div class="text-center text-muted py-3" style="font-size:13px;"><i class="fas fa-door-open fa-2x mb-2 d-block"></i>لا توجد قاعات بعد</div>';
         return;
     }
-    let html = '';
-    allRooms.forEach(room => {
+    let html = '<div class="table-responsive"><table class="table table-hover table-sm mb-0 align-middle" style="border-radius:10px; overflow:hidden;">';
+    html += '<thead style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color:white;"><tr>';
+    html += '<th class="text-center" style="width:50px; padding:8px 6px; font-size:12px;">#</th>';
+    html += '<th style="padding:8px 6px; font-size:12px;">اسم القاعة</th>';
+    html += '<th class="text-center" style="width:80px; padding:8px 6px; font-size:12px;">السعة</th>';
+    html += '<th class="text-center" style="width:80px; padding:8px 6px; font-size:12px;">الفعاليات</th>';
+    html += '<th class="text-center" style="width:100px; padding:8px 6px; font-size:12px;">الإجراءات</th>';
+    html += '</tr></thead><tbody>';
+    allRooms.forEach((room, idx) => {
         const cnt = allSchedule.filter(s => s.room_id === room.id).length;
-        html += '<div class="ws-room-row">';
-        html += '<div class="rr-info">';
-        html += '<div class="rr-icon"><i class="fas fa-door-open"></i></div>';
-        html += '<div><span class="rr-id">#' + room.id + '</span> <span class="rr-name">' + escapeHtml(room.name) + '</span>';
-        html += '<div class="rr-cap">السعة: ' + (room.capacity || '-') + ' | فعاليات: ' + cnt + '</div></div>';
-        html += '</div>';
-        html += '<div class="rr-acts">';
-        html += '<button class="act-edit" onclick="openEditRoomModal(' + room.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
-        html += '<button class="act-del" onclick="deleteRoom(' + room.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
-        html += '</div>';
-        html += '</div>';
+        html += '<tr>';
+        html += '<td class="text-center fw-bold" style="color:#4f46e5;">' + (idx + 1) + '</td>';
+        html += '<td><div class="d-flex align-items-center gap-2">';
+        html += '<div style="width:30px; height:30px; background:#eef2ff; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#4f46e5; font-size:12px;"><i class="fas fa-door-open"></i></div>';
+        html += '<div><span class="fw-bold" style="font-size:13px;">' + escapeHtml(room.name) + '</span>';
+        html += '<span style="font-size:10px; color:#4f46e5; font-weight:700; background:#eef2ff; padding:1px 6px; border-radius:4px; margin-right:6px;">#' + room.id + '</span></div></div></td>';
+        html += '<td class="text-center"><span class="badge" style="background:#f0f9ff; color:#0369a1; font-size:11px;">' + (room.capacity || '-') + '</span></td>';
+        html += '<td class="text-center"><span class="badge" style="background:#f0fdf4; color:#15803d; font-size:11px;">' + cnt + ' فعال</span></td>';
+        html += '<td class="text-center"><div class="btn-group btn-group-sm d-flex justify-content-center">';
+        html += '<button class="btn btn-outline-warning btn-sm" onclick="openEditRoomModal(' + room.id + ')" title="تعديل" style="padding:2px 8px;"><i class="fas fa-pen" style="font-size:11px;"></i></button>';
+        html += '<button class="btn btn-outline-danger btn-sm" onclick="deleteRoom(' + room.id + ')" title="حذف" style="padding:2px 8px;"><i class="fas fa-trash" style="font-size:11px;"></i></button>';
+        html += '</div></td>';
+        html += '</tr>';
     });
+    html += '</tbody></table></div>';
     el.innerHTML = html;
 }
 

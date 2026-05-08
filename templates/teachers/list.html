@@ -159,16 +159,15 @@
                         <thead class="table-gradient-emerald">
                             <tr>
                                 <th class="text-center" style="width:40px">#</th>
-                                <th>الاسم</th>
-                                <th class="text-center d-none d-sm-table-cell">المادة</th>
-                                <th class="text-center d-none d-lg-table-cell">المدفوع</th>
-                                <th class="text-center d-none d-xl-table-cell">نسبة المعهد</th>
-                                <th class="text-center d-none d-xl-table-cell">خصم المعهد</th>
-                                <th class="text-center d-none d-xl-table-cell">مستحق المدرس</th>
-                                <th class="text-center d-none d-xl-table-cell">المسحوب</th>
-                                <th class="text-center d-none d-lg-table-cell">متبقي المدرس</th>
-                                <th class="text-center d-none d-md-table-cell">الطلاب</th>
-                                <th class="text-center d-none d-sm-table-cell" style="min-width:100px; width:140px;">الإجراءات</th>
+                                <th style="min-width:140px">الاسم</th>
+                                <th class="text-center" style="min-width:80px">المادة</th>
+                                <th class="text-center" style="min-width:90px">الطلاب</th>
+                                <th class="text-center" style="min-width:100px">المدفوع</th>
+                                <th class="text-center" style="min-width:90px">خصم المعهد</th>
+                                <th class="text-center" style="min-width:100px">مستحق المدرس</th>
+                                <th class="text-center" style="min-width:90px">المسحوب</th>
+                                <th class="text-center" style="min-width:100px">متبقي المدرس</th>
+                                <th class="text-center" style="min-width:120px; width:140px;">الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -182,49 +181,31 @@
                                     {% if teacher.notes %}
                                     <br><small class="text-muted">{{ teacher.notes[:40] }}</small>
                                     {% endif %}
-                                    <div class="d-sm-none mt-1">
-                                        <span class="badge bg-light text-dark me-1">{{ teacher.subject }}</span>
-                                        <span class="badge bg-light text-dark me-1">{{ teacher.students_count or 0 }} طالب</span>
-                                    </div>
-                                    <div class="d-sm-none mt-1">
-                                        <small class="text-muted">مدفوع: </small><small class="fw-bold text-success">{{ format_currency(teacher.total_received) }}</small>
-                                        <small class="text-muted ms-2">متبقي: </small><small class="fw-bold {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">{{ format_currency(teacher.remaining_balance) }}</small>
-                                    </div>
                                 </td>
-                                <td class="text-center d-none d-sm-table-cell">
+                                <td class="text-center">
                                     <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
                                 </td>
-                                {# المدفوع #}
-                                <td class="text-center d-none d-lg-table-cell fw-bold text-success">
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
+                                </td>
+                                <td class="text-center fw-bold text-success">
                                     {{ format_currency(teacher.total_received) }}
                                 </td>
-                                {# نسبة المعهد #}
-                                <td class="text-center d-none d-xl-table-cell">
-                                    <span class="badge bg-light text-dark">{{ teacher.institute_rate_display }}</span>
-                                </td>
-                                {# خصم المعهد #}
-                                <td class="text-center d-none d-xl-table-cell text-danger">
+                                <td class="text-center text-danger">
                                     {{ format_currency(teacher.institute_deduction) }}
                                 </td>
-                                {# مستحق المدرس #}
-                                <td class="text-center d-none d-xl-table-cell fw-bold text-info">
+                                <td class="text-center fw-bold text-info">
                                     {{ format_currency(teacher.teacher_due) }}
                                 </td>
-                                {# المسحوب #}
-                                <td class="text-center d-none d-xl-table-cell fw-bold" style="color: var(--warning-dark);">
+                                <td class="text-center fw-bold" style="color: var(--warning-dark);">
                                     {{ format_currency(teacher.withdrawn_total) }}
                                 </td>
-                                {# متبقي المدرس (القابل للسحب) #}
-                                <td class="text-center d-none d-lg-table-cell">
+                                <td class="text-center">
                                     <span class="fw-bold {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
                                         {{ format_currency(teacher.remaining_balance) }}
                                     </span>
                                 </td>
-                                {# عدد الطلاب #}
-                                <td class="text-center d-none d-md-table-cell">
-                                    <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
-                                </td>
-                                <td class="text-center d-none d-sm-table-cell">
+                                <td class="text-center">
                                     <div class="btn-group btn-group-sm d-flex justify-content-center">
                                         <a href="/teachers/{{ teacher.id }}" class="btn btn-outline-success" title="التفاصيل">
                                             <i class="fas fa-eye"></i>
