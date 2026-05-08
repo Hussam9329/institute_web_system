@@ -1,5 +1,6 @@
 # ============================================
 # app.py - نقطة الدخول الرئيسية للتطبيق
+# محسّن لبيئة Vercel Serverless
 # ============================================
 import os
 from contextlib import asynccontextmanager
@@ -22,7 +23,7 @@ from config import (
     APP_TITLE, APP_VERSION, APP_DESCRIPTION,
     HOST, PORT, DEBUG,
     ensure_directories_exists,
-    BASE_DIR
+    BASE_DIR, IS_VERCEL
 )
 from database import init_db
 from auth import auth_middleware
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
     # ===== عند البدء =====
     print("\n" + "=" * 60)
     print(f"جاري تشغيل {APP_TITLE} v{APP_VERSION}")
+    print(f"بيئة Vercel: {IS_VERCEL}")
     print("=" * 60 + "\n")
 
     # إنشاء المجلدات المطلوبة
@@ -51,7 +53,7 @@ async def lifespan(app: FastAPI):
     except:
         pass
 
-    # تهيئة قاعدة البيانات
+    # تهيئة قاعدة البيانات - مع timeout أقصر على Vercel
     try:
         init_db()
         print("تم تهيئة قاعدة البيانات بنجاح")
@@ -80,24 +82,19 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 # ===== وسيط المصادقة (تم تعطيل تسجيل الدخول) =====
 app.middleware("http")(auth_middleware)
 
-# ===== تحسين السرعة: Cache Headers للملفات الثابتة =====
+# ===== تحسين السرعة: Cache Headers =====
 @app.middleware("http")
 async def cache_control_middleware(request: Request, call_next):
-    """إضافة headers تخزين مؤقت للملفات الثابتة و API"""
+    """إضافة headers تخزين مؤقت للملفات الثابتة"""
     response = await call_next(request)
     path = request.url.path
 
-    # تخزين مؤقت طويل للملفات الثابتة (CSS, JS, صور, خطوط)
+    # تخزين مؤقت طويل للملفات الثابتة
     if path.startswith('/static/'):
-        # التحقق من نوع الملف
         if any(path.endswith(ext) for ext in ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2', '.ttf', '.eot']):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         else:
             response.headers["Cache-Control"] = "public, max-age=86400"
-
-    # تخزين مؤقت قصير لصفحات HTML
-    elif response.headers.get("content-type", "").startswith("text/html"):
-        response.headers["Cache-Control"] = "no-cache, must-revalidate"
 
     return response
 
@@ -116,7 +113,7 @@ static_dir = os.path.join(BASE_DIR, "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# ===== تم إلغاء مسارات تسجيل الدخول والخروج =====
+# ===== تم إلغاء مسارات تسجيل الدخول =====
 
 @app.get("/login")
 async def login_redirect():
