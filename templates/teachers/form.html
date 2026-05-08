@@ -38,6 +38,13 @@
                     </div>
                     {% endif %}
 
+                    {% if error == 'invalid_pct' %}
+                    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <div><strong>نسبة غير صالحة!</strong> النسبة لنوع التدريس "{{ request.args.get('label', '') }}" هي {{ request.args.get('val', '') }}% وهي خارج النطاق المسموح. يجب أن تكون النسبة بين <strong>1</strong> و <strong>99</strong> (أرقام صحيحة فقط بدون اعشار).</div>
+                    </div>
+                    {% endif %}
+
                     {% if has_linked_students %}
                     <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-lock me-2"></i>
@@ -140,10 +147,12 @@
                                     </div>
                                     <div class="row g-2">
                                         <div class="col-6" id="ded_pct_in_person">
-                                            <label class="form-label small">النسبة %:</label>
-                                            <input type="number" class="form-control form-control-sm" name="institute_pct_in_person" min="0" max="100" placeholder="15"
+                                            <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
+                                            <input type="number" class="form-control form-control-sm" name="institute_pct_in_person" min="1" max="99" step="1" placeholder="15"
                                                    value="{{ teacher.institute_pct_in_person if teacher else 0 }}"
+                                                   oninput="validatePct(this)"
                                                    {% if has_linked_students and teacher and ('حضوري' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <div class="invalid-feedback" id="pct_err_in_person"></div>
                                         </div>
                                         <div class="col-6 d-none" id="ded_manual_in_person">
                                             <label class="form-label small">المبلغ (بالألف):</label>
@@ -187,10 +196,12 @@
                                     </div>
                                     <div class="row g-2">
                                         <div class="col-6" id="ded_pct_electronic">
-                                            <label class="form-label small">النسبة %:</label>
-                                            <input type="number" class="form-control form-control-sm" name="institute_pct_electronic" min="0" max="100" placeholder="10"
+                                            <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
+                                            <input type="number" class="form-control form-control-sm" name="institute_pct_electronic" min="1" max="99" step="1" placeholder="10"
                                                    value="{{ teacher.institute_pct_electronic if teacher else 0 }}"
+                                                   oninput="validatePct(this)"
                                                    {% if has_linked_students and teacher and ('الكتروني' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <div class="invalid-feedback" id="pct_err_electronic"></div>
                                         </div>
                                         <div class="col-6 d-none" id="ded_manual_electronic">
                                             <label class="form-label small">المبلغ (بالألف):</label>
@@ -234,10 +245,12 @@
                                     </div>
                                     <div class="row g-2">
                                         <div class="col-6" id="ded_pct_blended">
-                                            <label class="form-label small">النسبة %:</label>
-                                            <input type="number" class="form-control form-control-sm" name="institute_pct_blended" min="0" max="100" placeholder="12"
+                                            <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
+                                            <input type="number" class="form-control form-control-sm" name="institute_pct_blended" min="1" max="99" step="1" placeholder="12"
                                                    value="{{ teacher.institute_pct_blended if teacher else 0 }}"
+                                                   oninput="validatePct(this)"
                                                    {% if has_linked_students and teacher and ('مدمج' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <div class="invalid-feedback" id="pct_err_blended"></div>
                                         </div>
                                         <div class="col-6 d-none" id="ded_manual_blended">
                                             <label class="form-label small">المبلغ (بالألف):</label>
@@ -328,6 +341,69 @@ function toggleDedField(type, value) {
     }
 }
 
+// ===== التحقق من نسبة المعهد (1 - 99) أرقام صحيحة فقط بدون اعشار =====
+function validatePct(input) {
+    const rawVal = input.value.trim();
+    const val = parseInt(rawVal);
+    const errEl = document.getElementById('pct_err_' + input.name.replace('institute_pct_', ''));
+    
+    // إزالة تنبيهات سابقة
+    input.classList.remove('is-invalid', 'is-valid');
+    if (errEl) errEl.textContent = '';
+    
+    // التحقق من أنه رقم صحيح بدون اعشار
+    if (rawVal === '' || isNaN(val) || rawVal.includes('.')) {
+        input.classList.add('is-invalid');
+        if (errEl) errEl.textContent = 'يرجى إدخال رقم صحيح بدون اعشار';
+        showAlert('النسبة يجب أن تكون رقماً صحيحاً بدون اعشار!', 'error');
+        return false;
+    }
+    
+    if (val < 1) {
+        input.classList.add('is-invalid');
+        if (errEl) errEl.textContent = 'النسبة لا يمكن أن تقل عن 1';
+        showAlert('النسبة لا يمكن أن تقل عن 1% ! يجب أن تكون بين 1 و 99', 'error');
+        return false;
+    }
+    
+    if (val > 99) {
+        input.classList.add('is-invalid');
+        if (errEl) errEl.textContent = 'النسبة لا يمكن أن تتجاوز 99';
+        showAlert('النسبة لا يمكن أن تتجاوز 99% ! يجب أن تكون بين 1 و 99', 'error');
+        return false;
+    }
+    
+    input.classList.add('is-valid');
+    return true;
+}
+
+// التحقق من جميع حقول النسبة
+function validateAllPctFields() {
+    let allValid = true;
+    const pctFields = ['institute_pct_in_person', 'institute_pct_electronic', 'institute_pct_blended'];
+    const typeCheckboxes = {
+        'institute_pct_in_person': 'type_in_person',
+        'institute_pct_electronic': 'type_electronic',
+        'institute_pct_blended': 'type_blended'
+    };
+    
+    pctFields.forEach(fieldName => {
+        const input = document.querySelector('input[name="' + fieldName + '"]');
+        const checkbox = document.getElementById(typeCheckboxes[fieldName]);
+        const typeKey = fieldName.replace('institute_pct_', '');
+        const dedTypeSelect = document.querySelector('select[name="inst_ded_type_' + typeKey + '"]');
+        
+        // تحقق فقط إذا كان نوع التدريس مختار وخصم المعهد نسبة مئوية
+        if (input && checkbox && checkbox.checked && dedTypeSelect && dedTypeSelect.value === 'percentage') {
+            if (!validatePct(input)) {
+                allValid = false;
+            }
+        }
+    });
+    
+    return allValid;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const select = document.getElementById('subject_select');
     const hidden = document.getElementById('subject_hidden');
@@ -347,6 +423,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const hasLinkedStudents = {{ 'true' if has_linked_students else 'false' }};
 
     document.getElementById('teacherForm').addEventListener('submit', function(e) {
+        // التحقق من حقول النسبة المئوية أولاً
+        if (!validateAllPctFields()) {
+            e.preventDefault();
+            showAlert('يرجى تصحيح حقول النسبة المئوية قبل الحفظ!', 'error');
+            return;
+        }
+
         const hidden = document.getElementById('subject_hidden');
         if (!hidden.value || hidden.value.trim() === '') {
             e.preventDefault();

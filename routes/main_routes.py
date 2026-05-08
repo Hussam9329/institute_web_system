@@ -749,6 +749,16 @@ async def teacher_add(
 ):
     """حفظ مدرس جديد"""
     check_permission(request, 'add_teachers')
+    
+    # التحقق من أن النسب المئوية بين 1 و 99
+    for pct_val, pct_label in [
+        (institute_pct_in_person, 'حضوري'),
+        (institute_pct_electronic, 'الكتروني'),
+        (institute_pct_blended, 'مدمج')
+    ]:
+        if pct_val != 0 and (pct_val < 1 or pct_val > 99):
+            return RedirectResponse(url=f"/teachers/add?error=invalid_pct&label={pct_label}&val={pct_val}", status_code=303)
+
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url="/teachers/add?error=no_teaching_type", status_code=303)
 
@@ -844,6 +854,16 @@ async def teacher_update(
 ):
     """تحديث بيانات مدرس - مع منع تغيير أي شيء بعد ارتباط الطالب به (فقط إضافة نوع تدريسي جديد)"""
     check_permission(request, 'edit_teachers')
+    
+    # التحقق من أن النسب المئوية بين 1 و 99
+    for pct_val, pct_label in [
+        (institute_pct_in_person, 'حضوري'),
+        (institute_pct_electronic, 'الكتروني'),
+        (institute_pct_blended, 'مدمج')
+    ]:
+        if pct_val != 0 and (pct_val < 1 or pct_val > 99):
+            return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=invalid_pct&label={pct_label}&val={pct_val}", status_code=303)
+    
     if not teaching_types or teaching_types.strip() == '':
         return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=no_teaching_type", status_code=303)
 
