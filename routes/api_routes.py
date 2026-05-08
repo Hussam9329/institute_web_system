@@ -437,7 +437,7 @@ async def api_get_student_discount(student_id: int, teacher_id: int):
 
 @router.put("/update-student-teacher-link/{student_id}/{teacher_id}")
 async def api_update_student_teacher_link(request: Request, student_id: int, teacher_id: int, data: dict):
-    """تحديث نوع الدراسة والحالة لربط طالب بمدرس - مع منع تغيير نوع الدراسة إذا وُجدت مدفوعات"""
+    """تحديث نوع الدراسة والحالة لربط طالب بمدرس - مع منع تغيير نوع الدراسة أو التحويل لمنسحب إذا وُجدت مدفوعات"""
     check_permission(request, 'link_students')
     db = Database()
     
@@ -445,7 +445,7 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
         new_study_type = data.get("study_type", "حضوري")
         status = data.get("status", "مستمر")
         
-        # فحص وجود أقساط مدفوعة - يُمنع تغيير نوع الدراسة نهائياً
+        # فحص وجود أقساط مدفوعة - يُمنع تغيير نوع الدراسة أو التحويل لمنسحب نهائياً
         payment_check = db.execute_query(
             "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
@@ -453,6 +453,10 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
         has_payments = payment_check and payment_check[0]['cnt'] > 0
         
         if has_payments:
+            # لا يمكن التحويل إلى منسحب إذا وُجدت أقساط
+            if status == 'منسحب':
+                return {"success": False, "message": f"لا يمكن تغيير الحالة إلى منسحب! يوجد {payment_check[0]['cnt']} قسط مسجل بين الطالب وهذا المدرس. يجب حذف جميع الأقساط أولاً."}
+            
             # جلب نوع الدراسة الحالي والحفاظ عليه
             current_link = db.execute_query(
                 "SELECT study_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
@@ -466,6 +470,10 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
             )
             return {"success": True, "message": "تم تحديث الحالة فقط. لا يمكن تغيير نوع الدراسة لوجود أقساط مسجلة."}
         else:
+            # لا يمكن التحويل إلى منسحب عبر هذه الواجهة - يجب استخدام إلغاء الربط
+            if status == 'منسحب':
+                return {"success": False, "message": "لا يمكن تغيير الحالة إلى منسحب. استخدم زر إلغاء الربط بدلاً من ذلك."}
+            
             # لا توجد مدفوعات - يمكن تحديث كل شيء
             db.execute_query(
                 "UPDATE student_teacher SET study_type = %s, status = %s WHERE student_id = %s AND teacher_id = %s",
@@ -481,7 +489,7 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
 
 @router.delete("/unlink-student-teacher/{student_id}/{teacher_id}")
 async def api_unlink_student_teacher(request: Request, student_id: int, teacher_id: int):
-    """إلغاء ربط طالب بمدرس - تغيير الحالة إلى منسحب مع الحفاظ على السجلات المالية"""
+    """إلغاء ربط طالب بمدرس - مسموح فقط في حالة عدم وجود أقساط بينهما"""
     check_permission(request, 'link_students')
     db = Database()
     
@@ -499,28 +507,30 @@ async def api_unlink_student_teacher(request: Request, student_id: int, teacher_
         if current_status == 'منسحب':
             return {"success": False, "message": "الطالب بالفعل منسحب من هذا المدرس"}
         
-        # تغيير حالة الربط إلى "منسحب" بدلاً من حذفه
-        # هذا يحافظ على السجلات المالية (الأقساط) ويسمح بتتبع تاريخ الطالب
-        db.execute_query(
-            "UPDATE student_teacher SET status = 'منسحب' WHERE student_id = %s AND teacher_id = %s",
-            (student_id, teacher_id)
-        )
-        
-        sync_student_status(student_id)
-        
-        # فحص عدد الأقساط المحفوظة للإبلاغ
+        # فحص وجود أقساط بين الطالب والمدرس - لا يمكن إلغاء الربط إذا وُجدت أقساط
         installment_count = db.execute_query(
             "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
         )
         count = installment_count[0]['cnt'] if installment_count else 0
         
-        msg = "تم إلغاء الربط وتغيير حالة الطالب إلى منسحب"
         if count > 0:
-            msg = f"تم إلغاء الربط مع الحفاظ على {count} سجل مالي (قسط)"
+            return {
+                "success": False, 
+                "message": f"لا يمكن إلغاء الربط! يوجد {count} قسط مسجل بين الطالب وهذا المدرس. يجب حذف جميع الأقساط أولاً قبل إلغاء الربط."
+            }
+        
+        # لا توجد أقساط - يمكن إلغاء الربط
+        # حذف الربط نهائياً بدلاً من تغيير الحالة (لأنه لا توجد سجلات مالية)
+        db.execute_query(
+            "DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+            (student_id, teacher_id)
+        )
+        
+        sync_student_status(student_id)
         
         _invalidate_dashboard_cache()
-        return {"success": True, "message": msg, "preserved_installments": count}
+        return {"success": True, "message": "تم إلغاء الربط بنجاح", "preserved_installments": 0}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 

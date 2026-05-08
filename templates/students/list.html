@@ -270,7 +270,7 @@
                 <i class="fas fa-exclamation-triangle fa-lg"></i>
                 <div>
                     <strong>لا يمكن حذف الطالب "{{ request.args.get('name', '') }}"!</strong>
-                    <span class="d-block">يوجد {{ request.args.get('count', '0') }} مدرسين مرتبطين به. قم بإلغاء الارتباط أولاً.</span>
+                    <span class="d-block">يوجد {{ request.args.get('count', '0') }} مدرسين مرتبطين بشكل نشط. يجب إلغاء الارتباط أولاً (لا يمكن إلغاء الارتباط إذا وُجدت أقساط مسجلة).</span>
                 </div>
                 <button type="button" class="btn-close ms-auto" onclick="this.parentElement.remove()"></button>
             </div>
@@ -491,9 +491,9 @@
                                             <a href="/students/{{ student.id }}" class="btn btn-outline-primary" title="البروفايل"><i class="fas fa-eye"></i></a>
                                             <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning" title="تعديل"><i class="fas fa-edit"></i></a>
                                             <a href="/reports/student/{{ student.id }}" class="btn btn-outline-info" target="_blank" title="طباعة"><i class="fas fa-print"></i></a>
-                                            {% if student.teachers_count and student.teachers_count > 0 %}
+                                            {% if student.active_links_count and student.active_links_count > 0 %}
                                             <button type="button" class="btn btn-outline-danger" disabled
-                                                    title="لا يمكن الحذف - يوجد {{ student.teachers_count }} مدرسين مرتبطين">
+                                                    title="لا يمكن الحذف - يوجد {{ student.active_links_count }} مدرسين مرتبطين بشكل نشط">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                             {% else %}
@@ -562,9 +562,9 @@
                                 <a href="/students/{{ student.id }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-eye me-1"></i>عرض</a>
                                 <a href="/students/{{ student.id }}/edit" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit me-1"></i>تعديل</a>
                                 <a href="/reports/student/{{ student.id }}" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-print"></i></a>
-                                {% if student.teachers_count and student.teachers_count > 0 %}
+                                {% if student.active_links_count and student.active_links_count > 0 %}
                                 <button type="button" class="btn btn-outline-danger btn-sm" disabled
-                                        title="لا يمكن الحذف - يوجد {{ student.teachers_count }} مدرسين مرتبطين">
+                                        title="لا يمكن الحذف - يوجد {{ student.active_links_count }} مدرسين مرتبطين بشكل نشط">
                                     <i class="fas fa-trash"></i>
                                 </button>
                                 {% else %}

@@ -173,6 +173,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         query = f'''
             SELECT s.*,
                 (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
+                (SELECT COUNT(*) FROM student_teacher st2 WHERE st2.student_id = s.id AND st2.status = 'مستمر') as active_links_count,
                 (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) = COUNT(*) THEN 'منسحب' WHEN SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
             FROM students s
             {where_sql}
@@ -537,9 +538,20 @@ async def student_update(
             except:
                 pass
 
-    # تغيير حالة الروابط التي أزيلت إلى "منسحب" مع الحفاظ على السجلات المالية
+    # تغيير حالة الروابط التي أزيلت - فقط إذا لم توجد أقساط بين الطالب والمدرس
     for tid in old_teacher_ids - new_teacher_ids:
-        db.execute_query("UPDATE student_teacher SET status = 'منسحب' WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
+        # فحص وجود أقساط - لا يمكن إلغاء الربط إذا وُجدت أقساط
+        installment_check = db.execute_query(
+            "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
+            (student_id, tid)
+        )
+        has_installments = installment_check and installment_check[0]['cnt'] > 0
+        if has_installments:
+            # لا يمكن إلغاء الربط - الحفاظ على الربط النشط
+            # إعادة إضافة المدرس للقائمة الجديدة لمنع إزالته
+            continue
+        # لا توجد أقساط - حذف الربط نهائياً
+        db.execute_query("DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s", (student_id, tid))
 
     sync_student_status(student_id)
 
@@ -584,23 +596,9 @@ async def student_profile(request: Request, student_id: int):
 
 @router.post("/students/{student_id}/delete")
 async def student_delete(request: Request, student_id: int):
-    """حذف طالب - مع حماية إذا كان مرتبط بمدرسين أو لديه سجلات مالية"""
+    """حذف طالب - يمكن حذف أي طالب غير مرتبط بمدرسين (لا يوجد روابط نشطة)"""
     check_permission(request, 'delete_students')
     db = Database()
-    
-    # فحص إذا كان الطالب لديه أقساط مسجلة (سجلات مالية)
-    installments_count = db.execute_query(
-        "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s", 
-        (student_id,)
-    )
-    if installments_count and installments_count[0]['cnt'] > 0:
-        cnt = installments_count[0]['cnt']
-        student = db.execute_query("SELECT name FROM students WHERE id = %s", (student_id,))
-        student_name = student[0]['name'] if student else ''
-        return RedirectResponse(
-            url=f"/students?error=has_financial_records&count={cnt}&name={student_name}", 
-            status_code=303
-        )
     
     # فحص إذا كان الطالب مرتبط بمدرسين بحالة مستمر
     active_links = db.execute_query(
@@ -616,10 +614,15 @@ async def student_delete(request: Request, student_id: int):
             status_code=303
         )
     
-    # لا توجد سجلات مالية ولا روابط نشطة - يمكن الحذف بأمان
-    # حذف الروابط المنسحبة أولاً (لا توجد أقساط مرتبطة بهم)
+    # لا توجد روابط نشطة - يمكن الحذف
+    # حذف الأقساط المرتبطة بالروابط المنسحبة أولاً
+    db.execute_query("DELETE FROM installments WHERE student_id = %s", (student_id,))
+    # حذف جميع الروابط (منسحبة وغيرها)
     db.execute_query("DELETE FROM student_teacher WHERE student_id = %s", (student_id,))
+    # حذف الطالب
     db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
+    
+    cache_service.invalidate_pattern('dashboard_')
     return RedirectResponse(url="/students?msg=deleted", status_code=303)
 
 
