@@ -1545,7 +1545,7 @@ async def api_export_all(request: Request):
         # الطلاب
         students = db.execute_query('''
             SELECT s.id, s.name, s.barcode, s.notes, s.created_at,
-                (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st.status = 'منسحب') = COUNT(*) THEN 'منسحب' ELSE 'مستمر' END 
+                (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) = COUNT(*) THEN 'منسحب' ELSE 'مستمر' END 
                  FROM student_teacher st WHERE st.student_id = s.id) as status
             FROM students s ORDER BY s.name
         ''')

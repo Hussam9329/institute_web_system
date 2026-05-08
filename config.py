@@ -16,9 +16,8 @@ PORT = 8000
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
 # ===== إعدادات قاعدة البيانات =====
-# يمكن تعيين متغير البيئة DATABASE_URL أو سيتم استخدام القيمة الافتراضية
-# مثال: export DATABASE_URL="postgresql://user:pass@host/db"
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
+# قاعدة بيانات SQLite محلية - مضمنة داخل ملفات النظام
+DATABASE_URL = ""
 
 # ===== مفتاح التشفير للجلسات =====
 SECRET_KEY = os.environ.get("SECRET_KEY", "institute-system-change-in-production-2024")

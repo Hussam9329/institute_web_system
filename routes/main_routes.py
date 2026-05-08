@@ -121,11 +121,11 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         # فلتر الحالة (مستمر/منسحب/مدمج/غير مربوط)
         if status_filter:
             if status_filter == 'مستمر':
-                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) = 0")
+                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st3 WHERE st3.student_id = s.id) = 0")
             elif status_filter == 'منسحب':
-                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) = (SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id)")
+                where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st3 WHERE st3.student_id = s.id) = (SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id)")
             elif status_filter == 'مدمج':
-                where_clauses.append("(SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT COUNT(*) FILTER (WHERE st3.status = 'منسحب') FROM student_teacher st3 WHERE st3.student_id = s.id) < (SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id)")
+                where_clauses.append("(SELECT SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st3 WHERE st3.student_id = s.id) > 0 AND (SELECT SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st3 WHERE st3.student_id = s.id) < (SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id)")
             elif status_filter == 'غير مربوط':
                 where_clauses.append("(SELECT COUNT(*) FROM student_teacher st3 WHERE st3.student_id = s.id) = 0")
 
@@ -150,7 +150,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
         query = f'''
             SELECT s.*,
                 (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
-                (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') = COUNT(*) THEN 'منسحب' WHEN COUNT(*) FILTER (WHERE st3.status = 'منسحب') > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
+                (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) = COUNT(*) THEN 'منسحب' WHEN SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
             FROM students s
             {where_sql}
             ORDER BY s.name
@@ -1087,9 +1087,9 @@ async def teacher_detail(request: Request, teacher_id: int):
     counts_query = '''
         SELECT
             COUNT(*) as total,
-            COUNT(*) FILTER (WHERE study_type = 'حضوري') as in_person,
-            COUNT(*) FILTER (WHERE study_type = 'الكتروني') as electronic,
-            COUNT(*) FILTER (WHERE study_type = 'مدمج') as blended
+            SUM(CASE WHEN study_type = 'حضوري' THEN 1 ELSE 0 END) as in_person,
+            SUM(CASE WHEN study_type = 'الكتروني' THEN 1 ELSE 0 END) as electronic,
+            SUM(CASE WHEN study_type = 'مدمج' THEN 1 ELSE 0 END) as blended
         FROM student_teacher WHERE teacher_id = %s
     '''
     counts_result = db.execute_query(counts_query, (teacher_id,))

@@ -814,7 +814,7 @@ def sync_student_status(student_id: int):
         result = db.execute_query('''
             SELECT 
                 COUNT(*) as total,
-                COUNT(*) FILTER (WHERE status = 'منسحب') as withdrawn
+                SUM(CASE WHEN status = 'منسحب' THEN 1 ELSE 0 END) as withdrawn
             FROM student_teacher 
             WHERE student_id = %s
         ''', (student_id,))

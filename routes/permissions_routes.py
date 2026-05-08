@@ -158,12 +158,12 @@ async def update_role_permissions(request: Request, role_id: int, data: RolePerm
     cursor = conn.cursor()
     try:
         # حذف الصلاحيات الحالية
-        cursor.execute('DELETE FROM role_permissions WHERE role_id = %s', (role_id,))
+        cursor.execute('DELETE FROM role_permissions WHERE role_id = ?', (role_id,))
         
         # إضافة الصلاحيات الجديدة
         for perm_id in data.permission_ids:
             cursor.execute(
-                'INSERT INTO role_permissions (role_id, permission_id) VALUES (%s, %s)',
+                'INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
                 (role_id, perm_id)
             )
         
