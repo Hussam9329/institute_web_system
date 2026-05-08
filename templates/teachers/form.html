@@ -460,6 +460,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // تعبئة الحقول الرقمية الفارغة بـ 0 لتجنب خطأ التحقق من FastAPI
+        document.querySelectorAll('#teacherForm input[type="number"]').forEach(input => {
+            if (!input.value || input.value.trim() === '') {
+                input.value = '0';
+            }
+        });
+
 
         // إضافة حقل مخفي لأنواع التدريس
         let typesInput = document.createElement('input');

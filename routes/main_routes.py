@@ -720,7 +720,9 @@ async def teacher_form(request: Request, error: str = ""):
         "teacher": None,
         "mode": "add",
         "subjects": subjects,
-        "error": error
+        "error": error,
+        "has_payments": False,
+        "has_linked_students": False
     })
 
 
