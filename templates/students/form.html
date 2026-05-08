@@ -87,6 +87,26 @@
                                 <span>ربط الطالب بالمدرسين</span>
                             </div>
 
+                            <!-- فرز حسب المواد الدراسية -->
+                            {% if subjects %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold mb-2">
+                                    <i class="fas fa-filter me-1 text-primary"></i>فرز حسب المادة الدراسية
+                                    <span class="text-muted fw-normal small">(اختر مادة أو أكثر لتصفية المدرسين)</span>
+                                </label>
+                                <div class="d-flex flex-wrap gap-2" id="subjectFilter">
+                                    <button type="button" class="btn btn-sm subject-chip active" data-subject="all" onclick="filterBySubject('all')">
+                                        <i class="fas fa-th me-1"></i>الكل
+                                    </button>
+                                    {% for subject in subjects %}
+                                    <button type="button" class="btn btn-sm subject-chip" data-subject="{{ subject }}" onclick="filterBySubject('{{ subject }}')">
+                                        {{ subject }}
+                                    </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
                             <div class="mb-3">
                                 <div class="card border bg-light-subtle overflow-hidden">
                                     {% if teachers %}
@@ -99,7 +119,7 @@
                                         <div class="fw-bold text-muted small" style="width:5rem;flex-shrink:0">الخصم</div>
                                     </div>
                                     <!-- قائمة المدرسين -->
-                                    <div class="p-2 p-md-0">
+                                    <div class="p-2 p-md-0" id="teachersList">
                                         {% for teacher in teachers %}
                                         {% set is_linked = linked_teacher_ids is defined and teacher.id in linked_teacher_ids %}
                                         {% set ld = linked_data[teacher.id] if linked_data and teacher.id in linked_data else None %}
@@ -115,7 +135,7 @@
                                         {% set is_completed = (completed_teachers is defined and teacher.id in completed_teachers) %}
 
                                         <div class="teacher-row {% if is_linked %}active{% endif %} border-bottom {% if not loop.last %}border-light{% else %}border-0{% endif %}"
-                                             id="teacher_row_{{ teacher.id }}">
+                                             id="teacher_row_{{ teacher.id }}" data-subject="{{ teacher.subject }}">
                                             <div class="teacher-row-inner d-flex align-items-center px-2 px-md-3 py-2">
                                                 <!-- Checkbox -->
                                                 <div class="d-flex align-items-center" style="width:2.5rem;flex-shrink:0;justify-content:center">
@@ -290,11 +310,16 @@
                                         {% endfor %}
                                     </div>
                                     {% else %}
-                                    <div class="text-center py-3 py-md-4 text-muted">
+                                    <div class="text-center py-3 py-md-4 text-muted" id="noTeachersMsg">
                                         <i class="fas fa-exclamation-circle me-1"></i>
                                         لا يوجد مدرسين مسجلين. <a href="/teachers/add">أضف مدرس أولاً</a>
                                     </div>
                                     {% endif %}
+                                    <!-- رسالة عدم وجود مدرسين للمواد المختارة -->
+                                    <div class="text-center py-3 py-md-4 text-muted d-none" id="noFilteredTeachersMsg">
+                                        <i class="fas fa-search me-1"></i>
+                                        لا يوجد مدرسين للمواد المختارة. <a href="javascript:void(0)" onclick="filterBySubject('all')">عرض الكل</a>
+                                    </div>
                                 </div>
                                 <div class="form-text mt-2">
                                     <i class="fas fa-info-circle me-1"></i>
@@ -328,6 +353,29 @@
 </div>
 
 <style>
+.subject-chip {
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border: 1.5px solid #dee2e6;
+    background: #fff;
+    color: #495057;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.subject-chip:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: #eff6ff;
+}
+.subject-chip.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    border-color: #2563eb;
+    box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+}
 .teacher-row {
     transition: background-color 0.2s ease, border-color 0.2s ease;
     border-right: 3px solid transparent;
@@ -355,6 +403,9 @@
 .teacher-row:not(.active) .discount-toggle-btn {
     opacity: 0.4;
     pointer-events: none;
+}
+.teacher-row.subject-hidden {
+    display: none !important;
 }
 .discount-panel {
     animation: slideDown 0.2s ease;
@@ -395,6 +446,10 @@
         width: calc(33% - 1.5rem) !important;
         min-width: 0 !important;
     }
+    .subject-chip {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+    }
 }
 </style>
 
@@ -408,6 +463,75 @@ const teachersMap = {
     {{ teacher.id }}: { name: "{{ teacher.name }}", subject: "{{ teacher.subject }}", fee_in_person: {{ teacher.fee_in_person or 0 }}, fee_electronic: {{ teacher.fee_electronic or 0 }}, fee_blended: {{ teacher.fee_blended or 0 }}, total_fee: {{ teacher.total_fee or 0 }} },
     {% endfor %}
 };
+
+// ===== فرز المواد الدراسية =====
+var selectedSubjects = new Set(); // المواد المختارة للفرز
+
+function filterBySubject(subject) {
+    if (subject === 'all') {
+        // عرض الكل - إزالة كل الفلاتر
+        selectedSubjects.clear();
+    } else {
+        // تبديل حالة المادة المختارة
+        if (selectedSubjects.has(subject)) {
+            selectedSubjects.delete(subject);
+        } else {
+            selectedSubjects.add(subject);
+        }
+    }
+
+    // تحديث حالة الأزرار
+    var chips = document.querySelectorAll('.subject-chip');
+    chips.forEach(function(chip) {
+        var chipSubject = chip.getAttribute('data-subject');
+        if (chipSubject === 'all') {
+            // زر "الكل" يكون نشطاً فقط عندما لا توجد مواد مختارة
+            chip.classList.toggle('active', selectedSubjects.size === 0);
+        } else {
+            chip.classList.toggle('active', selectedSubjects.has(chipSubject));
+        }
+    });
+
+    // تصفية المدرسين
+    applySubjectFilter();
+}
+
+function applySubjectFilter() {
+    var teacherRows = document.querySelectorAll('.teacher-row');
+    var visibleCount = 0;
+
+    teacherRows.forEach(function(row) {
+        var rowSubject = row.getAttribute('data-subject');
+        var isLinked = row.classList.contains('active'); // مرتبط بالفعل
+
+        if (selectedSubjects.size === 0) {
+            // لا يوجد فرز - عرض الكل
+            row.classList.remove('subject-hidden');
+            visibleCount++;
+        } else if (selectedSubjects.has(rowSubject)) {
+            // المادة مختارة - عرض المدرس
+            row.classList.remove('subject-hidden');
+            visibleCount++;
+        } else if (isLinked) {
+            // المدرس مرتبط بالفعل - عرضه دائماً حتى لو لم تكن مادته مختارة
+            row.classList.remove('subject-hidden');
+            visibleCount++;
+        } else {
+            // إخفاء المدرس
+            row.classList.add('subject-hidden');
+        }
+    });
+
+    // عرض/إخفاء رسالة عدم وجود نتائج
+    var noFilteredMsg = document.getElementById('noFilteredTeachersMsg');
+    if (noFilteredMsg) {
+        if (selectedSubjects.size > 0 && visibleCount === 0) {
+            noFilteredMsg.classList.remove('d-none');
+        } else {
+            noFilteredMsg.classList.add('d-none');
+        }
+    }
+}
 
 function toggleTeacherRow(teacherId) {
     const row = document.getElementById('teacher_row_' + teacherId);

@@ -248,11 +248,21 @@ async def student_form(request: Request, error: str = "", detail: str = ""):
     check_permission(request, 'add_students')
     db = Database()
     teachers = db.execute_query("SELECT id, name, subject, teaching_types FROM teachers ORDER BY name")
+    # جلب قائمة المواد الدراسية للفرز
+    subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
+    subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
+    all_subjects = set()
+    if subjects_from_table:
+        all_subjects.update(s['name'] for s in subjects_from_table)
+    if subjects_from_teachers:
+        all_subjects.update(s['name'] for s in subjects_from_teachers)
+    subjects_list = sorted(all_subjects)
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": None,
         "mode": "add",
         "teachers": teachers,
+        "subjects": subjects_list,
         "error": error,
         "error_detail": detail
     })
@@ -386,11 +396,22 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
             if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
                 completed_teachers.add(tid)
 
+    # جلب قائمة المواد الدراسية للفرز
+    subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
+    subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
+    all_subjects = set()
+    if subjects_from_table:
+        all_subjects.update(s['name'] for s in subjects_from_table)
+    if subjects_from_teachers:
+        all_subjects.update(s['name'] for s in subjects_from_teachers)
+    subjects_list = sorted(all_subjects)
+
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": student,
         "mode": "edit",
         "teachers": teachers,
+        "subjects": subjects_list,
         "linked_teacher_ids": linked_ids,
         "linked_data": linked_data,
         "installment_counts": installment_counts,
