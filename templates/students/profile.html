@@ -411,9 +411,9 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="action-btn-group justify-content-center">
-                                                <button class="action-btn action-btn-primary" data-action="pay-installment" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" data-study-type="{{ ts.study_type | e }}" data-total-fee="{{ ts.total_fee }}" title="دفع قسط">
+                                                <a href="/payments/add?student_id={{ student.id }}&teacher_id={{ ts.teacher_id }}" class="action-btn action-btn-primary" title="دفع قسط">
                                                     <i class="fas fa-money-bill"></i>
-                                                </button>
+                                                </a>
                                                 <button class="action-btn action-btn-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
                                                     <i class="fas fa-list"></i>
                                                 </button>

@@ -26,20 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         const action = btn.dataset.action;
-        if (action === 'pay-installment') {
-            const studentId = parseInt(btn.dataset.studentId);
-            const teacherId = parseInt(btn.dataset.teacherId);
-            const teacherName = btn.dataset.teacherName || '';
-            const studyType = btn.dataset.studyType || 'حضوري';
-            const totalFee = parseInt(btn.dataset.totalFee) || 0;
-            
-            if (isNaN(studentId) || isNaN(teacherId)) {
-                showAlert('بيانات القسط غير صحيحة', 'error');
-                return;
-            }
-            
-            openInstallmentModal(studentId, teacherId, teacherName, studyType, totalFee);
-        } else if (action === 'unlink-teacher') {
+        if (action === 'unlink-teacher') {
             const studentId = parseInt(btn.dataset.studentId);
             const teacherId = parseInt(btn.dataset.teacherId);
             const teacherName = btn.dataset.teacherName || '';

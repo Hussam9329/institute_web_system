@@ -1308,6 +1308,26 @@ async def withdrawals_page(request: Request, date_from: str = "", date_to: str =
 
 # ===== الأقساط والمدفوعات =====
 
+@router.get("/payments/add", response_class=HTMLResponse)
+async def payment_form(request: Request, student_id: int = None, teacher_id: int = None):
+    """صفحة تسجيل قسط جديد"""
+    check_permission(request, 'view_payments_list')
+    db = Database()
+    
+    try:
+        students = db.execute_query("SELECT id, name FROM students ORDER BY name")
+    except:
+        students = []
+    
+    return templates.TemplateResponse("payments/form.html", {
+        "request": request,
+        "students": students,
+        "preselected_student_id": student_id or 0,
+        "preselected_teacher_id": teacher_id or 0,
+        "format_currency": format_currency
+    })
+
+
 @router.get("/payments", response_class=HTMLResponse)
 async def payments_page(request: Request, search: str = "", date_from: str = "", date_to: str = ""):
     """صفحة إدارة الأقساط والمدفوعات"""
