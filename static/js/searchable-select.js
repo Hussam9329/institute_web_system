@@ -564,16 +564,13 @@
             });
 
             // ─── القائمة المنسدلة: منع انتشار الأحداث ───
+            // NOTE: wheel scrolling is handled by the GLOBAL capture-phase handler below.
+            // The instance-level handler here is kept as a fallback for edge cases.
             this.dropdown.addEventListener('wheel', (e) => {
-                e.stopPropagation();
-                // تمرير الخيارات حتى لو كان الهدف خارج optionsList
-                if (!this.optionsList.contains(e.target)) {
-                    const scrollAmount = e.deltaY || e.deltaX;
-                    if (scrollAmount) {
-                        this.optionsList.scrollTop += scrollAmount;
-                    }
-                }
-            }, { passive: true });
+                e.preventDefault();   // block page/modal scroll
+                e.stopPropagation(); // stop event bubbling
+                this.optionsList.scrollTop += e.deltaY || 0;
+            }, { passive: false });
 
             this.dropdown.addEventListener('touchmove', (e) => {
                 e.stopPropagation();
@@ -892,6 +889,22 @@
             }
         });
     });
+
+    // ★ معالج wheel عام (capture phase + passive:false)
+    // عندما يكون المؤشر داخل قائمة مفتوحة:
+    //   1) preventDefault() يمنع تمرير الصفحة/المودال
+    //   2) نمرّر التمرير يدوياً إلى .ss-options
+    // استخدام capture:true يضمن التنفيذ قبل أي معالج آخر.
+    document.addEventListener('wheel', (e) => {
+        for (const inst of instances) {
+            if (inst.isOpen && inst.dropdown.contains(e.target)) {
+                e.preventDefault();   // منع تمرير الصفحة/المودال
+                e.stopPropagation(); // منع وصول الحدث للصفحة
+                inst.optionsList.scrollTop += e.deltaY || 0;
+                return;
+            }
+        }
+    }, { passive: false, capture: true });
 
     // إغلاق بـ Escape
     document.addEventListener('keydown', (e) => {

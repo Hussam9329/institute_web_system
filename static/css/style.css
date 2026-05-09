@@ -3499,10 +3499,10 @@ textarea:focus-visible {
        — do NOT add !important rules for these or JS inline styles will be overridden */
 }
 
-/* Inside modal: even higher z-index */
+/* Inside modal: even higher z-index — must be above Bootstrap modal (1055+) and backdrop (1050) */
 .modal .searchable-select .ss-dropdown,
 .ss-dropdown-fixed.in-modal {
-    z-index: 1060 !important;
+    z-index: 999999 !important;
 }
 
 .searchable-select .ss-dropdown.show,
