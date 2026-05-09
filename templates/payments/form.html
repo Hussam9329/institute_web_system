@@ -517,6 +517,10 @@ function renderTeacherButtons() {
             discountBadge = '<span class="t-badge" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-gift" style="font-size:0.6rem;"></i> مجاني</span>';
         } else if (discountInfo && discountInfo.discount_type === 'percentage') {
             discountBadge = '<span class="t-badge" style="background:#fef3c7;color:#d97706;"><i class="fas fa-percent" style="font-size:0.55rem;"></i> ' + discountInfo.discount_value + '%</span>';
+        } else if (discountInfo && discountInfo.discount_type === 'custom') {
+            discountBadge = '<span class="t-badge" style="background:#fef3c7;color:#d97706;"><i class="fas fa-percent" style="font-size:0.55rem;"></i> ' + discountInfo.discount_value + '%</span>';
+        } else if (discountInfo && discountInfo.discount_type === 'fixed') {
+            discountBadge = '<span class="t-badge" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-coins" style="font-size:0.55rem;"></i> ' + formatCurrency(discountInfo.discount_value) + '</span>';
         }
 
         btn.innerHTML = '<i class="fas fa-chalkboard-teacher t-icon"></i>' +
@@ -756,6 +760,16 @@ function showRemainingHint(teacherId) {
             discountHintText.innerHTML = 'خصم ' + discountInfo.discount_value + '% — القسط الأصلي: ' + formatCurrency(originalFee) + ' ← بعد الخصم: ' + formatCurrency(effectiveFee) + ' (توفير ' + formatCurrency(discountAmt) + ')';
             discountHintEl.style.display = '';
             discountHintEl.classList.remove('d-none');
+        } else if (discountInfo && discountInfo.discount_type === 'custom' && discountInfo.discount_value > 0) {
+            var discountAmt = originalFee - effectiveFee;
+            discountHintText.innerHTML = 'خصم ' + discountInfo.discount_value + '% — القسط الأصلي: ' + formatCurrency(originalFee) + ' ← بعد الخصم: ' + formatCurrency(effectiveFee) + ' (توفير ' + formatCurrency(discountAmt) + ')';
+            discountHintEl.style.display = '';
+            discountHintEl.classList.remove('d-none');
+        } else if (discountInfo && discountInfo.discount_type === 'fixed' && discountInfo.discount_value > 0) {
+            var discountAmt = originalFee - effectiveFee;
+            discountHintText.innerHTML = 'خصم مبلغ ثابت ' + formatCurrency(discountInfo.discount_value) + ' — القسط الأصلي: ' + formatCurrency(originalFee) + ' ← بعد الخصم: ' + formatCurrency(effectiveFee) + ' (توفير ' + formatCurrency(discountAmt) + ')';
+            discountHintEl.style.display = '';
+            discountHintEl.classList.remove('d-none');
         } else if (discountInfo && discountInfo.discount_type === 'free') {
             discountHintText.innerHTML = 'الطالب مجاني — لا يدفع أي مبلغ' + (discountInfo.institute_waiver === 1 ? ' (تنازل المعهد — لا يُحسب شيء)' : ' (المدرس سيدفع نسبته للمعهد)');
             discountHintEl.style.display = '';
@@ -849,6 +863,54 @@ function payUpdateDiscountDisplay() {
         }
         if (badge) {
             badge.textContent = payCurrentDiscountValue + '%';
+            badge.classList.remove('d-none');
+        }
+    } else if (payCurrentDiscountType === 'custom' && payCurrentDiscountValue > 0) {
+        if (pctInfo) {
+            var teacherId = document.getElementById('pay_teacher_id')?.value;
+            var teacherData = teachersBalanceData[String(teacherId)];
+            var originalFee = (teacherData && teacherData.original_fee) ? teacherData.original_fee : (teacherData ? teacherData.total_fee : 0);
+            var effectiveFee = teacherData ? teacherData.total_fee : 0;
+            var savedAmount = originalFee - effectiveFee;
+
+            var pctValEl = document.getElementById('payDiscountPctValue');
+            var origFeeEl = document.getElementById('payDiscountOrigFee');
+            var newFeeEl = document.getElementById('payDiscountNewFee');
+            var savedEl = document.getElementById('payDiscountSaved');
+
+            if (pctValEl) pctValEl.textContent = payCurrentDiscountValue;
+            if (origFeeEl) origFeeEl.textContent = formatCurrency(originalFee);
+            if (newFeeEl) newFeeEl.textContent = formatCurrency(effectiveFee);
+            if (savedEl) savedEl.textContent = formatCurrency(savedAmount);
+
+            pctInfo.classList.remove('d-none');
+        }
+        if (badge) {
+            badge.textContent = payCurrentDiscountValue + '%';
+            badge.classList.remove('d-none');
+        }
+    } else if (payCurrentDiscountType === 'fixed' && payCurrentDiscountValue > 0) {
+        if (pctInfo) {
+            var teacherId = document.getElementById('pay_teacher_id')?.value;
+            var teacherData = teachersBalanceData[String(teacherId)];
+            var originalFee = (teacherData && teacherData.original_fee) ? teacherData.original_fee : (teacherData ? teacherData.total_fee : 0);
+            var effectiveFee = teacherData ? teacherData.total_fee : 0;
+            var savedAmount = originalFee - effectiveFee;
+
+            var pctValEl = document.getElementById('payDiscountPctValue');
+            var origFeeEl = document.getElementById('payDiscountOrigFee');
+            var newFeeEl = document.getElementById('payDiscountNewFee');
+            var savedEl = document.getElementById('payDiscountSaved');
+
+            if (pctValEl) pctValEl.textContent = formatCurrency(payCurrentDiscountValue);
+            if (origFeeEl) origFeeEl.textContent = formatCurrency(originalFee);
+            if (newFeeEl) newFeeEl.textContent = formatCurrency(effectiveFee);
+            if (savedEl) savedEl.textContent = formatCurrency(savedAmount);
+
+            pctInfo.classList.remove('d-none');
+        }
+        if (badge) {
+            badge.textContent = formatCurrency(payCurrentDiscountValue);
             badge.classList.remove('d-none');
         }
     } else if (payCurrentDiscountType === 'free') {

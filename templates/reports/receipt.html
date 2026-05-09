@@ -80,13 +80,29 @@
 </div>
 
 <!-- معلومات الخصم - تظهر دائماً -->
-<div style="margin:8px 24px;padding:10px 14px;border-radius:10px;{% if discount_type == 'percentage' %}background:#fffbeb;border:1px solid #fbbf24;{% elif discount_type == 'free' %}background:#f0fdf4;border:1px solid #86efac;{% else %}background:#f9fafb;border:1px solid #e5e7eb;{% endif %}">
+<div style="margin:8px 24px;padding:10px 14px;border-radius:10px;{% if discount_type == 'percentage' or discount_type == 'custom' %}background:#fffbeb;border:1px solid #fbbf24;{% elif discount_type == 'free' %}background:#f0fdf4;border:1px solid #86efac;{% elif discount_type == 'fixed' %}background:#eff6ff;border:1px solid #93c5fd;{% else %}background:#f9fafb;border:1px solid #e5e7eb;{% endif %}">
     {% if discount_type == 'percentage' %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
         <i class="fas fa-percent" style="color:#d97706;font-size:12px;"></i>
         <span style="font-size:12px;font-weight:600;color:#92400e;">خصم {{ discount_value }}%</span>
     </div>
     <div style="font-size:11px;color:#78350f;">
+        القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
+    </div>
+    {% elif discount_type == 'custom' %}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <i class="fas fa-percent" style="color:#d97706;font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:#92400e;">خصم {{ discount_value }}%</span>
+    </div>
+    <div style="font-size:11px;color:#78350f;">
+        القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
+    </div>
+    {% elif discount_type == 'fixed' %}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <i class="fas fa-money-bill-wave" style="color:#2563eb;font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:#1e40af;">خصم مبلغ ثابت {{ format_currency(discount_value) }}</span>
+    </div>
+    <div style="font-size:11px;color:#1e40af;">
         القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
     </div>
     {% elif discount_type == 'free' %}

@@ -131,6 +131,10 @@
                     <td style="text-align:center">
                         {% if s.discount_info and s.discount_info.discount_type == 'percentage' %}
                             <span style="color:#d97706;font-weight:600;">{{ s.discount_info.discount_value }}%</span>
+                        {% elif s.discount_info and s.discount_info.discount_type == 'custom' %}
+                            <span style="color:#d97706;font-weight:600;">{{ s.discount_info.discount_value }}%</span>
+                        {% elif s.discount_info and s.discount_info.discount_type == 'fixed' %}
+                            <span style="color:#2563eb;font-weight:600;">{{ format_currency(s.discount_info.discount_value) }}</span>
                         {% elif s.discount_info and s.discount_info.discount_type == 'free' %}
                             <span style="color:#16a34a;font-weight:600;">مجاني</span>
                         {% else %}

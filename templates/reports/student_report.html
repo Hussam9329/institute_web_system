@@ -128,6 +128,10 @@
                     <td style="text-align:center">
                         {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
                             <span style="color:#d97706;font-weight:600;">{{ ts.discount_info.discount_value }}%</span>
+                        {% elif ts.discount_info and ts.discount_info.discount_type == 'custom' %}
+                            <span style="color:#d97706;font-weight:600;">{{ ts.discount_info.discount_value }}%</span>
+                        {% elif ts.discount_info and ts.discount_info.discount_type == 'fixed' %}
+                            <span style="color:#2563eb;font-weight:600;">{{ format_currency(ts.discount_info.discount_value) }}</span>
                         {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
                             <span style="color:#16a34a;font-weight:600;">مجاني</span>
                         {% else %}
@@ -136,9 +140,7 @@
                     </td>
                     <td style="text-align:center{% if ts.discount_info and ts.discount_info.discount_type not in ['none', ''] %}; text-decoration:line-through; color:var(--muted){% endif %}">{{ format_currency(ts.original_fee) }}</td>
                     <td style="text-align:center; font-weight:600">
-                        {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
-                            {{ format_currency(ts.total_fee) }}
-                        {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
+                        {% if ts.discount_info and ts.discount_info.discount_type == 'free' %}
                             مجاني
                             {% if ts.discount_info.institute_waiver %}<br><small style="color:#f0a500">تنازل المعهد</small>{% endif %}
                         {% else %}

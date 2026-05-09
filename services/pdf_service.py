@@ -950,6 +950,10 @@ class PDFService:
             disc_text = ""
             if discount_type == 'percentage':
                 disc_text = f"خصم {discount_value}% — القسط الأصلي: {format_currency(original_fee)} ← بعد الخصم: {format_currency(total_fee)} (توفير {format_currency(discount_amount)})"
+            elif discount_type == 'custom':
+                disc_text = f"خصم {discount_value}% — القسط الأصلي: {format_currency(original_fee)} ← بعد الخصم: {format_currency(total_fee)} (توفير {format_currency(discount_amount)})"
+            elif discount_type == 'fixed':
+                disc_text = f"خصم مبلغ ثابت {format_currency(discount_value)} — القسط الأصلي: {format_currency(original_fee)} ← بعد الخصم: {format_currency(total_fee)} (توفير {format_currency(discount_amount)})"
             elif discount_type == 'free':
                 disc_text = "الطالب مجاني — معفي من الدفع بالكامل"
             disc_cell = Table(

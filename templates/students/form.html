@@ -190,6 +190,8 @@
                                                             style="opacity:0.5;cursor:not-allowed;">
                                                         <i class="fas fa-lock" style="font-size:0.7rem;"></i>
                                                         {% if current_discount_type == 'percentage' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> {{ current_discount_value }}%</span>
+                                                        {% elif current_discount_type == 'custom' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> {{ current_discount_value }}%</span>
+                                                        {% elif current_discount_type == 'fixed' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> خصم مبلغ</span>
                                                         {% elif current_discount_type == 'free' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>
                                                         {% endif %}
                                                     </button>
@@ -200,6 +202,8 @@
                                                             title="إعداد الخصم">
                                                         <i class="fas fa-percent" style="font-size:0.7rem;"></i>
                                                         {% if current_discount_type == 'percentage' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> {{ current_discount_value }}%</span>
+                                                        {% elif current_discount_type == 'custom' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> {{ current_discount_value }}%</span>
+                                                        {% elif current_discount_type == 'fixed' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> خصم مبلغ</span>
                                                         {% elif current_discount_type == 'free' %}<span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>
                                                         {% endif %}
                                                     </button>
@@ -745,6 +749,9 @@ function updateDiscountBtn(teacherId, discountType) {
         const val = document.getElementById('disc_fixed_val_' + teacherId)?.value || '';
         btn.classList.add('btn-warning');
         btn.innerHTML = '<i class="fas fa-coins" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> ' + val + 'K</span>';
+    } else if (discountType === 'custom') {
+        btn.classList.add('btn-warning');
+        btn.innerHTML = '<i class="fas fa-tag" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> مخصص</span>';
     } else if (discountType === 'free') {
         btn.classList.add('btn-warning');
         btn.innerHTML = '<i class="fas fa-gift" style="font-size:0.7rem;"></i><span class="d-none d-md-inline" style="font-size:0.7rem;"> مجاني</span>';
