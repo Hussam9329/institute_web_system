@@ -5,14 +5,13 @@
 # ============================================
 
 import os
-import re
 import time
 import logging
 import threading
 import psycopg2
 import psycopg2.extras
 from psycopg2.pool import ThreadedConnectionPool
-from psycopg2 import InterfaceError, OperationalError, DatabaseError
+from psycopg2 import InterfaceError, OperationalError
 
 # ===== إعدادات قاعدة البيانات =====
 DATABASE_URL = os.environ.get("DATABASE_URL", "")

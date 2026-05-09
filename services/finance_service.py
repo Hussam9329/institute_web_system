@@ -340,19 +340,6 @@ class FinanceService:
             return result[0]['count'] if result[0]['count'] else 0
         return 0
     
-    def get_teacher_total_students_count(self, teacher_id: int) -> int:
-        """حساب عدد كل الطلاب المرتبطين بالمدرس (مستمرين فقط)"""
-        query = '''
-            SELECT COUNT(*) as count
-            FROM student_teacher
-            WHERE teacher_id = %s AND status = 'مستمر'
-        '''
-        result = self.db.execute_query(query, (teacher_id,))
-        
-        if result and len(result) > 0:
-            return result[0]['count'] if result[0]['count'] else 0
-        return 0
-    
     def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0) -> int:
         """
         حساب خصم المعهد - يدعم نسبة مئوية أو مبلغ يدوي لكل نوع تدريس
