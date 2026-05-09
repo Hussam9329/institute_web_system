@@ -4008,7 +4008,7 @@ textarea:focus-visible {
 }
 
 .pay-balance-placeholder.has-content {
-    max-height: 80px;
+    max-height: 200px;
     visibility: visible;
 }
 
@@ -4047,6 +4047,24 @@ textarea:focus-visible {
 
 .pay-balance-row span {
     font-size: 0.8rem;
+}
+
+/* شريط نسبة السداد */
+.pay-balance-pct-row {
+    flex-wrap: wrap;
+}
+.pay-balance-bar-container {
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    margin-top: 3px;
+    overflow: hidden;
+}
+.pay-balance-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
 }
 
 /* ===== Responsive: Tablet ===== */

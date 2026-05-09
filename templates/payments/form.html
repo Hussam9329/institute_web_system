@@ -717,14 +717,53 @@ function showTeacherBalance(teacherId) {
     }
 
     var data = teachersBalanceData[String(teacherId)];
+    var total = formatCurrency(data.total_fee);
+    var originalTotal = data.original_fee || data.total_fee;
     var paid = formatCurrency(data.paid_total);
     var remaining = formatCurrency(data.remaining_balance);
 
-    if (data.remaining_balance <= 0) {
-        msgDiv.innerHTML = '<div class="pay-balance-msg pay-balance-complete"><div class="pay-balance-row"><i class="fas fa-check-circle"></i><span>المدفوع: <strong>' + paid + '</strong></span></div><div class="pay-balance-row"><i class="fas fa-check-double"></i><span>تمت التسوية بالكامل</span></div></div>';
-    } else {
-        msgDiv.innerHTML = '<div class="pay-balance-msg pay-balance-partial"><div class="pay-balance-row"><i class="fas fa-check-circle text-success"></i><span>المدفوع: <strong class="text-success">' + paid + '</strong></span></div><div class="pay-balance-row"><i class="fas fa-exclamation-circle text-danger"></i><span>المتبقي: <strong class="text-danger">' + remaining + '</strong></span></div></div>';
+    // حساب نسبة السداد
+    var totalNum = data.total_fee || 1;
+    var paidNum = data.paid_total || 0;
+    var pct = Math.min(100, Math.round((paidNum / totalNum) * 100));
+    if (data.remaining_balance <= 0) pct = 100;
+
+    // تحديد لون النسبة
+    var pctClass = 'text-danger';
+    var barClass = 'bg-danger';
+    if (pct >= 100) { pctClass = 'text-success'; barClass = 'bg-success'; }
+    else if (pct >= 75) { pctClass = 'text-warning'; barClass = 'bg-warning'; }
+    else if (pct >= 50) { pctClass = 'text-info'; barClass = 'bg-info'; }
+
+    var isComplete = data.remaining_balance <= 0;
+
+    var html = '<div class="pay-balance-msg ' + (isComplete ? 'pay-balance-complete' : 'pay-balance-partial') + '">';
+
+    // صف الكلي
+    html += '<div class="pay-balance-row"><i class="fas fa-coins text-warning"></i><span>الكلي: <strong>' + total + '</strong></span>';
+    if (originalTotal > data.total_fee) {
+        html += ' <small class="text-muted" style="text-decoration:line-through;">' + formatCurrency(originalTotal) + '</small>';
     }
+    html += '</div>';
+
+    // صف النسبة + شريط التقدم
+    html += '<div class="pay-balance-row pay-balance-pct-row"><i class="fas fa-chart-pie ' + pctClass + '"></i><span>نسبة السداد: <strong class="' + pctClass + '">' + pct + '%</strong></span>';
+    html += '<div class="pay-balance-bar-container"><div class="pay-balance-bar ' + barClass + '" style="width:' + pct + '%;"></div></div>';
+    html += '</div>';
+
+    // صف المدفوع
+    html += '<div class="pay-balance-row"><i class="fas fa-check-circle text-success"></i><span>المدفوع: <strong class="text-success">' + paid + '</strong></span></div>';
+
+    // صف المتبقي أو مكتمل
+    if (isComplete) {
+        html += '<div class="pay-balance-row"><i class="fas fa-check-double text-success"></i><span>تمت التسوية بالكامل</span></div>';
+    } else {
+        html += '<div class="pay-balance-row"><i class="fas fa-exclamation-circle text-danger"></i><span>المتبقي: <strong class="text-danger">' + remaining + '</strong></span></div>';
+    }
+
+    html += '</div>';
+
+    msgDiv.innerHTML = html;
     msgDiv.classList.add('has-content');
 }
 
