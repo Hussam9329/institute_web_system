@@ -1417,7 +1417,7 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
     }
 }
 
-/* ===== Enhanced Dropdown Responsive ===== */
+/* ===== Searchable Select v3 — Responsive ===== */
 
 /* Tablet & below */
 @media (max-width: 991.98px) {
@@ -1429,14 +1429,20 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
         padding: 6px 24px 6px 8px;
     }
 
-    .searchable-select .ss-options {
+    .searchable-select .ss-options,
+    .ss-dropdown-fixed .ss-options {
         max-height: 240px;
     }
 
     .searchable-select .ss-display {
-        padding: 0.65rem 0.9rem;
         min-height: 44px;
         font-size: 0.9rem;
+    }
+
+    .searchable-select .ss-option,
+    .ss-dropdown-fixed .ss-option {
+        padding: 9px 12px;
+        font-size: 0.86rem;
     }
 
     .pay-search-dropdown {
@@ -1455,28 +1461,43 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
     }
 
     .searchable-select .ss-display {
-        padding: 0.6rem 0.875rem;
-        min-height: 42px;
-        font-size: 0.88rem;
+        min-height: 40px;
+        font-size: 0.86rem;
+        padding: 0 10px;
     }
 
-    .searchable-select .ss-options {
+    .searchable-select .ss-options,
+    .ss-dropdown-fixed .ss-options {
         max-height: 200px;
     }
 
-    .searchable-select .ss-option {
-        padding: 9px 12px;
+    .searchable-select .ss-option,
+    .ss-dropdown-fixed .ss-option {
+        padding: 9px 10px;
         font-size: 0.84rem;
     }
 
-    .searchable-select .ss-search-input {
+    .searchable-select .ss-search-input,
+    .ss-dropdown-fixed .ss-search-input {
         padding: 7px 10px 7px 28px;
         font-size: 0.84rem;
+    }
+
+    .searchable-select .ss-search-wrap,
+    .ss-dropdown-fixed .ss-search-wrap {
+        padding: 8px 8px;
     }
 
     .searchable-select .ss-clear-btn {
         width: 18px;
         height: 18px;
+    }
+
+    .searchable-select .ss-option.selected::before,
+    .ss-dropdown-fixed .ss-option.selected::before {
+        width: 16px;
+        height: 16px;
+        font-size: 0.55rem;
     }
 
     .pay-search-dropdown {

@@ -1,17 +1,16 @@
 /**
- * SearchableSelect v2 — محوّل موحّد لعناصر <select> إلى قوائم منسدلة قابلة للبحث
+ * SearchableSelect v3 — محوّل موحّد لعناصر <select> إلى قوائم منسدلة قابلة للبحث
  *
- * الميزات:
- *   - تصميم موحّد يحل محل جميع الأنظمة السابقة
+ * التحسينات في v3:
+ *   - تصميم جديد بالكامل مع تأثيرات بصرية أنظف
+ *   - بحث ذكي مع ترتيب النتائج حسب الصلة (Best Match)
+ *   - مؤشر بصرى للخيار المحدد بعلامة ✓ دائرية
+ *   - تحسين تجربة لوحة المفاتيح
+ *   - تحسين الأداء مع تصفية محسّنة
+ *   - دعم كامل لـ RTL والعربية
  *   - القائمة تُضاف إلى document.body بـ position:fixed فلا تُقطع من أي حاوية
- *   - حساب الموقع ديناميكياً مع مراعاة RTL والشاشة
  *   - تمييز نص البحث في النتائج (Highlight)
- *   - دعم كامل للوحة المفاتيح (Arrow, Enter, Escape, Tab)
- *   - دعم ARIA للإتاحة
- *   - تمرير سلس يعمل داخل القائمة بدون تضارب مع المودال
  *   - واجهة برمجية موحّدة: updateOptions(), setValue(), getValue(), open(), close(), destroy()
- *   - دعم renderFn لعرض مخصص للعناصر (أيقونات، نصوص فرعية)
- *   - دعم onChange callback
  *
  * الاستخدام:
  *   1) تلقائي: <select> بعدد خيارات ≥ threshold → يتم التحويل تلقائياً
@@ -35,7 +34,7 @@
     const DEFAULT_MAX_HEIGHT = 280;
     const SEARCH_PLACEHOLDER = 'بحث...';
     const NO_RESULTS_TEXT = 'لا توجد نتائج';
-    const ANIMATION_DURATION = 180; // ms — يتطابق مع CSS transition
+    const ANIMATION_DURATION = 220;
 
     // ===== سجلّ جميع النسخ =====
     const instances = [];
@@ -43,10 +42,23 @@
     // ===== إزالة التشكيل العربي للبحث =====
     function normalizeArabic(str) {
         return str
-            .replace(/[\u064B-\u065F\u0670]/g, '') // حركات (فتحة، ضمة، كسرة، تنوين...)
+            .replace(/[\u064B-\u065F\u0670]/g, '') // حركات
             .replace(/[\u0622\u0623\u0625]/g, '\u0627') // أ، إ، آ ← ا
             .replace(/\u0629/g, '\u0647')               // ة ← ه
             .replace(/\u0649/g, '\u064A');              // ى ← ي
+    }
+
+    // ===== ترتيب نتائج البحث حسب الصلة =====
+    function getRelevanceScore(text, term) {
+        const normalizedText = normalizeArabic(text.toLowerCase());
+        const normalizedTerm = normalizeArabic(term.toLowerCase());
+
+        if (normalizedText === normalizedTerm) return 100;       // تطابق كامل
+        if (normalizedText.startsWith(normalizedTerm)) return 80; // يبدأ بالنص
+        const idx = normalizedText.indexOf(normalizedTerm);
+        if (idx === 0) return 70;
+        if (idx > 0) return 50 + (20 - Math.min(idx, 20));      // أقرب للبداية = أعلى
+        return 0;
     }
 
     // ===== تمييز نص البحث =====
@@ -55,6 +67,7 @@
         const normalizedText = normalizeArabic(text.toLowerCase());
         const normalizedTerm = normalizeArabic(term.toLowerCase());
 
+        // البحث عن جميع مواضع التطابق
         const idx = normalizedText.indexOf(normalizedTerm);
         if (idx === -1) return escapeHtml(text);
 
@@ -92,10 +105,10 @@
     // ==========================================================
     class SearchableSelect {
         /**
-         * @param {HTMLSelectElement} selectEl — عنصر الـ select الأصلي
+         * @param {HTMLSelectElement} selectEl
          * @param {Object} [userOptions={}]
-         * @param {Function} [userOptions.onChange]  — callback عند تغيير القيمة
-         * @param {Function} [userOptions.renderFn]  — دالة عرض مخصّصة (opt) => HTML string
+         * @param {Function} [userOptions.onChange]
+         * @param {Function} [userOptions.renderFn]
          * @param {string}   [userOptions.placeholder]
          * @param {string}   [userOptions.searchPlaceholder]
          * @param {number}   [userOptions.maxHeight]
@@ -153,7 +166,6 @@
                     text: opt.textContent.trim(),
                     selected: opt.selected,
                     disabled: opt.disabled,
-                    // بيانات إضافية من data attributes
                     dataFee: opt.dataset.fee || '',
                     dataBalance: opt.dataset.balance || '',
                     _index: idx,
@@ -169,17 +181,16 @@
             this.selectEl.style.display = 'none';
             this.selectEl.setAttribute('data-ss-converted', 'true');
 
-            // ─── الحاوي (inline, يحمل زر التفعيل فقط) ───
+            // ─── الحاوي ───
             this.container = document.createElement('div');
             this.container.className = 'searchable-select';
             if (this.isDisabled) this.container.classList.add('ss-disabled');
             if (this.originalId) this.container.setAttribute('data-ss-for', this.originalId);
 
-            // إدراج بعد الـ select
             this.selectEl.parentNode.insertBefore(this.container, this.selectEl.nextSibling);
             this.container.appendChild(this.selectEl);
 
-            // ─── زر التفعيل (display trigger) ───
+            // ─── زر التفعيل ───
             this.display = document.createElement('div');
             this.display.className = 'ss-display';
             if (this.isRequired && !this.selectedValue) this.display.classList.add('ss-empty');
@@ -200,7 +211,7 @@
             this.arrow = document.createElement('i');
             this.arrow.className = 'fas fa-chevron-down ss-arrow';
 
-            // أيقونة مسح الاختيار (clear button)
+            // زر مسح الاختيار
             this.clearBtn = document.createElement('button');
             this.clearBtn.type = 'button';
             this.clearBtn.className = 'ss-clear-btn';
@@ -250,7 +261,7 @@
             this.noResults = document.createElement('div');
             this.noResults.className = 'ss-no-results';
             this.noResults.setAttribute('role', 'status');
-            this.noResults.innerHTML = '<i class="fas fa-folder-open ss-no-results-icon"></i><span>' + this.config.emptyText + '</span>';
+            this.noResults.innerHTML = '<i class="fas fa-search ss-no-results-icon"></i><span>' + this.config.emptyText + '</span>';
             this.noResults.style.display = 'none';
 
             // ─── عدّاد النتائج ───
@@ -277,7 +288,6 @@
             const viewH = window.innerHeight;
             const viewW = window.innerWidth;
 
-            // إذا كان الزر غير مرئي (مثلاً داخل لوحة مطوية)
             if (rect.width === 0 && rect.height === 0) {
                 const containerRect = this.container.getBoundingClientRect();
                 if (containerRect.width > 0 && containerRect.height > 0) {
@@ -296,10 +306,9 @@
             const dd = this.dropdown;
             const viewH = window.innerHeight;
             const viewW = window.innerWidth;
-            const GAP = 4;
-            const MIN_PAD = 8;
+            const GAP = 6;
+            const MIN_PAD = 10;
 
-            // حساب الارتفاع المتوقع للقائمة
             this.optionsList.style.maxHeight = this.config.maxHeight + 'px';
             const ddHeight = dd.offsetHeight > 50 ? dd.offsetHeight : Math.min(dd.scrollHeight, this.config.maxHeight + 120) || 300;
 
@@ -309,11 +318,10 @@
             let top, left, width;
             let optionsMaxHeight = this.config.maxHeight;
 
-            // تحديد الاتجاه: أسفل أو أعلى
             if (spaceBelow >= Math.min(ddHeight, 200)) {
                 top = rect.bottom + GAP;
                 if (spaceBelow < ddHeight) {
-                    const searchHeight = 52;
+                    const searchHeight = 54;
                     const countHeight = 36;
                     const available = spaceBelow - searchHeight - countHeight - MIN_PAD;
                     optionsMaxHeight = Math.max(available, 100);
@@ -321,14 +329,14 @@
             } else if (spaceAbove >= Math.min(ddHeight, 200)) {
                 top = Math.max(rect.top - ddHeight - GAP, MIN_PAD);
                 if (rect.top - GAP - MIN_PAD < ddHeight) {
-                    const searchHeight = 52;
+                    const searchHeight = 54;
                     const countHeight = 36;
                     const available = (rect.top - GAP - MIN_PAD) - searchHeight - countHeight;
                     optionsMaxHeight = Math.max(available, 100);
                 }
             } else {
                 top = rect.bottom + GAP;
-                const searchHeight = 52;
+                const searchHeight = 54;
                 const countHeight = 36;
                 const available = (viewH - top - MIN_PAD) - searchHeight - countHeight;
                 optionsMaxHeight = Math.max(available, 80);
@@ -339,12 +347,10 @@
             width = Math.max(rect.width, 200);
             left = rect.left;
 
-            // RTL: محاذاة للحافة اليمنى
             if (document.documentElement.dir === 'rtl' || document.documentElement.getAttribute('dir') === 'rtl') {
                 left = rect.right - width;
             }
 
-            // منع الخروج عن الشاشة
             if (left + width > viewW - MIN_PAD) {
                 left = viewW - width - MIN_PAD;
             }
@@ -357,14 +363,38 @@
             dd.style.width = width + 'px';
         }
 
-        // ===== عرض الخيارات =====
+        // ===== عرض الخيارات مع ترتيب حسب الصلة =====
         _renderOptions() {
             this.optionsList.innerHTML = '';
             const term = this.searchTerm;
             const normalizedTerm = term ? normalizeArabic(term.toLowerCase().trim()) : '';
             let visibleCount = 0;
 
-            this.options.forEach((opt, idx) => {
+            // ترتيب الخيارات حسب الصلة عند وجود بحث
+            let sortedOptions = this.options.map((opt, idx) => ({ opt, idx }));
+            if (normalizedTerm) {
+                sortedOptions.forEach(item => {
+                    const normalizedText = normalizeArabic(item.opt.text.toLowerCase());
+                    const normalizedValue = normalizeArabic(item.opt.value.toLowerCase());
+                    let score = 0;
+                    if (normalizedText.includes(normalizedTerm)) {
+                        score = getRelevanceScore(item.opt.text, term);
+                    } else if (normalizedValue.includes(normalizedTerm)) {
+                        score = getRelevanceScore(item.opt.value, term) * 0.5;
+                    }
+                    // الخيار المحدد يحصل على أولوية أعلى
+                    if (item.opt.value === this.selectedValue && item.opt.value) score += 10;
+                    item.score = score;
+                });
+                sortedOptions.sort((a, b) => {
+                    // الخيارات الفارغة (placeholder) دائماً أولاً
+                    if (!a.opt.value && b.opt.value) return -1;
+                    if (a.opt.value && !b.opt.value) return 1;
+                    return b.score - a.score;
+                });
+            }
+
+            sortedOptions.forEach(({ opt, idx }) => {
                 // تصفية حسب البحث
                 if (normalizedTerm) {
                     const normalizedText = normalizeArabic(opt.text.toLowerCase());
@@ -417,7 +447,7 @@
             if (visibleCount === undefined) {
                 visibleCount = this.optionsList.querySelectorAll('.ss-option').length;
             }
-            const total = this.options.filter(o => o.value).length; // استثناء الخيار الفارغ
+            const total = this.options.filter(o => o.value).length;
             if (this.searchTerm) {
                 this.countFooter.textContent = visibleCount + ' من ' + total;
             } else {
@@ -481,7 +511,6 @@
             this.display.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (this.isDisabled) return;
-                // إذا نقر على زر المسح
                 if (this.clearBtn.contains(e.target)) {
                     this._clearSelection();
                     return;
@@ -553,9 +582,7 @@
                         if (this.isOpen) this.close();
                         break;
                     case 'Backspace':
-                        // مسح الاختيار عند مسح كل النص
                         if (this.searchInput.value === '' && this.selectedValue) {
-                            // لا نمسح تلقائياً — فقط نظهر الكل
                             this.searchTerm = '';
                             this._renderOptions();
                         }
@@ -564,11 +591,9 @@
             });
 
             // ─── القائمة المنسدلة: منع انتشار الأحداث ───
-            // NOTE: wheel scrolling is handled by the GLOBAL capture-phase handler below.
-            // The instance-level handler here is kept as a fallback for edge cases.
             this.dropdown.addEventListener('wheel', (e) => {
-                e.preventDefault();   // block page/modal scroll
-                e.stopPropagation(); // stop event bubbling
+                e.preventDefault();
+                e.stopPropagation();
                 this.optionsList.scrollTop += e.deltaY || 0;
             }, { passive: false });
 
@@ -651,7 +676,6 @@
             if (this._focusedIdx >= 0 && this._focusedIdx < opts.length) {
                 opts[this._focusedIdx].classList.add('ss-focused');
                 opts[this._focusedIdx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                // تحديث aria-activedescendant
                 const val = opts[this._focusedIdx].getAttribute('data-value');
                 this.display.setAttribute('aria-activedescendant', 'ss-opt-' + val);
             }
@@ -678,13 +702,11 @@
 
             if (this.isRequired) this.display.classList.add('ss-empty');
 
-            // تحديث التحديد في القائمة
             this.optionsList.querySelectorAll('.ss-option.selected').forEach(el => {
                 el.classList.remove('selected');
                 el.setAttribute('aria-selected', 'false');
             });
 
-            // إطلاق حدث change
             const event = new Event('change', { bubbles: true });
             this.selectEl.dispatchEvent(event);
 
@@ -763,14 +785,14 @@
                 if (!this._destroyed) {
                     this.searchInput.focus();
                 }
-            }, 60);
+            }, 50);
 
             // التمرير للخيار المحدد
             const selEl = this.optionsList.querySelector('.ss-option.selected');
             if (selEl) {
                 setTimeout(() => {
                     selEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                }, 120);
+                }, 100);
             }
         }
 
@@ -861,9 +883,8 @@
             this.selectEl.style.display = '';
             this.selectEl.removeAttribute('data-ss-converted');
 
-            // إزالة اعتراض value
             if (this._valueInterceptor) {
-                delete this.selectEl.value; // يُعيد الأصل من prototype
+                delete this.selectEl.value;
             }
 
             if (this.container.parentNode) {
@@ -890,16 +911,12 @@
         });
     });
 
-    // ★ معالج wheel عام (capture phase + passive:false)
-    // عندما يكون المؤشر داخل قائمة مفتوحة:
-    //   1) preventDefault() يمنع تمرير الصفحة/المودال
-    //   2) نمرّر التمرير يدوياً إلى .ss-options
-    // استخدام capture:true يضمن التنفيذ قبل أي معالج آخر.
+    // ★ معالج wheel عام (capture phase)
     document.addEventListener('wheel', (e) => {
         for (const inst of instances) {
             if (inst.isOpen && inst.dropdown.contains(e.target)) {
-                e.preventDefault();   // منع تمرير الصفحة/المودال
-                e.stopPropagation(); // منع وصول الحدث للصفحة
+                e.preventDefault();
+                e.stopPropagation();
                 inst.optionsList.scrollTop += e.deltaY || 0;
                 return;
             }
@@ -925,15 +942,13 @@
     }, 16);
 
     window.addEventListener('scroll', (e) => {
-        // إعادة حساب فقط إذا كان الهدف حاوية أصلية (مودال، لوحة قابلة للتمرير)
         instances.forEach(inst => {
             if (inst.isOpen) {
-                // إذا كان التمرير من داخل القائمة نفسها — لا نعيد الحساب
                 if (inst.dropdown.contains(e.target)) return;
                 inst._positionDropdown();
             }
         });
-    }, true); // capture phase
+    }, true);
 
     window.addEventListener('resize', debouncedReposition);
 
@@ -988,14 +1003,12 @@
             searchPlaceholder: options.searchPlaceholder || undefined,
         });
 
-        // واجهة متوافقة مع النظام القديم
         return {
             setValue: (value) => instance.setValue(value),
             getValue: () => instance.getValue(),
             refresh: () => instance._syncFromSelect(),
             clear: () => instance._clearSelection(),
             destroy: () => instance.destroy(),
-            // واجهة إضافية
             open: () => instance.open(),
             close: () => instance.close(),
             updateOptions: (opts) => instance.updateOptions(opts),
