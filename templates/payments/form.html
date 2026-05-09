@@ -57,13 +57,7 @@
                                         <label class="pay-field-label">
                                             <i class="fas fa-chalkboard-teacher"></i>المدرس
                                         </label>
-                                        <!-- التاج عند الاختيار -->
-                                        <div class="pay-teacher-tag d-none" id="teacherTag">
-                                            <span id="teacherTagName"></span>
-                                            <button type="button" class="pay-teacher-tag-remove" id="teacherTagRemove">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
+
                                         <input type="hidden" id="pay_teacher_id" value="{% if preselected_teacher_id %}{{ preselected_teacher_id }}{% endif %}">
                                         <!-- أزرار المدرسين -->
                                         <div id="teacherButtonsContainer" class="pay-teacher-buttons">
@@ -258,28 +252,7 @@
 .pay-teacher-btn .t-badge.badge-done { background: #e8fde8; color: #16a34a; }
 .pay-teacher-btn.selected .t-badge.badge-remain { background: rgba(255,255,255,0.25); color: #fff; }
 .pay-teacher-btn.selected .t-badge.badge-done { background: rgba(255,255,255,0.25); color: #fff; }
-.pay-teacher-tag {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #f0a500, #e6960a);
-    color: #fff;
-    font-size: 0.82rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-.pay-teacher-tag-remove {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    padding: 0 2px;
-    font-size: 0.75rem;
-    opacity: 0.7;
-}
-.pay-teacher-tag-remove:hover { opacity: 1; }
+
 .pay-teacher-placeholder {
     font-size: 0.78rem;
     padding: 4px 2px;
@@ -381,8 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // تهيئة بحث الطالب عبر SearchableSelect الموحّد
     initStudentSearch();
-    // تهيئة بحث المدرس
-    initTeacherSearch();
+
 
     // عند تغيير نوع القسط - إظهار/إخفاء حقل for_installment
     var payTypeEl = document.getElementById('pay_type');
@@ -502,27 +474,14 @@ function resetStudentSearch() {
 // ============================================
 // اختيار المدرس - أزرار مضغوطة
 // ============================================
-function initTeacherSearch() {
-    var tagRemove = document.getElementById('teacherTagRemove');
-    // زر إزالة الاختيار
-    if (tagRemove) {
-        tagRemove.addEventListener('click', function(e) {
-            e.stopPropagation();
-            resetTeacherSearch();
-        });
-    }
-}
-
 function renderTeacherButtons() {
     var container = document.getElementById('teacherButtonsContainer');
-    var tag = document.getElementById('teacherTag');
     if (!container) return;
 
     container.innerHTML = '';
 
     if (currentTeachersList.length === 0) {
         container.innerHTML = '<div class="pay-teacher-placeholder text-muted"><i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً</div>';
-        tag.classList.add('d-none');
         return;
     }
 
@@ -570,13 +529,9 @@ function renderTeacherButtons() {
 
 function selectTeacher(id, name) {
     var hiddenInput = document.getElementById('pay_teacher_id');
-    var tag = document.getElementById('teacherTag');
-    var tagName = document.getElementById('teacherTagName');
     var container = document.getElementById('teacherButtonsContainer');
 
     hiddenInput.value = id;
-    tagName.textContent = name;
-    tag.classList.remove('d-none');
 
     // تحديث حالة الأزرار (تحديد المختار)
     container.querySelectorAll('.pay-teacher-btn').forEach(function(btn) {
@@ -617,11 +572,9 @@ function selectTeacher(id, name) {
 
 function resetTeacherSearch() {
     var hiddenInput = document.getElementById('pay_teacher_id');
-    var tag = document.getElementById('teacherTag');
     var container = document.getElementById('teacherButtonsContainer');
 
     hiddenInput.value = '';
-    tag.classList.add('d-none');
 
     // إزالة التحديد من الأزرار
     if (container) {
