@@ -474,6 +474,8 @@ class FinanceService:
                     total_deduction += ded_value
                 elif has_splits_first and has_second:
                     total_deduction += ded_value
+                elif has_splits_first and has_splits_second:
+                    total_deduction += ded_value
                 elif has_first or has_splits_first:
                     total_deduction += half_ded
                 elif has_second or has_splits_second:
@@ -492,6 +494,8 @@ class FinanceService:
                 elif has_first and has_splits_second:
                     total_deduction += full_deduction
                 elif has_splits_first and has_second:
+                    total_deduction += full_deduction
+                elif has_splits_first and has_splits_second:
                     total_deduction += full_deduction
                 elif has_first or has_splits_first:
                     total_deduction += half_deduction
