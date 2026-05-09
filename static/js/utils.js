@@ -217,11 +217,23 @@ function printElement(elementId) {
 /**
  * تحويل المبلغ المدخل (بالألف) إلى القيمة الفعلية
  * مثال: 150 → 150000
+ * يستخدم معالجة السلسلة النصية لتجنب أخطاء الفاصلة العائمة في JavaScript
+ * (مثال: 0.3 * 1000 = 299.999... بدون هذه المعالجة)
  */
 function toFullAmount(thousands) {
-    const val = parseFloat(thousands);
+    const str = String(thousands).trim();
+    if (!str || str === '0') return 0;
+    const val = parseFloat(str);
     if (isNaN(val) || val <= 0) return 0;
-    return Math.round(val * 1000);
+
+    // معالجة السلسلة النصية لتجنب أخطاء الفاصلة العائمة
+    if (str.includes('.')) {
+        const [intPart, decPart] = str.split('.');
+        const paddedDec = (decPart + '000').substring(0, 3);
+        const result = parseInt(intPart + paddedDec, 10);
+        return result > 0 ? result : 0;
+    }
+    return val * 1000;
 }
 
 /**
