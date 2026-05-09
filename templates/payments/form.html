@@ -1038,9 +1038,7 @@ async function submitPayment(event) {
         });
 
         if (result.success) {
-            showAlert(result.message, 'success');
-
-            // عرض رابط الوصل إذا وُجد
+            // عرض رابط الوصل إذا وُجد - يبقى ظاهراً حتى يضغط المستخدم X
             if (result.installment_id) {
                 const receiptUrl = '/reports/receipt/' + result.installment_id;
                 const receiptId = 'receipt-' + Date.now();
@@ -1050,21 +1048,23 @@ async function submitPayment(event) {
                 receiptAlert.setAttribute('role', 'alert');
                 receiptAlert.innerHTML =
                     '<div class="d-flex align-items-center gap-3 p-3">' +
-                        '<div class="alert-icon-wrap"><i class="fas fa-print"></i></div>' +
-                        '<div class="alert-text">تم تسجيل القسط - يمكنك تحميل الوصل</div>' +
+                        '<div class="alert-icon-wrap"><i class="fas fa-check-circle"></i></div>' +
+                        '<div class="alert-text">تم تسجيل القسط بنجاح - يمكنك طباعة الوصل</div>' +
                         '<a href="' + receiptUrl + '" target="_blank" class="alert-close-btn" style="background:rgba(255,255,255,0.35);font-size:12px;width:auto;padding:4px 10px;border-radius:8px;text-decoration:none;">' +
                             '<i class="fas fa-print me-1"></i>طباعة' +
                         '</a>' +
-                        '<button type="button" class="alert-close-btn" onclick="dismissAlert(\'' + receiptId + '\')">' +
+                        '<button type="button" class="alert-close-btn" onclick="dismissReceiptAlert(\'' + receiptId + '\')" title="إغلاق">' +
                             '<i class="fas fa-times"></i>' +
                         '</button>' +
-                    '</div>' +
-                    '<div class="alert-progress" style="animation-duration: 8000ms;"></div>';
+                    '</div>';
                 document.getElementById('alert-container').prepend(receiptAlert);
+            } else {
+                showAlert(result.message, 'success');
             }
 
-            // تأخير ثم التوجيه لصفحة الأقساط
-            setTimeout(function() { window.location.href = '/payments'; }, 1500);
+            // إعادة تعيين النموذج بعد النجاح
+            document.getElementById('addPaymentForm').reset();
+            document.getElementById('pay_date').value = getTodayDate();
         } else {
             showAlert(result.message, 'error');
             // إعادة تفعيل الزر
@@ -1080,11 +1080,13 @@ async function submitPayment(event) {
 }
 
 /**
- * إغلاق تنبيه مخصص
+ * إغلاق تنبيه الوصل وإعادة التوجيه لصفحة الأقساط
  */
-function dismissAlert(id) {
+function dismissReceiptAlert(id) {
     var el = document.getElementById(id);
     if (el) el.remove();
+    // التوجيه لصفحة الأقساط بعد إغلاق التنبيه
+    window.location.href = '/payments';
 }
 </script>
 {% endblock %}
