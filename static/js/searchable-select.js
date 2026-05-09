@@ -175,19 +175,50 @@
             const dd = this.dropdown;
             const viewH = window.innerHeight;
             const viewW = window.innerWidth;
+            const GAP = 4;
+            const MIN_PAD = 8;
 
             // Estimate dropdown height (after first render, use actual)
             const ddHeight = dd.offsetHeight > 50 ? dd.offsetHeight : Math.min(dd.scrollHeight, this.maxHeight + 120) || 300;
 
-            let top, left, width;
+            // Calculate available space
+            const spaceBelow = viewH - rect.bottom - GAP;
+            const spaceAbove = rect.top - GAP;
 
-            if (rect.bottom + ddHeight + 8 > viewH) {
-                // Not enough room below → open above
-                top = rect.top - ddHeight - 4;
-                if (top < 4) top = 4;
+            let top, left, width;
+            let optionsMaxHeight = this.maxHeight; // default
+
+            // Decide: open below or above
+            if (spaceBelow >= Math.min(ddHeight, 200)) {
+                // Enough room below → open below
+                top = rect.bottom + GAP;
+                // If dropdown is taller than available space, constrain options height
+                if (spaceBelow < ddHeight) {
+                    const searchHeight = 48; // search wrap height
+                    const countHeight = 32;  // count footer height
+                    const availableForOptions = spaceBelow - searchHeight - countHeight - MIN_PAD;
+                    optionsMaxHeight = Math.max(availableForOptions, 100);
+                }
+            } else if (spaceAbove >= Math.min(ddHeight, 200)) {
+                // Not enough below, but enough above → open above
+                top = Math.max(rect.top - ddHeight - GAP, MIN_PAD);
+                if (rect.top - GAP - MIN_PAD < ddHeight) {
+                    const searchHeight = 48;
+                    const countHeight = 32;
+                    const availableForOptions = (rect.top - GAP - MIN_PAD) - searchHeight - countHeight;
+                    optionsMaxHeight = Math.max(availableForOptions, 100);
+                }
             } else {
-                top = rect.bottom + 4;
+                // Not enough room either way → open below and constrain to viewport
+                top = rect.bottom + GAP;
+                const searchHeight = 48;
+                const countHeight = 32;
+                const availableForOptions = (viewH - top - MIN_PAD) - searchHeight - countHeight;
+                optionsMaxHeight = Math.max(availableForOptions, 80);
             }
+
+            // Apply constrained max-height to options list
+            this.optionsList.style.maxHeight = optionsMaxHeight + 'px';
 
             width = Math.max(rect.width, 200);
             left = rect.left;
@@ -198,11 +229,11 @@
             }
 
             // Prevent going off-screen
-            if (left + width > viewW - 8) {
-                left = viewW - width - 8;
+            if (left + width > viewW - MIN_PAD) {
+                left = viewW - width - MIN_PAD;
             }
-            if (left < 8) {
-                left = 8;
+            if (left < MIN_PAD) {
+                left = MIN_PAD;
             }
 
             dd.style.top = top + 'px';
@@ -482,6 +513,8 @@
             // Reset search
             this.searchTerm = '';
             this.searchInput.value = '';
+            // Reset options max-height to default
+            this.optionsList.style.maxHeight = this.maxHeight + 'px';
             this._renderOptions();
             this._focusedIdx = -1;
         }
