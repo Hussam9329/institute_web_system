@@ -5,36 +5,6 @@
 {% block extra_css %}
 <style>
 /* ===== ربط المدرس - بطاقات احترافية ===== */
-.link-teacher-tag {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: #fff;
-    font-size: 0.88rem;
-    font-weight: 600;
-    margin-bottom: 12px;
-    animation: tagSlideIn 0.2s ease;
-}
-@keyframes tagSlideIn {
-    from { opacity: 0; transform: translateY(-6px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.link-teacher-tag i { font-size: 0.85rem; }
-.link-teacher-tag-remove {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    padding: 0 4px;
-    font-size: 0.8rem;
-    opacity: 0.7;
-    margin-right: auto;
-    transition: opacity 0.15s;
-}
-.link-teacher-tag-remove:hover { opacity: 1; }
 
 .link-teacher-search {
     position: relative;
@@ -264,14 +234,7 @@
                                 <small class="text-muted">نوع الدراسة</small>
                                 <span class="badge bg-{% if student.study_type == 'حضوري' or not student.study_type %}primary{% elif student.study_type == 'الكتروني' %}info{% else %}warning{% endif %}">{{ student.study_type or 'حضوري' }}</span>
                             </div>
-                            <div class="profile-info-item">
-                                <small class="text-muted">الشارة</small>
-                                {% if student.has_badge %}
-                                <span class="badge bg-success"><i class="fas fa-id-badge me-1"></i>نعم</span>
-                                {% else %}
-                                <span class="badge bg-secondary"><i class="fas fa-id-badge me-1"></i>لا</span>
-                                {% endif %}
-                            </div>
+
                             {% if student.created_at %}
                             <div class="profile-info-item">
                                 <small class="text-muted">تاريخ التسجيل</small>
@@ -536,15 +499,6 @@
                 <div class="modal-body p-3 p-md-4">
                     <input type="hidden" id="link_student_id" value="{{ student.id }}">
                     <input type="hidden" id="link_teacher_id" value="">
-
-                    <!-- التاج عند الاختيار -->
-                    <div class="link-teacher-tag d-none" id="linkTeacherTag">
-                        <i class="fas fa-chalkboard-teacher"></i>
-                        <span id="linkTeacherTagName"></span>
-                        <button type="button" class="link-teacher-tag-remove" onclick="clearLinkTeacher()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
 
                     <!-- بحث المدرسين -->
                     <div class="link-teacher-search mb-2">
@@ -863,12 +817,8 @@ function renderLinkTeacherCards(filter) {
  */
 function selectLinkTeacher(id, name) {
     document.getElementById('link_teacher_id').value = id;
-    var tag = document.getElementById('linkTeacherTag');
-    var tagName = document.getElementById('linkTeacherTagName');
     var submitBtn = document.getElementById('linkTeacherSubmitBtn');
 
-    tagName.textContent = name;
-    tag.classList.remove('d-none');
     submitBtn.disabled = false;
 
     // فلتر نوع الدراسة حسب المدرس المختار
@@ -911,11 +861,9 @@ function selectLinkTeacher(id, name) {
  */
 function clearLinkTeacher() {
     document.getElementById('link_teacher_id').value = '';
-    var tag = document.getElementById('linkTeacherTag');
     var submitBtn = document.getElementById('linkTeacherSubmitBtn');
     var studyTypeSelect = document.getElementById('link_study_type');
 
-    tag.classList.add('d-none');
     submitBtn.disabled = true;
 
     // إعادة نوع الدراسة لكل الخيارات
