@@ -3533,6 +3533,7 @@ textarea:focus-visible {
 .ss-dropdown-fixed {
     position: fixed !important;
     z-index: 99999 !important;
+    display: none;
     /* NOTE: top / left / width are set dynamically by JS _positionDropdown()
        — do NOT add !important rules for these or JS inline styles will be overridden */
 }
