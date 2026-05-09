@@ -1979,18 +1979,21 @@ select.sort-by-select { min-width: 130px; }
 /* --- Custom Scrollbar for Dropdowns --- */
 .custom-dropdown-panel::-webkit-scrollbar,
 .searchable-select .ss-options::-webkit-scrollbar,
+.ss-dropdown-fixed .ss-options::-webkit-scrollbar,
 .pay-search-dropdown::-webkit-scrollbar {
     width: 5px;
 }
 
 .custom-dropdown-panel::-webkit-scrollbar-track,
 .searchable-select .ss-options::-webkit-scrollbar-track,
+.ss-dropdown-fixed .ss-options::-webkit-scrollbar-track,
 .pay-search-dropdown::-webkit-scrollbar-track {
     background: transparent;
 }
 
 .custom-dropdown-panel::-webkit-scrollbar-thumb,
 .searchable-select .ss-options::-webkit-scrollbar-thumb,
+.ss-dropdown-fixed .ss-options::-webkit-scrollbar-thumb,
 .pay-search-dropdown::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 10px;
@@ -1998,20 +2001,24 @@ select.sort-by-select { min-width: 130px; }
 
 .custom-dropdown-panel::-webkit-scrollbar-thumb:hover,
 .searchable-select .ss-options::-webkit-scrollbar-thumb:hover,
+.ss-dropdown-fixed .ss-options::-webkit-scrollbar-thumb:hover,
 .pay-search-dropdown::-webkit-scrollbar-thumb:hover {
     background: var(--muted-light);
 }
 
 /* ===== Searchable Select - Enhanced ===== */
-.searchable-select .ss-dropdown {
+.searchable-select .ss-dropdown,
+.ss-dropdown-fixed {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
     overflow: hidden;
     animation: customDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--white);
 }
 
-.searchable-select .ss-options {
+.searchable-select .ss-options,
+.ss-dropdown-fixed .ss-options {
     max-height: 280px;
     overflow-y: auto;
     padding: 6px;
@@ -2019,7 +2026,8 @@ select.sort-by-select { min-width: 130px; }
     scroll-behavior: smooth;
 }
 
-.searchable-select .ss-option {
+.searchable-select .ss-option,
+.ss-dropdown-fixed .ss-option {
     padding: 10px 14px;
     cursor: pointer;
     border-radius: var(--radius-sm);
@@ -2035,19 +2043,22 @@ select.sort-by-select { min-width: 130px; }
     gap: 8px;
 }
 
-.searchable-select .ss-option:hover {
+.searchable-select .ss-option:hover,
+.ss-dropdown-fixed .ss-option:hover {
     background: var(--primary-glow);
     color: var(--primary);
     transform: translateX(-2px);
 }
 
-.searchable-select .ss-option.selected {
+.searchable-select .ss-option.selected,
+.ss-dropdown-fixed .ss-option.selected {
     background: var(--primary-glow);
     color: var(--primary);
     font-weight: 600;
 }
 
-.searchable-select .ss-option.selected::before {
+.searchable-select .ss-option.selected::before,
+.ss-dropdown-fixed .ss-option.selected::before {
     content: '\f00c';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
@@ -2056,7 +2067,8 @@ select.sort-by-select { min-width: 130px; }
     flex-shrink: 0;
 }
 
-.searchable-select .ss-search-input {
+.searchable-select .ss-search-input,
+.ss-dropdown-fixed .ss-search-input {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 8px 12px 8px 32px;
@@ -2071,19 +2083,22 @@ select.sort-by-select { min-width: 130px; }
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.searchable-select .ss-search-input:focus {
+.searchable-select .ss-search-input:focus,
+.ss-dropdown-fixed .ss-search-input:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-.searchable-select .ss-no-results {
+.searchable-select .ss-no-results,
+.ss-dropdown-fixed .ss-no-results {
     padding: 20px 14px;
     text-align: center;
     color: var(--text-muted);
     font-size: 0.85rem;
 }
 
-.searchable-select .ss-no-results::before {
+.searchable-select .ss-no-results::before,
+.ss-dropdown-fixed .ss-no-results::before {
     content: '\f07b';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
@@ -2093,7 +2108,8 @@ select.sort-by-select { min-width: 130px; }
     opacity: 0.4;
 }
 
-.searchable-select .ss-count {
+.searchable-select .ss-count,
+.ss-dropdown-fixed .ss-count {
     padding: 8px 14px;
     font-size: 0.72rem;
     font-weight: 600;
@@ -3400,12 +3416,23 @@ textarea:focus-visible {
     animation: ssDropIn 0.15s ease;
 }
 
-/* داخل modal: القائمة المنسدلة تستخدم position: fixed من JS */
-.modal .searchable-select .ss-dropdown {
-    z-index: 1060;
+/* Fixed-position dropdown (appended to body by JS) — never clipped by overflow:hidden */
+.ss-dropdown-fixed {
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    z-index: 99999 !important;
 }
 
-.searchable-select .ss-dropdown.show {
+/* Inside modal: even higher z-index */
+.modal .searchable-select .ss-dropdown,
+.ss-dropdown-fixed.in-modal {
+    z-index: 1060 !important;
+}
+
+.searchable-select .ss-dropdown.show,
+.ss-dropdown-fixed.show {
     display: block;
 }
 

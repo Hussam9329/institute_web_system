@@ -1,20 +1,15 @@
 /**
  * SearchableSelect — محوّل تلقائي لعناصر <select> إلى قوائم منسدلة قابلة للبحث
  *
- * التحويل التلقائي: يبحث عن جميع عناصر <select> التي تحتوي على
- * data-searchable="true" أو التي يتجاوز عدد خياراتها data-search-threshold (افتراضي: 8)
- * ويحوّلها إلى قائمة منسدلة احترافية قابلة للبحث مع تمرير سلس.
+ * الإصلاحات:
+ *   - القائمة تُضاف إلى document.body بـ position:fixed فلا تُقطع من أي حاوية
+ *   - حساب الموقع ديناميكياً مع مراعاة RTL والشاشة
+ *   - التمرير السلس يعمل داخل القائمة بدون تضارب مع المودال
  *
  * الاستخدام:
  *   1) تلقائي: <select> بعدد خيارات > 8 → يتم التحويل تلقائياً
  *   2) يدوي: <select data-searchable="true"> → يتم التحويل بغض النظر عن عدد الخيارات
  *   3) تعطيل: <select data-searchable="false"> → لا يتم التحويل أبداً
- *
- * خيارات data attributes:
- *   data-searchable="true|false"  — فرض التحويل أو تعطيله
- *   data-search-placeholder="بحث..." — نص حقل البحث
- *   data-search-threshold="8"  — الحد الأدنى لعدد الخيارات للتحويل التلقائي
- *   data-search-max-height="280"  — أقصى ارتفاع للقائمة المنسدلة (px)
  */
 
 (function () {
@@ -24,6 +19,9 @@
     const DEFAULT_MAX_HEIGHT = 280;
     const SEARCH_PLACEHOLDER = 'بحث...';
 
+    // Track all instances for global event handling
+    const instances = [];
+
     class SearchableSelect {
         constructor(selectEl) {
             this.selectEl = selectEl;
@@ -31,12 +29,13 @@
             this.selectedValue = selectEl.value;
             this.isOpen = false;
             this.searchTerm = '';
+            this._focusedIdx = -1;
 
             // Read data attributes
             this.placeholder = selectEl.getAttribute('data-search-placeholder') || SEARCH_PLACEHOLDER;
             this.maxHeight = parseInt(selectEl.getAttribute('data-search-max-height')) || DEFAULT_MAX_HEIGHT;
 
-            // Preserve original classes and attributes
+            // Preserve original attributes
             this.originalClasses = selectEl.className;
             this.originalId = selectEl.id;
             this.originalName = selectEl.name;
@@ -47,6 +46,8 @@
             this._collectOptions();
             this._build();
             this._bindEvents();
+
+            instances.push(this);
         }
 
         _collectOptions() {
@@ -60,7 +61,6 @@
                     disabled: opt.disabled
                 });
             });
-            // Track selected
             const sel = this.options.find(o => o.selected);
             if (sel) this.selectedValue = sel.value;
         }
@@ -70,7 +70,7 @@
             this.selectEl.style.display = 'none';
             this.selectEl.setAttribute('data-ss-converted', 'true');
 
-            // Create container
+            // Container (inline, holds the trigger only)
             this.container = document.createElement('div');
             this.container.className = 'searchable-select';
             if (this.isDisabled) this.container.classList.add('ss-disabled');
@@ -102,9 +102,9 @@
             this.display.appendChild(this.arrow);
             this.container.appendChild(this.display);
 
-            // Dropdown panel
+            // ===== Dropdown panel — appended to document.body =====
             this.dropdown = document.createElement('div');
-            this.dropdown.className = 'ss-dropdown';
+            this.dropdown.className = 'ss-dropdown ss-dropdown-fixed';
             this.dropdown.setAttribute('role', 'listbox');
 
             // Search input
@@ -126,7 +126,7 @@
             this.optionsList.className = 'ss-options';
             this.optionsList.style.maxHeight = this.maxHeight + 'px';
 
-            // No results message
+            // No results
             this.noResults = document.createElement('div');
             this.noResults.className = 'ss-no-results';
             this.noResults.textContent = 'لا توجد نتائج';
@@ -139,11 +139,50 @@
             this.dropdown.appendChild(this.optionsList);
             this.dropdown.appendChild(this.noResults);
             this.dropdown.appendChild(this.countFooter);
-            this.container.appendChild(this.dropdown);
+
+            // Append to body so it's never clipped by overflow:hidden
+            document.body.appendChild(this.dropdown);
 
             // Render options
             this._renderOptions();
             this._updateCount();
+        }
+
+        _positionDropdown() {
+            const rect = this.display.getBoundingClientRect();
+            const dd = this.dropdown;
+            const viewH = window.innerHeight;
+            const viewW = window.innerWidth;
+
+            // Estimate dropdown height
+            const ddHeight = Math.min(dd.scrollHeight, this.maxHeight + 120) || 300;
+
+            // Position below or above
+            let top, left, width;
+
+            if (rect.bottom + ddHeight + 8 > viewH) {
+                // Not enough room below → open above
+                top = rect.top - ddHeight - 4;
+                if (top < 4) top = 4; // Fallback if also no room above
+            } else {
+                top = rect.bottom + 4;
+            }
+
+            width = Math.max(rect.width, 200);
+            left = rect.left;
+
+            // Prevent going off-screen right
+            if (left + width > viewW - 8) {
+                left = viewW - width - 8;
+            }
+            // Prevent going off-screen left
+            if (left < 8) {
+                left = 8;
+            }
+
+            dd.style.top = top + 'px';
+            dd.style.left = left + 'px';
+            dd.style.width = width + 'px';
         }
 
         _renderOptions() {
@@ -152,7 +191,6 @@
             let visibleCount = 0;
 
             this.options.forEach((opt, idx) => {
-                // Filter by search term
                 if (term && !opt.text.toLowerCase().includes(term) && !opt.value.toLowerCase().includes(term)) {
                     return;
                 }
@@ -212,7 +250,7 @@
             this.displayInner.textContent = opt.text;
             this.display.classList.remove('ss-empty');
 
-            // Mark selected
+            // Mark selected in list
             this.optionsList.querySelectorAll('.ss-option').forEach(el => {
                 el.classList.remove('selected');
                 el.setAttribute('aria-selected', 'false');
@@ -247,7 +285,7 @@
                 this.isOpen ? this.close() : this.open();
             });
 
-            // Keyboard support
+            // Keyboard support on trigger
             this.display.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -279,20 +317,23 @@
                 }
             });
 
-            // Close on outside click
-            document.addEventListener('click', (e) => {
-                if (!this.container.contains(e.target)) {
-                    this.close();
-                }
+            // Prevent scroll propagation from dropdown to modal
+            this.dropdown.addEventListener('wheel', (e) => {
+                e.stopPropagation();
+            }, { passive: true });
+
+            this.dropdown.addEventListener('touchmove', (e) => {
+                e.stopPropagation();
+            }, { passive: true });
+
+            // Prevent modal close when interacting with dropdown
+            this.dropdown.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
             });
 
-            // Sync with original select if value changes externally
-            const observer = new MutationObserver(() => {
-                if (this.selectEl.value !== this.selectedValue) {
-                    this._syncFromSelect();
-                }
+            this.dropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
             });
-            observer.observe(this.selectEl, { attributes: true, attributeFilter: ['value'] });
 
             // Watch for child list changes (innerHTML, appendChild, etc.)
             const childObserver = new MutationObserver(() => {
@@ -301,7 +342,6 @@
             childObserver.observe(this.selectEl, { childList: true, subtree: true });
 
             // Intercept .value property setter on the original select
-            // This ensures programmatic selectEl.value = x updates the UI
             const self = this;
             const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
             if (originalDescriptor) {
@@ -324,8 +364,8 @@
             if (!opts.length) return;
             if (!this._focusedIdx && this._focusedIdx !== 0) this._focusedIdx = -1;
             this._focusedIdx = Math.min(this._focusedIdx + 1, opts.length - 1);
+            opts.forEach(o => o.classList.remove('ss-focused'));
             opts[this._focusedIdx].classList.add('ss-focused');
-            opts.forEach((o, i) => { if (i !== this._focusedIdx) o.classList.remove('ss-focused'); });
             opts[this._focusedIdx].scrollIntoView({ block: 'nearest' });
         }
 
@@ -334,8 +374,8 @@
             if (!opts.length) return;
             if (!this._focusedIdx && this._focusedIdx !== 0) this._focusedIdx = opts.length;
             this._focusedIdx = Math.max(this._focusedIdx - 1, 0);
+            opts.forEach(o => o.classList.remove('ss-focused'));
             opts[this._focusedIdx].classList.add('ss-focused');
-            opts.forEach((o, i) => { if (i !== this._focusedIdx) o.classList.remove('ss-focused'); });
             opts[this._focusedIdx].scrollIntoView({ block: 'nearest' });
         }
 
@@ -370,29 +410,33 @@
             this.display.classList.add('active');
             this.display.setAttribute('aria-expanded', 'true');
 
+            // Check if inside a modal
+            const modal = this.container.closest('.modal');
+            if (modal) {
+                this.dropdown.classList.add('in-modal');
+            }
+
+            // Position dropdown relative to trigger
+            this._positionDropdown();
+
             // Focus search
             setTimeout(() => {
                 this.searchInput.focus();
-            }, 50);
+            }, 60);
 
             // Scroll to selected
             const selEl = this.optionsList.querySelector('.ss-option.selected');
             if (selEl) {
                 setTimeout(() => {
                     selEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                }, 100);
-            }
-
-            // If inside a modal, adjust z-index
-            const modal = this.container.closest('.modal');
-            if (modal) {
-                this.dropdown.style.zIndex = '1060';
+                }, 120);
             }
         }
 
         close() {
             this.isOpen = false;
             this.dropdown.classList.remove('show');
+            this.dropdown.classList.remove('in-modal');
             this.display.classList.remove('active');
             this.display.setAttribute('aria-expanded', 'false');
 
@@ -403,13 +447,11 @@
             this._focusedIdx = -1;
         }
 
-        /** Update options dynamically (e.g., when teacher list changes) */
+        /** Update options dynamically */
         updateOptions(newOptions) {
-            // Clear existing
             this.selectEl.innerHTML = '';
             this.options = [];
 
-            // Add new options
             newOptions.forEach(opt => {
                 const optionEl = document.createElement('option');
                 optionEl.value = opt.value;
@@ -426,7 +468,6 @@
                 });
             });
 
-            // Re-render
             this.selectedValue = this.selectEl.value;
             const sel = this.options.find(o => o.selected);
             if (sel) {
@@ -440,39 +481,52 @@
             this._updateCount();
         }
 
-        /** Destroy and restore original select */
         destroy() {
             this.selectEl.style.display = '';
             this.selectEl.removeAttribute('data-ss-converted');
             this.container.parentNode.insertBefore(this.selectEl, this.container);
             this.container.remove();
+            this.dropdown.remove();
+            const idx = instances.indexOf(this);
+            if (idx > -1) instances.splice(idx, 1);
         }
     }
+
+    // ===== Global event handlers =====
+
+    // Close all on outside click
+    document.addEventListener('click', (e) => {
+        instances.forEach(inst => {
+            if (inst.isOpen && !inst.display.contains(e.target) && !inst.dropdown.contains(e.target)) {
+                inst.close();
+            }
+        });
+    });
+
+    // Reposition on scroll/resize
+    function repositionAll() {
+        instances.forEach(inst => {
+            if (inst.isOpen) inst._positionDropdown();
+        });
+    }
+    window.addEventListener('scroll', repositionAll, true); // capture phase to catch modal scrolls
+    window.addEventListener('resize', repositionAll);
 
     // ===== Auto-initialization =====
     function initAll() {
         const selects = document.querySelectorAll('select');
 
         selects.forEach(select => {
-            // Skip if already converted
             if (select.getAttribute('data-ss-converted') === 'true') return;
-
-            // Skip if explicitly disabled
             if (select.getAttribute('data-searchable') === 'false') return;
-
-            // Check if inside a searchable-select container already
             if (select.closest('.searchable-select')) return;
 
-            // Skip very small selects (< 2 options, like empty placeholder-only)
             const optionCount = select.querySelectorAll('option').length;
-
-            // Check threshold
             const threshold = parseInt(select.getAttribute('data-search-threshold')) || DEFAULT_THRESHOLD;
             const forceSearchable = select.getAttribute('data-searchable') === 'true';
 
             if (!forceSearchable && optionCount < threshold) return;
 
-            // Convert!
             try {
                 new SearchableSelect(select);
             } catch (e) {
@@ -481,14 +535,12 @@
         });
     }
 
-    // Run on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initAll);
     } else {
         initAll();
     }
 
-    // Also run when new content is loaded (e.g., HTMX, dynamic forms)
     window.SearchableSelect = SearchableSelect;
     window.initSearchableSelects = initAll;
 
