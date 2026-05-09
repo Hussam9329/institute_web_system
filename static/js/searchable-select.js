@@ -154,16 +154,37 @@
             const viewH = window.innerHeight;
             const viewW = window.innerWidth;
 
-            // Estimate dropdown height
-            const ddHeight = Math.min(dd.scrollHeight, this.maxHeight + 120) || 300;
+            // If trigger is not visible (e.g., inside collapsed panel), try to make it visible temporarily
+            if (rect.width === 0 && rect.height === 0) {
+                // Fallback: use the container or try scrollIntoView
+                const containerRect = this.container.getBoundingClientRect();
+                if (containerRect.width > 0 && containerRect.height > 0) {
+                    return this._positionFromRect(containerRect);
+                }
+                // Last resort: position near center of viewport
+                dd.style.top = Math.max(viewH * 0.2, 20) + 'px';
+                dd.style.left = Math.max((viewW - 280) / 2, 8) + 'px';
+                dd.style.width = '280px';
+                return;
+            }
 
-            // Position below or above
+            this._positionFromRect(rect);
+        }
+
+        _positionFromRect(rect) {
+            const dd = this.dropdown;
+            const viewH = window.innerHeight;
+            const viewW = window.innerWidth;
+
+            // Estimate dropdown height (after first render, use actual)
+            const ddHeight = dd.offsetHeight > 50 ? dd.offsetHeight : Math.min(dd.scrollHeight, this.maxHeight + 120) || 300;
+
             let top, left, width;
 
             if (rect.bottom + ddHeight + 8 > viewH) {
                 // Not enough room below → open above
                 top = rect.top - ddHeight - 4;
-                if (top < 4) top = 4; // Fallback if also no room above
+                if (top < 4) top = 4;
             } else {
                 top = rect.bottom + 4;
             }
@@ -171,11 +192,15 @@
             width = Math.max(rect.width, 200);
             left = rect.left;
 
-            // Prevent going off-screen right
+            // RTL: align to the right edge of the trigger
+            if (document.documentElement.dir === 'rtl' || document.documentElement.getAttribute('dir') === 'rtl') {
+                left = rect.right - width;
+            }
+
+            // Prevent going off-screen
             if (left + width > viewW - 8) {
                 left = viewW - width - 8;
             }
-            // Prevent going off-screen left
             if (left < 8) {
                 left = 8;
             }
@@ -317,9 +342,18 @@
                 }
             });
 
-            // Prevent scroll propagation from dropdown to modal
+            // Prevent scroll propagation from dropdown to modal/page
+            // and forward wheel events to the options list for better UX
             this.dropdown.addEventListener('wheel', (e) => {
                 e.stopPropagation();
+                // If the scroll target is not inside the options list,
+                // forward the scroll to the options list so it still scrolls
+                if (!this.optionsList.contains(e.target)) {
+                    const scrollAmount = e.deltaY || e.deltaX;
+                    if (scrollAmount) {
+                        this.optionsList.scrollTop += scrollAmount;
+                    }
+                }
             }, { passive: true });
 
             this.dropdown.addEventListener('touchmove', (e) => {
@@ -416,8 +450,13 @@
                 this.dropdown.classList.add('in-modal');
             }
 
-            // Position dropdown relative to trigger
+            // Position dropdown relative to trigger (initial estimate)
             this._positionDropdown();
+
+            // Reposition after render to get accurate dimensions
+            requestAnimationFrame(() => {
+                this._positionDropdown();
+            });
 
             // Focus search
             setTimeout(() => {

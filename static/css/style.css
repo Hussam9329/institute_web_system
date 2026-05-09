@@ -3419,10 +3419,9 @@ textarea:focus-visible {
 /* Fixed-position dropdown (appended to body by JS) — never clipped by overflow:hidden */
 .ss-dropdown-fixed {
     position: fixed !important;
-    top: auto !important;
-    right: auto !important;
-    left: auto !important;
     z-index: 99999 !important;
+    /* NOTE: top / left / width are set dynamically by JS _positionDropdown()
+       — do NOT add !important rules for these or JS inline styles will be overridden */
 }
 
 /* Inside modal: even higher z-index */
