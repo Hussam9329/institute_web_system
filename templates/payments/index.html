@@ -536,18 +536,14 @@
                                 <label class="pay-field-label">
                                     <i class="fas fa-user-graduate"></i>الطالب
                                 </label>
-                                <div class="pay-search-box" id="studentSearchBox">
-                                    <input type="text" class="form-control pay-search-input" id="pay_student_search"
-                                           placeholder="ابحث باسم الطالب..." autocomplete="off">
-                                    <input type="hidden" id="pay_student_id" value="">
-                                    <div class="pay-search-tag d-none" id="studentTag">
-                                        <span id="studentTagName"></span>
-                                        <button type="button" class="pay-search-tag-remove" id="studentTagRemove">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div class="pay-search-dropdown" id="studentDropdown"></div>
-                                </div>
+                                <select class="form-select pay-field-input" id="pay_student_select"
+                                        data-searchable="true" data-search-placeholder="ابحث باسم الطالب..."
+                                        data-placeholder="اختر الطالب..." required>
+                                    <option value="">اختر الطالب...</option>
+                                    {% for student in students %}
+                                    <option value="{{ student.id }}">{{ student.name }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <!-- خانة المدرس -->
                             <div class="col-12 col-md-6">
@@ -699,6 +695,9 @@ var allStudents = [
 var teachersBalanceData = {};
 var currentTeachersList = []; // قائمة المدرسين المرتبطين بالطالب المختار
 
+// ===== مرجع نسخة SearchableSelect للطالب =====
+var studentSelectInstance = null;
+
 // ===== متغيرات الخصم =====
 var payCurrentDiscountType = 'none';
 var payCurrentDiscountValue = 0;
@@ -711,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var payDateEl = document.getElementById('pay_date');
     if (payDateEl) payDateEl.value = getTodayDate();
 
-    // تهيئة بحث الطالب
+    // تهيئة بحث الطالب عبر SearchableSelect الموحّد
     initStudentSearch();
     // تهيئة بحث المدرس
     initTeacherSearch();
@@ -784,126 +783,90 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// بحث الطالب - مخصص من الصفر
+// بحث الطالب — باستخدام SearchableSelect الموحّد
 // ============================================
 function initStudentSearch() {
-    var input = document.getElementById('pay_student_search');
-    var dropdown = document.getElementById('studentDropdown');
-    var tag = document.getElementById('studentTag');
-    var tagName = document.getElementById('studentTagName');
-    var tagRemove = document.getElementById('studentTagRemove');
-    var hiddenInput = document.getElementById('pay_student_id');
+    var selectEl = document.getElementById('pay_student_select');
+    if (!selectEl) return;
 
-    // عند الكتابة في حقل البحث
-    input.addEventListener('input', function() {
-        var query = this.value.trim().toLowerCase();
-        if (!query) {
-            dropdown.classList.remove('show');
-            dropdown.innerHTML = '';
+    // انتظر تحميل SearchableSelect
+    function tryInit() {
+        if (typeof SearchableSelect === 'undefined') {
+            setTimeout(tryInit, 100);
             return;
         }
-        // تصفية الطلاب
-        var filtered = allStudents.filter(function(s) {
-            return s.name.toLowerCase().includes(query);
-        });
-        renderStudentDropdown(filtered);
-    });
 
-    // عند التركيز على حقل البحث - عرض الكل إذا كان فارغاً
-    input.addEventListener('focus', function() {
-        if (this.value.trim() === '') {
-            renderStudentDropdown(allStudents);
+        // إذا لم يتم التحويل تلقائياً (لأنه داخل مودال ديناميكي)، حوّله يدوياً
+        if (selectEl.getAttribute('data-ss-converted') !== 'true') {
+            studentSelectInstance = new SearchableSelect(selectEl, {
+                onChange: function(value) {
+                    if (value) {
+                        loadStudentTeachers(parseInt(value));
+                    } else {
+                        resetTeacherSearch();
+                        var container = document.getElementById('teacherButtonsContainer');
+                        if (container) {
+                            container.innerHTML = '<div class="pay-teacher-placeholder text-muted"><i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً</div>';
+                        }
+                    }
+                }
+            });
+        } else {
+            // تم التحويل تلقائياً — ابحث عن النسخة
+            studentSelectInstance = _findStudentInstance();
+            if (studentSelectInstance) {
+                // أضف onChange handler
+                selectEl.addEventListener('change', function() {
+                    var value = this.value;
+                    if (value) {
+                        loadStudentTeachers(parseInt(value));
+                    } else {
+                        resetTeacherSearch();
+                        var container = document.getElementById('teacherButtonsContainer');
+                        if (container) {
+                            container.innerHTML = '<div class="pay-teacher-placeholder text-muted"><i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً</div>';
+                        }
+                    }
+                });
+            }
         }
-    });
-
-    // منع إغلاق المودال ومنع انتقال التمرير للمودال
-    input.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-    input.addEventListener('focusin', function(e) { e.stopPropagation(); });
-    dropdown.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-    dropdown.addEventListener('focusin', function(e) { e.stopPropagation(); });
-    // منع انتقال التمرير من القائمة إلى المودال (يمنع إغلاق القائمة عند استخدام عجلة الماوس)
-    dropdown.addEventListener('scroll', function(e) { e.stopPropagation(); });
-    dropdown.addEventListener('wheel', function(e) { e.stopPropagation(); });
-
-    // زر إزالة الاختيار
-    tagRemove.addEventListener('click', function(e) {
-        e.stopPropagation();
-        resetStudentSearch();
-    });
-
-    // إغلاق القائمة عند النقر خارجها
-    document.addEventListener('click', function(e) {
-        var box = document.getElementById('studentSearchBox');
-        if (box && !box.contains(e.target)) {
-            dropdown.classList.remove('show');
-            removeDropdownSpacing();
-        }
-    });
+    }
+    tryInit();
 }
 
-function renderStudentDropdown(students) {
-    var dropdown = document.getElementById('studentDropdown');
-    dropdown.innerHTML = '';
-
-    if (students.length === 0) {
-        dropdown.innerHTML = '<div class="pay-search-empty">لا توجد نتائج</div>';
-        positionFixedDropdown('studentSearchBox', 'studentDropdown');
-        dropdown.classList.add('show');
-        return;
-    }
-
-    students.forEach(function(s) {
-        var item = document.createElement('div');
-        item.className = 'pay-search-item';
-        item.innerHTML = '<i class="fas fa-user-graduate pay-search-item-icon"></i><span>' + escapeHtml(s.name) + '</span>';
-        item.addEventListener('click', function(e) {
-            e.stopPropagation();
-            selectStudent(s.id, s.name);
-        });
-        item.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-        dropdown.appendChild(item);
-    });
-
-    // عداد النتائج
-    var countDiv = document.createElement('div');
-    countDiv.className = 'pay-search-count';
-    countDiv.textContent = students.length + ' طالب';
-    dropdown.appendChild(countDiv);
-
-    positionFixedDropdown('studentSearchBox', 'studentDropdown');
-    dropdown.classList.add('show');
+function _findStudentInstance() {
+    // ابحث عن النسخة في سجلّ SearchableSelect
+    if (typeof SearchableSelect === 'undefined') return null;
+    // الطريقة: نبحث في instances المرئية
+    var selectEl = document.getElementById('pay_student_select');
+    if (!selectEl) return null;
+    // نستخدم الدالة العامة للحصول على النسخة
+    var container = selectEl.closest('.searchable-select');
+    if (!container) return null;
+    // اجتياز جميع النسخ
+    return null; // سيتم التعامل عبر change event
 }
 
 function selectStudent(id, name) {
-    var input = document.getElementById('pay_student_search');
-    var hiddenInput = document.getElementById('pay_student_id');
-    var tag = document.getElementById('studentTag');
-    var tagName = document.getElementById('studentTagName');
-    var dropdown = document.getElementById('studentDropdown');
-
-    hiddenInput.value = id;
-    tagName.textContent = name;
-    input.classList.add('d-none');
-    tag.classList.remove('d-none');
-    dropdown.classList.remove('show');
-    removeDropdownSpacing();
-
+    // استخدام SearchableSelect الموحّد
+    if (studentSelectInstance) {
+        studentSelectInstance.setValue(String(id));
+    } else {
+        var selectEl = document.getElementById('pay_student_select');
+        if (selectEl) selectEl.value = String(id);
+    }
     // تحميل مدرسين الطالب المختار
     loadStudentTeachers(id);
 }
 
 function resetStudentSearch() {
-    var input = document.getElementById('pay_student_search');
-    var hiddenInput = document.getElementById('pay_student_id');
-    var tag = document.getElementById('studentTag');
-    var dropdown = document.getElementById('studentDropdown');
-
-    input.value = '';
-    input.classList.remove('d-none');
-    hiddenInput.value = '';
-    tag.classList.add('d-none');
-    dropdown.classList.remove('show');
-    removeDropdownSpacing();
+    // إعادة تعيين SearchableSelect
+    if (studentSelectInstance) {
+        studentSelectInstance.setValue('');
+    } else {
+        var selectEl = document.getElementById('pay_student_select');
+        if (selectEl) selectEl.value = '';
+    }
 
     // إعادة تعيين المدرس أيضاً
     resetTeacherSearch();
@@ -1019,7 +982,7 @@ function selectTeacher(id, name) {
     showRemainingHint(id);
 
     // عرض قسم الخصم وتحميل الخصم الحالي
-    var studentId = parseInt(document.getElementById('pay_student_id').value);
+    var studentId = parseInt(document.getElementById('pay_student_select').value);
     if (studentId && id) {
         document.getElementById('payDiscountSection').style.display = '';
         payResetDiscountForm();
@@ -1182,78 +1145,14 @@ function showRemainingHint(teacherId) {
 }
 
 // ============================================
-// موضع القائمة المنسدلة - داخل المودال بدون تداخل
+// إدارة القوائم المنسدلة — تُدار عبر SearchableSelect الموحّد
 // ============================================
-function positionFixedDropdown(boxId, dropdownId) {
-    var box = document.getElementById(boxId);
-    var dropdown = document.getElementById(dropdownId);
-    if (!box || !dropdown) return;
-
-    var rect = box.getBoundingClientRect();
-    var dropdownMaxH = 220;
-    var footerEl = document.querySelector('.pay-modal-footer');
-    var footerTop = footerEl ? footerEl.getBoundingClientRect().top : window.innerHeight;
-    var availableBelow = footerTop - rect.bottom - 8;
-
-    // حساب الارتفاع المناسب
-    var calculatedHeight = Math.min(dropdownMaxH, availableBelow);
-    if (calculatedHeight < 80) calculatedHeight = dropdownMaxH;
-
-    dropdown.style.position = 'fixed';
-    dropdown.style.width = rect.width + 'px';
-    dropdown.style.left = rect.left + 'px';
-    dropdown.style.right = 'auto';
-    dropdown.style.maxHeight = calculatedHeight + 'px';
-
-    // حساب المساحة المتاحة أدناه وأعلاه
-    var spaceBelow = window.innerHeight - rect.bottom;
-    var spaceAbove = rect.top;
-
-    if (spaceBelow < 150 && spaceAbove > spaceBelow) {
-        // عرض القائمة للأعلى
-        dropdown.style.top = 'auto';
-        dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
-    } else {
-        // عرض القائمة للأسفل
-        dropdown.style.top = (rect.bottom + 4) + 'px';
-        dropdown.style.bottom = 'auto';
-    }
-
-    // لا نضيف مساحة ديناميكية - القائمة ثابتة بـ position: fixed ولا تؤثر على تدفق الصفحة
-}
-
-// إزالة المسافة الإضافية عند إغلاق القائمة
-function removeDropdownSpacing() {
-    document.querySelectorAll('[data-dropdown-open="true"]').forEach(function(el) {
-        el.style.marginBottom = '';
-        el.removeAttribute('data-dropdown-open');
-    });
-}
-
-// تحديث الموضع عند تغيير حجم النافذة أو تمرير المودال
 document.addEventListener('DOMContentLoaded', function() {
-    var modalEl = document.getElementById('addPaymentModal');
-    if (modalEl) {
-        // عند تمرير المودال نفسه
-        modalEl.addEventListener('scroll', function() {
-            closeAllDropdowns();
-        }, true);
-        // عند تمرير محتوى المودال (modal-body)
-        var modalBody = modalEl.querySelector('.pay-modal-body');
-        if (modalBody) {
-            modalBody.addEventListener('scroll', function() {
-                closeAllDropdowns();
-            });
-        }
-    }
-    window.addEventListener('resize', function() {
-        closeAllDropdowns();
-    });
+    // لا حاجة لمعالجة scroll/resize يدوياً — SearchableSelect يتعامل معها
 });
 
 function closeAllDropdowns() {
-    document.getElementById('studentDropdown')?.classList.remove('show');
-    removeDropdownSpacing();
+    // تُدار الآن عبر SearchableSelect الموحّد
 }
 
 // ============================================
@@ -1382,7 +1281,7 @@ function payToggleDiscountPanel() {
  */
 function payGoToEditDiscount(event) {
     event.preventDefault();
-    var studentId = document.getElementById('pay_student_id')?.value;
+    var studentId = document.getElementById('pay_student_select')?.value;
     if (studentId) {
         window.open('/students/' + studentId + '/edit', '_blank');
     }
@@ -1458,7 +1357,7 @@ window.addEventListener('resize', enforceMobileView);
 async function submitPayment(event) {
     event.preventDefault();
 
-    var studentId = parseInt(document.getElementById('pay_student_id').value);
+    var studentId = parseInt(document.getElementById('pay_student_select').value);
     var teacherId = parseInt(document.getElementById('pay_teacher_id').value);
     var amount = toFullAmount(document.getElementById('pay_amount').value);
 

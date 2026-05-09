@@ -1433,6 +1433,12 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
         max-height: 240px;
     }
 
+    .searchable-select .ss-display {
+        padding: 0.65rem 0.9rem;
+        min-height: 44px;
+        font-size: 0.9rem;
+    }
+
     .pay-search-dropdown {
         max-height: 250px;
     }
@@ -1466,6 +1472,11 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
     .searchable-select .ss-search-input {
         padding: 7px 10px 7px 28px;
         font-size: 0.84rem;
+    }
+
+    .searchable-select .ss-clear-btn {
+        width: 18px;
+        height: 18px;
     }
 
     .pay-search-dropdown {
