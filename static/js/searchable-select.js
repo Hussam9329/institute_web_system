@@ -378,19 +378,18 @@
             });
 
             // Prevent scroll propagation from dropdown to modal/page
-            // and forward wheel events to the options list for better UX
+            // Use passive:false so we can call preventDefault() — this ensures
+            // the wheel event ONLY scrolls the options list, never the page/modal.
             this.dropdown.addEventListener('wheel', (e) => {
-                e.stopPropagation();
-                // If the scroll target is not inside the options list,
-                // forward the scroll to the options list so it still scrolls
-                if (!this.optionsList.contains(e.target)) {
-                    const scrollAmount = e.deltaY || e.deltaX;
-                    if (scrollAmount) {
-                        this.optionsList.scrollTop += scrollAmount;
-                    }
+                e.preventDefault();   // block page/modal scroll
+                e.stopPropagation(); // stop event bubbling
+                const scrollAmount = e.deltaY || e.deltaX;
+                if (scrollAmount) {
+                    this.optionsList.scrollTop += scrollAmount;
                 }
-            }, { passive: true });
+            }, { passive: false });
 
+            // Touch move: stop propagation so modal doesn't scroll underneath
             this.dropdown.addEventListener('touchmove', (e) => {
                 e.stopPropagation();
             }, { passive: true });

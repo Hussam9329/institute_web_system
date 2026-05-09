@@ -2007,12 +2007,21 @@ select.sort-by-select { min-width: 130px; }
 }
 
 /* ===== Searchable Select - Enhanced ===== */
-.searchable-select .ss-dropdown,
-.ss-dropdown-fixed {
+.searchable-select .ss-dropdown {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
     overflow: hidden;
+    animation: customDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    background: var(--white);
+}
+
+/* Fixed dropdown: NO overflow:hidden — the .ss-options child handles its own scroll */
+.ss-dropdown-fixed {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    overflow: visible;
     animation: customDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     background: var(--white);
 }
@@ -3420,6 +3429,7 @@ textarea:focus-visible {
 .ss-dropdown-fixed {
     position: fixed !important;
     z-index: 99999 !important;
+    overflow: visible !important;   /* Must NOT clip — .ss-options handles its own scroll */
     /* NOTE: top / left / width are set dynamically by JS _positionDropdown()
        — do NOT add !important rules for these or JS inline styles will be overridden */
 }
@@ -3427,7 +3437,7 @@ textarea:focus-visible {
 /* Inside modal: even higher z-index */
 .modal .searchable-select .ss-dropdown,
 .ss-dropdown-fixed.in-modal {
-    z-index: 1060 !important;
+    z-index: 999999 !important;
 }
 
 .searchable-select .ss-dropdown.show,
@@ -3450,6 +3460,11 @@ textarea:focus-visible {
     padding: 8px 10px;
     border-bottom: 1px solid var(--border-light);
     background: var(--light-bg);
+}
+
+/* Rounded top corners for search wrap in fixed dropdown */
+.ss-dropdown-fixed .ss-search-wrap {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .searchable-select .ss-search-input {
@@ -3518,6 +3533,16 @@ textarea:focus-visible {
     background: var(--light-bg);
     border-top: 1px solid var(--border-light);
     text-align: center;
+}
+
+/* Rounded bottom corners for count footer in fixed dropdown */
+.ss-dropdown-fixed .ss-count {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* No results — also needs rounded bottom corners when visible alone */
+.ss-dropdown-fixed .ss-no-results {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* Responsive */
