@@ -79,9 +79,8 @@
     <div class="amount-value">{{ format_currency(installment.amount) }}</div>
 </div>
 
-<!-- معلومات الخصم -->
-{% if discount_type != 'none' %}
-<div class="receipt-discount-info" style="margin:8px 24px;padding:10px 14px;background:#fffbeb;border:1px solid #fbbf24;border-radius:10px;">
+<!-- معلومات الخصم - تظهر دائماً -->
+<div style="margin:8px 24px;padding:10px 14px;border-radius:10px;{% if discount_type == 'percentage' %}background:#fffbeb;border:1px solid #fbbf24;{% elif discount_type == 'free' %}background:#f0fdf4;border:1px solid #86efac;{% else %}background:#f9fafb;border:1px solid #e5e7eb;{% endif %}">
     {% if discount_type == 'percentage' %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
         <i class="fas fa-percent" style="color:#d97706;font-size:12px;"></i>
@@ -101,9 +100,13 @@
     <div style="font-size:11px;color:#166534;">
         الطالب معفي من الدفع بالكامل
     </div>
+    {% else %}
+    <div style="display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-ban" style="color:#9ca3af;font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:500;color:#6b7280;">لا يوجد خصم</span>
+    </div>
     {% endif %}
 </div>
-{% endif %}
 
 <!-- الملخص المالي -->
 <div class="receipt-summary">

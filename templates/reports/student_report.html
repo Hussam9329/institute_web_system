@@ -105,6 +105,7 @@
                     <th>المادة</th>
                     <th style="text-align:center">نوع الدراسة</th>
                     <th style="text-align:center">الحالة</th>
+                    <th style="text-align:center">الخصم</th>
                     <th style="text-align:center">القسط قبل الخصم</th>
                     <th style="text-align:center">القسط بعد الخصم</th>
                     <th style="text-align:center">المدفوع</th>
@@ -124,20 +125,22 @@
                     <td style="text-align:center">
                         <span class="badge-continue">{{ ts.get('status', 'مستمر') }}</span>
                     </td>
+                    <td style="text-align:center">
+                        {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
+                            <span style="color:#d97706;font-weight:600;">{{ ts.discount_info.discount_value }}%</span>
+                        {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
+                            <span style="color:#16a34a;font-weight:600;">مجاني</span>
+                        {% else %}
+                            <span style="color:var(--muted);">لا يوجد</span>
+                        {% endif %}
+                    </td>
                     <td style="text-align:center{% if ts.discount_info and ts.discount_info.discount_type not in ['none', ''] %}; text-decoration:line-through; color:var(--muted){% endif %}">{{ format_currency(ts.original_fee) }}</td>
                     <td style="text-align:center; font-weight:600">
                         {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
                             {{ format_currency(ts.total_fee) }}
-                            <br><small style="color:#f0a500">{{ ts.discount_info.discount_value }}% خصم</small>
-                        {% elif ts.discount_info and ts.discount_info.discount_type == 'fixed' %}
-                            {{ format_currency(ts.total_fee) }}
-                            <br><small style="color:#f0a500">خصم ثابت</small>
                         {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
                             مجاني
                             {% if ts.discount_info.institute_waiver %}<br><small style="color:#f0a500">تنازل المعهد</small>{% endif %}
-                        {% elif ts.discount_info and ts.discount_info.discount_type == 'custom' %}
-                            {{ format_currency(ts.total_fee) }}
-                            <br><small style="color:#f0a500">خصم مخصص</small>
                         {% else %}
                             {{ format_currency(ts.total_fee) }}
                         {% endif %}
@@ -150,7 +153,7 @@
                 </tr>
                 {% endfor %}
                 <tr class="total-row">
-                    <td colspan="5" style="text-align:center">الإجمالي</td>
+                    <td colspan="6" style="text-align:center">الإجمالي</td>
                     <td style="text-align:center">{{ format_currency(total_original_fee_raw) }}</td>
                     <td style="text-align:center">{{ format_currency(total_fee_raw) }}</td>
                     <td style="text-align:center; color:var(--success)">{{ format_currency(total_paid_raw) }}</td>

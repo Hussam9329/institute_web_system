@@ -114,6 +114,8 @@
                     <th>الطالب</th>
                     <th style="text-align:center">نوع الدراسة</th>
                     <th style="text-align:center">الحالة</th>
+                    <th style="text-align:center">الخصم</th>
+                    <th style="text-align:center">القسط</th>
                     <th style="text-align:center">المدفوع</th>
                     <th style="text-align:center">المتبقي</th>
                     <th style="text-align:center">حالة الدفع</th>
@@ -126,6 +128,26 @@
                     <td style="font-weight:600">{{ s.name }}</td>
                     <td style="text-align:center"><span class="badge-continue">{{ s.get('study_type', 'حضوري') }}</span></td>
                     <td style="text-align:center"><span class="badge-continue">{{ s.get('status', 'مستمر') }}</span></td>
+                    <td style="text-align:center">
+                        {% if s.discount_info and s.discount_info.discount_type == 'percentage' %}
+                            <span style="color:#d97706;font-weight:600;">{{ s.discount_info.discount_value }}%</span>
+                        {% elif s.discount_info and s.discount_info.discount_type == 'free' %}
+                            <span style="color:#16a34a;font-weight:600;">مجاني</span>
+                        {% else %}
+                            <span style="color:var(--muted);">لا يوجد</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:center; font-weight:600">
+                        {% if s.discount_info and s.discount_info.discount_type == 'free' %}
+                            <span style="text-decoration:line-through;color:var(--muted);">{{ format_currency(s.original_fee) }}</span>
+                            <br><span style="color:#16a34a;">0</span>
+                        {% elif s.original_fee != s.total_fee %}
+                            <span style="text-decoration:line-through;color:var(--muted);font-size:10px;">{{ format_currency(s.original_fee) }}</span>
+                            <br>{{ format_currency(s.total_fee) }}
+                        {% else %}
+                            {{ format_currency(s.total_fee) }}
+                        {% endif %}
+                    </td>
                     <td style="text-align:center; font-weight:600; color:var(--success)">{{ format_currency(s.paid_total) }}</td>
                     <td style="text-align:center; font-weight:600; color:{% if s.remaining_balance > 0 %}var(--danger){% else %}var(--success){% endif %}">
                         {{ format_currency(s.remaining_balance) }}
