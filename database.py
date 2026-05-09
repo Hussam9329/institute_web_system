@@ -337,6 +337,7 @@ def init_db():
                         discount_type TEXT DEFAULT 'none',
                         discount_value INTEGER DEFAULT 0,
                         institute_waiver INTEGER DEFAULT 0,
+                        discount_notes TEXT DEFAULT '',
                         PRIMARY KEY (student_id, teacher_id),
                         FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                         FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE
@@ -369,6 +370,12 @@ def init_db():
                         FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE
                     )
                 ''')
+                
+                # ===== إضافة عمود discount_notes إذا لم يكن موجوداً =====
+                try:
+                    cursor.execute("ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS discount_notes TEXT DEFAULT ''")
+                except Exception:
+                    pass
                 
                 # ===== جداول نظام الصلاحيات =====
                 cursor.execute('''

@@ -44,7 +44,7 @@ class FinanceService:
         """الحصول على معلومات الخصم لربط طالب-مدرس"""
         db = self.db
         query = '''
-            SELECT discount_type, discount_value, institute_waiver
+            SELECT discount_type, discount_value, institute_waiver, discount_notes
             FROM student_teacher 
             WHERE student_id = %s AND teacher_id = %s
         '''
@@ -54,8 +54,9 @@ class FinanceService:
                 'discount_type': result[0].get('discount_type', 'none'),
                 'discount_value': result[0].get('discount_value', 0) or 0,
                 'institute_waiver': result[0].get('institute_waiver', 0) or 0,
+                'discount_notes': result[0].get('discount_notes', '') or '',
             }
-        return {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0}
+        return {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0, 'discount_notes': ''}
     
     def _apply_discount_to_fee(self, total_fee: int, discount_info: Dict) -> int:
         """تطبيق الخصم على القسط الكلي وإرجاء القسط الفعلي (بتقريب عادل)"""
@@ -96,7 +97,7 @@ class FinanceService:
         result = db.execute_query(query, (student_id, student_id, teacher_id, student_id, teacher_id))
         
         if not result:
-            return {'total_fee': 0, 'paid_total': 0, 'remaining_balance': 0, 'original_fee': 0, 'discount_info': {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0}}
+            return {'total_fee': 0, 'paid_total': 0, 'remaining_balance': 0, 'original_fee': 0, 'discount_info': {'discount_type': 'none', 'discount_value': 0, 'institute_waiver': 0, 'discount_notes': ''}}
         
         r = result[0]
         study_type = r.get('study_type', 'حضوري') or 'حضوري'
@@ -104,6 +105,7 @@ class FinanceService:
             'discount_type': r.get('discount_type', 'none') or 'none',
             'discount_value': r.get('discount_value', 0) or 0,
             'institute_waiver': r.get('institute_waiver', 0) or 0,
+            'discount_notes': r.get('discount_notes', '') or '',
         }
         
         # تحديد القسط حسب نوع الدراسة
@@ -237,7 +239,7 @@ class FinanceService:
         """الحصول على ملخص مالي للطالب مع جميع مدرسيه"""
         query = '''
             SELECT t.id, t.name, t.subject, t.total_fee, st.study_type as study_type, st.status as link_status,
-                   st.discount_type, st.discount_value, st.institute_waiver,
+                   st.discount_type, st.discount_value, st.institute_waiver, st.discount_notes,
                    t.fee_in_person, t.fee_electronic, t.fee_blended,
                    COALESCE(i.paid, 0) as paid_total
             FROM teachers t
@@ -257,7 +259,7 @@ class FinanceService:
             # Fallback بدون LATERAL
             query2 = '''
                 SELECT t.id, t.name, t.subject, t.total_fee, st.study_type as study_type, st.status as link_status,
-                       st.discount_type, st.discount_value, st.institute_waiver,
+                       st.discount_type, st.discount_value, st.institute_waiver, st.discount_notes,
                        t.fee_in_person, t.fee_electronic, t.fee_blended
                 FROM teachers t
                 INNER JOIN student_teacher st ON t.id = st.teacher_id
@@ -276,6 +278,7 @@ class FinanceService:
                 'discount_type': teacher.get('discount_type', 'none') or 'none',
                 'discount_value': teacher.get('discount_value', 0) or 0,
                 'institute_waiver': teacher.get('institute_waiver', 0) or 0,
+                'discount_notes': teacher.get('discount_notes', '') or '',
             }
             
             if study_type == 'الكتروني' and teacher.get('fee_electronic', 0) > 0:

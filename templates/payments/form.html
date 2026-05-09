@@ -97,6 +97,11 @@
                                                 <i class="fas fa-building text-primary me-1"></i>تنازل المعهد — لا يُحسب شيء للمعهد
                                             </div>
                                         </div>
+                                        <!-- ملاحظات الخصم -->
+                                        <div class="alert alert-light py-2 px-3 mb-2 small d-none" id="payDiscountNotesInfo" style="border-right:3px solid #f0a500;">
+                                            <i class="fas fa-pen-fancy text-warning me-1"></i>
+                                            <span id="payDiscountNotesText"></span>
+                                        </div>
                                     </div>
                                     <!-- رابط لتعديل الخصم -->
                                     <div class="mt-2">
@@ -340,6 +345,7 @@ var studentSelectInstance = null;
 var payCurrentDiscountType = 'none';
 var payCurrentDiscountValue = 0;
 var payCurrentInstituteWaiver = 0;
+var payCurrentDiscountNotes = '';
 var payDiscountApplied = false;
 
 // ===== معرفات محددة مسبقاً =====
@@ -786,6 +792,7 @@ async function payLoadCurrentDiscount(studentId, teacherId) {
             payCurrentDiscountType = data.discount_type || 'none';
             payCurrentDiscountValue = data.discount_value || 0;
             payCurrentInstituteWaiver = data.institute_waiver || 0;
+            payCurrentDiscountNotes = data.discount_notes || '';
             
             payUpdateDiscountDisplay();
 
@@ -854,6 +861,18 @@ function payUpdateDiscountDisplay() {
     } else {
         if (noneInfo) noneInfo.classList.remove('d-none');
     }
+
+    // عرض ملاحظات الخصم
+    var notesInfo = document.getElementById('payDiscountNotesInfo');
+    var notesText = document.getElementById('payDiscountNotesText');
+    if (notesInfo && notesText) {
+        if (payCurrentDiscountNotes && payCurrentDiscountType !== 'none') {
+            notesText.textContent = payCurrentDiscountNotes;
+            notesInfo.classList.remove('d-none');
+        } else {
+            notesInfo.classList.add('d-none');
+        }
+    }
 }
 
 /**
@@ -863,6 +882,7 @@ function payResetDiscountForm() {
     payCurrentDiscountType = 'none';
     payCurrentDiscountValue = 0;
     payCurrentInstituteWaiver = 0;
+    payCurrentDiscountNotes = '';
     payDiscountApplied = true; // لا حاجة للتطبيق لأنه يُدار من صفحة الطالب
     
     // تفعيل حقل المبلغ
