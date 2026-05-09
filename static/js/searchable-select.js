@@ -178,7 +178,11 @@
             const GAP = 4;
             const MIN_PAD = 8;
 
-            // Estimate dropdown height (after first render, use actual)
+            // Temporarily reset options max-height to measure the full/unconstrained height
+            const prevMaxHeight = this.optionsList.style.maxHeight;
+            this.optionsList.style.maxHeight = this.maxHeight + 'px';
+
+            // Measure the full dropdown height (unconstrained by viewport)
             const ddHeight = dd.offsetHeight > 50 ? dd.offsetHeight : Math.min(dd.scrollHeight, this.maxHeight + 120) || 300;
 
             // Calculate available space
