@@ -160,7 +160,7 @@ class FinanceService:
                 FROM installments
                 WHERE installments.student_id = st.student_id AND installments.teacher_id = st.teacher_id
             ) i ON true
-            WHERE st.student_id IN ({placeholders})
+            WHERE st.student_id IN ({placeholders}) AND st.status = 'مستمر'
         '''
         
         try:
@@ -174,7 +174,7 @@ class FinanceService:
                            t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended
                     FROM student_teacher st
                     INNER JOIN teachers t ON t.id = st.teacher_id
-                    WHERE st.student_id IN ({placeholders})
+                    WHERE st.student_id IN ({placeholders}) AND st.status = 'مستمر'
                 '''
                 results = db.execute_query(query2, tuple(student_ids))
                 
