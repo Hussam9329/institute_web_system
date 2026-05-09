@@ -44,6 +44,16 @@
         min-height: 36px;
     }
 
+    /* Circular action buttons - tablet */
+    .action-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .action-btn i {
+        font-size: 0.85rem;
+    }
+
     /* Stat cards */
     .stat-card .card-body {
         padding: 1.1rem;
@@ -126,6 +136,20 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+    }
+
+    /* Circular action buttons - mobile large */
+    .action-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .action-btn i {
+        font-size: 0.88rem;
+    }
+
+    .action-btn-group {
+        gap: 7px;
     }
 
     /* Stat cards */
@@ -431,6 +455,30 @@
         font-size: 0.78rem;
         min-width: 36px;
         min-height: 36px;
+    }
+
+    /* Circular action buttons - small mobile */
+    .action-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .action-btn i {
+        font-size: 0.92rem;
+    }
+
+    .action-btn-group {
+        gap: 6px;
+    }
+
+    /* Card view action buttons - mobile compact pill shape */
+    .list-card-actions .action-btn {
+        padding: 5px 10px;
+        font-size: 0.72rem;
+    }
+
+    .list-card-actions .action-btn i {
+        font-size: 0.74rem;
     }
 
     /* Stat cards */
@@ -1217,6 +1265,15 @@
     }
 
     .btn:hover {
+        transform: none;
+    }
+
+    /* Circular action buttons - disable hover transforms on touch */
+    .action-btn:hover {
+        transform: none;
+    }
+
+    .action-btn:hover i {
         transform: none;
     }
 

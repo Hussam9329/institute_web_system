@@ -427,11 +427,11 @@
                                 </td>
                                 <td class="text-center text-muted d-none d-sm-table-cell">{{ format_date(inst.payment_date) }}</td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm d-flex justify-content-center">
-                                        <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info" title="وصل طباعة">
+                                    <div class="action-btn-group">
+                                        <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="action-btn action-btn-info" title="وصل طباعة">
                                             <i class="fas fa-print"></i>
                                         </a>
-                                        <button class="btn btn-outline-danger" onclick="deletePayment({{ inst.id }})" title="حذف">
+                                        <button class="action-btn action-btn-danger" onclick="deletePayment({{ inst.id }})" title="حذف">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -496,8 +496,8 @@
 
                         <!-- أزرار الإجراءات -->
                         <div class="list-card-actions">
-                            <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-outline-info btn-sm"><i class="fas fa-print me-1"></i>الوصل</a>
-                            <button class="btn btn-outline-danger btn-sm" onclick="deletePayment({{ inst.id }})" title="حذف"><i class="fas fa-trash"></i></button>
+                            <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="action-btn action-btn-info"><i class="fas fa-print"></i> الوصل</a>
+                            <button class="action-btn action-btn-danger" onclick="deletePayment({{ inst.id }})" title="حذف"><i class="fas fa-trash"></i> حذف</button>
                         </div>
                     </div>
                 </div>

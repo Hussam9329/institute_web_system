@@ -1549,9 +1549,9 @@ function renderRoomsList() {
         html += '<span style="font-size:10px; color:#4f46e5; font-weight:700; background:#eef2ff; padding:1px 6px; border-radius:4px; margin-right:6px;">#' + room.id + '</span></div></div></td>';
         html += '<td class="text-center"><span class="badge" style="background:#f0f9ff; color:#0369a1; font-size:11px;">' + (room.capacity || '-') + '</span></td>';
         html += '<td class="text-center"><span class="badge" style="background:#f0fdf4; color:#15803d; font-size:11px;">' + cnt + ' فعال</span></td>';
-        html += '<td class="text-center"><div class="btn-group btn-group-sm d-flex justify-content-center">';
-        html += '<button class="btn btn-outline-warning btn-sm" onclick="openEditRoomModal(' + room.id + ')" title="تعديل" style="padding:2px 8px;"><i class="fas fa-pen" style="font-size:11px;"></i></button>';
-        html += '<button class="btn btn-outline-danger btn-sm" onclick="deleteRoom(' + room.id + ')" title="حذف" style="padding:2px 8px;"><i class="fas fa-trash" style="font-size:11px;"></i></button>';
+        html += '<td class="text-center"><div class="action-btn-group">';
+        html += '<button class="action-btn action-btn-warning" onclick="openEditRoomModal(' + room.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
+        html += '<button class="action-btn action-btn-danger" onclick="deleteRoom(' + room.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
         html += '</div></td>';
         html += '</tr>';
     });

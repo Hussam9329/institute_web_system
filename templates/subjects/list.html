@@ -151,24 +151,24 @@
                                     <span class="badge bg-purple-gradient">{{ subject.teachers_count }} مدرس</span>
                                 </td>
                                 <td class="text-center">
-                                    <a href="/reports/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="طباعة">
+                                    <a href="/reports/subject/{{ subject.name }}" target="_blank" class="action-btn action-btn-info" title="طباعة">
                                         <i class="fas fa-print"></i>
                                     </a>
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
+                                    <div class="action-btn-group justify-content-center">
+                                        <button class="action-btn action-btn-warning" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         {% if subject.teachers_count > 0 %}
-                                        <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                                        <button type="button" class="action-btn action-btn-danger" disabled
                                                 title="لا يمكن الحذف - يوجد {{ subject.teachers_count }} مدرسين مسجلين">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         {% else %}
                                         <form method="POST" action="/subjects/{{ subject.id }}/delete" style="display:inline"
                                               onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة؟')">
-                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="حذف">
+                                            <button type="submit" class="action-btn action-btn-danger" title="حذف">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
@@ -213,21 +213,21 @@
 
                         <!-- أزرار الإجراءات -->
                         <div class="list-card-actions">
-                            <button class="btn btn-outline-warning btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')">
+                            <button class="action-btn action-btn-warning" onclick="editSubject({{ subject.id }}, '{{ subject.name }}')" title="تعديل">
                                 <i class="fas fa-edit me-1"></i>تعديل
                             </button>
-                            <a href="/reports/subject/{{ subject.name }}" target="_blank" class="btn btn-outline-info btn-sm" title="طباعة">
+                            <a href="/reports/subject/{{ subject.name }}" target="_blank" class="action-btn action-btn-info" title="طباعة">
                                 <i class="fas fa-print"></i>
                             </a>
                             {% if subject.teachers_count > 0 %}
-                            <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                            <button type="button" class="action-btn action-btn-danger" disabled
                                     title="لا يمكن الحذف - يوجد {{ subject.teachers_count }} مدرسين مسجلين">
                                 <i class="fas fa-trash"></i>
                             </button>
                             {% else %}
                             <form method="POST" action="/subjects/{{ subject.id }}/delete" style="display:inline"
                                   onsubmit="return confirm('هل أنت متأكد من حذف هذه المادة؟')">
-                                <button type="submit" class="btn btn-outline-danger btn-sm" title="حذف">
+                                <button type="submit" class="action-btn action-btn-danger" title="حذف">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>

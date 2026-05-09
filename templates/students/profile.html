@@ -207,25 +207,25 @@
                     <i class="fas fa-barcode me-1"></i>{{ student.barcode }}
                 </p>
             </div>
-            <div class="d-flex gap-2">
-                <a href="/students" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-right me-1"></i> رجوع
+            <div class="action-btn-group">
+                <a href="/students" class="action-btn action-btn-secondary" title="رجوع">
+                    <i class="fas fa-arrow-right"></i>
                 </a>
-                <a href="/students/{{ student.id }}/edit" class="btn btn-primary btn-sm">
-                    <i class="fas fa-edit me-1"></i> تعديل
+                <a href="/students/{{ student.id }}/edit" class="action-btn action-btn-primary" title="تعديل">
+                    <i class="fas fa-edit"></i>
                 </a>
-                <a href="/reports/student/{{ student.id }}" class="btn btn-info btn-sm" target="_blank">
-                    <i class="fas fa-print me-1"></i> طباعة تقرير
+                <a href="/reports/student/{{ student.id }}" class="action-btn action-btn-info" target="_blank" title="طباعة تقرير">
+                    <i class="fas fa-print"></i>
                 </a>
                 {% if teachers_summary %}
-                <button type="button" class="btn btn-outline-danger btn-sm" disabled
+                <button type="button" class="action-btn action-btn-danger" disabled
                         title="لا يمكن الحذف - يوجد مدرسين مرتبطين">
-                    <i class="fas fa-trash me-1"></i> حذف
+                    <i class="fas fa-trash"></i>
                 </button>
                 {% else %}
                 <form method="POST" action="/students/{{ student.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الطالب؟')">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-trash me-1"></i> حذف
+                    <button type="submit" class="action-btn action-btn-danger" title="حذف">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </form>
                 {% endif %}
@@ -410,14 +410,14 @@
                                             </span>
                                         </td>
                                         <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" data-action="pay-installment" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" data-study-type="{{ ts.study_type | e }}" data-total-fee="{{ ts.total_fee }}" title="دفع قسط">
+                                            <div class="action-btn-group justify-content-center">
+                                                <button class="action-btn action-btn-primary" data-action="pay-installment" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" data-study-type="{{ ts.study_type | e }}" data-total-fee="{{ ts.total_fee }}" title="دفع قسط">
                                                     <i class="fas fa-money-bill"></i>
                                                 </button>
-                                                <button class="btn btn-outline-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
+                                                <button class="action-btn action-btn-info" onclick="viewInstallments({{ student.id }}, {{ ts.teacher_id }})" title="عرض الأقساط">
                                                     <i class="fas fa-list"></i>
                                                 </button>
-                                                <button class="btn btn-outline-danger" data-action="unlink-teacher" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" title="إلغاء الربط">
+                                                <button class="action-btn action-btn-danger" data-action="unlink-teacher" data-student-id="{{ student.id }}" data-teacher-id="{{ ts.teacher_id }}" data-teacher-name="{{ ts.teacher_name | e }}" title="إلغاء الربط">
                                                     <i class="fas fa-unlink"></i>
                                                 </button>
                                             </div>
@@ -499,11 +499,9 @@
                                         </td>
                                         <td class="text-center text-muted d-none d-sm-table-cell">{{ format_date(inst.payment_date) }}</td>
                                         <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="btn btn-success" title="طباعة وصل">
-                                                    <i class="fas fa-print me-1"></i>وصل
-                                                </a>
-                                            </div>
+                                            <a href="/reports/receipt/{{ inst.id }}" target="_blank" class="action-btn action-btn-success" title="طباعة وصل">
+                                                <i class="fas fa-print"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                     {% endfor %}

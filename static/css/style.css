@@ -480,7 +480,175 @@ thead.table-gradient-orange th,
     border-radius: var(--radius-sm);
 }
 
-/* Table Action Buttons */
+/* ===== Circular Action Buttons ===== */
+.action-btn-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.action-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 2px solid;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    font-size: 0.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.action-btn i {
+    font-size: 0.82rem;
+    transition: transform 0.2s ease;
+    line-height: 1;
+}
+
+.action-btn:hover i {
+    transform: scale(1.15);
+}
+
+.action-btn:active {
+    transform: scale(0.92);
+}
+
+/* Primary - View/Profile */
+.action-btn-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-glow);
+}
+
+.action-btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Success - Details */
+.action-btn-success {
+    color: var(--success);
+    border-color: var(--success);
+    background: var(--success-glow);
+}
+
+.action-btn-success:hover {
+    background: linear-gradient(135deg, var(--success-light), var(--success));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Warning - Edit */
+.action-btn-warning {
+    color: var(--warning-dark);
+    border-color: var(--warning);
+    background: var(--warning-glow);
+}
+
+.action-btn-warning:hover {
+    background: linear-gradient(135deg, var(--warning-light), var(--warning));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Danger - Delete */
+.action-btn-danger {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-glow);
+}
+
+.action-btn-danger:hover {
+    background: linear-gradient(135deg, var(--danger-light), var(--danger));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Info - Print */
+.action-btn-info {
+    color: var(--info);
+    border-color: var(--info);
+    background: var(--info-glow);
+}
+
+.action-btn-info:hover {
+    background: linear-gradient(135deg, var(--info-light), var(--info));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Secondary - Back/Unlink */
+.action-btn-secondary {
+    color: var(--muted);
+    border-color: var(--border);
+    background: var(--light-bg);
+}
+
+.action-btn-secondary:hover {
+    background: var(--dark-light);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Disabled state */
+.action-btn:disabled,
+.action-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: var(--light-bg);
+    border-color: var(--border);
+    color: var(--muted-light);
+}
+
+/* Focus state */
+.action-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Card view action buttons - with optional text */
+.list-card-actions .action-btn {
+    width: auto;
+    height: auto;
+    border-radius: 50px;
+    padding: 6px 14px;
+    gap: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.list-card-actions .action-btn i {
+    font-size: 0.78rem;
+}
+
+/* Table-specific compact sizing */
+table .action-btn-group {
+    gap: 5px;
+}
+
+/* Legacy support - keep old btn-group-xs styles */
 .btn-group-xs .btn,
 .btn-xs {
     padding: 0.2rem 0.45rem;
@@ -497,22 +665,6 @@ thead.table-gradient-orange th,
 
 .btn-group-xs .btn i {
     font-size: 0.72rem;
-}
-
-.table .btn-group.btn-group-sm .btn,
-table .btn-group.btn-group-sm .btn {
-    padding: 0.2rem 0.45rem;
-    font-size: 0.72rem;
-    border-width: 1.5px;
-    line-height: 1.3;
-}
-
-table .btn-group.btn-group-sm .btn i {
-    font-size: 0.72rem;
-}
-
-table .btn-group.btn-group-sm {
-    gap: 2px;
 }
 
 /* Gradient Buttons */

@@ -225,12 +225,13 @@
 
                     <!-- أزرار الإجراءات -->
                     <div class="list-card-actions mt-auto">
-                        <a href="/teachers/{{ teacher.id }}" class="btn btn-outline-primary btn-sm">
+                        <a href="/teachers/{{ teacher.id }}" class="action-btn action-btn-primary" title="التفاصيل">
                             <i class="fas fa-eye me-1"></i>التفاصيل
                         </a>
-                        <button class="btn btn-success btn-sm"
+                        <button class="action-btn action-btn-success"
                                 data-action="withdraw" data-teacher-id="{{ teacher.id }}" data-teacher-name="{{ teacher.name | e }}" data-balance="{{ teacher.financial.remaining_balance }}"
-                                {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}>
+                                {% if teacher.financial.remaining_balance <= 0 %}disabled{% endif %}
+                                title="سحب">
                             <i class="fas fa-hand-holding-usd me-1"></i>سحب
                         </button>
                     </div>

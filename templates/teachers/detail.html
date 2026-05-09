@@ -22,18 +22,18 @@
             </h4>
             <p class="text-muted mb-0 small"><i class="fas fa-book me-1"></i>{{ teacher.subject }}</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/teachers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-right me-1"></i> رجوع</a>
-            <a href="/teachers/{{ teacher.id }}/edit" class="btn btn-success btn-sm"><i class="fas fa-edit me-1"></i> تعديل</a>
-            <a href="/reports/teacher/{{ teacher.id }}" class="btn btn-info btn-sm" target="_blank"><i class="fas fa-print me-1"></i> طباعة</a>
+        <div class="action-btn-group">
+            <a href="/teachers" class="action-btn action-btn-secondary" title="رجوع"><i class="fas fa-arrow-right"></i></a>
+            <a href="/teachers/{{ teacher.id }}/edit" class="action-btn action-btn-warning" title="تعديل"><i class="fas fa-edit"></i></a>
+            <a href="/reports/teacher/{{ teacher.id }}" class="action-btn action-btn-info" target="_blank" title="طباعة"><i class="fas fa-print"></i></a>
             {% if students_list %}
-            <button type="button" class="btn btn-outline-danger btn-sm" disabled
+            <button type="button" class="action-btn action-btn-danger" disabled
                     title="لا يمكن الحذف - يوجد {{ students_list|length }} طلاب مسجلين">
-                <i class="fas fa-trash me-1"></i> حذف
+                <i class="fas fa-trash"></i>
             </button>
             {% else %}
             <form method="POST" action="/teachers/{{ teacher.id }}/delete" style="display:inline" onsubmit="return confirm('هل أنت متأكد؟')">
-                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i> حذف</button>
+                <button type="submit" class="action-btn action-btn-danger" title="حذف"><i class="fas fa-trash"></i></button>
             </form>
             {% endif %}
         </div>
