@@ -463,7 +463,7 @@
             o.forEach(e => e.classList.remove('ss-focused'));
             if (this._focusedIdx >= 0 && this._focusedIdx < o.length) {
                 o[this._focusedIdx].classList.add('ss-focused');
-                o[this._focusedIdx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                o[this._focusedIdx].scrollIntoView({ block: 'nearest', behavior: 'instant' });
             }
         }
 
@@ -536,7 +536,7 @@
             setTimeout(() => { if (!this._destroyed) this.searchInput.focus(); }, 40);
 
             const selEl = this.optionsList.querySelector('.ss-option.selected');
-            if (selEl) setTimeout(() => selEl.scrollIntoView({ block: 'center', behavior: 'smooth' }), 80);
+            if (selEl) setTimeout(() => selEl.scrollIntoView({ block: 'center', behavior: 'instant' }), 80);
         }
 
         // ─── إغلاق ───
