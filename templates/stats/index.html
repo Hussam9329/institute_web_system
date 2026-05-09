@@ -401,11 +401,11 @@
                     <div class="ms-badges">
                         {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}
                         <span class="ms-badge" style="background: var(--success-glow); color: var(--success-dark);">
-                            <i class="fas fa-arrow-up me-1"></i>صافي: {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
+                            <i class="fas fa-wallet me-1"></i>المستلم الكلي: {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
                         </span>
                         {% else %}
                         <span class="ms-badge" style="background: var(--danger-glow); color: var(--danger-dark);">
-                            <i class="fas fa-arrow-down me-1"></i>صافي: {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
+                            <i class="fas fa-wallet me-1"></i>المستلم الكلي: {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
                         </span>
                         {% endif %}
                     </div>
@@ -540,17 +540,17 @@
                             </div>
                         </div>
 
-                        <!-- صافي الإيرادات -->
+                        <!-- المستلم الكلي (الكاش) -->
                         {% if stats.total_amount_paid - stats.total_withdrawals >= 0 %}
-                        <div class="net-box" style="background: var(--success-glow); border-color: rgba(16, 185, 129, 0.25);">
+                        <div class="net-box" style="background: var(--primary-glow); border-color: rgba(79, 70, 229, 0.2);">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="net-box-icon" style="background: linear-gradient(135deg, var(--success-light), var(--success)); color: white;">
-                                    <i class="fas fa-chart-line"></i>
+                                <div class="net-box-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
+                                    <i class="fas fa-wallet"></i>
                                 </div>
                                 <div style="flex: 1; min-width: 0;">
-                                    <div class="net-box-label">صافي الإيرادات</div>
-                                    <div class="net-box-value text-success">{{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}</div>
-                                    <div class="net-box-sub"><i class="fas fa-check-circle me-1"></i>المدفوعات تتجاوز السحوبات</div>
+                                    <div class="net-box-label">المستلم الكلي (المدفوع - المسحوب)</div>
+                                    <div class="net-box-value text-primary">{{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}</div>
+                                    <div class="net-box-sub"><i class="fas fa-coins me-1"></i>إجمالي الكاش المتوفر حالياً</div>
                                 </div>
                             </div>
                         </div>
@@ -561,13 +561,28 @@
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </div>
                                 <div style="flex: 1; min-width: 0;">
-                                    <div class="net-box-label">صافي الإيرادات</div>
+                                    <div class="net-box-label">المستلم الكلي (المدفوع - المسحوب)</div>
                                     <div class="net-box-value text-danger">{{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}</div>
                                     <div class="net-box-sub"><i class="fas fa-exclamation-circle me-1"></i>السحوبات تتجاوز المدفوعات</div>
                                 </div>
                             </div>
                         </div>
                         {% endif %}
+
+                        <!-- صافي إيرادات المعهد -->
+                        {% set _net_revenue = (stats.total_institute_deduction or 0) %}
+                        <div class="net-box" style="background: var(--success-glow); border-color: rgba(16, 185, 129, 0.25);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="net-box-icon" style="background: linear-gradient(135deg, var(--success-light), var(--success)); color: white;">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="net-box-label">صافي إيرادات المعهد</div>
+                                    <div class="net-box-value text-success">{{ format_currency(_net_revenue) }}</div>
+                                    <div class="net-box-sub"><i class="fas fa-building me-1"></i>نسبة/مبلغ استقطاع المعهد من الأقساط</div>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </div>
@@ -624,10 +639,16 @@
                             <td class="fw-bold px-3"><i class="fas fa-user-tie me-2 text-info"></i>إجمالي مستحق المدرسين</td>
                             <td class="text-center text-info fw-bold">{{ format_currency((stats.total_amount_paid or 0) - (stats.total_institute_deduction or 0)) }}</td>
                         </tr>
-                        <tr class="table-success">
-                            <td class="fw-bold px-3"><i class="fas fa-chart-line me-2"></i>صافي الإيرادات (المدفوع - المسحوب)</td>
-                            <td class="text-center text-success fw-bold">
+                        <tr class="table-primary">
+                            <td class="fw-bold px-3"><i class="fas fa-wallet me-2 text-primary"></i>المستلم الكلي (المدفوع - المسحوب)</td>
+                            <td class="text-center text-primary fw-bold">
                                 {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
+                            </td>
+                        </tr>
+                        <tr class="table-success">
+                            <td class="fw-bold px-3"><i class="fas fa-chart-line me-2 text-success"></i>صافي إيرادات المعهد (الاستقطاعات)</td>
+                            <td class="text-center text-success fw-bold">
+                                {{ format_currency(stats.total_institute_deduction or 0) }}
                             </td>
                         </tr>
                     </tbody>
