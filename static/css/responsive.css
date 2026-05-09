@@ -1416,10 +1416,9 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
         padding-right: 2rem;
     }
 }
-
 /* ===== Searchable Select v3 — Responsive ===== */
 
-/* Tablet & below */
+/* Tablet */
 @media (max-width: 991.98px) {
     select.sort-by-select,
     select.sf-select,
@@ -1429,25 +1428,16 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
         padding: 6px 24px 6px 8px;
     }
 
-    .searchable-select .ss-options,
-    .ss-dropdown-fixed .ss-options {
-        max-height: 240px;
-    }
+    .ss-dropdown .ss-options { max-height: 240px; }
 
     .searchable-select .ss-display {
-        min-height: 44px;
-        font-size: 0.9rem;
+        min-height: 42px;
+        font-size: 0.88rem;
     }
 
-    .searchable-select .ss-option,
-    .ss-dropdown-fixed .ss-option {
-        padding: 9px 12px;
-        font-size: 0.86rem;
-    }
+    .ss-dropdown .ss-option { padding: 8px 10px; font-size: 0.86rem; }
 
-    .pay-search-dropdown {
-        max-height: 250px;
-    }
+    .pay-search-dropdown { max-height: 250px; }
 }
 
 /* Mobile */
@@ -1461,57 +1451,19 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
     }
 
     .searchable-select .ss-display {
-        min-height: 40px;
-        font-size: 0.86rem;
+        min-height: 38px;
+        font-size: 0.84rem;
         padding: 0 10px;
     }
 
-    .searchable-select .ss-options,
-    .ss-dropdown-fixed .ss-options {
-        max-height: 200px;
-    }
+    .ss-dropdown .ss-options { max-height: 200px; }
+    .ss-dropdown .ss-option { padding: 8px 10px; font-size: 0.84rem; }
+    .ss-dropdown .ss-search-input { padding: 7px 10px 7px 28px; font-size: 0.84rem; }
+    .ss-dropdown .ss-search-wrap { padding: 8px; }
+    .searchable-select .ss-clear-btn { width: 18px; height: 18px; }
+    .ss-dropdown .ss-option.selected::after { width: 14px; height: 14px; font-size: 0.5rem; }
 
-    .searchable-select .ss-option,
-    .ss-dropdown-fixed .ss-option {
-        padding: 9px 10px;
-        font-size: 0.84rem;
-    }
-
-    .searchable-select .ss-search-input,
-    .ss-dropdown-fixed .ss-search-input {
-        padding: 7px 10px 7px 28px;
-        font-size: 0.84rem;
-    }
-
-    .searchable-select .ss-search-wrap,
-    .ss-dropdown-fixed .ss-search-wrap {
-        padding: 8px 8px;
-    }
-
-    .searchable-select .ss-clear-btn {
-        width: 18px;
-        height: 18px;
-    }
-
-    .searchable-select .ss-option.selected::before,
-    .ss-dropdown-fixed .ss-option.selected::before {
-        width: 16px;
-        height: 16px;
-        font-size: 0.55rem;
-    }
-
-    .pay-search-dropdown {
-        max-height: 220px;
-    }
-
-    .pay-search-item {
-        padding: 8px 10px;
-        gap: 8px;
-    }
-
-    .pay-search-item-icon {
-        width: 28px;
-        height: 28px;
-        font-size: 0.65rem;
-    }
+    .pay-search-dropdown { max-height: 220px; }
+    .pay-search-item { padding: 8px 10px; gap: 8px; }
+    .pay-search-item-icon { width: 28px; height: 28px; font-size: 0.65rem; }
 }
