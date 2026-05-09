@@ -457,8 +457,10 @@ class FinanceService:
             total_paid_by_student = sum(p['amount'] for p in payments)
             
             is_effectively_full_payment = effective_fee > 0 and total_paid_by_student >= effective_fee
-            first_installment_total = sum(p['amount'] for p in payments if p['installment_type'] == 'القسط الأول')
-            is_first_equals_full = has_first and not has_second and not has_full and first_installment_total >= effective_fee and effective_fee > 0
+            first_installment_total = sum(p['amount'] for p in payments
+                if p['installment_type'] == 'القسط الأول'
+                or (p['installment_type'] == 'دفعات' and p.get('for_installment', '') != 'القسط الثاني'))
+            is_first_equals_full = (has_first or has_splits_first) and not has_second and not has_full and not has_splits_second and first_installment_total >= effective_fee and effective_fee > 0
             
             if ded_type == 'manual':
                 half_ded = ded_value // 2
