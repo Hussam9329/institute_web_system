@@ -126,7 +126,7 @@
                             <input type="checkbox" class="form-check-input m-0 filter-checkbox" id="chk_subject" data-target="filter_subject">
                             <label for="chk_subject" class="form-check-label small fw-bold mb-0"><i class="fas fa-book-open me-1"></i>بحث بالمادة</label>
                         </div>
-                        <select class="form-select form-select-sm filter-input" id="filter_subject" disabled>
+                        <select class="form-select form-select-sm filter-input" id="filter_subject" disabled data-searchable="true" data-search-placeholder="ابحث عن مادة...">
                             <option value="">كل المواد</option>
                             {% for subj in installments | map(attribute='subject') | unique | sort %}
                             <option value="{{ subj|lower }}">{{ subj }}</option>
@@ -340,26 +340,7 @@
         color: #64748b;
         white-space: nowrap;
     }
-    .sort-by-select {
-        padding: 5px 26px 5px 8px;
-        border-radius: 8px;
-        border: 2px solid #e5e7eb;
-        background: white;
-        font-size: 12px;
-        font-weight: 600;
-        color: #374151;
-        cursor: pointer;
-        outline: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: left 8px center;
-        min-width: 130px;
-    }
-    .sort-by-select:hover { border-color: #fcd34d; }
-    .sort-by-select:focus { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.12); }
+    /* sort-by-select base styles are in style.css */
 
     /* ===== MOBILE: Force card view ===== */
     @media (max-width: 991.98px) {

@@ -96,7 +96,8 @@
                             </label>
                             <div class="input-group">
                                 <select class="form-select form-select-lg" id="subject_select" onchange="handleSubjectChange()"
-                                        {% if has_linked_students %}disabled{% endif %}>
+                                        {% if has_linked_students %}disabled{% endif %}
+                                        data-searchable="true" data-search-placeholder="ابحث عن مادة...">
                                     <option value="">-- اختر مادة --</option>
                                     {% for subject in subjects %}
                                     <option value="{{ subject.name }}" {% if teacher and teacher.subject == subject.name %}selected{% endif %}>

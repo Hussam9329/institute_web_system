@@ -1410,9 +1410,76 @@ h1, h2, h3, h4, h5, h6, p, span, a, label, small, li {
         max-width: 2200px;
         padding: 2rem;
     }
-    
+
     .container-fluid {
         padding-left: 2rem;
         padding-right: 2rem;
+    }
+}
+
+/* ===== Enhanced Dropdown Responsive ===== */
+
+/* Tablet & below */
+@media (max-width: 991.98px) {
+    select.sort-by-select,
+    select.sf-select,
+    select.ws-filter-select {
+        min-width: 110px;
+        font-size: 0.75rem;
+        padding: 6px 24px 6px 8px;
+    }
+
+    .searchable-select .ss-options {
+        max-height: 240px;
+    }
+
+    .pay-search-dropdown {
+        max-height: 250px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 575.98px) {
+    select.sort-by-select,
+    select.sf-select,
+    select.ws-filter-select {
+        min-width: 100px;
+        font-size: 0.72rem;
+        padding: 5px 22px 5px 6px;
+    }
+
+    .searchable-select .ss-display {
+        padding: 0.6rem 0.875rem;
+        min-height: 42px;
+        font-size: 0.88rem;
+    }
+
+    .searchable-select .ss-options {
+        max-height: 200px;
+    }
+
+    .searchable-select .ss-option {
+        padding: 9px 12px;
+        font-size: 0.84rem;
+    }
+
+    .searchable-select .ss-search-input {
+        padding: 7px 10px 7px 28px;
+        font-size: 0.84rem;
+    }
+
+    .pay-search-dropdown {
+        max-height: 220px;
+    }
+
+    .pay-search-item {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .pay-search-item-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.65rem;
     }
 }

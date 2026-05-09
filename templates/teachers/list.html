@@ -16,26 +16,7 @@
     color: #64748b;
     white-space: nowrap;
 }
-.sort-by-select {
-    padding: 5px 26px 5px 8px;
-    border-radius: 8px;
-    border: 2px solid #e5e7eb;
-    background: white;
-    font-size: 12px;
-    font-weight: 600;
-    color: #374151;
-    cursor: pointer;
-    outline: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: left 8px center;
-    min-width: 130px;
-}
-.sort-by-select:hover { border-color: #86efac; }
-.sort-by-select:focus { border-color: #059669; box-shadow: 0 0 0 2px rgba(5,150,105,0.12); }
+/* sort-by-select base styles are in style.css */
 
 /* ===== MOBILE: Force card view ===== */
 @media (max-width: 991.98px) {
@@ -133,7 +114,7 @@
                     </div>
                 </div>
                 <div class="col-6 col-md-4 col-lg-3">
-                    <select name="subject" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <select name="subject" class="form-select form-select-sm" onchange="this.form.submit()" data-searchable="true" data-search-placeholder="ابحث عن مادة...">
                         <option value="">كل المواد</option>
                         {% for subject in subjects %}
                         <option value="{{ subject }}" {% if selected_subject == subject %}selected{% endif %}>{{ subject }}</option>
