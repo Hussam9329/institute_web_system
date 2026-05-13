@@ -3117,3 +3117,63 @@ html[data-theme="dark"] .smart-sort-chip:hover {
 html[data-theme="dark"] .smart-sort-chip.active {
     color: #fff;
 }
+
+
+/* =========================
+   ألوان نصوص Bootstrap في الوضع الليلي
+   تضمن وضوح الألوان على الخلفية الداكنة
+========================= */
+
+/* أزرق أساسي (روابط، أيقونات) */
+html[data-theme="dark"] .text-primary {
+    color: #818cf8 !important;
+}
+
+/* أخضر (المبالغ، النجاح) */
+html[data-theme="dark"] .text-success {
+    color: #6ee7b7 !important;
+}
+
+/* أحمر (الخطر، الحذف) */
+html[data-theme="dark"] .text-danger {
+    color: #fca5a5 !important;
+}
+
+/* برتقالي (تحذير) */
+html[data-theme="dark"] .text-warning {
+    color: #fde68a !important;
+}
+
+/* أزرق معلوماتي */
+html[data-theme="dark"] .text-info {
+    color: #93c5fd !important;
+}
+
+/* أزرق أساسي للأزرار المحددة */
+html[data-theme="dark"] .btn-outline-primary {
+    color: #818cf8 !important;
+    border-color: #818cf8 !important;
+}
+html[data-theme="dark"] .btn-outline-primary:hover {
+    background-color: #818cf8 !important;
+    color: #fff !important;
+    border-color: #818cf8 !important;
+}
+
+/* نجاح خلفية شارة */
+html[data-theme="dark"] .badge.bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+    color: #6ee7b7 !important;
+}
+
+/* خطر خلفية شارة */
+html[data-theme="dark"] .badge.bg-danger-subtle {
+    background-color: rgba(248, 113, 113, 0.12) !important;
+    color: #fca5a5 !important;
+}
+
+/* تحذير خلفية شارة */
+html[data-theme="dark"] .badge.bg-warning-subtle {
+    background-color: rgba(251, 191, 36, 0.12) !important;
+    color: #fde68a !important;
+}
