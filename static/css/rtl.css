@@ -1,326 +1,129 @@
 /* ============================================
    rtl.css - تنسيقات دعم اللغة العربية RTL
-   تصميم متجاوب واحترافي
-   Modernized for the new UI system
    ============================================ */
 
-/* ===== اتجاه النصوص ===== */
-html[dir="rtl"] body {
-    text-align: right;
-}
+html[dir="rtl"] body { text-align: right; }
+html[dir="rtl"] .text-start { text-align: right !important; }
+html[dir="rtl"] .text-end { text-align: left !important; }
 
-html[dir="rtl"] .text-start {
-    text-align: right !important;
-}
-
-html[dir="rtl"] .text-end {
-    text-align: left !important;
-}
-
-/* ===== الحواف والهوامش ===== */
+/* الحواف والهوامش */
 html[dir="rtl"] .me-1 { margin-left: 0.25rem !important; margin-right: 0 !important; }
 html[dir="rtl"] .me-2 { margin-left: 0.5rem !important; margin-right: 0 !important; }
 html[dir="rtl"] .me-3 { margin-left: 1rem !important; margin-right: 0 !important; }
 html[dir="rtl"] .me-4 { margin-left: 1.5rem !important; margin-right: 0 !important; }
-
 html[dir="rtl"] .ms-1 { margin-right: 0.25rem !important; margin-left: 0 !important; }
 html[dir="rtl"] .ms-2 { margin-right: 0.5rem !important; margin-left: 0 !important; }
 html[dir="rtl"] .ms-3 { margin-right: 1rem !important; margin-left: 0 !important; }
 html[dir="rtl"] .ms-4 { margin-right: 1.5rem !important; margin-left: 0 !important; }
-
 html[dir="rtl"] .ps-1 { padding-right: 0.25rem !important; padding-left: 0 !important; }
 html[dir="rtl"] .ps-2 { padding-right: 0.5rem !important; padding-left: 0 !important; }
 html[dir="rtl"] .ps-3 { padding-right: 1rem !important; padding-left: 0 !important; }
 html[dir="rtl"] .ps-4 { padding-right: 1.5rem !important; padding-left: 0 !important; }
-
 html[dir="rtl"] .pe-1 { padding-left: 0.25rem !important; padding-right: 0 !important; }
 html[dir="rtl"] .pe-2 { padding-left: 0.5rem !important; padding-right: 0 !important; }
 html[dir="rtl"] .pe-3 { padding-left: 1rem !important; padding-right: 0 !important; }
 html[dir="rtl"] .pe-4 { padding-left: 1.5rem !important; padding-right: 0 !important; }
 
-/* ===== الأيقونات مع النصوص ===== */
-html[dir="rtl"] i.fa-arrow-right::before {
-    content: "\f060"; /* السهم لليسار */
-}
+/* الأيقونات مع النصوص */
+html[dir="rtl"] i.fa-arrow-right::before { content: "\f060"; }
+html[dir="rtl"] i.fa-arrow-left::before { content: "\f061"; }
+html[dir="rtl"] i.fa-chevron-right::before { content: "\f053"; }
+html[dir="rtl"] i.fa-chevron-left::before { content: "\f054"; }
 
-html[dir="rtl"] i.fa-arrow-left::before {
-    content: "\f061"; /* السهم لليمين */
-}
+/* الجداول RTL */
+html[dir="rtl"] table { direction: rtl; }
+html[dir="rtl"] thead th { text-align: right; }
+html[dir="rtl"] thead th.text-center, html[dir="rtl"] td.text-center { text-align: center !important; }
+html[dir="rtl"] .table-responsive { direction: rtl; }
+html[dir="rtl"] .table-responsive table { direction: rtl; }
 
-html[dir="rtl"] i.fa-chevron-right::before {
-    content: "\f053"; /* السهم لليسار */
-}
+/* النماذج RTL */
+html[dir="rtl"] input[type="text"], html[dir="rtl"] input[type="number"], html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="date"], html[dir="rtl"] input[type="tel"], html[dir="rtl"] input[type="search"],
+html[dir="rtl"] select, html[dir="rtl"] textarea { text-align: right; direction: rtl; }
 
-html[dir="rtl"] i.fa-chevron-left::before {
-    content: "\f054"; /* السهم لليمين */
-}
+/* Input Group RTL */
+html[dir="rtl"] .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+html[dir="rtl"] .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) { margin-right: -2px; margin-left: 0; border-radius: var(--radius-md) 0 0 var(--radius-md); }
 
-/* ===== الجداول RTL ===== */
-html[dir="rtl"] table {
-    direction: rtl;
-}
+/* Form Section Title RTL */
+html[dir="rtl"] .form-section-title { border-right: 4px solid var(--primary); border-left: none; background: linear-gradient(90deg, var(--primary-glow) 0%, transparent 100%); }
 
-html[dir="rtl"] thead th {
-    text-align: right;
-}
+/* البطاقات RTL */
+html[dir="rtl"] .card-header { text-align: right; }
+html[dir="rtl"] .card::before { left: 0; right: auto; }
 
-html[dir="rtl"] thead th.text-center,
-html[dir="rtl"] td.text-center {
-    text-align: center !important;
-}
+/* الـ Breadcrumb RTL */
+html[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before { content: "/"; float: right; padding-left: 0.5rem; padding-right: 0; }
 
-html[dir="rtl"] .table-responsive {
-    direction: rtl;
-}
+/* Dropdown Menu RTL */
+html[dir="rtl"] .dropdown-menu { text-align: right; }
+html[dir="rtl"] .dropdown-menu-end { --bs-position: start; }
+html[dir="rtl"] .dropdown-menu-start { --bs-position: end; }
 
-html[dir="rtl"] .table-responsive table {
-    direction: rtl;
-}
+/* Modal RTL */
+html[dir="rtl"] .modal-header .btn-close { margin-left: -1rem; margin-right: 0; }
 
-/* ===== النماذج RTL ===== */
-html[dir="rtl"] input[type="text"],
-html[dir="rtl"] input[type="number"],
-html[dir="rtl"] input[type="email"],
-html[dir="rtl"] input[type="date"],
-html[dir="rtl"] input[type="tel"],
-html[dir="rtl"] input[type="search"],
-html[dir="rtl"] select,
-html[dir="rtl"] textarea {
-    text-align: right;
-    direction: rtl;
-}
+/* Pagination RTL */
+html[dir="rtl"] .pagination { direction: rtl; }
 
-/* ===== Input Group RTL ===== */
-html[dir="rtl"] .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
-}
-
-html[dir="rtl"] .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
-    margin-right: -2px;
-    margin-left: 0;
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
-}
-
-/* ===== Form Section Title RTL ===== */
-html[dir="rtl"] .form-section-title {
-    border-right: 4px solid var(--primary);
-    border-left: none;
-    background: linear-gradient(90deg, var(--primary-glow) 0%, transparent 100%);
-}
-
-/* ===== البطاقات RTL ===== */
-html[dir="rtl"] .card-header {
-    text-align: right;
-}
-
-html[dir="rtl"] .card::before {
-    left: 0;
-    right: auto;
-}
-
-/* ===== الـ Breadcrumb RTL ===== */
-html[dir="rtl"] .breadcrumb-item + .breadcrumb-item::before {
-    content: "/";
-    float: right;
-    padding-left: 0.5rem;
-    padding-right: 0;
-}
-
-/* ===== Dropdown Menu RTL ===== */
-html[dir="rtl"] .dropdown-menu {
-    text-align: right;
-}
-
-html[dir="rtl"] .dropdown-menu-end {
-    --bs-position: start;
-}
-
-html[dir="rtl"] .dropdown-menu-start {
-    --bs-position: end;
-}
-
-/* ===== Modal RTL ===== */
-html[dir="rtl"] .modal-header .btn-close {
-    margin-left: -1rem;
-    margin-right: 0;
-}
-
-/* ===== Pagination RTL ===== */
-html[dir="rtl"] .pagination {
-    direction: rtl;
-}
-
-/* ===== List Groups RTL ===== */
-html[dir="rtl"] .list-group {
-    text-align: right;
-}
-
-/* ===== RTL support for new utility classes ===== */
-
-/* RTL support for page transitions */
-.page-transition {
-    direction: rtl;
-}
-
-/* RTL for gradient text classes */
-.text-gradient-blue,
-.text-gradient-emerald,
-.text-gradient-purple,
-.text-gradient-orange {
-    direction: rtl;
-}
-
-/* RTL for empty states */
-.empty-state {
-    direction: rtl;
-}
+/* List Groups RTL */
+html[dir="rtl"] .list-group { text-align: right; }
 
 /* RTL for data-tooltip */
-[data-tooltip]:hover::after {
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
-}
+[data-tooltip]:hover::after { right: auto; left: 50%; transform: translateX(-50%); }
 
-/* RTL for list-group-clean */
-.list-group-clean .list-group-item {
-    text-align: right;
-}
+/* Sidebar Navigation RTL Fixes */
+.sidebar-nav .nav-link { padding-right: 18px; padding-left: 18px; text-align: right; }
+.sidebar-nav .nav-link i { margin-left: 0; }
 
-/* ===== Sidebar Navigation RTL Fixes ===== */
-.sidebar-nav .nav-link {
-    padding-right: 18px;
-    padding-left: 18px;
-    text-align: right;
-}
+/* Profile Info RTL */
+html[dir="rtl"] .profile-info-item:hover { margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
 
-.sidebar-nav .nav-link i {
-    margin-left: 0;
-}
+/* Stat Card RTL */
+html[dir="rtl"] .stat-card .d-flex { text-align: right; }
 
-/* ===== Profile Info RTL ===== */
-html[dir="rtl"] .profile-info-item:hover {
-    margin: 0 -1.5rem;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-}
+/* Global Search RTL */
+html[dir="rtl"] .global-search-results { right: 0; left: auto; }
 
-/* ===== Stat Card RTL ===== */
-html[dir="rtl"] .stat-card .d-flex {
-    text-align: right;
-}
-
-/* ===== Global Search RTL ===== */
-html[dir="rtl"] .global-search-results {
-    right: 0;
-    left: auto;
-}
-
-/* ===== Button Group RTL ===== */
+/* Button Group RTL */
 html[dir="rtl"] .btn-group > .btn:not(:last-child):not(.dropdown-toggle),
 html[dir="rtl"] .btn-group > .btn.dropdown-toggle-split:first-child,
-html[dir="rtl"] .btn-group > .btn-group:not(:last-child) > .btn {
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-}
+html[dir="rtl"] .btn-group > .btn-group:not(:last-child) > .btn { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
 
 html[dir="rtl"] .btn-group > .btn:nth-child(n + 3),
 html[dir="rtl"] .btn-group > :not(.btn-check) + .btn,
-html[dir="rtl"] .btn-group > .btn-group:not(:first-child) > .btn {
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-}
+html[dir="rtl"] .btn-group > .btn-group:not(:first-child) > .btn { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
 
-/* ===== Alert RTL ===== */
-html[dir="rtl"] .alert {
-    text-align: right;
-}
+/* Alert RTL */
+html[dir="rtl"] .alert { text-align: right; }
 
-/* ===== الأرقام العربية (اختياري) ===== */
-.arabic-numerals {
-    font-feature-settings: 'ss01';
-}
+/* تحسين عرض النص العربي */
+html[dir="rtl"] p, html[dir="rtl"] span, html[dir="rtl"] div, html[dir="rtl"] td,
+html[dir="rtl"] th, html[dir="rtl"] li, html[dir="rtl"] label { line-height: 1.8; }
+html[dir="rtl"] .fw-bold { letter-spacing: 0; }
 
-/* ===== تحسين عرض النص العربي ===== */
-html[dir="rtl"] p,
-html[dir="rtl"] span,
-html[dir="rtl"] div,
-html[dir="rtl"] td,
-html[dir="rtl"] th,
-html[dir="rtl"] li,
-html[dir="rtl"] label {
-    line-height: 1.8;
-}
-
-/* ===== تحسين تباعد الحروف العربية ===== */
-html[dir="rtl"] .fw-bold {
-    letter-spacing: 0;
-}
-
-/* ===== حركة الانزلاق من اليمين ===== */
+/* حركة الانزلاق من اليمين */
 @keyframes slideFromRight {
-    from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(50px); }
+    to { opacity: 1; transform: translateX(0); }
 }
+html[dir="rtl"] .slide-in { animation: slideFromRight 0.4s ease forwards; }
 
-html[dir="rtl"] .slide-in {
-    animation: slideFromRight 0.4s ease forwards;
-}
-
-/* ===== تحسينات الشاشات الصغيرة RTL ===== */
+/* تحسينات الشاشات الصغيرة RTL */
 @media (max-width: 575px) {
-    html[dir="rtl"] .profile-info-item:hover {
-        margin: 0 -0.875rem;
-        padding-left: 0.875rem;
-        padding-right: 0.875rem;
-    }
-
-    html[dir="rtl"] .form-section-title {
-        padding: 0.75rem 1rem;
-    }
-
-    .page-transition {
-        padding: 0;
-    }
-
-    .d-flex.align-items-center.justify-content-between.flex-wrap {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 0.75rem;
-    }
-
-    .d-flex.gap-2 {
-        width: 100%;
-    }
-
-    /* Fix container-fluid on mobile */
-    .container-fluid {
-        padding-left: 0;
-        padding-right: 0;
-    }
+    html[dir="rtl"] .profile-info-item:hover { margin: 0 -0.875rem; padding-left: 0.875rem; padding-right: 0.875rem; }
+    html[dir="rtl"] .form-section-title { padding: 0.75rem 1rem; }
+    .d-flex.align-items-center.justify-content-between.flex-wrap { flex-direction: column; align-items: flex-start !important; gap: 0.75rem; }
+    .d-flex.gap-2 { width: 100%; }
+    .container-fluid { padding-left: 0; padding-right: 0; }
 }
 
-/* ===== Tablet RTL Improvements ===== */
 @media (max-width: 767px) {
-    html[dir="rtl"] .profile-info-item:hover {
-        margin: 0 -1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
+    html[dir="rtl"] .profile-info-item:hover { margin: 0 -1rem; padding-left: 1rem; padding-right: 1rem; }
 }
 
-/* ===== Print RTL ===== */
 @media print {
-    html[dir="rtl"] body {
-        text-align: right;
-    }
-
-    html[dir="rtl"] .table th,
-    html[dir="rtl"] .table td {
-        text-align: right;
-    }
+    html[dir="rtl"] body { text-align: right; }
+    html[dir="rtl"] .table th, html[dir="rtl"] .table td { text-align: right; }
 }
