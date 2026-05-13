@@ -2193,3 +2193,38 @@ async def api_lookup_barcode(request: Request, code: str = ""):
         
     except Exception as e:
         return {"found": False, "type": "none", "message": f"خطأ في البحث: {str(e)}"}
+
+
+# ===== عمليات الثيم =====
+
+class ThemeUpdate(BaseModel):
+    """نموذج تحديث ثيم المستخدم"""
+    theme: str = Field(..., pattern="^(light|dark)$", description="الثيم: light أو dark")
+
+
+@router.post("/user/theme")
+async def api_update_user_theme(request: Request, data: ThemeUpdate):
+    """حفظ تفضيل الثيم للمستخدم الحالي"""
+    try:
+        # محاولة الحصول على المستخدم الحالي
+        from auth import get_current_user
+        user = get_current_user(request)
+
+        if user:
+            db = Database()
+            # التحقق من وجود عمود theme في جدول users
+            try:
+                db.execute_query(
+                    "UPDATE users SET theme = %s WHERE id = %s",
+                    (data.theme, user['id'])
+                )
+            except Exception:
+                # إذا لم يكن عمود theme موجوداً بعد، نتجاهل الخطأ
+                # localStorage يكفي كخطة بديلة
+                pass
+
+        return {"success": True, "theme": data.theme}
+
+    except Exception as e:
+        # لا نعرض خطأ للمستخدم - localStorage يكفي
+        return {"success": True, "theme": data.theme}

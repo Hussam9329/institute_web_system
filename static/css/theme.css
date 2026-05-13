@@ -1,0 +1,408 @@
+/* =========================
+   Theme Variables
+========================= */
+
+:root {
+    --app-bg: #f8f9fa;
+    --app-surface: #ffffff;
+    --app-surface-soft: #f1f3f5;
+    --app-text: #212529;
+    --app-muted: #6c757d;
+    --app-border: #dee2e6;
+
+    --app-primary: #0d6efd;
+    --app-primary-hover: #0b5ed7;
+
+    --app-card-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+
+    --app-input-bg: #ffffff;
+    --app-input-text: #212529;
+    --app-input-border: #ced4da;
+
+    --app-table-head-bg: #f1f3f5;
+    --app-table-row-hover: #f8f9fa;
+
+    --app-navbar-bg: #ffffff;
+    --app-sidebar-bg: #ffffff;
+}
+
+html[data-theme="dark"] {
+    --app-bg: #121212;
+    --app-surface: #1e1e1e;
+    --app-surface-soft: #2a2a2a;
+    --app-text: #f1f3f5;
+    --app-muted: #adb5bd;
+    --app-border: #343a40;
+
+    --app-primary: #4dabf7;
+    --app-primary-hover: #339af0;
+
+    --app-card-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+
+    --app-input-bg: #242424;
+    --app-input-text: #f1f3f5;
+    --app-input-border: #495057;
+
+    --app-table-head-bg: #2a2a2a;
+    --app-table-row-hover: #262626;
+
+    --app-navbar-bg: #1e1e1e;
+    --app-sidebar-bg: #1e1e1e;
+}
+
+/* =========================
+   Global Theme Styles
+========================= */
+
+body {
+    background-color: var(--app-bg) !important;
+    color: var(--app-text) !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* الروابط */
+a {
+    color: var(--app-primary);
+}
+
+a:hover {
+    color: var(--app-primary-hover);
+}
+
+/* =========================
+   Bootstrap Overrides
+========================= */
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item,
+.offcanvas,
+.toast {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.card {
+    box-shadow: var(--app-card-shadow);
+}
+
+.card-header,
+.card-footer,
+.modal-header,
+.modal-footer {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.navbar {
+    background-color: var(--app-navbar-bg) !important;
+    border-color: var(--app-border) !important;
+}
+
+.navbar .nav-link,
+.navbar .navbar-brand,
+.dropdown-item {
+    color: var(--app-text) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   Forms
+========================= */
+
+.form-control,
+.form-select,
+.input-group-text,
+textarea,
+select,
+input {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+.form-control::placeholder {
+    color: var(--app-muted) !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(77, 171, 247, 0.15) !important;
+}
+
+.form-label,
+.form-check-label {
+    color: var(--app-text) !important;
+}
+
+.text-muted {
+    color: var(--app-muted) !important;
+}
+
+/* =========================
+   Tables
+========================= */
+
+.table {
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.table th,
+.table td {
+    border-color: var(--app-border) !important;
+}
+
+.table thead th {
+    background-color: var(--app-table-head-bg) !important;
+    color: var(--app-text) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--app-table-row-hover) !important;
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.btn-primary {
+    background-color: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--app-primary-hover) !important;
+    border-color: var(--app-primary-hover) !important;
+}
+
+.btn-outline-secondary {
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   Alerts
+========================= */
+
+html[data-theme="dark"] .alert-success {
+    background-color: #123524 !important;
+    color: #b7f7d4 !important;
+    border-color: #1f7a4d !important;
+}
+
+html[data-theme="dark"] .alert-danger {
+    background-color: #3b1518 !important;
+    color: #ffc9c9 !important;
+    border-color: #842029 !important;
+}
+
+html[data-theme="dark"] .alert-warning {
+    background-color: #3b2f12 !important;
+    color: #ffe8a1 !important;
+    border-color: #997404 !important;
+}
+
+html[data-theme="dark"] .alert-info {
+    background-color: #102a36 !important;
+    color: #a5d8ff !important;
+    border-color: #087990 !important;
+}
+
+/* =========================
+   Theme Toggle Button
+========================= */
+
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.theme-toggle-btn i {
+    font-size: 1rem;
+}
+
+/* =========================
+   Sidebar / Custom Layout
+========================= */
+
+.sidebar,
+.app-sidebar {
+    background-color: var(--app-sidebar-bg) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.sidebar a,
+.app-sidebar a {
+    color: var(--app-text) !important;
+}
+
+.sidebar a:hover,
+.app-sidebar a:hover {
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* =========================
+   Searchable Select / Custom JS Components
+========================= */
+
+.searchable-select,
+.searchable-select-dropdown,
+.searchable-select-input {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.searchable-select-option:hover {
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* =========================
+   Stat Cards / Dashboard Cards
+========================= */
+
+.stat-card,
+.dashboard-card,
+.summary-card {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border: 1px solid var(--app-border) !important;
+    box-shadow: var(--app-card-shadow);
+}
+
+.stat-card .stat-title,
+.dashboard-card .stat-title,
+.summary-card .stat-title {
+    color: var(--app-muted) !important;
+}
+
+.stat-card .stat-value,
+.dashboard-card .stat-value,
+.summary-card .stat-value {
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   Top Bar Theme Override
+========================= */
+
+html[data-theme="dark"] .top-bar {
+    background-color: var(--app-navbar-bg) !important;
+    border-color: var(--app-border) !important;
+}
+
+html[data-theme="dark"] .hamburger-btn {
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .hamburger-btn:hover {
+    background-color: var(--app-surface-soft) !important;
+}
+
+html[data-theme="dark"] .top-bar .page-title {
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   Sidebar Search Results Theme Override
+========================= */
+
+html[data-theme="dark"] .sidebar-search-results {
+    background-color: var(--app-surface) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] .sidebar-search-results .search-result-label {
+    color: var(--app-text) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+
+html[data-theme="dark"] .sidebar-search-results .search-result-item {
+    color: var(--app-text) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+
+html[data-theme="dark"] .sidebar-search-results .search-result-item:hover {
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* =========================
+   Footer Theme Override
+========================= */
+
+html[data-theme="dark"] .main-footer {
+    background: linear-gradient(90deg, #1a1a2e, #2d2a6e) !important;
+}
+
+/* =========================
+   Alert Stack Container
+========================= */
+
+html[data-theme="dark"] .alert-stack-container {
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   Print - لا يتأثر بالثيم الليلي
+========================= */
+
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .theme-toggle-btn {
+        display: none !important;
+    }
+
+    .report-container,
+    .invoice-container {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+
+    .card,
+    .table,
+    .modal-content {
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }
+
+    .table th,
+    .table td {
+        color: #000000 !important;
+        border-color: #000000 !important;
+    }
+
+    .navbar,
+    .sidebar,
+    .no-print {
+        display: none !important;
+    }
+}

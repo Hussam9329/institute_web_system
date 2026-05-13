@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
@@ -7,6 +7,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}نظام إدارة المعهد{% endblock %}</title>
+
+    <!-- منع وميض الثيم عند تحميل الصفحة -->
+    <script>
+    (function () {
+        var THEME_KEY = "institute_theme";
+        var savedTheme = localStorage.getItem(THEME_KEY);
+        var theme = savedTheme;
+        if (theme !== "light" && theme !== "dark") {
+            var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            theme = prefersDark ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+    })();
+    </script>
     
     <!-- Bootstrap 5 RTL - ملف محلي -->
     <link rel="stylesheet" href="/static/vendor/bootstrap.rtl.min.css">
@@ -126,6 +140,9 @@
     <link rel="stylesheet" href="/static/css/style.css?v=20260509b">
     <link rel="stylesheet" href="/static/css/rtl.css">
     <link rel="stylesheet" href="/static/css/responsive.css">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/static/css/theme.css">
     
     <!-- Preload critical JS -->
     <link rel="preload" href="/static/js/utils.js" as="script">
@@ -652,6 +669,19 @@
         <i class="fas fa-graduation-cap me-1 d-lg-none"></i>
         {% block page_title %}نظام إدارة المعهد{% endblock %}
     </h6>
+
+    <!-- زر تبديل الثيم -->
+    <div class="me-auto"></div>
+    <button
+        type="button"
+        id="themeToggleBtn"
+        class="btn btn-outline-secondary theme-toggle-btn"
+        title="تغيير الثيم"
+        aria-label="تغيير الثيم"
+    >
+        <i class="fas fa-moon"></i>
+        <span class="theme-toggle-text d-none d-md-inline">الوضع الليلي</span>
+    </button>
 </div>
 
     <!-- ===== المحتوى الرئيسي ===== -->
@@ -680,6 +710,9 @@
     <script src="/static/js/utils.js" defer></script>
     <script src="/static/js/searchable-select.js?v=20260509b" defer></script>
     <script src="/static/js/app.js" defer></script>
+
+    <!-- Theme Toggle JS -->
+    <script src="/static/js/theme-toggle.js" defer></script>
     
     <!-- Sidebar toggle functions -->
     <script>
