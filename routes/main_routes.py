@@ -1773,7 +1773,7 @@ async def weekly_schedule_page(request: Request):
 @router.get("/logs", response_class=HTMLResponse)
 async def operation_logs_page(request: Request):
     """صفحة سجل العمليات"""
-    check_permission(request, 'manage_users')
+    check_permission(request, 'view_logs')
     db = Database()
 
     logs = db.execute_query("""

@@ -542,6 +542,7 @@ def init_db():
                         ('manage_users', 'إدارة المستخدمين', 'الصلاحيات', 'إضافة وتعديل وحذف المستخدمين', 'admin'),
                         ('manage_roles', 'إدارة الأدوار', 'الصلاحيات', 'إنشاء أدوار جديدة', 'admin'),
                         ('system_settings', 'إعدادات النظام', 'الصلاحيات', 'تغيير إعدادات النظام', 'admin'),
+                        ('view_logs', 'عرض سجل العمليات', 'الصلاحيات', 'عرض سجل العمليات والتغييرات في النظام', 'preview'),
                     ]
                     
                     for perm in default_permissions:
@@ -589,39 +590,6 @@ def init_db():
                     except Exception:
                         conn.rollback()
                     
-                    # إنشاء جدول سجل العمليات
-                    try:
-                        cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS operation_logs (
-                                id SERIAL PRIMARY KEY,
-                                user_id INTEGER,
-                                username TEXT DEFAULT '',
-                                action TEXT NOT NULL,
-                                entity TEXT NOT NULL,
-                                entity_id TEXT DEFAULT '',
-                                description TEXT DEFAULT '',
-                                ip_address TEXT DEFAULT '',
-                                user_agent TEXT DEFAULT '',
-                                created_at TEXT NOT NULL,
-                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-                            )
-                        """)
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-
-                    # إضافة أعمدة created_by و updated_by للجداول المهمة
-                    for table_name in ["students", "teachers", "subjects", "installments", "teacher_withdrawals", "student_teacher"]:
-                        try:
-                            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS created_by INTEGER")
-                            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS updated_by INTEGER")
-                        except Exception:
-                            pass
-                    try:
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-
                     # إنشاء مستخدم مدير افتراضي
                     try:
                         import bcrypt
@@ -654,6 +622,80 @@ def init_db():
                     except Exception:
                         conn.rollback()
                 
+                # ===== إنشاء جدول سجل العمليات (دائماً - خارج الكتلة الشرطية) =====
+                try:
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS operation_logs (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            username TEXT DEFAULT '',
+                            action TEXT NOT NULL,
+                            entity TEXT NOT NULL,
+                            entity_id TEXT DEFAULT '',
+                            description TEXT DEFAULT '',
+                            ip_address TEXT DEFAULT '',
+                            user_agent TEXT DEFAULT '',
+                            created_at TEXT NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                        )
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== إضافة أعمدة created_by و updated_by للجداول المهمة (دائماً) =====
+                for table_name in ["students", "teachers", "subjects", "installments", "teacher_withdrawals", "student_teacher"]:
+                    try:
+                        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS created_by INTEGER")
+                        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS updated_by INTEGER")
+                    except Exception:
+                        pass
+                try:
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== إضافة فهرس لجدول سجل العمليات =====
+                try:
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_operation_logs_created_at
+                        ON operation_logs (created_at)
+                    """)
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_operation_logs_user_id
+                        ON operation_logs (user_id)
+                    """)
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_operation_logs_entity
+                        ON operation_logs (entity)
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== إضافة صلاحية عرض سجل العمليات إذا لم تكن موجودة =====
+                try:
+                    cursor.execute("""
+                        INSERT INTO permissions (code, name, category, description, level)
+                        VALUES ('view_logs', 'عرض سجل العمليات', 'الصلاحيات', 'عرض سجل العمليات والتغييرات في النظام', 'preview')
+                        ON CONFLICT DO NOTHING
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== منح صلاحية سجل العمليات لدور المدير العام =====
+                try:
+                    cursor.execute("""
+                        INSERT INTO role_permissions (role_id, permission_id)
+                        SELECT r.id, p.id FROM roles r, permissions p
+                        WHERE r.name = 'مدير عام' AND p.code = 'view_logs'
+                        ON CONFLICT DO NOTHING
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
                 _db_initialized = True
                 logger.info("تم تهيئة قاعدة البيانات بنجاح")
                 break  # نجح التهيئة - نخرج من حلقة المحاولات
