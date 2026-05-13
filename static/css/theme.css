@@ -3000,3 +3000,24 @@ html[data-theme="dark"] .popover-header {
 html[data-theme="dark"] .popover-body {
     color: var(--app-text) !important;
 }
+
+/* ================================================================
+   FINAL OVERRIDE: إصلاح خلفية كومبوبوكس الترتيب
+   السبب: قاعدة theme.css العامة للـ select كانت تعيد background-color
+   إلى var(--app-input-bg) بعد تحميل style.css.
+   ================================================================ */
+html body select.sort-by-select,
+html body select.sort-by-select:hover,
+html body select.sort-by-select:focus,
+html body select.sort-by-select:active {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] body select.sort-by-select,
+html[data-theme="dark"] body select.sort-by-select:hover,
+html[data-theme="dark"] body select.sort-by-select:focus,
+html[data-theme="dark"] body select.sort-by-select:active {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
