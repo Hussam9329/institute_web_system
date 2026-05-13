@@ -774,21 +774,34 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 # حساب المطلوب الكلي لكل المدرسين دفعة واحدة
                 total_fees_map = finance_service.get_teachers_total_fees_batch(teacher_ids)
                 
+                # حساب مستحق المدرس المتوقع دفعة واحدة
+                # المعادلة: (عدد الحضوريين × قسط الحضوري) + (عدد الالكترونيين × قسط الالكتروني) + (عدد المدمجين × قسط المدمج) - خصم المعهد
+                expected_due_map = finance_service.calculate_expected_teacher_due_batch(teacher_ids)
+                
                 for t in teachers:
                     total_received = received_map.get(t['id'], 0)
                     withdrawn_total = withdrawn_map.get(t['id'], 0)
                     institute_deduction = deduction_map.get(t['id'], 0)
                     
-                    teacher_due = total_received - institute_deduction
+                    # مستحق المدرس = إجمالي الأقساط المتوقعة - خصم المعهد المتوقع
+                    expected_info = expected_due_map.get(t['id'], {})
+                    teacher_due = expected_info.get('teacher_due', 0)
+                    expected_deduction = expected_info.get('expected_deduction', 0)
+                    total_fees = expected_info.get('total_fees', 0)
+                    
                     remaining_balance = max(0, teacher_due - withdrawn_total)
                     
                     t['total_received'] = total_received
                     t['institute_deduction'] = institute_deduction
+                    t['expected_deduction'] = expected_deduction
                     t['teacher_due'] = teacher_due
                     t['withdrawn_total'] = withdrawn_total
                     t['remaining_balance'] = remaining_balance
                     t['total_remaining'] = remaining_balance
-                    t['total_fees'] = total_fees_map.get(t['id'], 0)
+                    t['total_fees'] = total_fees
+                    t['in_person_count'] = expected_info.get('in_person_count', 0)
+                    t['electronic_count'] = expected_info.get('electronic_count', 0)
+                    t['blended_count'] = expected_info.get('blended_count', 0)
                     
                     # حساب عرض نسبة المعهد
                     t['institute_rate_display'] = _build_institute_rate_display(t)
@@ -797,10 +810,14 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                     t['total_received'] = 0
                     t['total_remaining'] = 0
                     t['institute_deduction'] = 0
+                    t['expected_deduction'] = 0
                     t['teacher_due'] = 0
                     t['withdrawn_total'] = 0
                     t['remaining_balance'] = 0
                     t['total_fees'] = 0
+                    t['in_person_count'] = 0
+                    t['electronic_count'] = 0
+                    t['blended_count'] = 0
                     t['institute_rate_display'] = ''
     except:
         teachers = []

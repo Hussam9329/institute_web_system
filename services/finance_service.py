@@ -809,6 +809,111 @@ class FinanceService:
         except Exception:
             return {tid: 0 for tid in teacher_ids}
     
+    # ===== حساب مستحق المدرس المتوقع دفعة واحدة =====
+    
+    def calculate_expected_teacher_due_batch(self, teacher_ids: list) -> Dict[int, Dict]:
+        """
+        حساب مستحق المدرس المتوقع لعدة مدرسين دفعة واحدة
+        المعادلة: (عدد الحضوريين × قسط الحضوري) + (عدد الالكترونيين × قسط الالكتروني) + (عدد المدمجين × قسط المدمج) - خصم المعهد
+        يُرجع dict: {teacher_id: {total_fees, expected_deduction, teacher_due, student_counts}}
+        """
+        if not teacher_ids:
+            return {}
+        
+        db = self.db
+        placeholders = ','.join(['%s'] * len(teacher_ids))
+        
+        # جلب بيانات المدرسين (أقساط + خصومات المعهد)
+        teachers_query = f'''
+            SELECT id, total_fee, fee_in_person, fee_electronic, fee_blended,
+                   institute_deduction_type, institute_deduction_value,
+                   institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+                   inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+                   inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
+                   teaching_types
+            FROM teachers WHERE id IN ({placeholders})
+        '''
+        teachers_data = db.execute_query(teachers_query, tuple(teacher_ids))
+        teachers_map = {t['id']: t for t in teachers_data} if teachers_data else {}
+        
+        # جلب جميع روابط الطلاب مع أنواع الدراسة والخصومات
+        links_query = f'''
+            SELECT st.teacher_id, st.student_id, st.study_type, 
+                   st.discount_type, st.discount_value, st.institute_waiver
+            FROM student_teacher st
+            WHERE st.teacher_id IN ({placeholders}) AND st.status = 'مستمر'
+        '''
+        links = db.execute_query(links_query, tuple(teacher_ids))
+        
+        # تهيئة النتائج
+        result = {}
+        for tid in teacher_ids:
+            result[tid] = {
+                'total_fees': 0,
+                'expected_deduction': 0,
+                'teacher_due': 0,
+                'in_person_count': 0,
+                'electronic_count': 0,
+                'blended_count': 0,
+            }
+        
+        if not links:
+            return result
+        
+        for link in links:
+            tid = link['teacher_id']
+            teacher = teachers_map.get(tid)
+            if not teacher:
+                continue
+            
+            study_type = link.get('study_type', 'حضوري') or 'حضوري'
+            discount_type = link.get('discount_type', 'none') or 'none'
+            discount_value = link.get('discount_value', 0) or 0
+            institute_waiver = link.get('institute_waiver', 0) or 0
+            
+            # عدد الطلاب حسب النوع
+            if study_type == 'حضوري':
+                result[tid]['in_person_count'] += 1
+            elif study_type == 'الكتروني':
+                result[tid]['electronic_count'] += 1
+            elif study_type == 'مدمج':
+                result[tid]['blended_count'] += 1
+            
+            # القسط حسب نوع الدراسة
+            fee = self._get_fee_for_study_type(teacher, study_type)
+            
+            # تطبيق خصم الطالب
+            discount_info = {
+                'discount_type': discount_type,
+                'discount_value': discount_value,
+                'institute_waiver': institute_waiver,
+            }
+            effective_fee = self._apply_discount_to_fee(fee, discount_info)
+            
+            # إضافة للإجمالي
+            result[tid]['total_fees'] += effective_fee
+            
+            # حساب خصم المعهد لهذا الطالب
+            ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
+            
+            if ded_value > 0 and effective_fee > 0:
+                # تخطي الطلاب مجانيين مع تنازل المعهد
+                if discount_type == 'free' and institute_waiver:
+                    pass  # لا خصم
+                elif ded_type == 'manual':
+                    # المبلغ اليدوي هو المبلغ الكامل للقسطين معاً
+                    result[tid]['expected_deduction'] += ded_value
+                else:
+                    # نسبة مئوية من القسط الفعلي
+                    result[tid]['expected_deduction'] += round(effective_fee * ded_value / 100)
+        
+        # حساب المستحق
+        for tid in teacher_ids:
+            r = result[tid]
+            r['teacher_due'] = r['total_fees'] - r['expected_deduction']
+        
+        return result
+    
     # =====================================================
     # دوال الإحصائيات العامة - محسّنة بسرعة فائقة
     # =====================================================
