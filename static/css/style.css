@@ -1763,12 +1763,12 @@ select.ws-filter-select {
     -moz-appearance: none;
     padding: 7px 28px 7px 10px;
     border-radius: var(--radius-sm);
-    border: 1.5px solid var(--border);
-    background: var(--surface-input);
+    border: 1.5px solid var(--app-input-border);
+    background-color: var(--app-input-bg);
+    color: var(--app-input-text);
     font-size: 0.8rem;
     font-weight: 600;
     font-family: var(--font-family);
-    color: var(--text-primary);
     cursor: pointer;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
@@ -1782,15 +1782,15 @@ select.ws-filter-select {
 select.sort-by-select:hover,
 select.sf-select:hover,
 select.ws-filter-select:hover {
-    border-color: var(--primary-light);
-    background-color: var(--light);
+    border-color: var(--app-primary);
+    background-color: var(--app-surface-hover);
 }
 
 select.sort-by-select:focus,
 select.sf-select:focus,
 select.ws-filter-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-glow);
+    border-color: var(--app-input-focus-border);
+    box-shadow: var(--app-input-focus-shadow);
 }
 
 .form-select {
@@ -1806,14 +1806,14 @@ select.ws-filter-select:focus {
 }
 
 .form-select:hover {
-    border-color: var(--primary-light);
-    background-color: var(--light);
+    border-color: var(--app-primary);
+    background-color: var(--app-surface-hover);
 }
 
 .form-select:disabled {
     opacity: 0.65;
     cursor: not-allowed;
-    background-color: var(--light);
+    background-color: var(--app-surface-hover);
 }
 
 /* ===== Custom Dropdown Panel ===== */
