@@ -810,30 +810,44 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 import traceback
                 logging.error(f"❌ خطأ في حساب البيانات المالية للمدرسين: {e}")
                 logging.error(traceback.format_exc())
-                # محاولة حساب فردي لكل مدرس بدلاً من تعيين 0
+                # محاولة حساب فردي لكل مدرس باستخدام المعادلة المتوقعة بدلاً من تعيين 0
                 for t in teachers:
                     try:
                         tid = t['id']
-                        balance_info = finance_service.calculate_teacher_balance(tid)
-                        t['total_received'] = balance_info.get('total_received', 0)
-                        t['institute_deduction'] = balance_info.get('institute_deduction', 0)
-                        t['teacher_due'] = balance_info.get('teacher_due', 0)
-                        t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
-                        t['remaining_balance'] = max(0, balance_info.get('remaining_balance', 0))
-                        t['total_remaining'] = t['remaining_balance']
-                        t['total_fees'] = balance_info.get('total_fees', 0)
-                        # حساب أعداد الطلاب حسب النوع
-                        student_links = db.execute_query(
-                            "SELECT study_type FROM student_teacher WHERE teacher_id = %s AND status = 'مستمر'",
+                        # استخدام الحساب المتوقع (المعادلة: عدد الطلاب × الأقساط - خصم المعهد)
+                        expected_info = finance_service._calculate_expected_teacher_due_single(tid)
+                        
+                        # إجمالي المدفوعات والسحوبات
+                        recv_result = db.execute_query(
+                            "SELECT COALESCE(SUM(amount), 0) as total FROM installments WHERE teacher_id = %s",
                             (tid,)
-                        ) or []
-                        in_person = sum(1 for s in student_links if s.get('study_type') == 'حضوري')
-                        electronic = sum(1 for s in student_links if s.get('study_type') == 'الكتروني')
-                        blended = sum(1 for s in student_links if s.get('study_type') == 'مدمج')
-                        t['in_person_count'] = in_person
-                        t['electronic_count'] = electronic
-                        t['blended_count'] = blended
-                        t['expected_deduction'] = balance_info.get('institute_deduction', 0)
+                        )
+                        total_received = recv_result[0]['total'] if recv_result else 0
+                        
+                        with_result = db.execute_query(
+                            "SELECT COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals WHERE teacher_id = %s",
+                            (tid,)
+                        )
+                        withdrawn_total = with_result[0]['total'] if with_result else 0
+                        
+                        ded_result = db.execute_query(
+                            "SELECT COALESCE(SUM(amount), 0) as total FROM installments i "
+                            "LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id "
+                            "WHERE i.teacher_id = %s",
+                            (tid,)
+                        )
+                        
+                        t['total_received'] = total_received or 0
+                        t['teacher_due'] = expected_info.get('teacher_due', 0)
+                        t['total_fees'] = expected_info.get('total_fees', 0)
+                        t['expected_deduction'] = expected_info.get('expected_deduction', 0)
+                        t['institute_deduction'] = expected_info.get('expected_deduction', 0)
+                        t['withdrawn_total'] = withdrawn_total or 0
+                        t['remaining_balance'] = max(0, expected_info.get('teacher_due', 0) - (withdrawn_total or 0))
+                        t['total_remaining'] = t['remaining_balance']
+                        t['in_person_count'] = expected_info.get('in_person_count', 0)
+                        t['electronic_count'] = expected_info.get('electronic_count', 0)
+                        t['blended_count'] = expected_info.get('blended_count', 0)
                         t['institute_rate_display'] = _build_institute_rate_display(t)
                     except Exception as inner_e:
                         logging.error(f"❌ خطأ في حساب المدرس {t.get('id')}: {inner_e}")
