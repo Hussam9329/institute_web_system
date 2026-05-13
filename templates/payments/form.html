@@ -1145,10 +1145,11 @@ async function submitPayment(event) {
                 receiptAlert.id = receiptId;
                 receiptAlert.className = 'custom-alert success';
                 receiptAlert.setAttribute('role', 'alert');
+                const successMessage = result.message || 'تم تسجيل القسط بنجاح - يمكنك طباعة الوصل';
                 receiptAlert.innerHTML =
                     '<div class="d-flex align-items-center gap-3 p-3">' +
                         '<div class="alert-icon-wrap"><i class="fas fa-check-circle"></i></div>' +
-                        '<div class="alert-text">تم تسجيل القسط بنجاح - يمكنك طباعة الوصل</div>' +
+                        '<div class="alert-text">' + successMessage + '</div>' +
                         '<a href="' + receiptUrl + '" target="_blank" class="alert-close-btn" style="background:rgba(255,255,255,0.35);font-size:12px;width:auto;padding:4px 10px;border-radius:8px;text-decoration:none;">' +
                             '<i class="fas fa-print me-1"></i>طباعة' +
                         '</a>' +
@@ -1158,12 +1159,13 @@ async function submitPayment(event) {
                     '</div>';
                 document.getElementById('alert-container').prepend(receiptAlert);
             } else {
-                showAlert(result.message, 'success');
+                showAlert(result.message || 'تم تسجيل القسط بنجاح', 'success');
             }
-
-            // إعادة تعيين النموذج بعد النجاح
-            document.getElementById('addPaymentForm').reset();
-            document.getElementById('pay_date').value = getTodayDate();
+            // تنظيف كامل للواجهة بعد نجاح التسجيل
+            resetPaymentFormAfterSuccess();
+            // إعادة تفعيل زر التسجيل
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
         } else {
             showAlert(result.message, 'error');
             // إعادة تفعيل الزر
@@ -1179,13 +1181,99 @@ async function submitPayment(event) {
 }
 
 /**
- * إغلاق تنبيه الوصل وإعادة التوجيه لصفحة الأقساط
+ * تنظيف كامل للواجهة بعد نجاح تسجيل القسط
+ */
+function resetPaymentFormAfterSuccess() {
+    const form = document.getElementById('addPaymentForm');
+    if (form) {
+        form.reset();
+    }
+    // إعادة تاريخ اليوم
+    const dateEl = document.getElementById('pay_date');
+    if (dateEl) {
+        dateEl.value = getTodayDate();
+    }
+    // تفريغ الطالب
+    const studentSelect = document.getElementById('pay_student_select');
+    if (studentSelect) {
+        studentSelect.value = '';
+        studentSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // تفريغ المدرس المخفي
+    const teacherHidden = document.getElementById('pay_teacher_id');
+    if (teacherHidden) {
+        teacherHidden.value = '';
+    }
+    // إعادة أزرار المدرسين للحالة الافتراضية
+    const teacherButtonsContainer = document.getElementById('teacherButtonsContainer');
+    if (teacherButtonsContainer) {
+        teacherButtonsContainer.innerHTML =
+            '<div class="pay-teacher-placeholder text-muted">' +
+                '<i class="fas fa-arrow-right me-1"></i>اختر الطالب أولاً' +
+            '</div>';
+    }
+    // تفريغ رسالة الرصيد
+    const teacherBalanceMsg = document.getElementById('teacherBalanceMsg');
+    if (teacherBalanceMsg) {
+        teacherBalanceMsg.innerHTML = '';
+        teacherBalanceMsg.className = 'mt-2 pay-balance-placeholder';
+    }
+    // إخفاء معاينات المبلغ والتنبيهات
+    const amountPreview = document.getElementById('pay_amount_preview');
+    if (amountPreview) {
+        amountPreview.textContent = '';
+        amountPreview.classList.add('d-none');
+    }
+    const remainingHint = document.getElementById('pay_remaining_hint');
+    if (remainingHint) {
+        remainingHint.textContent = '';
+        remainingHint.classList.add('d-none');
+    }
+    const discountHint = document.getElementById('pay_discount_hint');
+    if (discountHint) {
+        discountHint.style.display = 'none';
+        discountHint.classList.add('d-none');
+    }
+    const discountHintText = document.getElementById('pay_discount_hint_text');
+    if (discountHintText) {
+        discountHintText.innerHTML = '';
+    }
+    // إخفاء قسم الخصم وإعادة متغيراته
+    payCurrentDiscountType = 'none';
+    payCurrentDiscountValue = 0;
+    payCurrentInstituteWaiver = 0;
+    payCurrentDiscountNotes = '';
+    const discountSection = document.getElementById('payDiscountSection');
+    if (discountSection) {
+        discountSection.style.display = 'none';
+    }
+    if (typeof payResetDiscountForm === 'function') {
+        payResetDiscountForm();
+    }
+    // إعادة حقل المبلغ للوضع الطبيعي
+    const amountEl = document.getElementById('pay_amount');
+    if (amountEl) {
+        amountEl.value = '';
+        amountEl.disabled = false;
+    }
+    // إعادة نوع القسط للوضع الافتراضي
+    const typeEl = document.getElementById('pay_type');
+    if (typeEl) {
+        typeEl.value = 'القسط الأول';
+        typeEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // تنظيف الذاكرة المؤقتة الخاصة بالمدرسين
+    teachersBalanceData = {};
+}
+
+/**
+ * إغلاق تنبيه الوصل
  */
 function dismissReceiptAlert(id) {
     var el = document.getElementById(id);
-    if (el) el.remove();
-    // التوجيه لصفحة الأقساط بعد إغلاق التنبيه
-    window.location.href = '/payments';
+    if (el) {
+        el.remove();
+    }
 }
 </script>
 {% endblock %}
