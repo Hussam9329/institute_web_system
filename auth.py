@@ -7,10 +7,13 @@ import hashlib
 import json
 import base64
 import time
+import logging
 from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from database import Database
 from config import SECRET_KEY
+
+logger = logging.getLogger(__name__)
 
 SESSION_COOKIE = "institute_session"
 SESSION_EXPIRY = 86400 * 7  # 7 أيام
@@ -222,12 +225,18 @@ def login_user(username: str, password: str) -> dict | None:
             WHERE u.username = %s
         ''', (username,))
 
-        if not user or user[0]['is_active'] != 1:
+        if not user:
+            logger.warning(f"محاولة تسجيل دخول فاشلة - المستخدم غير موجود: {username}")
+            return None
+
+        if user[0]['is_active'] != 1:
+            logger.warning(f"محاولة تسجيل دخول فاشلة - الحساب معطل: {username}")
             return None
 
         user_data = dict(user[0])
 
         if not verify_password(password, user_data['password_hash']):
+            logger.warning(f"محاولة تسجيل دخول فاشلة - كلمة مرور خاطئة: {username}")
             return None
 
         # ترحيل كلمة المرور من SHA-256 إلى bcrypt
@@ -238,10 +247,13 @@ def login_user(username: str, password: str) -> dict | None:
                     "UPDATE users SET password_hash = %s WHERE id = %s",
                     (new_hash, user_data['id'])
                 )
-            except Exception:
-                pass  # فشل الترحيل لا يمنع تسجيل الدخول
+                logger.info(f"تم ترحيل كلمة مرور المستخدم {username} من SHA-256 إلى bcrypt")
+            except Exception as e:
+                logger.warning(f"فشل ترحيل كلمة المرور للمستخدم {username}: {e}")
 
+        logger.info(f"تسجيل دخول ناجح: {username}")
         return user_data
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"خطأ في تسجيل الدخول: {e}")
         return None

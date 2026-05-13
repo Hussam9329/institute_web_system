@@ -590,38 +590,6 @@ def init_db():
                     except Exception:
                         conn.rollback()
                     
-                    # إنشاء مستخدم مدير افتراضي
-                    try:
-                        import bcrypt
-                        admin_plain_password = '1993'
-                        admin_pass_hash = bcrypt.hashpw(admin_plain_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-                    except ImportError:
-                        import hashlib
-                        admin_pass_hash = hashlib.sha256('1993'.encode()).hexdigest()
-
-                    try:
-                        cursor.execute('''
-                            INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
-                            SELECT 'admin', 'المدير العام', %s, r.id, 1, %s
-                            FROM roles r WHERE r.name = 'مدير عام'
-                            ON CONFLICT DO NOTHING
-                        ''', (admin_pass_hash, now))
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-
-                    # تحديث كلمة المرور إجباريًا حتى لو كان المستخدم موجودًا مسبقًا
-                    try:
-                        cursor.execute("""
-                            UPDATE users
-                            SET password_hash = %s,
-                                is_active = 1
-                            WHERE username = 'admin'
-                        """, (admin_pass_hash,))
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-                
                 # ===== إنشاء جدول سجل العمليات (دائماً - خارج الكتلة الشرطية) =====
                 try:
                     cursor.execute("""
@@ -692,6 +660,52 @@ def init_db():
                         WHERE r.name = 'مدير عام' AND p.code = 'view_logs'
                         ON CONFLICT DO NOTHING
                     """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== ضمان وجود مستخدم admin دائماً (خارج الكتلة الشرطية) =====
+                from datetime import datetime as _dt
+                _now = _dt.now().strftime('%Y-%m-%d %H:%M')
+                try:
+                    import bcrypt as _bcrypt
+                    _admin_pass = _bcrypt.hashpw('1993'.encode('utf-8'), _bcrypt.gensalt()).decode('utf-8')
+                except ImportError:
+                    import hashlib as _hashlib
+                    _admin_pass = _hashlib.sha256('1993'.encode()).hexdigest()
+
+                # إنشاء مستخدم admin إذا لم يكن موجوداً
+                try:
+                    cursor.execute('''
+                        INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
+                        SELECT 'admin', 'المدير العام', %s, r.id, 1, %s
+                        FROM roles r WHERE r.name = 'مدير عام'
+                        ON CONFLICT DO NOTHING
+                    ''', (_admin_pass, _now))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # تحديث كلمة المرور إجباريًا حتى لو كان المستخدم موجودًا مسبقًا
+                try:
+                    cursor.execute("""
+                        UPDATE users
+                        SET password_hash = %s,
+                            is_active = 1
+                        WHERE username = 'admin'
+                    """, (_admin_pass,))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== منح جميع الصلاحيات للمدير العام (دائماً - ضمان) =====
+                try:
+                    cursor.execute('''
+                        INSERT INTO role_permissions (role_id, permission_id)
+                        SELECT r.id, p.id FROM roles r, permissions p
+                        WHERE r.name = 'مدير عام'
+                        ON CONFLICT DO NOTHING
+                    ''')
                     conn.commit()
                 except Exception:
                     conn.rollback()
