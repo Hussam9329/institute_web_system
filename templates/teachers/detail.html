@@ -60,10 +60,6 @@
                             <span class="badge bg-light text-dark">{{ teacher.subject }}</span>
                         </div>
                         <div class="profile-info-item">
-                            <span class="text-muted">الأجر الكلي</span>
-                            <span class="fw-bold text-primary">{{ format_currency(teacher.total_fee) }}</span>
-                        </div>
-                        <div class="profile-info-item">
                             <span class="text-muted">عدد الطلاب</span>
                             <span class="fw-bold">{{ study_counts.total }}</span>
                         </div>
@@ -111,16 +107,48 @@
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
+                            <div class="card text-white border-0 p-2 p-md-3 text-center h-100" style="background: linear-gradient(135deg, #0ea5e9, #06b6d4);">
+                                <small class="opacity-75 d-block">قسط الأستاذ</small>
+                                {% set teaching_types = (teacher.teaching_types or 'حضوري').split(',') %}
+                                {% for tt in teaching_types %}
+                                    {% set tt_trim = tt.strip() %}
+                                    {% if tt_trim == 'حضوري' and (teacher.fee_in_person or 0) > 0 %}
+                                        <div class="small">{{ tt_trim }}: {{ format_currency(teacher.fee_in_person) }}</div>
+                                    {% elif tt_trim == 'الكتروني' and (teacher.fee_electronic or 0) > 0 %}
+                                        <div class="small">{{ tt_trim }}: {{ format_currency(teacher.fee_electronic) }}</div>
+                                    {% elif tt_trim == 'مدمج' and (teacher.fee_blended or 0) > 0 %}
+                                        <div class="small">{{ tt_trim }}: {{ format_currency(teacher.fee_blended) }}</div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
                             <div class="card bg-gradient-purple text-white border-0 p-2 p-md-3 text-center h-100">
                                 <small class="opacity-75 d-block">خصم المعهد</small>
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.institute_deduction) }}</h5>
-                                {% if teacher.institute_deduction_type == 'percentage' %}
-                                <small class="opacity-75 d-none d-md-block">{{ teacher.institute_deduction_value }}% من القسط 1 و 2</small>
-                                {% elif teacher.institute_deduction_value %}
-                                <small class="opacity-75 d-none d-md-block">{{ financial_info.paying_students_count }} طالب × {{ format_currency(teacher.institute_deduction_value) }}</small>
-                                {% else %}
-                                <small class="opacity-75 d-none d-md-block">لا يوجد خصم</small>
-                                {% endif %}
+                                {% set teaching_types = (teacher.teaching_types or 'حضوري').split(',') %}
+                                {% for tt in teaching_types %}
+                                    {% set tt_trim = tt.strip() %}
+                                    {% if tt_trim == 'حضوري' %}
+                                        {% if teacher.inst_ded_type_in_person == 'manual' and (teacher.inst_ded_manual_in_person or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">حضوري: {{ format_currency(teacher.inst_ded_manual_in_person) }}</small>
+                                        {% elif (teacher.institute_pct_in_person or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">حضوري: {{ teacher.institute_pct_in_person }}%</small>
+                                        {% endif %}
+                                    {% elif tt_trim == 'الكتروني' %}
+                                        {% if teacher.inst_ded_type_electronic == 'manual' and (teacher.inst_ded_manual_electronic or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">الكتروني: {{ format_currency(teacher.inst_ded_manual_electronic) }}</small>
+                                        {% elif (teacher.institute_pct_electronic or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">الكتروني: {{ teacher.institute_pct_electronic }}%</small>
+                                        {% endif %}
+                                    {% elif tt_trim == 'مدمج' %}
+                                        {% if teacher.inst_ded_type_blended == 'manual' and (teacher.inst_ded_manual_blended or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">مدمج: {{ format_currency(teacher.inst_ded_manual_blended) }}</small>
+                                        {% elif (teacher.institute_pct_blended or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">مدمج: {{ teacher.institute_pct_blended }}%</small>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
@@ -129,13 +157,13 @@
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.teacher_due) }}</h5>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="card bg-gradient-orange text-white border-0 p-2 p-md-3 text-center h-100">
                                 <small class="opacity-75 d-block">المسحوب سابقاً</small>
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.withdrawn_total) }}</h5>
                             </div>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-4">
                             <div class="card bg-gradient-danger text-white border-0 p-2 p-md-3 text-center h-100">
                                 <small class="opacity-75 d-block">الرصيد المتبقي المتاح للسحب</small>
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.remaining_balance) }}</h5>

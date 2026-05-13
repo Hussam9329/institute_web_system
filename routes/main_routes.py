@@ -693,6 +693,39 @@ def _build_institute_rate_display(teacher: dict) -> str:
     return '-'
 
 
+def _build_teacher_fee_display(teacher: dict) -> str:
+    """عرض قسط الأستاذ حسب أنواع التدريس مع الإجمالي"""
+    teaching_types = (teacher.get('teaching_types') or 'حضوري').split(',')
+    teaching_types = [t.strip() for t in teaching_types if t.strip()]
+    
+    type_fee_map = {
+        'حضوري': 'fee_in_person',
+        'الكتروني': 'fee_electronic',
+        'مدمج': 'fee_blended',
+    }
+    
+    displays = []
+    total_fee = 0
+    for tt in teaching_types:
+        if tt in type_fee_map:
+            fee_val = teacher.get(type_fee_map[tt], 0) or 0
+            if fee_val > 0:
+                displays.append(f"{tt}: {format_currency(fee_val)}")
+                total_fee += fee_val
+    
+    if len(displays) > 1:
+        displays.append(f"الإجمالي: {format_currency(total_fee)}")
+        return ' | '.join(displays)
+    elif len(displays) == 1:
+        return displays[0]
+    
+    # fallback
+    fallback_fee = teacher.get('total_fee', 0) or 0
+    if fallback_fee > 0:
+        return format_currency(fallback_fee)
+    return '-'
+
+
 @router.get("/teachers", response_class=HTMLResponse)
 async def teachers_list(request: Request, subject: str = "", search: str = ""):
     """صفحة قائمة المدرسين - محسّنة باستعلامات مجمعة"""
@@ -806,6 +839,8 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                     
                     # حساب عرض نسبة المعهد
                     t['institute_rate_display'] = _build_institute_rate_display(t)
+                    # حساب عرض قسط الأستاذ
+                    t['fee_display'] = _build_teacher_fee_display(t)
             except Exception as e:
                 import traceback
                 logging.error(f"❌ خطأ في حساب البيانات المالية للمدرسين: {e}")
@@ -849,6 +884,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                         t['electronic_count'] = expected_info.get('electronic_count', 0)
                         t['blended_count'] = expected_info.get('blended_count', 0)
                         t['institute_rate_display'] = _build_institute_rate_display(t)
+                        t['fee_display'] = _build_teacher_fee_display(t)
                     except Exception as inner_e:
                         logging.error(f"❌ خطأ في حساب المدرس {t.get('id')}: {inner_e}")
                         t['total_received'] = 0
@@ -863,6 +899,7 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                         t['electronic_count'] = 0
                         t['blended_count'] = 0
                         t['institute_rate_display'] = ''
+                        t['fee_display'] = ''
     except Exception as e:
         logging.error(f"خطأ في جلب قائمة المدرسين: {e}")
         teachers = []

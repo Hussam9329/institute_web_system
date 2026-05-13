@@ -443,18 +443,20 @@ const PrintUtils = {
             const withdrawn = parseInt(row.dataset.withdrawn) || 0;
             const remaining = parseInt(row.dataset.remaining) || 0;
             const students = parseInt(row.dataset.students) || 0;
+            const feeDisplay = row.dataset.feeDisplay || '';
 
             visibleRows.push([
                 count,
                 name,
                 `<span class="badge-continue">${subject}</span>`,
+                students,
                 formatCurrency(received),
-                rateDisplay,
+                feeDisplay || '-',
+                rateDisplay || '-',
                 `<span style="color:var(--danger);font-weight:600">${formatCurrency(deduction)}</span>`,
                 `<span style="color:var(--info);font-weight:600">${formatCurrency(teacherDue)}</span>`,
                 `<span style="color:var(--warning);font-weight:600">${formatCurrency(withdrawn)}</span>`,
-                remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(remaining)}</span>` : '<span style="color:var(--muted)">0</span>',
-                students
+                remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(remaining)}</span>` : '<span style="color:var(--muted)">0</span>'
             ]);
         });
 
@@ -464,11 +466,11 @@ const PrintUtils = {
         }
 
         visibleRows.push([
-            '', 'الإجمالي', '', formatCurrency(totalReceived), '',
+            '', 'الإجمالي', '', '', formatCurrency(totalReceived), '', '',
             `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
             `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
             `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
-            totalRemaining > 0 ? formatCurrency(totalRemaining) : '0', ''
+            totalRemaining > 0 ? formatCurrency(totalRemaining) : '0'
         ]);
 
         const filters = [];
@@ -498,9 +500,9 @@ const PrintUtils = {
                 title: 'قائمة المدرسين - التفاصيل المالية الشاملة',
                 icon: 'chalkboard-teacher',
                 content: this.buildTableHTML(
-                    ['#', 'المدرس', 'المادة', 'المدفوع', 'نسبة المعهد', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي', 'الطلاب'],
+                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'قسط الأستاذ', 'نسبة المعهد', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي'],
                     visibleRows,
-                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
+                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
                 )
             }]
         });

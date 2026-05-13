@@ -47,10 +47,6 @@
             <div class="info-value">{{ teacher.subject }}</div>
         </div>
         <div class="info-card">
-            <div class="info-label">الأجر الكلي</div>
-            <div class="info-value">{{ format_currency(teacher.total_fee) }}</div>
-        </div>
-        <div class="info-card">
             <div class="info-label">عدد الطلاب</div>
             <div class="info-value">{{ students_list|length }}</div>
         </div>
@@ -58,6 +54,101 @@
             <div class="info-label">ملاحظات</div>
             <div class="info-value">{{ teacher.notes or 'لا توجد ملاحظات' }}</div>
         </div>
+    </div>
+</div>
+
+<!-- قسط الأستاذ -->
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-money-check-alt"></i>
+        قسط الأستاذ
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <tbody>
+                {% if (teacher.fee_in_person or 0) > 0 %}
+                <tr>
+                    <td style="width:40%"><span style="color:var(--muted)">قسط الحضوري</span></td>
+                    <td style="font-weight:700">{{ format_currency(teacher.fee_in_person) }}</td>
+                </tr>
+                {% endif %}
+                {% if (teacher.fee_electronic or 0) > 0 %}
+                <tr>
+                    <td><span style="color:var(--muted)">قسط الالكتروني</span></td>
+                    <td style="font-weight:700">{{ format_currency(teacher.fee_electronic) }}</td>
+                </tr>
+                {% endif %}
+                {% if (teacher.fee_blended or 0) > 0 %}
+                <tr>
+                    <td><span style="color:var(--muted)">قسط المدمج</span></td>
+                    <td style="font-weight:700">{{ format_currency(teacher.fee_blended) }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td><span style="color:var(--muted)">الإجمالي</span></td>
+                    <td style="font-weight:700; color:var(--primary)">{{ format_currency(teacher.total_fee) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- خصم المعهد -->
+<div class="report-section">
+    <div class="section-title">
+        <i class="fas fa-percent"></i>
+        خصم المعهد
+    </div>
+    <div class="report-table-wrapper">
+        <table class="report-table">
+            <tbody>
+                {% set teaching_types = (teacher.teaching_types or 'حضوري').split(',') %}
+                {% for tt in teaching_types %}
+                    {% set tt_trim = tt.strip() %}
+                    {% if tt_trim == 'حضوري' %}
+                        {% if teacher.inst_ded_type_in_person == 'manual' and (teacher.inst_ded_manual_in_person or 0) > 0 %}
+                        <tr>
+                            <td style="width:40%"><span style="color:var(--muted)">خصم الحضوري</span></td>
+                            <td style="font-weight:700">{{ format_currency(teacher.inst_ded_manual_in_person) }} <small style="color:var(--muted)">(مبلغ ثابت)</small></td>
+                        </tr>
+                        {% elif (teacher.institute_pct_in_person or 0) > 0 %}
+                        <tr>
+                            <td><span style="color:var(--muted)">خصم الحضوري</span></td>
+                            <td style="font-weight:700">{{ teacher.institute_pct_in_person }}%</td>
+                        </tr>
+                        {% endif %}
+                    {% elif tt_trim == 'الكتروني' %}
+                        {% if teacher.inst_ded_type_electronic == 'manual' and (teacher.inst_ded_manual_electronic or 0) > 0 %}
+                        <tr>
+                            <td><span style="color:var(--muted)">خصم الالكتروني</span></td>
+                            <td style="font-weight:700">{{ format_currency(teacher.inst_ded_manual_electronic) }} <small style="color:var(--muted)">(مبلغ ثابت)</small></td>
+                        </tr>
+                        {% elif (teacher.institute_pct_electronic or 0) > 0 %}
+                        <tr>
+                            <td><span style="color:var(--muted)">خصم الالكتروني</span></td>
+                            <td style="font-weight:700">{{ teacher.institute_pct_electronic }}%</td>
+                        </tr>
+                        {% endif %}
+                    {% elif tt_trim == 'مدمج' %}
+                        {% if teacher.inst_ded_type_blended == 'manual' and (teacher.inst_ded_manual_blended or 0) > 0 %}
+                        <tr>
+                            <td><span style="color:var(--muted)">خصم المدمج</span></td>
+                            <td style="font-weight:700">{{ format_currency(teacher.inst_ded_manual_blended) }} <small style="color:var(--muted)">(مبلغ ثابت)</small></td>
+                        </tr>
+                        {% elif (teacher.institute_pct_blended or 0) > 0 %}
+                        <tr>
+                            <td><span style="color:var(--muted)">خصم المدمج</span></td>
+                            <td style="font-weight:700">{{ teacher.institute_pct_blended }}%</td>
+                        </tr>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                <tr>
+                    <td><span style="color:var(--muted)">إجمالي خصم المعهد المحسوب</span></td>
+                    <td style="font-weight:700; color:var(--danger)">{{ format_currency(balance_info.institute_deduction) }}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
