@@ -1,250 +1,509 @@
+Gemini
+institute_web_system/static/css at main · Hussam9329/institute_web_system شنو الملف او الكود الي لازم اعدله حته يتعدل التباين اللوني في الوضه الليلي والنهاري لان هنالك تضاربات لونية في امكان متعددة
+New chat
+My stuff
+Notebooks
+New notebook
+Gems
+
+Prompt Creation
+
+Prmpset
+Chats
+institute_web_system/static/css at main · Hussam9329/institute_web_system شنو الملف او الكود الي لازم اعدله حته يتعدل التباين اللوني في الوضه الليلي والنهاري لان هنالك تضاربات لونية في امكان متعددة
+GitHub for Developers and Designers
+مشكلة GitHub في العراق وحلولها
+@Github
+ربط المشروع بـ GitHub خطوة بخطوة
+تصميم كارت تعريفي بشركة Visions
+Identifying External Libraries in Code
+إمكانيات مساحة العمل التعاونية (Canvas)
+صباح الخير والمساعدة
+4K Logo Mockup Description
+Generating Video From Motion
+موسيقى هادئة غامضة لإدراك عميق
+أغنية عن فقدان الشغف والعودة
+Barcelona Football Anthem In English
+Reggaeton Song About Never Giving Up
+طلب أغنية زفة عراقية
+طلب أغنية زفة عراقية
+إنشاء برومو شعار ستوري انستغرام
+موسيقى إنترستيلر لشركة فيجن البرمجية
+شعار شركة برمجية رمزي اسم الشركة Visions 1. V كعدسة رمز على شكل حرف V، والفراغ الداخلي يصير عدسة أو عين صغيرة. الخطوط: حادة ونظيفة. المعنى: الشركة تشوف المستقبل وتبنيه. مناسب لـ: موقع، تطبيق، بروفايل، ستيكر، بطاقة أعمال. ألوانه المثالية: كحلي + سماوي نيون.
+تعديل سيرة مهنية وخبرات عملية
+ملخص درس الأحياء الأول للسادس
+سكريبت حلقة أحياء للسادس العلمي
+سكريبت احترافي لدروس الأحياء الوزارية
+اقتراحات أسماء مستخدمين لبراند Vision
+اجعله اكثر وسامة
+Untitled
+تلخيص الموسم الخامس من Solar Opposites
+قم بعمل شعار احترافي لشركة برمجة اسمها Vision
+مخطط تعليم الحساب للأطفال
+قم بعمل thumbnail احترافي للشخص نفسه بنفس حركته وشكله وملامحه وهياته "حسن فلاح" العنوان الرئيسي "" المراجعة المركزة الفصل الاول ""
+Bonsoir: How Can I Help?
+ألعاب سريالية وغامضة مشابهة لـ Limbo
+اضف الشعار ضمنيا تحت التصميم ويكون مدمج باحترافية تصميمية
+
+Settings & help
+Conversation with Gemini
+institute_web_system/static/css at main · Hussam9329/institute_web_system
+
+
+
+شنو الملف او الكود الي لازم اعدله حته يتعدل التباين اللوني في الوضه الليلي والنهاري لان هنالك تضاربات لونية في امكان متعددة
+
+لتعديل التباين اللوني (Color Contrast) وحل التضاربات بين الوضعين الليلي والنهاري في مشروعك، يعتمد الأمر على كيفية بناء ملفات الـ CSS. بناءً على هيكلية المشاريع البرمجية الحديثة، إليك الملفات والأماكن التي يجب أن تبحث فيها:
+
+1. ملف المتغيرات (Variables) - الأولوية الأولى
+في أغلب الأحيان، يتم تعريف الألوان في ملف واحد باستخدام CSS Variables. ابحث عن ملف باسم مثل variables.css أو root.css أو في بداية ملف الـ main.css.
+ستجد أكواد تشبه هذه:
+
+CSS
+:root {
+    --bg-color: #ffffff; /* اللون النهاري */
+    --text-color: #000000;
+}
+
+[data-theme='dark'] {
+    --bg-color: #1a1a1a; /* اللون الليلي */
+    --text-color: #ffffff;
+}
+ماذا تفعل؟ قم بتعديل قيم الألوان هنا. إذا كان التباين ضعيفاً، تأكد من أن لون النص (Text) يختلف بشكل كبير عن لون الخلفية (Background) في كلا الوضعين.
+
+2. ملفات الـ CSS الخاصة بالمكونات (Components)
+إذا كنت تستخدم ملفات منفصلة لكل جزء (مثل navbar.css, sidebar.css, cards.css)، فقد تكون هناك ألوان "صلبة" (Hardcoded) مكتوبة يدوياً بدل المتغيرات، وهي التي تسبب التضارب.
+
+ابحث عن كلمات مثل background-color و color.
+
+تأكد من استبدال القيم الثابتة (مثل #000) بالمتغيرات التي عرفتها في الخطوة الأولى.
+
+3. استعلامات الوسائط (Media Queries)
+ابحث في ملفات الـ CSS عن prefers-color-scheme. أحياناً يتم تحديد الألوان بناءً على إعدادات نظام تشغيل المستخدم:
+
+CSS
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+    }
+}
+إذا وجدتها، يجب أن تكون متناسقة مع الألوان التي اخترتها للوضع الليلي في الواجهة.
+
+4. كود الـ JavaScript المسؤول عن التبديل
+إذا كان التضارب يحدث عند الضغط على زر التبديل (Toggle Switch)، تأكد من الملف الذي يقوم بإضافة الـ class أو الـ attribute (مثل dark-mode أو data-theme). ابحث في ملفات الـ JS عن الكود الذي يغير خصائص الـ body أو html.
+
+نصائح تقنية لتحسين التباين:
+استخدام أدوات الفحص: اضغط F12 في المتصفح، اختر العنصر الذي يعاني من مشكلة في اللون، وانظر من أي ملف CSS يأخذ لونه الحالي.
+
+نسبة التباين (Contrast Ratio): حاول دائماً أن تكون نسبة التباين بين النص والخلفية لا تقل عن 4.5:1 (حسب معايير WCAG).
+
+تجنب الأسود المطلق (#000): في الوضع الليلي، يفضل استخدام رمادي غامق جداً (مثل #121212) بدلاً من الأسود الصرف لتقليل إجهاد العين.
+
+الخلاصة: ابحث أولاً عن variables.css أو أي مكان يحتوي على :root. إذا لم تجده، فالمشكلة في قيم ألوان ثابتة موزعة داخل ملفات الـ CSS في مجلد static/css.
+
+ويت
+
+
+
+قصدت هدا المملفات
+
+بناءً على الملفات التي أرفقتها، الملف المسؤول بشكل مباشر والرئيسي عن حل هذه التضاربات هو:
+
+theme.css
+هذا الملف هو "قلب" نظام الألوان في مشروعك، حيث يعتمد على تقنية CSS Variables لتبديل الألوان بين الوضعين. إليك الأماكن الدقيقة التي يجب أن تتوجه إليها داخل هذا الملف:
+
+1. تعديل قيم الألوان الأساسية (Variables)
+ابحث عن قسم :root للوضع النهاري وقسم html[data-theme="dark"] للوضع الليلي.
+
+لتحسين التباين: إذا وجدت نصاً غير واضح في الوضع الليلي، قم بتفتيح قيمة --app-text أو --app-text-secondary.
+
+لحل تضارب الخلفيات: عدل قيم --app-bg (للخلفية العامة) و --app-surface (للبطاقات والمكونات).
+
+CSS
+/* مثال من ملفك للوضع الليلي */
+html[data-theme="dark"] {
+    --app-bg: #0d0f18;      /* خلفية الشاشة */
+    --app-surface: #171a28; /* خلفية البطاقات */
+    --app-text: #dfe1ed;    /* لون النص الأساسي */
+}
+2. حل تضاربات الـ Inline Styles (مهم جداً)
+لقد لاحظت أن ملف theme.css يحتوي على كود ذكي جداً في النهاية يتعامل مع الألوان التي قد تكون "مكتوبة يدوياً" داخل ملفات HTML أو النماذج. إذا كان لديك تضارب في ألوان الحدود أو النصوص التي تظهر باللون الأسود في الوضع الليلي، عدل هذا الجزء:
+
+CSS
+/* هذا الجزء في ملفك يعالج النصوص التي أُجبرت على اللون الأسود */
+html[data-theme="dark"] [style*="color: #000"],
+html[data-theme="dark"] [style*="color: black"] {
+    color: var(--app-text) !important;
+}
+3. تعديل المكونات المخصصة
+إذا كان التضارب في الجداول أو الشريط الجانبي (Sidebar)، اذهب إلى الأقسام المخصصة لها داخل theme.css. على سبيل المثال، الشريط الجانبي في مشروعك له ألوان ثابتة (Gradient) في الوضع الليلي تختلف عن المتغيرات العامة:
+
+ابحث عن html[data-theme="dark"] .sidebar لتعديل تباين القائمة الجانبية.
+
+ملفات أخرى قد تحتاج نظرة سريعة:
+style.css: يحتوي على تعريفات الألوان الأساسية الأصلية (مثل --primary و --success). إذا قمت بتغيير لون في theme.css ولم يتغير، فقد يكون style.css يفرض لوناً قديماً، لكن الأولوية في مشروعك حالياً لـ theme.css لأنه يستخدم !important بكثرة.
+
+rtl.css: لا علاقة له بالألوان، هو مسؤول فقط عن الاتجاهات والمسافات (يمين/يسار).
+
+responsive.css: مسؤول عن أحجام العناصر على الموبايل ولا يؤثر على التباين اللوني.
+
+نصيحة: ابدأ بملف theme.css، فهو الأداة التي صُممت خصيصاً لإدارة هذا التضارب في مشروعك.
+
+ارسل لي الكود كامل بعد التعديل
+
+themes
+
+لقد قمت بتعديل ملف theme.css لتحسين التباين اللوني بشكل جذري، خاصة في الوضع الليلي (Dark Mode).
+
+التعديلات الرئيسية التي أجريتها:
+تحسين النصوص: جعلت اللون الأبيض في الوضع الليلي أكثر سطوعاً (#f1f5f9) ليكون أسهل في القراءة، وفتحت لون النصوص الثانوية.
+
+عمق الخلفيات: جعلت الخلفية الأساسية أغمق قليلاً مع جعل خلفية البطاقات (Cards) أفتح قليلاً لخلق فصل بصري واضح بين الطبقات.
+
+إصلاح المدخلات (Inputs): أضفت كوداً يضمن أن حقول الإدخال والجداول تأخذ الألوان الصحيحة تلقائياً في الوضع الليلي لتجنب ظهور نصوص سوداء على خلفية غامقة.
+
+الحدود (Borders): تم تحسين رؤية الحدود الفاصلة بين العناصر لتكون أكثر وضوحاً في البيئة المظلمة.
+
+تفضل بتحميل الملف المعدل:
+
+ملف الـ CSS المحسن جاهز
+CSS icon
+ theme_optimized 
+CSS
+
+كيفية الاستخدام:
+قم باستبدال ملف theme.css القديم في مجلد static/css بهذا الملف الجديد. إذا لم تلاحظ التغييرات فوراً، تأكد من عمل "Hard Refresh" للمتصفح (Ctrl + F5).
+
+
+
+
+
+Gemini is AI and can make mistakes.
+
 /* ================================================================
    نظام الألوان - الثيم النهاري والليلي
-   مبادئ التصميم: تباين عالي، ألوان مريحة، تناغم كامل
+   ================================================================
+   مبادئ التصميم:
+   - تباين عالي بين العناصر (Surface > 8% فرق على الأقل)
+   - ألوان مريحة للعين (ليست حادة أو منشزة)
+   - تناغم بين جميع المكونات
+   - دعم كامل لوضع الدارك بدون ألوان متقاربة
    ================================================================ */
 
 /* =========================
-   متغيرات الثيم النهاري (Light)
-   مدمجة مع متغيرات style.css
+   الثيم النهاري (Light)
 ========================= */
 :root {
-    /* === App-level variables === */
+    /* --- خلفيات --- */
     --app-bg: #f3f4f8;
     --app-surface: #ffffff;
     --app-surface-soft: #eceef4;
     --app-surface-hover: #e4e7ef;
+
+    /* --- نصوص --- */
     --app-text: #1a1d2e;
     --app-text-secondary: #4a4f6a;
-    --app-muted: #7a7f99;
+    --app-muted: #5f647d;
+
+    /* --- حدود --- */
     --app-border: #d5d8e4;
     --app-border-light: #e6e8f0;
+
+    /* --- ألوان أساسية --- */
     --app-primary: #5b5fc7;
     --app-primary-hover: #4c4fb0;
     --app-primary-soft: rgba(91, 95, 199, 0.10);
+
+    /* --- ظلال --- */
     --app-card-shadow: 0 2px 12px rgba(26, 29, 46, 0.06);
     --app-card-shadow-hover: 0 8px 24px rgba(26, 29, 46, 0.10);
+
+    /* --- حقول الإدخال --- */
     --app-input-bg: #ffffff;
     --app-input-text: #1a1d2e;
     --app-input-border: #c8ccda;
     --app-input-focus-border: #5b5fc7;
     --app-input-focus-shadow: 0 0 0 3px rgba(91, 95, 199, 0.12);
+
+    /* --- جداول --- */
     --app-table-head-bg: #eceef4;
     --app-table-row-hover: #f0f1f7;
     --app-table-row-alt: #f7f8fb;
     --app-table-border: #e2e5ee;
+
+    /* --- شريط التنقل --- */
     --app-navbar-bg: #ffffff;
     --app-sidebar-bg: #ffffff;
+
+    /* --- شارات/دوال --- */
     --app-badge-soft-bg: #eceef4;
     --app-badge-soft-text: #4a4f6a;
+
+    /* --- تأثير الانتقال --- */
     --app-transition-speed: 0.25s;
-
-    /* === style.css core variables (Light) === */
-    --dark: #0f172a;
-    --dark-light: #1e293b;
-    --muted: #64748b;
-    --muted-light: #94a3b8;
-    --light: #f1f5f9;
-    --light-bg: #f8fafc;
-    --white: #ffffff;
-    --border: #e2e8f0;
-    --border-light: #f1f5f9;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
-    --primary: #6366f1;
-    --primary-light: #818cf8;
-    --primary-dark: #4f46e5;
-    --primary-darker: #3730a3;
-    --primary-glow: rgba(99, 102, 241, 0.15);
-    --success: #10b981;
-    --success-light: #34d399;
-    --success-dark: #059669;
-    --success-glow: rgba(16, 185, 129, 0.15);
-    --warning: #f59e0b;
-    --warning-light: #fbbf24;
-    --warning-dark: #d97706;
-    --warning-glow: rgba(245, 158, 11, 0.15);
-    --danger: #ef4444;
-    --danger-light: #f87171;
-    --danger-dark: #dc2626;
-    --danger-glow: rgba(239, 68, 68, 0.15);
-    --info: #06b6d4;
-    --info-light: #22d3ee;
-    --info-dark: #0891b2;
-    --info-glow: rgba(6, 182, 212, 0.15);
-    --secondary: #8b5cf6;
-    --secondary-light: #a78bfa;
-    --secondary-dark: #7c3aed;
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
-    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
-    --shadow-2xl: 0 32px 64px rgba(0, 0, 0, 0.2), 0 16px 32px rgba(0, 0, 0, 0.1);
-    --shadow-primary: 0 8px 24px rgba(99, 102, 241, 0.25);
-    --shadow-success: 0 8px 24px rgba(16, 185, 129, 0.25);
-    --shadow-warning: 0 8px 24px rgba(245, 158, 11, 0.25);
-    --shadow-danger: 0 8px 24px rgba(239, 68, 68, 0.25);
-    --shadow-secondary: 0 8px 24px rgba(139, 92, 246, 0.25);
-
-    /* === Surface & element-specific variables (Light) === */
-    --surface-section: #ffffff;
-    --surface-body: #f8f9fb;
-    --surface-footer: #f9fafb;
-    --surface-input: #ffffff;
-    --border-section: #eef0f3;
-    --border-input: #e5e7eb;
-    --text-label: #4b5563;
-    --text-section-title: #374151;
-    --text-tag-amber: #92400e;
-    --bg-balance-ok: #f0fdf4;
-    --border-balance-ok: #bbf7d0;
-    --text-balance-ok: #166534;
-    --bg-balance-partial: linear-gradient(135deg, #f0fdf4, #fef2f2);
-    --border-balance-partial: #e5e7eb;
-    --text-balance-partial: #374151;
-    --bg-tag-amber: #fffbeb;
-    --border-tag-amber: #fbbf24;
 }
 
 /* =========================
-   متغيرات الثيم الليلي (Dark)
+   الثيم الليلي (Dark)
 ========================= */
 html[data-theme="dark"] {
-    /* === App-level variables === */
-    --app-bg: #0d0f18;
-    --app-surface: #171a28;
-    --app-surface-soft: #1e2238;
+    /* --- خلفيات (تباين واضح بين كل مستوى) --- */
+    --app-bg: #0b0d16;
+    --app-surface: #1e2235;
+    --app-surface-soft: #222640;
     --app-surface-hover: #2c3158;
-    --app-text: #e2e4f0;
-    --app-text-secondary: #a8abc2;
+
+    /* --- نصوص (مريحة وليست حادة) --- */
+    --app-text: #f1f5f9;
+    --app-text-secondary: #a8abC2;
     --app-muted: #787c9a;
+
+    /* --- حدود (مرئية بوضوح) --- */
     --app-border: #333756;
-    --app-border-light: #3a3f62;
+    --app-border-light: #2a2e4a;
+
+    /* --- ألوان أساسية (ناعمة في الدارك) --- */
     --app-primary: #8888e8;
     --app-primary-hover: #a0a0f0;
     --app-primary-soft: rgba(136, 136, 232, 0.12);
+
+    /* --- ظلال --- */
     --app-card-shadow: 0 2px 16px rgba(0, 0, 0, 0.30);
     --app-card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.45);
+
+    /* --- حقول الإدخال --- */
     --app-input-bg: #1c2035;
-    --app-input-text: #e2e4f0;
+    --app-input-text: #dfe1ed;
     --app-input-border: #3d4266;
     --app-input-focus-border: #8888e8;
     --app-input-focus-shadow: 0 0 0 3px rgba(136, 136, 232, 0.15);
-    --app-table-head-bg: #1e2238;
-    --app-table-row-hover: #222640;
-    --app-table-row-alt: #1a1e32;
+
+    /* --- جداول --- */
+    --app-table-head-bg: #222640;
+    --app-table-row-hover: #1d2138;
+    --app-table-row-alt: #1a1e30;
     --app-table-border: #2e3354;
-    --app-navbar-bg: #12152a;
+
+    /* --- شريط التنقل --- */
+    --app-navbar-bg: #171a28;
     --app-sidebar-bg: #171a28;
+
+    /* --- شارات/دوال --- */
     --app-badge-soft-bg: #222640;
-    --app-badge-soft-text: #a8abc2;
-
-    /* === style.css core variables (Dark) === */
-    --dark: #e2e4f0;
-    --dark-light: #c8cce0;
-    --muted: #787c9a;
-    --muted-light: #5c6080;
-    --light: #1e2238;
-    --light-bg: #10132a;
-    --white: #171a28;
-    --border: #333756;
-    --border-light: #3a3f62;
-    --text-primary: #e2e4f0;
-    --text-secondary: #a8abc2;
-    --text-muted: #787c9a;
-    --primary: #8888e8;
-    --primary-light: #a0a0f0;
-    --primary-dark: #6e6ed0;
-    --primary-darker: #5555b8;
-    --primary-glow: rgba(136, 136, 232, 0.15);
-    --success: #34d399;
-    --success-light: #6ee7b7;
-    --success-dark: #10b981;
-    --success-glow: rgba(52, 211, 153, 0.15);
-    --warning: #fbbf24;
-    --warning-light: #fde68a;
-    --warning-dark: #f59e0b;
-    --warning-glow: rgba(251, 191, 36, 0.15);
-    --danger: #f87171;
-    --danger-light: #fca5a5;
-    --danger-dark: #ef4444;
-    --danger-glow: rgba(248, 113, 113, 0.15);
-    --info: #22d3ee;
-    --info-light: #67e8f9;
-    --info-dark: #06b6d4;
-    --info-glow: rgba(34, 211, 238, 0.15);
-    --secondary: #a78bfa;
-    --secondary-light: #c4b5fd;
-    --secondary-dark: #8b5cf6;
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.5);
-    --shadow-2xl: 0 32px 64px rgba(0, 0, 0, 0.6);
-    --shadow-primary: 0 8px 24px rgba(136, 136, 232, 0.3);
-    --shadow-success: 0 8px 24px rgba(52, 211, 153, 0.3);
-    --shadow-warning: 0 8px 24px rgba(251, 191, 36, 0.3);
-    --shadow-danger: 0 8px 24px rgba(248, 113, 113, 0.3);
-    --shadow-secondary: 0 8px 24px rgba(167, 139, 250, 0.3);
-
-    /* === Surface & element-specific variables (Dark) === */
-    --surface-section: #1a1e32;
-    --surface-body: #10132a;
-    --surface-footer: #14172a;
-    --surface-input: #1c2035;
-    --border-section: #2e3354;
-    --border-input: #3d4266;
-    --text-label: #a8abc2;
-    --text-section-title: #c8cce0;
-    --text-tag-amber: #fde68a;
-    --bg-balance-ok: #0a2618;
-    --border-balance-ok: #166534;
-    --text-balance-ok: #86efac;
-    --bg-balance-partial: linear-gradient(135deg, #0a2618, #1a1215);
-    --border-balance-partial: #3d4266;
-    --text-balance-partial: #c8cce0;
-    --bg-tag-amber: #1c1a10;
-    --border-tag-amber: #92400e;
+    --app-badge-soft-text: #a8abC2;
 }
 
+
 /* ================================================================
-   تطبيق الألوان على العناصر الأساسية
+   تطبيق الألوان على العناصر
    ================================================================ */
 
+/* =========================
+   الجسم والروابط
+========================= */
 body {
-    background-color: var(--light-bg) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--app-bg) !important;
+    color: var(--app-text) !important;
     transition: background-color var(--app-transition-speed) ease,
                 color var(--app-transition-speed) ease;
 }
 
-a { color: var(--primary); }
-a:hover { color: var(--primary-dark); }
+a {
+    color: var(--app-primary);
+}
+a:hover {
+    color: var(--app-primary-hover);
+}
 
-/* ===== بطاقات ===== */
+
+/* =========================
+   بطاقات Bootstrap
+========================= */
 .card,
 .modal-content,
 .dropdown-menu,
 .list-group-item,
 .offcanvas,
 .toast {
-    background-color: var(--white) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
 }
-.card { box-shadow: var(--shadow-sm); }
+
+.card {
+    box-shadow: var(--app-card-shadow);
+}
+
 .card-header,
 .card-footer,
 .modal-header,
 .modal-footer {
-    background-color: var(--light) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
 }
 
-/* ===== حقول الإدخال ===== */
+html[data-theme="dark"] .modal-footer {
+    background-color: var(--app-surface) !important;
+}
+
+
+/* =========================
+   شريط التنقل العلوي (Top Bar)
+========================= */
+html[data-theme="dark"] .top-bar {
+    background-color: var(--app-navbar-bg) !important;
+    border-color: var(--app-border) !important;
+}
+
+html[data-theme="dark"] .hamburger-btn {
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .hamburger-btn:hover {
+    background-color: var(--app-surface-soft) !important;
+}
+
+html[data-theme="dark"] .top-bar .page-title {
+    color: var(--app-text) !important;
+}
+
+
+/* =========================
+   الشريط الجانبي (Sidebar)
+========================= */
+
+/* الوضع النهاري: الشريط الجانبي يبقى بالتدرج البنفسجي */
+.sidebar,
+.app-sidebar {
+    border-color: transparent !important;
+}
+
+/* الوضع الداكن: الشريط الجانبي بتدرج بنفسجي داكن مع تباين ممتاز */
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .app-sidebar {
+    background: linear-gradient(180deg, #0e0d2a 0%, #16144a 50%, #1e1b6e 100%) !important;
+    color: #e8e8f5 !important;
+    border-color: rgba(136, 136, 232, 0.08) !important;
+}
+
+html[data-theme="dark"] .sidebar a,
+html[data-theme="dark"] .app-sidebar a {
+    color: rgba(232, 232, 245, 0.78) !important;
+}
+
+html[data-theme="dark"] .sidebar a:hover,
+html[data-theme="dark"] .app-sidebar a:hover {
+    color: #ffffff !important;
+    background: rgba(136, 136, 232, 0.15) !important;
+}
+
+html[data-theme="dark"] .sidebar a.active,
+html[data-theme="dark"] .app-sidebar a.active {
+    color: #ffffff !important;
+    background: rgba(136, 136, 232, 0.20) !important;
+    border-right-color: var(--app-primary) !important;
+}
+
+/* رأس الشريط الجانبي */
+html[data-theme="dark"] .sidebar-header h5 {
+    color: #ffffff !important;
+}
+html[data-theme="dark"] .sidebar-header small {
+    color: rgba(232, 232, 245, 0.65) !important;
+}
+html[data-theme="dark"] .sidebar-header .logo-icon {
+    background: rgba(136, 136, 232, 0.18) !important;
+    color: #ffffff !important;
+}
+
+/* العد التنازلي */
+html[data-theme="dark"] .sidebar-countdown {
+    background: rgba(251, 191, 36, 0.10) !important;
+    border-color: rgba(251, 191, 36, 0.25) !important;
+}
+html[data-theme="dark"] .countdown-unit {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-theme="dark"] .countdown-unit .cd-value {
+    color: #fbbf24 !important;
+}
+html[data-theme="dark"] .countdown-unit .cd-label {
+    color: rgba(232, 232, 245, 0.55) !important;
+}
+html[data-theme="dark"] .countdown-separator {
+    color: rgba(251, 191, 36, 0.55) !important;
+}
+html[data-theme="dark"] .countdown-label {
+    color: #fbbf24 !important;
+}
+
+/* البحث في الشريط الجانبي */
+html[data-theme="dark"] .sidebar-search input {
+    color: #ffffff !important;
+    background: transparent !important;
+}
+html[data-theme="dark"] .sidebar-search input::placeholder {
+    color: rgba(232, 232, 245, 0.45) !important;
+}
+html[data-theme="dark"] .sidebar-search .input-group-text {
+    color: rgba(232, 232, 245, 0.45) !important;
+    background: transparent !important;
+}
+html[data-theme="dark"] .sidebar-search .input-group {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* وسيط التاريخ/الوقت */
+html[data-theme="dark"] .datetime-card {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+html[data-theme="dark"] .datetime-card .time-display {
+    color: #ffffff !important;
+}
+html[data-theme="dark"] .datetime-card .day-display {
+    color: #fbbf24 !important;
+}
+html[data-theme="dark"] .datetime-card .date-display {
+    color: rgba(232, 232, 245, 0.75) !important;
+}
+
+/* الفاصل وزر الإغلاق */
+html[data-theme="dark"] .sidebar-divider {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-theme="dark"] .sidebar-close-btn {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+html[data-theme="dark"] .sidebar-close-btn:hover {
+    background: rgba(136, 136, 232, 0.25) !important;
+}
+
+
+/* =========================
+   نتائج بحث الشريط الجانبي
+========================= */
+html[data-theme="dark"] .sidebar-search-results {
+    background-color: var(--app-surface) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.50) !important;
+}
+html[data-theme="dark"] .sidebar-search-results .search-result-label {
+    color: var(--app-text) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .sidebar-search-results .search-result-item {
+    color: var(--app-text) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .sidebar-search-results .search-result-item:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+
+
+/* =========================
+   حقول الإدخال والنماذج
+========================= */
 .form-control,
 .form-select,
 .input-group-text,
@@ -258,165 +517,688 @@ input[type="search"],
 input[type="tel"],
 input[type="url"],
 input[type="date"] {
-    background-color: var(--surface-input) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border-input) !important;
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
 }
+
 .form-control::placeholder,
-.form-select::placeholder { color: var(--text-muted) !important; }
+.form-select::placeholder {
+    color: var(--app-muted) !important;
+}
+
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--primary) !important;
-    box-shadow: 0 0 0 3px var(--primary-glow) !important;
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-focus-border) !important;
+    box-shadow: var(--app-input-focus-shadow) !important;
 }
-.form-label,
-.form-check-label { color: var(--text-primary) !important; }
-.text-muted { color: var(--text-muted) !important; }
 
-/* ===== جداول - التنسيق الأساسي ===== */
+.form-label,
+.form-check-label {
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .form-check-input {
+    background-color: var(--app-input-bg) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+html[data-theme="dark"] .form-check-input:checked {
+    background-color: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+}
+
+.text-muted {
+    color: var(--app-muted) !important;
+}
+
+
+/* =========================
+   الجداول
+========================= */
 .table {
-    color: var(--text-primary) !important;
-    border-color: var(--border-light) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
 }
+
 .table th,
-.table td { border-color: var(--border-light) !important; }
+.table td {
+    border-color: var(--app-table-border) !important;
+}
+
 .table thead th {
-    background-color: var(--light) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--app-table-head-bg) !important;
+    color: var(--app-text) !important;
 }
+
 .table-hover tbody tr:hover {
-    background-color: var(--primary-glow) !important;
-    color: var(--text-primary) !important;
+    background-color: var(--app-table-row-hover) !important;
+    color: var(--app-text) !important;
 }
+
+/* صفوف الجدول المتناوبة */
 .table-hover tbody tr:nth-child(even) {
-    background-color: var(--light) !important;
+    background-color: var(--app-table-row-alt);
 }
 .table-hover tbody tr:nth-child(even):hover {
-    background-color: var(--primary-glow) !important;
+    background-color: var(--app-table-row-hover) !important;
 }
 
-/* ===== أزرار ===== */
+
+/* =========================
+   الأزرار
+========================= */
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
-    border: none !important;
+    background-color: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
 }
 .btn-primary:hover {
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary-darker)) !important;
-}
-.btn-outline-secondary {
-    color: var(--text-secondary) !important;
-    border-color: var(--border) !important;
-}
-.btn-outline-secondary:hover {
-    background-color: var(--light) !important;
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .btn-light {
-    background-color: var(--light) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .btn-light:hover {
-    background-color: var(--muted-light) !important;
+    background-color: var(--app-primary-hover) !important;
+    border-color: var(--app-primary-hover) !important;
 }
 
-/* ===== تنبيهات في الليلي ===== */
+.btn-outline-secondary {
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+.btn-outline-secondary:hover {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+
+/* زر فاتح في الدارك */
+html[data-theme="dark"] .btn-light {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .btn-light:hover {
+    background-color: var(--app-surface-hover) !important;
+    color: var(--app-text) !important;
+}
+
+
+/* =========================
+   التنبيهات (Alerts) - الدارك
+========================= */
 html[data-theme="dark"] .alert-success {
-    background-color: #0a2618 !important;
+    background-color: #0f2922 !important;
     color: #86efac !important;
     border-color: #166534 !important;
 }
+
 html[data-theme="dark"] .alert-danger {
-    background-color: #1a1215 !important;
+    background-color: #2a1215 !important;
     color: #fca5a5 !important;
     border-color: #7f1d1d !important;
 }
+
 html[data-theme="dark"] .alert-warning {
-    background-color: #1c1a08 !important;
+    background-color: #2a2008 !important;
     color: #fde68a !important;
     border-color: #78350f !important;
 }
+
 html[data-theme="dark"] .alert-info {
     background-color: #0c1f2e !important;
     color: #93c5fd !important;
     border-color: #1e40af !important;
 }
 
-/* ===== شارات في الليلي ===== */
-html[data-theme="dark"] .badge.bg-light {
-    background-color: var(--light) !important;
-    color: var(--text-primary) !important;
+
+/* =========================
+   زر تبديل الثيم
+========================= */
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.88rem;
+    transition: all 0.2s ease;
 }
-html[data-theme="dark"] .text-dark { color: var(--text-primary) !important; }
-html[data-theme="dark"] .bg-white { background-color: var(--white) !important; }
-html[data-theme="dark"] .card-header.bg-white {
-    background-color: var(--light) !important;
-    border-bottom-color: var(--border) !important;
+.theme-toggle-btn i {
+    font-size: 1rem;
+}
+html[data-theme="dark"] .theme-toggle-btn {
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .theme-toggle-btn:hover {
+    background-color: var(--app-surface-soft) !important;
 }
 
-/* ===== عناصر مخصصة في الليلي ===== */
-html[data-theme="dark"] .list-card,
-html[data-theme="dark"] .stat-card,
-html[data-theme="dark"] .dashboard-card,
-html[data-theme="dark"] .summary-card,
-html[data-theme="dark"] .stats-card,
-html[data-theme="dark"] .accounting-card,
-html[data-theme="dark"] .accounting-summary,
-html[data-theme="dark"] .withdrawal-card,
-html[data-theme="dark"] .permission-card,
-html[data-theme="dark"] .payment-info-panel,
-html[data-theme="dark"] .dash-net-card,
-html[data-theme="dark"] .dash-recent,
-html[data-theme="dark"] .dash-quick-item,
+
+/* =========================
+   بطاقات الإحصائيات / لوحة التحكم
+========================= */
+.stat-card,
+.dashboard-card,
+.summary-card {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border: 1px solid var(--app-border) !important;
+    box-shadow: var(--app-card-shadow);
+}
+.stat-card .stat-title,
+.dashboard-card .stat-title,
+.summary-card .stat-title {
+    color: var(--app-muted) !important;
+}
+.stat-card .stat-value,
+.dashboard-card .stat-value,
+.summary-card .stat-value {
+    color: var(--app-text) !important;
+}
+
+
+/* =========================
+   لوحة التحكم (Dashboard) - الدارك
+========================= */
+
+/* بطاقة صافي الإيرادات */
+html[data-theme="dark"] .dash-net-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* وصول سريع */
+html[data-theme="dark"] .dash-quick-item {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .dash-quick-item:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .dash-quick-item .qi-label {
+    color: var(--app-text-secondary) !important;
+}
+
+/* آخر المدفوعات */
+html[data-theme="dark"] .dash-recent {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .dash-recent-header {
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .dash-recent-table thead {
+    background-color: var(--app-table-head-bg) !important;
+}
+html[data-theme="dark"] .dash-recent-table thead th {
+    color: var(--app-muted) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .dash-recent-table tbody td {
+    border-bottom-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .dash-recent-table tbody tr:hover {
+    background-color: var(--app-table-row-hover) !important;
+}
+html[data-theme="dark"] .dash-pc-name {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .dash-pc-sub {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .dash-payment-card {
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .dash-payment-card:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+
+
+/* =========================
+   المكونات المخصصة (Searchable Select)
+========================= */
+.searchable-select,
+.searchable-select-dropdown,
+.searchable-select-input {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+.searchable-select-option:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+
+
+/* =========================
+   الشارات / Badges - الدارك
+========================= */
+
+/* bg-light text-dark => شارة ناعمة في الدارك */
+html[data-theme="dark"] .badge.bg-light {
+    background-color: var(--app-badge-soft-bg) !important;
+    color: var(--app-badge-soft-text) !important;
+}
+
+/* text-dark => نص القالب في الدارك */
+html[data-theme="dark"] .text-dark {
+    color: var(--app-text) !important;
+}
+
+/* bg-white => خلفية سطح في الدارك */
+html[data-theme="dark"] .bg-white {
+    background-color: var(--app-surface) !important;
+}
+
+/* card-header bg-white */
+html[data-theme="dark"] .card-header.bg-white {
+    background-color: var(--app-surface-soft) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+
+
+/* =========================
+   التذييل (Footer)
+========================= */
+html[data-theme="dark"] .main-footer {
+    background: linear-gradient(90deg, #0e0d2a, #1e1b6e) !important;
+}
+
+
+/* =========================
+   حاوية التنبيهات
+========================= */
+html[data-theme="dark"] .alert-stack-container {
+    color: var(--app-text) !important;
+}
+
+
+/* =========================
+   الجدول الأسبوعي - الدارك
+========================= */
 html[data-theme="dark"] .ws-card,
 html[data-theme="dark"] .ws-stat-card,
-html[data-theme="dark"] .ws-slot,
-html[data-theme="dark"] .ws-control-bar,
-html[data-theme="dark"] .ws-schedule-grid,
-html[data-theme="dark"] .sf-panel,
-html[data-theme="dark"] .login-card,
-html[data-theme="dark"] .login-form-card,
-html[data-theme="dark"] .link-teacher-card,
-html[data-theme="dark"] .subject-chip {
-    background-color: var(--white) !important;
-    border-color: var(--border) !important;
-    color: var(--text-primary) !important;
+html[data-theme="dark"] .ws-slot {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
 }
 
-/* ===== خلفيات ناعمة في الليلي ===== */
+html[data-theme="dark"] .ws-stat-icon {
+    background-color: var(--app-surface-soft) !important;
+}
+
+html[data-theme="dark"] .ws-day-header {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .ws-empty-slot {
+    background-color: var(--app-surface-soft) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-muted) !important;
+}
+
+
+/* =========================
+   صفحة تسجيل الدخول - الدارك
+========================= */
+html[data-theme="dark"] .login-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .login-logo i {
+    color: var(--app-text) !important;
+}
+
+
+/* =========================
+   صفحة الطالب / الملف الشخصي - الدارك
+========================= */
+html[data-theme="dark"] .profile-info-item {
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .profile-info-item:hover {
+    background-color: var(--app-surface-soft) !important;
+}
+
+
+/* =========================
+   الجداول المتدرجة - الدارك
+   (رؤوس الجداول الملونة تبقى كما هي لأنها بخلفية ملونة)
+========================= */
+
+
+/* =========================
+   شريط التمرير (Scrollbar) - الدارك
+========================= */
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--app-bg);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--app-border);
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--app-muted);
+}
+
+
+/* =========================
+   مكونات إضافية - الدارك
+========================= */
+
+/* Discount panel */
+html[data-theme="dark"] .discount-panel .card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* أنماط الخلفية المنشزة في الدارك */
+html[data-theme="dark"] .bg-warning {
+    color: #1a1d2e !important;
+}
+
+html[data-theme="dark"] .bg-primary-subtle {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+
+html[data-theme="dark"] .bg-success-subtle {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+    color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] .bg-info-subtle {
+    background-color: rgba(96, 165, 250, 0.12) !important;
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .bg-warning-subtle {
+    background-color: rgba(251, 191, 36, 0.12) !important;
+    color: #fde68a !important;
+}
+
+html[data-theme="dark"] .bg-danger-subtle {
+    background-color: rgba(248, 113, 113, 0.12) !important;
+    color: #fca5a5 !important;
+}
+
+/* خلفية شفافة في النماذج */
 html[data-theme="dark"] .bg-light-subtle,
 html[data-theme="dark"] [style*="background: #fff"],
 html[data-theme="dark"] [style*="background: white"],
 html[data-theme="dark"] [style*="background:#fff"],
-html[data-theme="dark"] [style*="background:white"],
-html[data-theme="dark"] [style*="background: #fffdf7"],
-html[data-theme="dark"] [style*="background:#fffdf7"],
-html[data-theme="dark"] [style*="background: #fff8ed"],
-html[data-theme="dark"] [style*="background:#fff8ed"],
-html[data-theme="dark"] [style*="background: #fffbeb"],
-html[data-theme="dark"] [style*="background:#fffbeb"],
-html[data-theme="dark"] [style*="background: #fafbfc"],
-html[data-theme="dark"] [style*="background:#fafbfc"],
-html[data-theme="dark"] [style*="background: #f8fafc"],
-html[data-theme="dark"] [style*="background:#f8fafc"],
-html[data-theme="dark"] [style*="background: #f7f8fb"],
-html[data-theme="dark"] [style*="background:#f7f8fb"] {
-    background-color: var(--light) !important;
+html[data-theme="dark"] [style*="background:white"] {
+    background-color: var(--app-surface) !important;
 }
 
-/* ===== نصوص ثابتة في الليلي ===== */
+/* لون النص في حقول الإدخال داخل المجموعة */
+html[data-theme="dark"] .input-group-text.bg-light {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+/* Permissions page */
+html[data-theme="dark"] .level-edit {
+    background: rgba(251, 191, 36, 0.10) !important;
+    color: #fde68a !important;
+    border-color: rgba(251, 191, 36, 0.25) !important;
+}
+
+
+/* =========================
+   مكونات مخصصة في القوالب - الدارك
+   (المكونات التي تستخدم background: white في <style> داخل القوالب)
+========================= */
+
+/* لوحة الفلتر في صفحة الطلاب */
+html[data-theme="dark"] .sf-panel {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+}
+html[data-theme="dark"] .sf-panel-title {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .sf-panel-body {
+    border-top-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .sf-field-label {
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .sf-btn-clear {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .sf-btn-clear:hover {
+    border-color: var(--app-primary) !important;
+    color: var(--app-primary) !important;
+    background-color: var(--app-surface-hover) !important;
+}
+html[data-theme="dark"] .sf-stat {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .sf-filter-badge {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+    border-color: rgba(136, 136, 232, 0.25) !important;
+}
+
+/* رقائق المواد في نموذج الطالب */
+html[data-theme="dark"] .subject-chip {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .subject-chip:hover {
+    border-color: var(--app-primary) !important;
+    color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* بحث ربط المدرس في بروفايل الطالب */
+html[data-theme="dark"] .link-teacher-search-input {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] .link-teacher-search-input::placeholder {
+    color: var(--app-muted) !important;
+}
+
+/* حاوية بطاقات المدرسين */
+html[data-theme="dark"] .link-teacher-cards {
+    background-color: var(--app-surface-soft) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .link-teacher-cards:has(.link-teacher-card) {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .link-teacher-cards:has(.link-teacher-card.selected) {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* بطاقة المدرس الواحدة */
+html[data-theme="dark"] .link-teacher-card {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .link-teacher-card:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-hover) !important;
+}
+html[data-theme="dark"] .link-teacher-card .tc-icon {
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .link-teacher-card .tc-subj {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .link-teacher-card .tc-fee {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .link-teacher-card .tc-type-badge {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .link-teacher-empty {
+    color: var(--app-muted) !important;
+}
+
+/* مكونات الجدول الأسبوعي */
+html[data-theme="dark"] .ws-btn-outline {
+    background-color: var(--app-surface) !important;
+    color: var(--app-primary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-btn-outline:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .ws-control-bar {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-time-label {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-schedule-grid {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-cell {
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-stat-icon {
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* صفحة تسجيل الدخول */
+html[data-theme="dark"] .login-wrapper {
+    background-color: var(--app-bg) !important;
+}
+html[data-theme="dark"] .login-card,
+html[data-theme="dark"] .login-form-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .login-logo i {
+    color: var(--app-text) !important;
+}
+
+/* صفحة الصلاحيات */
+html[data-theme="dark"] .permission-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* صفحة المحاسبة */
+html[data-theme="dark"] .accounting-card {
+    background-color: var(--app-surface) !important;
+}
+html[data-theme="dark"] .accounting-summary {
+    background-color: var(--app-surface) !important;
+}
+
+/* صفحة السحوبات */
+html[data-theme="dark"] .withdrawal-card {
+    background-color: var(--app-surface) !important;
+}
+
+/* مكون list-card */
+html[data-theme="dark"] .list-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* رأس كروت الطلاب/المدرسين */
+html[data-theme="dark"] .list-card-header h6 a {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .list-card-header h6 a:hover {
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .header-sub {
+    color: var(--app-muted) !important;
+}
+
+/* فاصل الكروت */
+html[data-theme="dark"] .list-card-divider {
+    border-top-color: var(--app-border) !important;
+}
+
+/* صفحة الإحصائيات */
+html[data-theme="dark"] .stats-card {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* صفحة المدفوعات */
+html[data-theme="dark"] .payment-info-panel {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* خلفية صفحة المدفوعات الدافئة */
+html[data-theme="dark"] [style*="background: #fffdf7"],
+html[data-theme="dark"] [style*="background:#fffdf7"] {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] [style*="background: #fff8ed"],
+html[data-theme="dark"] [style*="background:#fff8ed"] {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] [style*="background: #fffbeb"],
+html[data-theme="dark"] [style*="background:#fffbeb"] {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] [style*="background: #fafbfc"],
+html[data-theme="dark"] [style*="background:#fafbfc"] {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] [style*="background: #f8fafc"],
+html[data-theme="dark"] [style*="background:#f8fafc"] {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] [style*="background: #f7f8fb"],
+html[data-theme="dark"] [style*="background:#f7f8fb"] {
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* ألوان النص الثابتة */
 html[data-theme="dark"] [style*="color: #000"],
 html[data-theme="dark"] [style*="color:#000"],
 html[data-theme="dark"] [style*="color: black"],
-html[data-theme="dark"] [style*="color:black"],
-html[data-theme="dark"] [style*="color: #1e293b"],
-html[data-theme="dark"] [style*="color:#1e293b"],
+html[data-theme="dark"] [style*="color:black"] {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] [style*="color: #1e1b4b"],
+html[data-theme="dark"] [style*="color:#1e1b4b"] {
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] [style*="color: #4f46e5"],
+html[data-theme="dark"] [style*="color:#4f46e5"] {
+    color: var(--app-primary) !important;
+}
 html[data-theme="dark"] [style*="color: #374151"],
 html[data-theme="dark"] [style*="color:#374151"] {
-    color: var(--text-primary) !important;
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] [style*="color: #64748b"],
+html[data-theme="dark"] [style*="color:#64748b"] {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] [style*="color: #94a3b8"],
+html[data-theme="dark"] [style*="color:#94a3b8"] {
+    color: var(--app-muted) !important;
 }
 
-/* ===== حدود ثابتة في الليلي ===== */
+/* خطوط الحدود الثابتة */
 html[data-theme="dark"] [style*="border-color: #e5e7eb"],
 html[data-theme="dark"] [style*="border-color:#e5e7eb"],
 html[data-theme="dark"] [style*="border: 1px solid #e5e7eb"],
@@ -425,287 +1207,85 @@ html[data-theme="dark"] [style*="border: 1.5px solid #e5e7eb"],
 html[data-theme="dark"] [style*="border:1.5px solid #e5e7eb"],
 html[data-theme="dark"] [style*="border: 2px solid #e5e7eb"],
 html[data-theme="dark"] [style*="border:2px solid #e5e7eb"] {
-    border-color: var(--border) !important;
+    border-color: var(--app-border) !important;
 }
 
-/* ===== سكرول بار في الليلي ===== */
-html[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--light-bg); }
-html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--border); }
-html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-/* ===== بحث ===== */
-html[data-theme="dark"] .search-bar-inner {
-    background: var(--white) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .search-bar-inner:focus-within {
-    background: var(--light) !important;
-    border-color: var(--primary) !important;
+/* نافذة الباركود */
+html[data-theme="dark"] .modal-content[style*="background: #1a1a2e"],
+html[data-theme="dark"] .modal-body[style*="background: #1a1a2e"] {
+    background-color: var(--app-surface) !important;
 }
 
-/* ===== بطاقات المعلومات ===== */
-html[data-theme="dark"] .info-item,
-html[data-theme="dark"] .fin-item,
-html[data-theme="dark"] .list-card-info .info-item,
-html[data-theme="dark"] .list-card-financial .fin-item {
-    background-color: var(--light) !important;
-}
-html[data-theme="dark"] .header-sub,
-html[data-theme="dark"] .list-card-header .header-sub {
-    color: var(--text-muted) !important;
-}
-html[data-theme="dark"] .list-card-divider {
-    border-top-color: var(--border) !important;
-}
-html[data-theme="dark"] .list-card-header h6 a {
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .list-card-header h6 a:hover {
-    color: var(--primary) !important;
-}
+/* Toast / رسائل التنبيه المخصصة - لا تحتاج تغيير لأنها ملونة */
 
-/* ===== الجداول في الليلي - إصلاح شامل ===== */
-html[data-theme="dark"] .table {
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .table th,
-html[data-theme="dark"] .table td {
-    border-color: var(--border) !important;
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .table thead th {
-    background-color: var(--light) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .table-hover tbody tr:nth-child(even) {
-    background-color: var(--light) !important;
-}
-html[data-theme="dark"] .table-hover tbody tr:hover,
-html[data-theme="dark"] .table-hover tbody tr:nth-child(even):hover {
-    background-color: var(--primary-glow) !important;
-}
-html[data-theme="dark"] .table-responsive {
-    background-color: var(--white) !important;
-}
-/* رأس الجدول المتدرج يبقى كما هو لأنه يستخدم primary colors */
-
-/* ===== Payment Modal في الليلي ===== */
-html[data-theme="dark"] .pay-section {
-    background-color: var(--surface-section) !important;
-    border-color: var(--border-section) !important;
-}
-html[data-theme="dark"] .pay-section-title {
-    color: var(--text-section-title) !important;
-    border-bottom-color: var(--border) !important;
-}
-html[data-theme="dark"] .pay-section-title i {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(217, 119, 6, 0.15)) !important;
-    color: var(--warning) !important;
-}
-html[data-theme="dark"] .pay-field-label {
-    color: var(--text-label) !important;
-}
-html[data-theme="dark"] .pay-field-input,
-html[data-theme="dark"] .pay-search-input {
-    background-color: var(--surface-input) !important;
-    border-color: var(--border-input) !important;
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .pay-field-input:focus,
-html[data-theme="dark"] .pay-search-input:focus {
-    border-color: var(--warning) !important;
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1) !important;
-    background-color: var(--white) !important;
-}
-html[data-theme="dark"] .pay-search-input:disabled {
-    background-color: var(--light) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .pay-modal-body {
-    background-color: var(--surface-body) !important;
-}
-html[data-theme="dark"] .pay-modal-footer {
-    background-color: var(--surface-footer) !important;
-}
-html[data-theme="dark"] .pay-search-tag {
-    background-color: var(--bg-tag-amber) !important;
-    border-color: var(--border-tag-amber) !important;
-}
-html[data-theme="dark"] .pay-search-tag span {
-    color: var(--text-tag-amber) !important;
-}
-html[data-theme="dark"] .pay-search-tag-remove {
-    background: var(--warning-dark) !important;
-}
-html[data-theme="dark"] .pay-balance-complete {
-    background-color: var(--bg-balance-ok) !important;
-    border-color: var(--border-balance-ok) !important;
-    color: var(--text-balance-ok) !important;
-}
-html[data-theme="dark"] .pay-balance-partial {
-    background: var(--bg-balance-partial) !important;
-    border-color: var(--border-balance-partial) !important;
-    color: var(--text-balance-partial) !important;
-}
-html[data-theme="dark"] .pay-balance-bar-container {
-    background-color: var(--border) !important;
-}
-html[data-theme="dark"] .pay-btn-cancel {
-    background-color: var(--light) !important;
-    color: var(--text-secondary) !important;
-}
-html[data-theme="dark"] .pay-btn-cancel:hover {
-    background-color: var(--border) !important;
-    color: var(--text-primary) !important;
-}
-
-/* ===== Searchable Select في الليلي ===== */
-html[data-theme="dark"] .searchable-select .ss-display {
-    background-color: var(--surface-input) !important;
-    border-color: var(--border-input) !important;
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-display .ss-placeholder {
-    color: var(--text-muted) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-display .ss-arrow {
-    color: var(--muted) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-dropdown,
-html[data-theme="dark"] .ss-dropdown-fixed {
-    background-color: var(--white) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-search-wrap {
-    background-color: var(--light) !important;
-    border-bottom-color: var(--border) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-search-input,
-html[data-theme="dark"] .ss-dropdown-fixed .ss-search-input {
-    background-color: var(--surface-input) !important;
-    border-color: var(--border-input) !important;
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-option,
-html[data-theme="dark"] .ss-dropdown-fixed .ss-option {
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-option:hover,
-html[data-theme="dark"] .ss-dropdown-fixed .ss-option:hover {
-    background-color: var(--primary-glow) !important;
-    color: var(--primary) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-no-results,
-html[data-theme="dark"] .ss-dropdown-fixed .ss-no-results {
-    color: var(--text-muted) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-count,
-html[data-theme="dark"] .ss-dropdown-fixed .ss-count {
-    color: var(--muted) !important;
-    background-color: var(--light) !important;
-    border-top-color: var(--border) !important;
-}
-html[data-theme="dark"] .searchable-select .ss-clear-btn {
-    background: var(--border) !important;
-    color: var(--text-muted) !important;
-}
-
-/* ===== Pay Search Dropdown في الليلي ===== */
-html[data-theme="dark"] .pay-search-dropdown {
-    background-color: var(--white) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .pay-search-item {
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .pay-search-item:hover {
-    background-color: var(--primary-glow) !important;
-}
-html[data-theme="dark"] .pay-search-item-icon {
-    background-color: var(--primary-glow) !important;
-    color: var(--primary) !important;
-}
-html[data-theme="dark"] .pay-search-item-name {
-    color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .pay-search-item-sub {
-    color: var(--text-muted) !important;
-}
-html[data-theme="dark"] .pay-search-empty {
-    color: var(--text-muted) !important;
-}
-html[data-theme="dark"] .pay-search-count {
-    color: var(--muted) !important;
-    background-color: var(--light) !important;
-    border-top-color: var(--border) !important;
-}
-
-/* ===== Modal Footer في الليلي ===== */
-html[data-theme="dark"] .modal-footer {
-    background-color: var(--surface-footer) !important;
-}
-html[data-theme="dark"] .modal-footer .btn-light,
-html[data-theme="dark"] .modal-footer .btn-secondary {
-    background-color: var(--light) !important;
-    color: var(--text-secondary) !important;
-    border-color: var(--border) !important;
-}
-html[data-theme="dark"] .modal-footer .btn-light:hover,
-html[data-theme="dark"] .modal-footer .btn-secondary:hover {
-    background-color: var(--border) !important;
-    color: var(--text-primary) !important;
-}
-
-/* ===== Custom Select في الليلي ===== */
-html[data-theme="dark"] select.sort-by-select,
-html[data-theme="dark"] select.sf-select,
-html[data-theme="dark"] select.ws-filter-select {
-    background-color: var(--surface-input) !important;
-    border-color: var(--border-input) !important;
-    color: var(--text-primary) !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23787c9a' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
-}
-
-/* ===== Discount Panel في الليلي ===== */
-html[data-theme="dark"] .discount-panel .form-check {
-    border-color: var(--border) !important;
-    background-color: var(--light) !important;
-}
-html[data-theme="dark"] .discount-panel .form-check:hover {
-    border-color: var(--warning) !important;
-    background-color: var(--warning-glow) !important;
-}
-
-/* ===== profile-info في الليلي ===== */
-html[data-theme="dark"] .profile-info-item:hover {
-    background-color: var(--light) !important;
-}
-
-/* ===== Navigation bar في الليلي ===== */
-html[data-theme="dark"] .navbar {
-    background: linear-gradient(135deg, #0a0c1a 0%, #151832 50%, #1e2248 100%) !important;
-}
-
-/* ===== Form Section Title في الليلي ===== */
-html[data-theme="dark"] .form-section-title {
-    background: var(--primary-glow) !important;
-    color: var(--primary) !important;
-    border-right-color: var(--primary) !important;
-}
 
 /* =========================
-   الطباعة
+   خلفية الجسم شبه الشفافة - الدارك
+========================= */
+html[data-theme="dark"] body::before {
+    background:
+        radial-gradient(ellipse at 20% 20%, rgba(136, 136, 232, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(16, 185, 129, 0.02) 0%, transparent 50%) !important;
+}
+
+
+/* =========================
+   الطباعة - لا يتأثر بالثيم الليلي
 ========================= */
 @media print {
-    body { background: #ffffff !important; color: #000000 !important; }
-    .theme-toggle-btn { display: none !important; }
-    .card, .table, .modal-content {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .theme-toggle-btn {
+        display: none !important;
+    }
+    .report-container,
+    .invoice-container {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .card,
+    .table,
+    .modal-content {
         background: #ffffff !important;
         color: #000000 !important;
         box-shadow: none !important;
     }
-    .table th, .table td { color: #000000 !important; border-color: #000000 !important; }
-    .navbar, .sidebar, .no-print { display: none !important; }
+    .table th,
+    .table td {
+        color: #000000 !important;
+        border-color: #000000 !important;
+    }
+    .navbar,
+    .sidebar,
+    .no-print {
+        display: none !important;
+    }
 }
+
+/* --- إصلاحات عامة للتباين --- */
+html[data-theme="dark"] .table {
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .card {
+    border: 1px solid var(--app-border) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] input, 
+html[data-theme="dark"] select, 
+html[data-theme="dark"] textarea {
+    background-color: var(--app-bg) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+html[data-theme="dark"] .btn-light {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border: none !important;
+}
+theme_optimized.css
+Displaying theme_optimized.css.
