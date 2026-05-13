@@ -138,8 +138,8 @@
 
 /* Net Revenue Card */
 .dash-net-card {
-    background: white;
-    border: 1.5px solid var(--border-light);
+    background: var(--white, #ffffff);
+    border: 1.5px solid var(--app-border, var(--border-light));
     border-radius: var(--radius-xl);
     padding: 1.25rem;
     display: flex;
@@ -214,8 +214,8 @@
     gap: 0.75rem;
 }
 .dash-quick-item {
-    background: white;
-    border: 1.5px solid var(--border-light);
+    background: var(--white, #ffffff);
+    border: 1.5px solid var(--app-border, var(--border-light));
     border-radius: var(--radius-lg);
     padding: 1rem 0.5rem;
     text-align: center;
@@ -257,8 +257,8 @@
 
 /* Recent Payments Section */
 .dash-recent {
-    background: white;
-    border: 1.5px solid var(--border-light);
+    background: var(--white, #ffffff);
+    border: 1.5px solid var(--app-border, var(--border-light));
     border-radius: var(--radius-xl);
     overflow: hidden;
 }
@@ -709,7 +709,7 @@
                             <a href="/students/{{ inst.student_id }}" class="text-decoration-none text-primary">{{ inst.student_name }}</a>
                         </td>
                         <td>
-                            <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none text-dark">{{ inst.teacher_name }}</a>
+                            <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none" style="color: var(--app-text, var(--text-primary));">{{ inst.teacher_name }}</a>
                         </td>
                         <td>
                             <span class="badge bg-light text-dark" style="font-size:0.75rem;">{{ inst.subject }}</span>
