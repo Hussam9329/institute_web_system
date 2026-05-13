@@ -1098,6 +1098,88 @@ html[data-theme="dark"] .ws-empty-slot {
     color: var(--app-muted) !important;
 }
 
+/* --- زر القاعات (ws-btn-outline) --- */
+html[data-theme="dark"] .ws-btn-outline {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-primary) !important;
+    border-color: var(--app-primary-soft) !important;
+}
+html[data-theme="dark"] .ws-btn-outline:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-primary-soft) !important;
+}
+
+/* --- تحذير التعارض (ws-conflict) --- */
+html[data-theme="dark"] .ws-conflict {
+    background-color: rgba(239,68,68,0.10) !important;
+    border-color: rgba(239,68,68,0.30) !important;
+    color: #fca5a5 !important;
+}
+
+/* --- أزرار التعديل/الحذف في بطاقة الحدث (ws-ev-acts) --- */
+html[data-theme="dark"] .ws-ev-acts .act-edit {
+    background-color: rgba(251,191,36,0.25) !important;
+    color: #fde68a !important;
+}
+html[data-theme="dark"] .ws-ev-acts .act-del {
+    background-color: rgba(239,68,68,0.25) !important;
+    color: #fca5a5 !important;
+}
+
+/* --- أزرار التعديل/الحذف hover في عرض القائمة (ws-lv-acts) --- */
+html[data-theme="dark"] .ws-lv-acts .act-edit:hover {
+    background-color: rgba(251,191,36,0.15) !important;
+    border-color: rgba(251,191,36,0.40) !important;
+    color: #fde68a !important;
+}
+html[data-theme="dark"] .ws-lv-acts .act-del:hover {
+    background-color: rgba(239,68,68,0.15) !important;
+    border-color: rgba(239,68,68,0.40) !important;
+    color: #fca5a5 !important;
+}
+
+/* --- أزرار التعديل/الحذف hover في لوحة الغرف (rr-acts) --- */
+html[data-theme="dark"] .ws-room-row .rr-acts .act-edit:hover {
+    background-color: rgba(251,191,36,0.15) !important;
+    border-color: rgba(251,191,36,0.40) !important;
+    color: #fde68a !important;
+}
+html[data-theme="dark"] .ws-room-row .rr-acts .act-del:hover {
+    background-color: rgba(239,68,68,0.15) !important;
+    border-color: rgba(239,68,68,0.40) !important;
+    color: #fca5a5 !important;
+}
+
+/* --- حقل المدة اليدوية (ws-custom-duration-wrap) --- */
+html[data-theme="dark"] .ws-custom-duration-wrap .form-control {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] .ws-custom-duration-wrap .form-control:focus {
+    border-color: var(--app-input-focus-border) !important;
+    box-shadow: var(--app-input-focus-shadow) !important;
+}
+
+/* --- حقول القراءة فقط في النافذة (#lecSubject, #lecEndTime) --- */
+html[data-theme="dark"] .ws-modal input[readonly] {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-muted) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* --- شارات السعة والأحداث في لوحة الغرف (JS inline styles) --- */
+html[data-theme="dark"] .ws-room-row [style*="background:#f0f9ff"],
+html[data-theme="dark"] .ws-room-row [style*="background: #f0f9ff"] {
+    background-color: rgba(6,182,212,0.12) !important;
+    color: #67e8f9 !important;
+}
+html[data-theme="dark"] .ws-room-row [style*="background:#f0fdf4"],
+html[data-theme="dark"] .ws-room-row [style*="background: #f0fdf4"] {
+    background-color: rgba(16,185,129,0.12) !important;
+    color: #6ee7b7 !important;
+}
+
 
 /* =========================
    صفحة الأقساط - الدارك

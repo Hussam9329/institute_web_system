@@ -703,6 +703,10 @@
 .ws-evtype-btn:hover:not(.active-lec):not(.active-exm) {
     border-color: #a5b4fc;
 }
+/* Readonly inputs in modal */
+.ws-modal input[readonly] {
+    background-color: #f8fafc;
+}
 /* Conflict warning */
 .ws-conflict {
     background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
@@ -872,7 +876,7 @@
                     <div class="col-12">
                         <label class="ws-fld-label">المادة <small class="text-muted">(تلقائي من الاستاد)</small></label>
                         <input type="text" id="lecSubject" class="form-control form-control-sm" readonly
-                            style="background:#f8fafc; cursor:not-allowed;"
+                            style="cursor:not-allowed;"
                             placeholder="اختر الاستاد أولاً">
                     </div>
                     <div class="col-12">
@@ -913,8 +917,7 @@
                     </div>
                     <div class="col-12">
                         <label class="ws-fld-label">إلى الساعة <small class="text-muted">(تلقائي)</small></label>
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" readonly
-                            style="background:#f8fafc;">
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" readonly>
                     </div>
                     <div class="col-12">
                         <label class="ws-fld-label">ملاحظات</label>
