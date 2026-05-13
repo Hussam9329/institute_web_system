@@ -9,6 +9,7 @@ from database import Database
 from models import RoleCreate, RoleUpdate, UserCreate, UserUpdate, RolePermissionsUpdate
 from config import BASE_DIR, format_date
 from auth import hash_password, check_permission
+from services.audit_service import log_action
 from datetime import datetime as dt
 import os
 

@@ -91,12 +91,19 @@ async def teacher_report(request: Request, teacher_id: int):
     students_list = finance_service.get_teacher_students_list(teacher_id)
     recent_withdrawals = finance_service.get_teacher_recent_withdrawals(teacher_id, limit=20)
 
+    expected_total = sum(int(s.get("total_fee") or 0) for s in students_list)
+    paid_total = sum(int(s.get("paid_total") or 0) for s in students_list)
+    remaining_total = sum(int(s.get("remaining_balance") or 0) for s in students_list)
+
     return templates.TemplateResponse("reports/teacher_report.html", {
         "request": request,
         "teacher": teacher,
         "balance_info": balance_info,
         "students_list": students_list,
         "recent_withdrawals": recent_withdrawals,
+        "expected_total": expected_total,
+        "paid_total": paid_total,
+        "remaining_total": remaining_total,
         "report_date": format_report_datetime(),
     })
 

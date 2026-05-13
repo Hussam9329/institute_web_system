@@ -12,6 +12,7 @@ from services.cache_service import cache_service
 from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings
 from config import get_current_date, format_currency
 from auth import check_permission
+from services.audit_service import log_action
 
 router = APIRouter(prefix="/api")
 
@@ -272,6 +273,15 @@ async def api_link_student_teacher(request: Request, link: LinkStudentTeacher):
         
         sync_student_status(link.student_id)
         _invalidate_dashboard_cache()
+
+        log_action(
+            request,
+            action="link",
+            entity="student_teacher",
+            entity_id=f"{link.student_id}-{link.teacher_id}",
+            description=f"ربط الطالب {link.student_id} بالمدرس {link.teacher_id}"
+        )
+
         return {"success": True, "message": "تم الربط بنجاح"}
         
     except HTTPException:
@@ -550,6 +560,15 @@ async def api_unlink_student_teacher(request: Request, student_id: int, teacher_
         sync_student_status(student_id)
         
         _invalidate_dashboard_cache()
+
+        log_action(
+            request,
+            action="unlink",
+            entity="student_teacher",
+            entity_id=f"{student_id}-{teacher_id}",
+            description=f"إلغاء ربط الطالب {student_id} من المدرس {teacher_id}"
+        )
+
         return {"success": True, "message": "تم إلغاء الربط بنجاح", "preserved_installments": 0}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
@@ -776,6 +795,15 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             message = f"تم تسجيل الدفع كـ 'دفع كامل' لأن المبلغ المدفوع ({format_currency(installment.amount)}) يغطي كامل المتبقي."
         
         _invalidate_dashboard_cache()
+
+        log_action(
+            request,
+            action="create",
+            entity="installment",
+            entity_id=installment_id,
+            description=f"إضافة دفعة بمبلغ {installment.amount} للطالب {installment.student_id} عند المدرس {installment.teacher_id}"
+        )
+
         return {
             "success": True, 
             "message": message,
@@ -1247,6 +1275,14 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
         ))
         
         new_balance = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
+
+        log_action(
+            request,
+            action="create",
+            entity="teacher_withdrawal",
+            entity_id="",
+            description=f"إضافة سحب بمبلغ {amount} للمدرس {withdrawal.teacher_id}"
+        )
         
         return {
             "success": True, 

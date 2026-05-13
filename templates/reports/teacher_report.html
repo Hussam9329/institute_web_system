@@ -13,6 +13,10 @@
 
 <!-- KPI -->
 <div class="kpi-grid">
+    <div class="kpi-card kpi-primary">
+        <div class="kpi-value">{{ format_currency(expected_total) }}</div>
+        <div class="kpi-label">المبلغ المفترض استلامه</div>
+    </div>
     <div class="kpi-card kpi-accent">
         <div class="kpi-value">{{ format_currency(balance_info.total_received) }}</div>
         <div class="kpi-label">إجمالي الاستلامات</div>
@@ -158,7 +162,19 @@
         <table class="report-table">
             <tbody>
                 <tr>
-                    <td style="width:40%"><span style="color:var(--muted)">إجمالي الاستلامات</span></td>
+                    <td style="width:40%"><span style="color:var(--muted)">المبلغ المفترض من الطلاب</span></td>
+                    <td style="font-weight:700">{{ format_currency(expected_total) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">المدفوع فعليًا من الطلاب</span></td>
+                    <td style="font-weight:700; color:var(--success)">{{ format_currency(paid_total) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">المتبقي على الطلاب</span></td>
+                    <td style="font-weight:700; color:var(--danger)">{{ format_currency(remaining_total) }}</td>
+                </tr>
+                <tr>
+                    <td><span style="color:var(--muted)">إجمالي الاستلامات</span></td>
                     <td style="font-weight:700">{{ format_currency(balance_info.total_received) }}</td>
                 </tr>
                 <tr>
@@ -197,7 +213,7 @@
         <table class="report-table">
             <thead>
                 <tr>
-                    <th style="width:35px; text-align:center">#</th>
+                    <th class="index-col">#</th>
                     <th>الطالب</th>
                     <th style="text-align:center">نوع الدراسة</th>
                     <th style="text-align:center">الحالة</th>
@@ -211,7 +227,7 @@
             <tbody>
                 {% for s in students_list %}
                 <tr>
-                    <td style="text-align:center; color:var(--muted)">{{ loop.index }}</td>
+                    <td class="index-col" style="color:var(--muted)">{{ loop.index }}</td>
                     <td style="font-weight:600">{{ s.name }}</td>
                     <td style="text-align:center"><span class="badge-continue">{{ s.get('study_type', 'حضوري') }}</span></td>
                     <td style="text-align:center"><span class="badge-continue">{{ s.get('status', 'مستمر') }}</span></td>
@@ -269,7 +285,7 @@
         <table class="report-table">
             <thead>
                 <tr>
-                    <th style="width:35px; text-align:center">#</th>
+                    <th class="index-col">#</th>
                     <th style="text-align:center">المبلغ</th>
                     <th style="text-align:center">التاريخ</th>
                     <th>ملاحظات</th>
@@ -278,7 +294,7 @@
             <tbody>
                 {% for w in recent_withdrawals %}
                 <tr>
-                    <td style="text-align:center; color:var(--muted)">{{ loop.index }}</td>
+                    <td class="index-col" style="color:var(--muted)">{{ loop.index }}</td>
                     <td style="text-align:center; font-weight:700; color:var(--warning)">{{ format_currency(w.amount) }}</td>
                     <td style="text-align:center; color:var(--muted)">{{ format_date(w.withdrawal_date) }}</td>
                     <td style="color:var(--muted); font-size:12px">{{ w.notes or '-' }}</td>

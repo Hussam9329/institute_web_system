@@ -144,7 +144,7 @@
                     <table class="table table-hover mb-0 align-middle table-sm" id="teachersTable">
                         <thead class="table-gradient-emerald">
                             <tr>
-                                <th class="text-center" style="width:40px">#</th>
+                                <th class="index-col">#</th>
                                 <th style="min-width:140px">الاسم</th>
                                 <th class="text-center" style="min-width:80px">المادة</th>
                                 <th class="text-center" style="min-width:90px">الطلاب</th>
@@ -160,7 +160,7 @@
                         <tbody>
                             {% for teacher in teachers %}
                             <tr class="teacher-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.total_received or 0 }}" data-deduction="{{ teacher.institute_deduction or 0 }}" data-teacher-due="{{ teacher.teacher_due or 0 }}" data-withdrawn="{{ teacher.withdrawn_total or 0 }}" data-rate-display="{{ teacher.institute_rate_display }}" data-fee-display="{{ teacher.fee_display }}" data-remaining="{{ teacher.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
-                                <td class="text-center fw-bold text-muted">{{ loop.index }}</td>
+                                <td class="index-col fw-bold text-muted">{{ loop.index }}</td>
                                 <td>
                                     <a href="/teachers/{{ teacher.id }}" class="text-decoration-none fw-semibold text-success">
                                         {{ teacher.name }}

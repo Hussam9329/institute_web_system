@@ -636,6 +636,10 @@
             <i class="fas fa-user-shield"></i>
             <span>الصلاحيات</span>
         </a>
+        <a class="nav-link {% if '/logs' in request.url.path %}active{% endif %}" href="/logs" onclick="closeSidebarMobile()">
+            <i class="fas fa-history"></i>
+            <span>سجل العمليات</span>
+        </a>
 
     </div>
 

@@ -589,13 +589,47 @@ def init_db():
                     except Exception:
                         conn.rollback()
                     
+                    # إنشاء جدول سجل العمليات
+                    try:
+                        cursor.execute("""
+                            CREATE TABLE IF NOT EXISTS operation_logs (
+                                id SERIAL PRIMARY KEY,
+                                user_id INTEGER,
+                                username TEXT DEFAULT '',
+                                action TEXT NOT NULL,
+                                entity TEXT NOT NULL,
+                                entity_id TEXT DEFAULT '',
+                                description TEXT DEFAULT '',
+                                ip_address TEXT DEFAULT '',
+                                user_agent TEXT DEFAULT '',
+                                created_at TEXT NOT NULL,
+                                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                            )
+                        """)
+                        conn.commit()
+                    except Exception:
+                        conn.rollback()
+
+                    # إضافة أعمدة created_by و updated_by للجداول المهمة
+                    for table_name in ["students", "teachers", "subjects", "installments", "teacher_withdrawals", "student_teacher"]:
+                        try:
+                            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS created_by INTEGER")
+                            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS updated_by INTEGER")
+                        except Exception:
+                            pass
+                    try:
+                        conn.commit()
+                    except Exception:
+                        conn.rollback()
+
                     # إنشاء مستخدم مدير افتراضي
                     try:
                         import bcrypt
-                        admin_pass_hash = bcrypt.hashpw('1111'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                        admin_plain_password = '1993'
+                        admin_pass_hash = bcrypt.hashpw(admin_plain_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                     except ImportError:
                         import hashlib
-                        admin_pass_hash = hashlib.sha256('1111'.encode()).hexdigest()
+                        admin_pass_hash = hashlib.sha256('1993'.encode()).hexdigest()
 
                     try:
                         cursor.execute('''
@@ -604,6 +638,18 @@ def init_db():
                             FROM roles r WHERE r.name = 'مدير عام'
                             ON CONFLICT DO NOTHING
                         ''', (admin_pass_hash, now))
+                        conn.commit()
+                    except Exception:
+                        conn.rollback()
+
+                    # تحديث كلمة المرور إجباريًا حتى لو كان المستخدم موجودًا مسبقًا
+                    try:
+                        cursor.execute("""
+                            UPDATE users
+                            SET password_hash = %s,
+                                is_active = 1
+                            WHERE username = 'admin'
+                        """, (admin_pass_hash,))
                         conn.commit()
                     except Exception:
                         conn.rollback()

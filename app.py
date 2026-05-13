@@ -26,7 +26,7 @@ from config import (
     BASE_DIR, IS_VERCEL
 )
 from database import init_db
-from auth import auth_middleware
+from auth import auth_middleware, login_user, create_session_token, SESSION_COOKIE
 
 # استيراد المسارات
 from routes.main_routes import router as main_router
@@ -79,7 +79,7 @@ app = FastAPI(
 # ===== تحسين السرعة: ضغط GZip =====
 app.add_middleware(GZipMiddleware, minimum_size=300)
 
-# ===== وسيط المصادقة (تم تعطيل تسجيل الدخول) =====
+# ===== وسيط المصادقة =====
 app.middleware("http")(auth_middleware)
 
 # ===== تحسين السرعة: Cache Headers =====
@@ -113,12 +113,53 @@ static_dir = os.path.join(BASE_DIR, "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# ===== تم إلغاء مسارات تسجيل الدخول =====
+# ===== مسارات تسجيل الدخول =====
 
-@app.get("/login")
-async def login_redirect():
-    """إعادة توجيه من صفحة تسجيل الدخول إلى الرئيسية"""
-    return RedirectResponse(url='/', status_code=303)
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, error: str = ""):
+    """صفحة تسجيل الدخول"""
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "error": error,
+        "app_title": APP_TITLE
+    })
+
+
+@app.post("/api/login")
+async def api_login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    remember: str = Form("")
+):
+    """معالجة تسجيل الدخول"""
+    user = login_user(username, password)
+
+    if not user:
+        return RedirectResponse(url="/login?error=invalid", status_code=303)
+
+    remember_me = remember == "on"
+    token = create_session_token(user["id"], remember=remember_me)
+
+    response = RedirectResponse(url="/", status_code=303)
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        max_age=86400 * 30 if remember_me else 86400 * 7,
+        httponly=True,
+        samesite="lax",
+        secure=False
+    )
+
+    return response
+
+
+@app.get("/logout")
+async def logout():
+    """تسجيل الخروج"""
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(SESSION_COOKIE)
+    return response
 
 
 # ===== الصفحة الرئيسية للـ API =====

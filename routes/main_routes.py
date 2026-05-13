@@ -18,6 +18,7 @@ from services.teaching_types import (
     build_custom_type_settings_from_form
 )
 from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
+from services.audit_service import log_action
 from auth import check_permission
 
 logger = logging.getLogger(__name__)
@@ -284,24 +285,65 @@ async def student_add(
     check_permission(request, 'add_students')
     db = Database()
 
+    form_data = await request.form()
+    force_duplicate = form_data.get("force_duplicate") == "1"
+
+    # فحص الاسم المشابه
+    normalized_name = " ".join(name.strip().split())
+    similar_students = db.execute_query("""
+        SELECT 
+            s.id,
+            s.name,
+            COALESCE(
+                STRING_AGG(t.name || ' - ' || t.subject, '، '),
+                'غير مربوط بأي مدرس'
+            ) AS teachers_info
+        FROM students s
+        LEFT JOIN student_teacher st ON st.student_id = s.id
+        LEFT JOIN teachers t ON t.id = st.teacher_id
+        WHERE LOWER(TRIM(s.name)) = LOWER(TRIM(%s))
+           OR LOWER(TRIM(s.name)) LIKE LOWER(TRIM(%s))
+           OR LOWER(TRIM(%s)) LIKE LOWER(TRIM(s.name))
+        GROUP BY s.id, s.name
+        LIMIT 5
+    """, (
+        normalized_name,
+        f"%{normalized_name}%",
+        normalized_name
+    ))
+
+    if similar_students and not force_duplicate:
+        details = []
+        for s in similar_students:
+            details.append(f"{s['name']} عند: {s['teachers_info']}")
+
+        warning_text = " | ".join(details)
+
+        return RedirectResponse(
+            url=f"/students/add?error=similar_name&detail={warning_text}",
+            status_code=303
+        )
+
     # توليد باركود حقيقي مباشرة باستخدام RETURNING
-    # نستخدم timestamp + random كباركود مؤقت فريد لتجنب التكرار
     import time
     import random
-    
+
+    current_user_id = getattr(request.state, "user", {}).get("id")
+
     insert_query = '''
-        INSERT INTO students (name, barcode, notes, created_at)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO students (name, barcode, notes, created_at, created_by)
+        VALUES (%s, %s, %s, %s, %s)
         RETURNING id
     '''
-    
+
     temp_barcode = f"TEMP-{int(time.time()*1000)}-{random.randint(1000,9999)}"
-    result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date()))
+    result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date(), current_user_id))
     student_id = result[0]['id'] if result else None
-    
+
     if student_id:
         real_barcode = generate_barcode(student_id)
         db.execute_query("UPDATE students SET barcode = %s WHERE id = %s", (real_barcode, student_id))
+        log_action(request, action="create", entity="student", entity_id=student_id, description=f"إضافة الطالب: {name}")
 
     # ربط الطالب بالمدرسين المحددين
     form_data = await request.form()
@@ -651,6 +693,8 @@ async def student_delete(request: Request, student_id: int):
     db.execute_query("DELETE FROM student_teacher WHERE student_id = %s", (student_id,))
     # حذف الطالب
     db.execute_query("DELETE FROM students WHERE id = %s", (student_id,))
+
+    log_action(request, action="delete", entity="student", entity_id=student_id, description="حذف طالب")
     
     cache_service.invalidate_pattern('dashboard_')
     return RedirectResponse(url="/students?msg=deleted", status_code=303)
@@ -1723,4 +1767,23 @@ async def weekly_schedule_page(request: Request):
         "rooms": [dict(r) for r in rooms] if rooms else [],
         "teachers": [dict(t) for t in teachers] if teachers else [],
         "schedule": [dict(s) for s in schedule] if schedule else []
+    })
+
+
+@router.get("/logs", response_class=HTMLResponse)
+async def operation_logs_page(request: Request):
+    """صفحة سجل العمليات"""
+    check_permission(request, 'manage_users')
+    db = Database()
+
+    logs = db.execute_query("""
+        SELECT *
+        FROM operation_logs
+        ORDER BY id DESC
+        LIMIT 300
+    """)
+
+    return templates.TemplateResponse("logs/index.html", {
+        "request": request,
+        "logs": logs or []
     })

@@ -133,7 +133,7 @@
                 <table class="table table-hover mb-0 align-middle table-sm" id="withdrawalsTable">
                     <thead class="table-gradient-emerald">
                         <tr>
-                            <th>#</th>
+                            <th class="index-col">#</th>
                             <th>المدرس</th>
                             <th class="text-center d-none d-sm-table-cell">المادة</th>
                             <th class="text-center">المبلغ</th>
@@ -145,7 +145,7 @@
                     <tbody>
                         {% for w in withdrawals %}
                         <tr class="withdrawal-row" data-date="{{ w.withdrawal_date }}" data-name="{{ w.teacher_name|lower }}" data-amount="{{ w.amount or 0 }}">
-                            <td class="fw-bold text-muted">{{ loop.index }}</td>
+                            <td class="index-col fw-bold text-muted">{{ loop.index }}</td>
                             <td>
                                 <a href="/teachers/{{ w.teacher_id }}" class="text-decoration-none fw-semibold">
                                     {{ w.teacher_name }}

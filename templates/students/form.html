@@ -49,6 +49,21 @@
                         </div>
                         {% endif %}
 
+                        {% if error == 'similar_name' %}
+                        <div class="alert alert-warning d-flex align-items-start mb-4" role="alert">
+                            <i class="fas fa-exclamation-triangle fa-lg me-3 mt-1"></i>
+                            <div>
+                                <strong>تنبيه:</strong>
+                                يوجد طالب باسم مشابه أو مطابق:
+                                <br>
+                                <span class="fw-bold text-dark">{{ error_detail }}</span>
+                                <hr class="my-2">
+                                يرجى تسجيل الاسم الرابع أو الخامس للطالب حتى لا يحصل تضارب بين الطلاب.
+                                <input type="hidden" name="force_duplicate" value="1">
+                            </div>
+                        </div>
+                        {% endif %}
+
                         {% if mode == 'add' %}
                         <form method="POST" action="/students/add" id="studentForm">
                         {% else %}

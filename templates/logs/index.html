@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}سجل العمليات - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="page-transition">
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">
+                <i class="fas fa-history me-2 text-primary"></i>
+                سجل العمليات
+            </h4>
+            <p class="text-muted mb-0 small">عرض جميع العمليات المسجلة في النظام مع تفاصيل المستخدم والتاريخ</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                        <tr>
+                            <th class="index-col">#</th>
+                            <th>المستخدم</th>
+                            <th>العملية</th>
+                            <th>النوع</th>
+                            <th>رقم العنصر</th>
+                            <th>الوصف</th>
+                            <th>IP</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="index-col">{{ loop.index }}</td>
+                            <td>
+                                <span class="fw-bold">{{ log.username or '-' }}</span>
+                            </td>
+                            <td>
+                                {% if log.action == 'create' %}
+                                <span class="badge bg-success-subtle text-success"><i class="fas fa-plus me-1"></i>إضافة</span>
+                                {% elif log.action == 'update' %}
+                                <span class="badge bg-warning-subtle text-warning"><i class="fas fa-edit me-1"></i>تعديل</span>
+                                {% elif log.action == 'delete' %}
+                                <span class="badge bg-danger-subtle text-danger"><i class="fas fa-trash me-1"></i>حذف</span>
+                                {% elif log.action == 'link' %}
+                                <span class="badge bg-info-subtle text-info"><i class="fas fa-link me-1"></i>ربط</span>
+                                {% elif log.action == 'unlink' %}
+                                <span class="badge bg-secondary-subtle text-secondary"><i class="fas fa-unlink me-1"></i>إلغاء ربط</span>
+                                {% elif log.action == 'withdrawal' %}
+                                <span class="badge bg-primary-subtle text-primary"><i class="fas fa-money-bill-wave me-1"></i>سحب</span>
+                                {% else %}
+                                <span class="badge bg-light text-dark">{{ log.action }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.entity == 'student' %}
+                                <i class="fas fa-user-graduate me-1 text-primary"></i>طالب
+                                {% elif log.entity == 'teacher' %}
+                                <i class="fas fa-chalkboard-teacher me-1 text-success"></i>مدرس
+                                {% elif log.entity == 'subject' %}
+                                <i class="fas fa-book me-1 text-warning"></i>مادة
+                                {% elif log.entity == 'installment' %}
+                                <i class="fas fa-money-check-alt me-1 text-info"></i>قسط
+                                {% elif log.entity == 'teacher_withdrawal' %}
+                                <i class="fas fa-hand-holding-usd me-1 text-danger"></i>سحب
+                                {% elif log.entity == 'student_teacher' %}
+                                <i class="fas fa-link me-1 text-secondary"></i>ربط
+                                {% else %}
+                                {{ log.entity }}
+                                {% endif %}
+                            </td>
+                            <td><code>{{ log.entity_id or '-' }}</code></td>
+                            <td>{{ log.description or '-' }}</td>
+                            <td><small class="text-muted">{{ log.ip_address or '-' }}</small></td>
+                            <td><small class="text-muted">{{ log.created_at }}</small></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-history fa-2x d-block mb-2"></i>
+                                لا توجد عمليات مسجلة
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

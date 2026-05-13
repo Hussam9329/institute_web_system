@@ -64,9 +64,10 @@ def _verify_token(token: str) -> str | None:
     return None
 
 
-def create_session_token(user_id: int) -> str:
+def create_session_token(user_id: int, remember: bool = False) -> str:
     """إنشاء رمز جلسة موقع"""
-    payload = json.dumps({"uid": user_id, "exp": int(time.time()) + SESSION_EXPIRY})
+    expiry_seconds = 86400 * 30 if remember else SESSION_EXPIRY
+    payload = json.dumps({"uid": user_id, "exp": int(time.time()) + expiry_seconds, "remember": remember})
     encoded = base64.urlsafe_b64encode(payload.encode()).decode()
     return _sign_token(encoded)
 
@@ -143,36 +144,61 @@ def user_has_permission(user: dict, permission_code: str) -> bool:
         return False
 
 
-# ===== فحص الصلاحيات (يُستخدم في المسارات) =====
+# ===== فحص الصلاحيات =====
 
 def check_permission(request: Request, permission_code: str):
     """
-    فحص صلاحية المستخدم - تم تعطيله
-    جميع المستخدمين يملكون جميع الصلاحيات
+    فحص صلاحية المستخدم
+    يتحقق من أن المستخدم الحالي يملك الصلاحية المطلوبة
     """
-    pass  # تم تعطيل نظام الصلاحيات
+    user = getattr(request.state, 'user', None)
+    if not user:
+        raise HTTPException(status_code=401, detail="يجب تسجيل الدخول")
+
+    # مدير العام يملك كل الصلاحيات
+    if user.get('role_name') == 'مدير عام':
+        return
+
+    permissions = getattr(request.state, 'user_permissions', [])
+    if 'all' in permissions or permission_code in permissions:
+        return
+
+    raise HTTPException(status_code=403, detail="ليس لديك صلاحية")
 
 
-# ===== وسيط المصادقة (Middleware) - تم تعطيل تسجيل الدخول =====
+# ===== وسيط المصادقة (Middleware) =====
 
-# المستخدم الافتراضي (بدون تسجيل دخول)
-_DEFAULT_USER = {
-    'id': 1,
-    'username': 'admin',
-    'full_name': 'المدير العام',
-    'role_id': 1,
-    'is_active': 1,
-    'role_name': 'مدير عام',
-}
+PUBLIC_PATHS = [
+    "/login",
+    "/api/login",
+    "/static",
+    "/health"
+]
 
 async def auth_middleware(request: Request, call_next):
-    """
-    وسيط المصادقة - تم تعطيل تسجيل الدخول
-    جميع المستخدمين يُعاملون كمدير عام
-    """
-    # تعيين المستخدم الافتراضي مباشرة بدون أي تحقق
-    request.state.user = _DEFAULT_USER
-    request.state.user_permissions = ['all']  # جميع الصلاحيات
+    """وسيط المصادقة - التحقق من تسجيل الدخول"""
+    path = request.url.path
+
+    # السماح بالمسارات العامة
+    if any(path == p or path.startswith(p + "/") for p in PUBLIC_PATHS):
+        return await call_next(request)
+
+    user = get_current_user(request)
+
+    if not user:
+        if path.startswith("/api/"):
+            return JSONResponse(
+                {"success": False, "message": "يجب تسجيل الدخول"},
+                status_code=401
+            )
+        return RedirectResponse(url="/login", status_code=303)
+
+    request.state.user = user
+    request.state.user_permissions = get_user_permissions(user["id"])
+
+    # مدير العام يملك كل الصلاحيات
+    if user.get('role_name') == 'مدير عام':
+        request.state.user_permissions = ['all']
 
     response = await call_next(request)
     return response

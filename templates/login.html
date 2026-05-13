@@ -21,97 +21,116 @@
         }
         * { font-family: 'Cairo', 'Tajawal', 'NotoArabic', 'Segoe UI', Tahoma, Arial, sans-serif; }
         body {
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
             min-height: 100vh;
+            background:
+                radial-gradient(circle at top right, rgba(79, 70, 229, 0.35), transparent 35%),
+                linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #020617 100%);
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 18px;
         }
         .login-card {
-            background: rgba(26, 26, 26, 0.95);
-            border: 1px solid #2a2a2a;
-            border-radius: 20px;
-            padding: 2.5rem;
             width: 100%;
-            max-width: 420px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            max-width: 430px;
+            border-radius: 28px;
+            padding: 34px 28px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 30px 90px rgba(0,0,0,0.35);
         }
         .login-logo {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #d4af37, #b8960f);
+            width: 72px;
+            height: 72px;
+            border-radius: 24px;
+            margin: 0 auto 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
-        }
-        .login-logo i { font-size: 1.75rem; color: #000; }
-        .login-title {
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
             color: #fff;
-            font-weight: 700;
-            font-size: 1.5rem;
+            box-shadow: 0 14px 30px rgba(79,70,229,0.35);
+        }
+        .login-logo i {
+            font-size: 2rem;
+            color: #fff;
+        }
+        .login-title {
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 1.6rem;
             text-align: center;
             margin-bottom: 0.5rem;
         }
         .login-subtitle {
-            color: #888;
+            color: #64748b;
             text-align: center;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             margin-bottom: 2rem;
         }
         .form-control {
-            background: #0f0f0f;
-            border: 1px solid #2a2a2a;
-            color: #fff;
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
+            height: 52px;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
             font-size: 0.95rem;
         }
         .form-control:focus {
-            background: #0f0f0f;
-            border-color: #d4af37;
-            color: #fff;
-            box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.15);
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.15);
         }
-        .form-control::placeholder { color: #555; }
         .input-group-text {
-            background: #0f0f0f;
-            border: 1px solid #2a2a2a;
-            border-left: none;
-            color: #d4af37;
-            border-radius: 0 12px 12px 0;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-right: none;
+            color: #4f46e5;
         }
-        .form-control { border-right: none; border-radius: 12px 0 0 12px; }
+        .form-control {
+            border-left: none;
+            border-radius: 0 16px 16px 0;
+        }
         .btn-login {
-            background: linear-gradient(135deg, #d4af37, #b8960f);
-            color: #000;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 0.75rem;
-            font-size: 1rem;
+            height: 54px;
             width: 100%;
+            border-radius: 18px;
             border: none;
+            font-weight: 800;
+            font-size: 1.05rem;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            color: #fff;
+            box-shadow: 0 16px 36px rgba(79,70,229,0.32);
             transition: all 0.3s;
         }
         .btn-login:hover {
-            background: linear-gradient(135deg, #e6c65a, #d4af37);
-            color: #000;
+            color: #fff;
             transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            box-shadow: 0 20px 44px rgba(79,70,229,0.4);
+        }
+        .form-check-input:checked {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
         }
         .alert-danger {
-            background: rgba(220, 53, 69, 0.15);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            color: #ff6b6b;
-            border-radius: 12px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            color: #dc2626;
+            border-radius: 14px;
             font-size: 0.875rem;
         }
         .version-text {
-            color: #444;
+            color: #94a3b8;
             text-align: center;
             font-size: 0.75rem;
             margin-top: 1.5rem;
+        }
+        @media (max-width: 576px) {
+            .login-card {
+                padding: 28px 20px;
+                border-radius: 24px;
+            }
+            .login-title {
+                font-size: 1.45rem;
+            }
         }
     </style>
 </head>
@@ -142,19 +161,27 @@
 
         <form method="POST" action="/api/login">
             <div class="mb-3">
-                <label class="form-label text-secondary mb-1" style="font-size: 0.85rem;">اسم المستخدم</label>
+                <label class="form-label fw-bold mb-1" style="font-size: 0.85rem; color:#334155;">اسم المستخدم</label>
                 <div class="input-group">
                     <input type="text" name="username" class="form-control" placeholder="admin" required autofocus autocomplete="username">
                     <span class="input-group-text"><i class="fas fa-user"></i></span>
                 </div>
             </div>
-            <div class="mb-4">
-                <label class="form-label text-secondary mb-1" style="font-size: 0.85rem;">كلمة المرور</label>
+            <div class="mb-3">
+                <label class="form-label fw-bold mb-1" style="font-size: 0.85rem; color:#334155;">كلمة المرور</label>
                 <div class="input-group">
                     <input type="password" name="password" class="form-control" placeholder="••••" required autocomplete="current-password">
                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
                 </div>
             </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <label class="form-check-label d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="checkbox" name="remember" class="form-check-input">
+                    <span style="font-size:0.88rem; color:#475569;">تذكرني على هذا الجهاز</span>
+                </label>
+            </div>
+
             <button type="submit" class="btn btn-login">
                 <i class="fas fa-sign-in-alt me-2"></i>
                 دخول
