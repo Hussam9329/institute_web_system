@@ -3119,6 +3119,20 @@ textarea:focus-visible {
     .pay-field-input, .pay-search-input { height: 36px !important; font-size: 0.82rem; }
 }
 
+/* ================================================================
+   إصلاح لون كومبوبوكس الترتيب داخل شريط الصفحات
+   يجعل خلفية عنصر الترتيب شفافة لتأخذ نفس لون الفريم الحاوي
+   ================================================================ */
+select.sort-by-select {
+    background-color: transparent !important;
+    box-shadow: none;
+}
+
+select.sort-by-select:hover,
+select.sort-by-select:focus {
+    background-color: transparent !important;
+}
+
 @media print {
     .navbar, footer, .btn, .no-print { display: none !important; }
     .main-content { padding: 0; padding-top: 0; }

@@ -580,3 +580,17 @@ html[data-theme="dark"] [style*="color:#16a34a"],
 html[data-theme="dark"] [style*="color: #16a34a"] {
     color: #4ade80 !important;
 }
+
+/* ================================================================
+   إصلاح لون كومبوبوكس الترتيب في الوضع الليلي
+   لا نستخدم لون سطح منفصل حتى لا يظهر العنصر نشازاً داخل الفريم
+   ================================================================ */
+html[data-theme="dark"] select.sort-by-select {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] select.sort-by-select:hover,
+html[data-theme="dark"] select.sort-by-select:focus {
+    background-color: transparent !important;
+}
