@@ -1,0 +1,398 @@
+/* ================================================================
+   dark-fix.css - إصلاحات الوضع الليلي الشاملة
+   ================================================================
+   هذا الملف يحتوي على جميع الإصلاحات المفقودة في theme.css
+   يتضمن:
+   1. تجاوز متغيرات style.css القديمة في الوضع الليلي
+   2. عناصر Bootstrap غير مغطاة
+   3. مكونات القوالب ذات الألوان المدمجة
+   4. تجاوز الـ inline styles الديناميكية
+   ================================================================ */
+
+/* =========================
+   1. تجاوز متغيرات style.css القديمة
+   هذه المتغيرات تُستخدم في style.css والقوالب لكنها
+   لا تتغير في الوضع الليلي مما يسبب تضاربات
+========================= */
+html[data-theme="dark"] {
+    --white: #1e2235;
+    --light: #1a1e30;
+    --light-bg: #0b0d16;
+    --border: #333756;
+    --border-light: #2a2e4a;
+    --text-primary: #f1f5f9;
+    --text-secondary: #a8abc2;
+    --text-muted: #787c9a;
+    --dark: #0b0d16;
+    --dark-light: #1e2235;
+    --surface-section: #1e2235;
+    --surface-body: #0b0d16;
+    --surface-footer: #171a28;
+    --surface-input: #1c2035;
+    --border-section: #333756;
+    --border-input: #3d4266;
+    --text-label: #a8abc2;
+    --text-section-title: #f1f5f9;
+    --bg-balance-ok: rgba(16, 185, 129, 0.12);
+    --border-balance-ok: rgba(16, 185, 129, 0.25);
+    --text-balance-ok: #6ee7b7;
+    --bg-tag-amber: rgba(251, 191, 36, 0.12);
+    --border-tag-amber: rgba(251, 191, 36, 0.25);
+}
+
+
+/* =========================
+   2. عناصر Bootstrap غير مغطاة
+========================= */
+
+/* --- Pagination --- */
+html[data-theme="dark"] .page-link {
+    background-color: #1e2235;
+    color: #a8abc2;
+    border-color: #333756;
+}
+html[data-theme="dark"] .page-link:hover {
+    background-color: #222640;
+    color: #f1f5f9;
+}
+html[data-theme="dark"] .page-item.active .page-link {
+    background-color: #8888e8;
+    border-color: #8888e8;
+    color: #ffffff;
+}
+html[data-theme="dark"] .page-item.disabled .page-link {
+    background-color: #1a1e30;
+    color: #5f647d;
+    border-color: #2a2e4a;
+}
+
+/* --- Breadcrumb --- */
+html[data-theme="dark"] .breadcrumb {
+    background-color: transparent;
+}
+html[data-theme="dark"] .breadcrumb-item a {
+    color: var(--app-primary);
+}
+html[data-theme="dark"] .breadcrumb-item.active {
+    color: var(--app-muted);
+}
+html[data-theme="dark"] .breadcrumb-item + .breadcrumb-item::before {
+    color: var(--app-muted);
+}
+
+/* --- Progress --- */
+html[data-theme="dark"] .progress {
+    background-color: #1a1e30;
+    border-color: var(--app-border);
+}
+
+/* --- btn-close --- */
+html[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* --- Nav tabs --- */
+html[data-theme="dark"] .nav-tabs {
+    border-bottom-color: var(--app-border);
+}
+html[data-theme="dark"] .nav-tabs .nav-link {
+    color: var(--app-text-secondary);
+    border-color: transparent;
+}
+html[data-theme="dark"] .nav-tabs .nav-link:hover {
+    color: var(--app-text);
+    border-color: var(--app-border) var(--app-border) transparent;
+}
+html[data-theme="dark"] .nav-tabs .nav-link.active {
+    color: var(--app-text);
+    background-color: var(--app-surface);
+    border-color: var(--app-border) var(--app-border) var(--app-surface);
+}
+
+/* --- Nav pills --- */
+html[data-theme="dark"] .nav-pills .nav-link {
+    color: var(--app-text-secondary);
+}
+html[data-theme="dark"] .nav-pills .nav-link.active {
+    background-color: var(--app-primary);
+    color: #ffffff;
+}
+
+/* --- Table striped (Bootstrap) --- */
+html[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: var(--app-table-row-alt);
+    color: var(--app-text);
+}
+
+/* --- Popover --- */
+html[data-theme="dark"] .popover {
+    background-color: var(--app-surface);
+    border-color: var(--app-border);
+}
+html[data-theme="dark"] .popover-header {
+    background-color: var(--app-surface-soft);
+    color: var(--app-text);
+    border-bottom-color: var(--app-border);
+}
+html[data-theme="dark"] .popover-body {
+    color: var(--app-text);
+}
+
+/* --- Tooltip --- */
+html[data-theme="dark"] .tooltip-inner {
+    background-color: var(--app-surface-soft);
+    color: var(--app-text);
+}
+
+/* --- Close button (legacy) --- */
+html[data-theme="dark"] .close {
+    color: var(--app-text);
+}
+
+
+/* =========================
+   3. الجدول الأسبوعي - عناصر غير مغطاة
+========================= */
+html[data-theme="dark"] .ws-page-title { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-day-name { background-color: var(--app-surface-soft) !important; color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-cell-border { background-color: var(--app-border) !important; }
+html[data-theme="dark"] .ws-stat-value { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-day-name-lg { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-event-card { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-event-time { background-color: var(--app-surface-soft) !important; color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-event-title { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-event-subtitle { background-color: var(--app-surface-soft) !important; color: var(--app-text-secondary) !important; }
+html[data-theme="dark"] .ws-event-actions { background-color: var(--app-surface-soft) !important; }
+html[data-theme="dark"] .ws-drag-hint { border-color: var(--app-primary) !important; color: var(--app-primary) !important; background-color: var(--app-primary-soft) !important; }
+html[data-theme="dark"] .ws-list-panel { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; }
+html[data-theme="dark"] .ws-list-group { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; }
+html[data-theme="dark"] .ws-list-group-hd { background-color: var(--app-surface-soft) !important; color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-list-group-hd:hover { background-color: var(--app-surface-hover) !important; }
+html[data-theme="dark"] .ws-list-group-title { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-list-event-badge { background-color: var(--app-primary-soft) !important; color: var(--app-primary) !important; }
+html[data-theme="dark"] .ws-list-event-title { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-rooms-panel { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; }
+html[data-theme="dark"] .ws-rooms-panel h6 { color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-room-row { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; }
+html[data-theme="dark"] .ws-slot-picker-cell { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; color: var(--app-text) !important; }
+html[data-theme="dark"] .ws-slot-error { background-color: rgba(239, 68, 68, 0.10) !important; color: #fca5a5 !important; border-color: rgba(239, 68, 68, 0.25) !important; }
+
+/* ws stat icon colors - dark variants */
+html[data-theme="dark"] .ws-stat-icon.blue { background-color: rgba(99, 102, 241, 0.15) !important; }
+html[data-theme="dark"] .ws-stat-icon.orange { background-color: rgba(245, 158, 11, 0.15) !important; }
+html[data-theme="dark"] .ws-stat-icon.purple { background-color: rgba(139, 92, 246, 0.15) !important; }
+html[data-theme="dark"] .ws-stat-icon.green { background-color: rgba(16, 185, 129, 0.15) !important; }
+
+/* ws event action buttons */
+html[data-theme="dark"] .ws-lv-exm .ws-lv-badge { background-color: rgba(251, 191, 36, 0.12) !important; color: #fde68a !important; }
+html[data-theme="dark"] .ws-list-event-acts button { background-color: var(--app-surface-soft) !important; color: var(--app-text) !important; border-color: var(--app-border) !important; }
+
+/* ws modal */
+html[data-theme="dark"] .ws-modal .modal-content { background-color: var(--app-surface) !important; }
+html[data-theme="dark"] .ws-modal .modal-body { background-color: var(--app-surface-soft) !important; }
+
+
+/* =========================
+   4. صفحة الدفع - عناصر غير مغطاة
+========================= */
+html[data-theme="dark"] .pay-teacher-btn { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; color: var(--app-text) !important; }
+html[data-theme="dark"] .pay-teacher-btn:hover { background-color: var(--app-surface-hover) !important; border-color: var(--app-primary) !important; }
+html[data-theme="dark"] .pay-teacher-btn.selected { background-color: var(--app-primary-soft) !important; border-color: var(--app-primary) !important; }
+html[data-theme="dark"] .pay-teacher-inner { background-color: var(--app-surface) !important; border-color: var(--app-border) !important; }
+html[data-theme="dark"] .pay-teacher-inner.selected { background-color: var(--app-surface-soft) !important; border-color: var(--app-primary) !important; }
+html[data-theme="dark"] .badge-remain { background-color: rgba(239, 68, 68, 0.12) !important; color: #fca5a5 !important; }
+html[data-theme="dark"] .badge-done { background-color: rgba(16, 185, 129, 0.12) !important; color: #6ee7b7 !important; }
+
+
+/* =========================
+   5. إحصائيات فلتر الطلاب
+========================= */
+html[data-theme="dark"] .sf-stat.blue { background-color: rgba(99, 102, 241, 0.12) !important; color: #a5b4fc !important; }
+html[data-theme="dark"] .sf-stat.green { background-color: rgba(16, 185, 129, 0.12) !important; color: #6ee7b7 !important; }
+html[data-theme="dark"] .sf-stat.red { background-color: rgba(239, 68, 68, 0.12) !important; color: #fca5a5 !important; }
+html[data-theme="dark"] .sf-stat.yellow { background-color: rgba(245, 158, 11, 0.12) !important; color: #fde68a !important; }
+html[data-theme="dark"] .sf-stat.purple { background-color: rgba(139, 92, 246, 0.12) !important; color: #c4b5fd !important; }
+html[data-theme="dark"] .sort-by-label { color: var(--app-text-secondary) !important; }
+
+
+/* =========================
+   6. رقائق المواد - hover مفقود
+========================= */
+html[data-theme="dark"] .subject-chip:hover { border-color: var(--app-primary) !important; color: var(--app-primary) !important; background-color: var(--app-primary-soft) !important; }
+
+
+/* =========================
+   7. مستويات الصلاحيات
+========================= */
+html[data-theme="dark"] .level-view { background-color: rgba(96, 165, 250, 0.12) !important; color: #93c5fd !important; }
+html[data-theme="dark"] .level-preview { background-color: rgba(16, 185, 129, 0.12) !important; color: #6ee7b7 !important; }
+html[data-theme="dark"] .level-admin { background-color: rgba(239, 68, 68, 0.12) !important; color: #fca5a5 !important; }
+html[data-theme="dark"] .perm-item:hover { background-color: var(--app-surface-soft) !important; }
+
+
+/* =========================
+   8. تجاوز الـ inline styles الديناميكية
+   (الأنماط المُولّدة من JavaScript أو المكتوبة يدوياً)
+========================= */
+
+/* خلفيات فاتحة شائعة في inline styles */
+html[data-theme="dark"] [style*="background:#fffbeb"],
+html[data-theme="dark"] [style*="background: #fffbeb"] {
+    background-color: rgba(251, 191, 36, 0.10) !important;
+}
+
+html[data-theme="dark"] [style*="background:#f8fafc"],
+html[data-theme="dark"] [style*="background: #f8fafc"] {
+    background-color: var(--app-surface) !important;
+}
+
+html[data-theme="dark"] [style*="background:#eef2ff"],
+html[data-theme="dark"] [style*="background: #eef2ff"] {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+html[data-theme="dark"] [style*="background:#e0e7ff"],
+html[data-theme="dark"] [style*="background: #e0e7ff"] {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+}
+
+html[data-theme="dark"] [style*="background:#ffedd5"],
+html[data-theme="dark"] [style*="background: #ffedd5"] {
+    background-color: rgba(251, 191, 36, 0.12) !important;
+}
+
+html[data-theme="dark"] [style*="background:#fde8e8"],
+html[data-theme="dark"] [style*="background: #fde8e8"] {
+    background-color: rgba(239, 68, 68, 0.10) !important;
+}
+
+html[data-theme="dark"] [style*="background:#e8fde8"],
+html[data-theme="dark"] [style*="background: #e8fde8"] {
+    background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+html[data-theme="dark"] [style*="background:#fef2f2"],
+html[data-theme="dark"] [style*="background: #fef2f2"] {
+    background-color: rgba(239, 68, 68, 0.10) !important;
+}
+
+html[data-theme="dark"] [style*="background:#eff6ff"],
+html[data-theme="dark"] [style*="background: #eff6ff"] {
+    background-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+html[data-theme="dark"] [style*="background:#f0fdf4"],
+html[data-theme="dark"] [style*="background: #f0fdf4"] {
+    background-color: rgba(16, 185, 129, 0.10) !important;
+}
+
+html[data-theme="dark"] [style*="background:#f5f3ff"],
+html[data-theme="dark"] [style*="background: #f5f3ff"] {
+    background-color: rgba(139, 92, 246, 0.10) !important;
+}
+
+/* ألوان النص الداكنة في inline styles */
+html[data-theme="dark"] [style*="color:#1e1b4b"],
+html[data-theme="dark"] [style*="color: #1e1b4b"] {
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] [style*="color:#333"],
+html[data-theme="dark"] [style*="color: #333"] {
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] [style*="color:#4f46e5"],
+html[data-theme="dark"] [style*="color: #4f46e5"] {
+    color: var(--app-primary) !important;
+}
+
+html[data-theme="dark"] [style*="color:#92400e"],
+html[data-theme="dark"] [style*="color: #92400e"] {
+    color: #fde68a !important;
+}
+
+html[data-theme="dark"] [style*="color:#166534"],
+html[data-theme="dark"] [style*="color: #166534"] {
+    color: #6ee7b7 !important;
+}
+
+html[data-theme="dark"] [style*="color:#991b1b"],
+html[data-theme="dark"] [style*="color: #991b1b"] {
+    color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] [style*="color:#1e40af"],
+html[data-theme="dark"] [style*="color: #1e40af"] {
+    color: #93c5fd !important;
+}
+
+/* JS-generated badge styles */
+html[data-theme="dark"] [style*="background:#eef2ff"][style*="color:#4f46e5"],
+html[data-theme="dark"] [style*="background: #eef2ff"][style*="color: #4f46e5"] {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+    color: #a5b4fc !important;
+}
+
+
+/* =========================
+   9. إصلاحات إضافية متنوعة
+========================= */
+
+/* select elements inside filters */
+html[data-theme="dark"] select.sf-select,
+html[data-theme="dark"] select.ws-filter-select,
+html[data-theme="dark"] select.sort-by-select {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+/* category rows in permissions */
+html[data-theme="dark"] [style*="background:#f8fafc"] td,
+html[data-theme="dark"] [style*="background: #f8fafc"] td {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+
+/* discount panel warm backgrounds */
+html[data-theme="dark"] [style*="background:linear-gradient(135deg,#fffbeb"],
+html[data-theme="dark"] [style*="background: linear-gradient(135deg, #fffbeb"] {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.04)) !important;
+}
+
+/* Searchable select dropdown options in dark */
+html[data-theme="dark"] .ss-dropdown {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ss-dropdown .ss-option {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ss-dropdown .ss-option:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+html[data-theme="dark"] .ss-dropdown .ss-search-input {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+
+/* Empty states */
+html[data-theme="dark"] .empty-state {
+    color: var(--app-muted) !important;
+}
+
+/* Report pages - dark text fixes */
+html[data-theme="dark"] [style*="color:#d97706"],
+html[data-theme="dark"] [style*="color: #d97706"] {
+    color: #fbbf24 !important;
+}
+html[data-theme="dark"] [style*="color:#2563eb"],
+html[data-theme="dark"] [style*="color: #2563eb"] {
+    color: #60a5fa !important;
+}
+html[data-theme="dark"] [style*="color:#16a34a"],
+html[data-theme="dark"] [style*="color: #16a34a"] {
+    color: #4ade80 !important;
+}
