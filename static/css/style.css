@@ -1755,7 +1755,48 @@ code {
 }
 
 /* ===== Enhanced Select & Dropdown Styling ===== */
-select.sort-by-select,
+
+/* --- كومبوبوكس الفرز (sort-by-select) --- */
+/* مبني من الصفر - خلفية شفافة يأخذ لون الحاوية + ألوان نظام --app-* */
+select.sort-by-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 7px 28px 7px 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--app-border);
+    background-color: transparent;
+    color: var(--app-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+    outline: none;
+    box-shadow: none;
+    transition: border-color 0.2s ease, color 0.2s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 10px center;
+    min-width: 130px;
+    direction: rtl;
+}
+
+select.sort-by-select:hover {
+    border-color: var(--app-primary);
+    color: var(--app-primary);
+}
+
+select.sort-by-select:focus {
+    border-color: var(--app-input-focus-border);
+    box-shadow: var(--app-input-focus-shadow);
+}
+
+select.sort-by-select option {
+    background-color: var(--app-surface);
+    color: var(--app-text);
+}
+
+/* --- كومبوبوكس الفلتر (sf-select, ws-filter-select) --- */
 select.sf-select,
 select.ws-filter-select {
     appearance: none;
@@ -1779,14 +1820,12 @@ select.ws-filter-select {
     direction: rtl;
 }
 
-select.sort-by-select:hover,
 select.sf-select:hover,
 select.ws-filter-select:hover {
     border-color: var(--app-primary);
     background-color: var(--app-surface-hover);
 }
 
-select.sort-by-select:focus,
 select.sf-select:focus,
 select.ws-filter-select:focus {
     border-color: var(--app-input-focus-border);
@@ -3117,20 +3156,6 @@ textarea:focus-visible {
     .pay-modal-body { padding: 0.7rem 0.75rem; max-height: calc(100vh - 160px); }
     .pay-section { padding: 0.7rem 0.75rem; }
     .pay-field-input, .pay-search-input { height: 36px !important; font-size: 0.82rem; }
-}
-
-/* ================================================================
-   إصلاح لون كومبوبوكس الترتيب داخل شريط الصفحات
-   يجعل خلفية عنصر الترتيب شفافة لتأخذ نفس لون الفريم الحاوي
-   ================================================================ */
-select.sort-by-select {
-    background-color: transparent !important;
-    box-shadow: none;
-}
-
-select.sort-by-select:hover,
-select.sort-by-select:focus {
-    background-color: transparent !important;
 }
 
 @media print {
