@@ -248,21 +248,130 @@ html[data-theme="dark"] .alert-info {
    Sidebar / Custom Layout
 ========================= */
 
+/* الوضع النهاري: الشريط الجانبي يبقى بنفسجي */
 .sidebar,
 .app-sidebar {
-    background-color: var(--app-sidebar-bg) !important;
-    color: var(--app-text) !important;
     border-color: var(--app-border) !important;
 }
 
-.sidebar a,
-.app-sidebar a {
-    color: var(--app-text) !important;
+/* لا نغير لون الشريط الجانبي في الوضع النهاري - يبقى بالتدرج البنفسجي */
+
+/* الوضع الداكن: الشريط الجانبي يبقى بنفسجي داكن مع نصوص بيضاء ساطعة */
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .app-sidebar {
+    background: linear-gradient(180deg, #0f0e2e 0%, #1a1850 50%, #221f6e 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255,255,255,0.08) !important;
 }
 
-.sidebar a:hover,
-.app-sidebar a:hover {
-    background-color: var(--app-surface-soft) !important;
+html[data-theme="dark"] .sidebar a,
+html[data-theme="dark"] .app-sidebar a {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .sidebar a:hover,
+html[data-theme="dark"] .app-sidebar a:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-theme="dark"] .sidebar a.active,
+html[data-theme="dark"] .app-sidebar a.active {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-right-color: #4dabf7 !important;
+}
+
+/* رأس الشريط الجانبي في الدارك */
+html[data-theme="dark"] .sidebar-header h5 {
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .sidebar-header small {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* عد تنازلي الاشتراك في الدارك */
+html[data-theme="dark"] .sidebar-countdown {
+    background: rgba(251, 191, 36, 0.12) !important;
+    border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+html[data-theme="dark"] .countdown-unit {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+html[data-theme="dark"] .countdown-unit .cd-value {
+    color: #fbbf24 !important;
+}
+
+html[data-theme="dark"] .countdown-unit .cd-label {
+    color: rgba(255, 255, 255, 0.55) !important;
+}
+
+html[data-theme="dark"] .countdown-separator {
+    color: rgba(251, 191, 36, 0.6) !important;
+}
+
+html[data-theme="dark"] .countdown-label {
+    color: #fbbf24 !important;
+}
+
+/* بحث الشريط الجانبي في الدارك */
+html[data-theme="dark"] .sidebar-search input {
+    color: #ffffff !important;
+    background: transparent !important;
+}
+
+html[data-theme="dark"] .sidebar-search input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+html[data-theme="dark"] .sidebar-search .input-group-text {
+    color: rgba(255, 255, 255, 0.5) !important;
+    background: transparent !important;
+}
+
+html[data-theme="dark"] .sidebar-search .input-group {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* وسيط التاريخ/الوقت في الدارك */
+html[data-theme="dark"] .datetime-card {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .datetime-card .time-display {
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .datetime-card .day-display {
+    color: #fbbf24 !important;
+}
+
+html[data-theme="dark"] .datetime-card .date-display {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* فاصل الشريط الجانبي في الدارك */
+html[data-theme="dark"] .sidebar-divider {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* زر إغلاق الشريط الجانبي في الدارك */
+html[data-theme="dark"] .sidebar-close-btn {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-theme="dark"] .sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* أيقونة الشعار في الدارك */
+html[data-theme="dark"] .sidebar-header .logo-icon {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
 }
 
 /* =========================
