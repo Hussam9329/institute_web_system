@@ -8,8 +8,11 @@
 # ============================================
 
 from typing import List, Dict, Any, Optional
+import logging
 from database import Database
 from config import format_currency
+
+logger = logging.getLogger(__name__)
 
 
 class FinanceService:
@@ -539,7 +542,8 @@ class FinanceService:
         for tid in teacher_ids:
             try:
                 result[tid] = self.calculate_institute_deduction(tid)
-            except:
+            except Exception as e:
+                logger.error(f"خطأ في حساب خصم المعهد للمدرس {tid}: {e}")
                 result[tid] = 0
         return result
     
@@ -806,7 +810,8 @@ class FinanceService:
                     fees_map[tid] = 0
                 fees_map[tid] += r['effective_fee']
             return fees_map
-        except Exception:
+        except Exception as e:
+            logger.error(f"خطأ في حساب الأقساط الكلية للمدرسين: {e}")
             return {tid: 0 for tid in teacher_ids}
     
     # ===== حساب مستحق المدرس المتوقع دفعة واحدة =====
@@ -820,32 +825,7 @@ class FinanceService:
         if not teacher_ids:
             return {}
         
-        db = self.db
-        placeholders = ','.join(['%s'] * len(teacher_ids))
-        
-        # جلب بيانات المدرسين (أقساط + خصومات المعهد)
-        teachers_query = f'''
-            SELECT id, total_fee, fee_in_person, fee_electronic, fee_blended,
-                   institute_deduction_type, institute_deduction_value,
-                   institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
-                   inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
-                   inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
-                   teaching_types
-            FROM teachers WHERE id IN ({placeholders})
-        '''
-        teachers_data = db.execute_query(teachers_query, tuple(teacher_ids))
-        teachers_map = {t['id']: t for t in teachers_data} if teachers_data else {}
-        
-        # جلب جميع روابط الطلاب مع أنواع الدراسة والخصومات
-        links_query = f'''
-            SELECT st.teacher_id, st.student_id, st.study_type, 
-                   st.discount_type, st.discount_value, st.institute_waiver
-            FROM student_teacher st
-            WHERE st.teacher_id IN ({placeholders}) AND st.status = 'مستمر'
-        '''
-        links = db.execute_query(links_query, tuple(teacher_ids))
-        
-        # تهيئة النتائج
+        # تهيئة النتائج أولاً - ضمان وجود نتائج حتى لو فشلت الاستعلامات
         result = {}
         for tid in teacher_ids:
             result[tid] = {
@@ -857,62 +837,169 @@ class FinanceService:
                 'blended_count': 0,
             }
         
-        if not links:
-            return result
+        try:
+            db = self.db
+            placeholders = ','.join(['%s'] * len(teacher_ids))
+            
+            # جلب بيانات المدرسين (أقساط + خصومات المعهد)
+            teachers_query = f'''
+                SELECT id, total_fee, fee_in_person, fee_electronic, fee_blended,
+                       institute_deduction_type, institute_deduction_value,
+                       institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
+                       inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
+                       inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
+                       teaching_types
+                FROM teachers WHERE id IN ({placeholders})
+            '''
+            teachers_data = db.execute_query(teachers_query, tuple(teacher_ids))
+            teachers_map = {t['id']: t for t in teachers_data} if teachers_data else {}
+            
+            # جلب جميع روابط الطلاب مع أنواع الدراسة والخصومات
+            links_query = f'''
+                SELECT st.teacher_id, st.student_id, st.study_type, 
+                       st.discount_type, st.discount_value, st.institute_waiver
+                FROM student_teacher st
+                WHERE st.teacher_id IN ({placeholders}) AND st.status = 'مستمر'
+            '''
+            links = db.execute_query(links_query, tuple(teacher_ids))
+            
+            if not links:
+                return result
+            
+            for link in links:
+                try:
+                    tid = link['teacher_id']
+                    teacher = teachers_map.get(tid)
+                    if not teacher:
+                        logger.warning(f"المدرس {tid} موجود في روابط الطلاب لكن غير موجود في بيانات المدرسين")
+                        continue
+                    
+                    study_type = link.get('study_type', 'حضوري') or 'حضوري'
+                    discount_type = link.get('discount_type', 'none') or 'none'
+                    discount_value = link.get('discount_value', 0) or 0
+                    institute_waiver = link.get('institute_waiver', 0) or 0
+                    
+                    # عدد الطلاب حسب النوع
+                    if study_type == 'حضوري':
+                        result[tid]['in_person_count'] += 1
+                    elif study_type == 'الكتروني':
+                        result[tid]['electronic_count'] += 1
+                    elif study_type == 'مدمج':
+                        result[tid]['blended_count'] += 1
+                    
+                    # القسط حسب نوع الدراسة
+                    fee = self._get_fee_for_study_type(teacher, study_type)
+                    
+                    # تطبيق خصم الطالب
+                    discount_info = {
+                        'discount_type': discount_type,
+                        'discount_value': discount_value,
+                        'institute_waiver': institute_waiver,
+                    }
+                    effective_fee = self._apply_discount_to_fee(fee, discount_info)
+                    
+                    # إضافة للإجمالي
+                    result[tid]['total_fees'] += effective_fee
+                    
+                    # حساب خصم المعهد لهذا الطالب
+                    ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
+                    
+                    if ded_value > 0 and effective_fee > 0:
+                        # تخطي الطلاب مجانيين مع تنازل المعهد
+                        if discount_type == 'free' and institute_waiver:
+                            pass  # لا خصم
+                        elif ded_type == 'manual':
+                            # المبلغ اليدوي هو المبلغ الكامل للقسطين معاً
+                            result[tid]['expected_deduction'] += ded_value
+                        else:
+                            # نسبة مئوية من القسط الفعلي
+                            result[tid]['expected_deduction'] += round(effective_fee * ded_value / 100)
+                except Exception as link_err:
+                    logger.error(f"خطأ في حساب رابط الطالب {link.get('student_id')} للمدرس {link.get('teacher_id')}: {link_err}")
+                    continue
+            
+            # حساب المستحق
+            for tid in teacher_ids:
+                r = result[tid]
+                r['teacher_due'] = r['total_fees'] - r['expected_deduction']
+            
+        except Exception as e:
+            logger.error(f"خطأ في حساب مستحق المدرسين المتوقع: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            # محاولة حساب فردي لكل مدرس
+            for tid in teacher_ids:
+                try:
+                    individual_result = self._calculate_expected_teacher_due_single(tid)
+                    result[tid] = individual_result
+                except Exception as inner_e:
+                    logger.error(f"خطأ في الحساب الفردي للمدرس {tid}: {inner_e}")
+        
+        return result
+    
+    def _calculate_expected_teacher_due_single(self, teacher_id: int) -> Dict:
+        """حساب مستحق المدرس المتوقع بشكل فردي - fallback عند فشل الحساب المجمّع"""
+        db = self.db
+        
+        # جلب بيانات المدرس
+        teacher_data = db.execute_query(
+            "SELECT id, total_fee, fee_in_person, fee_electronic, fee_blended, "
+            "institute_deduction_type, institute_deduction_value, "
+            "institute_pct_in_person, institute_pct_electronic, institute_pct_blended, "
+            "inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended, "
+            "inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended, "
+            "teaching_types FROM teachers WHERE id = %s",
+            (teacher_id,)
+        )
+        if not teacher_data:
+            return {'total_fees': 0, 'expected_deduction': 0, 'teacher_due': 0,
+                    'in_person_count': 0, 'electronic_count': 0, 'blended_count': 0}
+        
+        teacher = teacher_data[0]
+        
+        # جلب روابط الطلاب
+        links = db.execute_query(
+            "SELECT student_id, study_type, discount_type, discount_value, institute_waiver "
+            "FROM student_teacher WHERE teacher_id = %s AND status = 'مستمر'",
+            (teacher_id,)
+        ) or []
+        
+        r = {'total_fees': 0, 'expected_deduction': 0, 'teacher_due': 0,
+             'in_person_count': 0, 'electronic_count': 0, 'blended_count': 0}
         
         for link in links:
-            tid = link['teacher_id']
-            teacher = teachers_map.get(tid)
-            if not teacher:
-                continue
-            
             study_type = link.get('study_type', 'حضوري') or 'حضوري'
             discount_type = link.get('discount_type', 'none') or 'none'
             discount_value = link.get('discount_value', 0) or 0
             institute_waiver = link.get('institute_waiver', 0) or 0
             
-            # عدد الطلاب حسب النوع
             if study_type == 'حضوري':
-                result[tid]['in_person_count'] += 1
+                r['in_person_count'] += 1
             elif study_type == 'الكتروني':
-                result[tid]['electronic_count'] += 1
+                r['electronic_count'] += 1
             elif study_type == 'مدمج':
-                result[tid]['blended_count'] += 1
+                r['blended_count'] += 1
             
-            # القسط حسب نوع الدراسة
             fee = self._get_fee_for_study_type(teacher, study_type)
-            
-            # تطبيق خصم الطالب
             discount_info = {
                 'discount_type': discount_type,
                 'discount_value': discount_value,
                 'institute_waiver': institute_waiver,
             }
             effective_fee = self._apply_discount_to_fee(fee, discount_info)
+            r['total_fees'] += effective_fee
             
-            # إضافة للإجمالي
-            result[tid]['total_fees'] += effective_fee
-            
-            # حساب خصم المعهد لهذا الطالب
             ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
-            
             if ded_value > 0 and effective_fee > 0:
-                # تخطي الطلاب مجانيين مع تنازل المعهد
                 if discount_type == 'free' and institute_waiver:
-                    pass  # لا خصم
+                    pass
                 elif ded_type == 'manual':
-                    # المبلغ اليدوي هو المبلغ الكامل للقسطين معاً
-                    result[tid]['expected_deduction'] += ded_value
+                    r['expected_deduction'] += ded_value
                 else:
-                    # نسبة مئوية من القسط الفعلي
-                    result[tid]['expected_deduction'] += round(effective_fee * ded_value / 100)
+                    r['expected_deduction'] += round(effective_fee * ded_value / 100)
         
-        # حساب المستحق
-        for tid in teacher_ids:
-            r = result[tid]
-            r['teacher_due'] = r['total_fees'] - r['expected_deduction']
-        
-        return result
+        r['teacher_due'] = r['total_fees'] - r['expected_deduction']
+        return r
     
     # =====================================================
     # دوال الإحصائيات العامة - محسّنة بسرعة فائقة

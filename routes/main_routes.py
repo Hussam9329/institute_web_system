@@ -729,7 +729,8 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                         students_count_map = {r['teacher_id']: r['cnt'] for r in cnt_results}
                 for t in teachers:
                     t['students_count'] = students_count_map.get(t['id'], 0)
-            except:
+            except Exception as e:
+                logging.error(f"خطأ في حساب عدد الطلاب: {e}")
                 for t in teachers:
                     t['students_count'] = 0
 
@@ -805,21 +806,51 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                     
                     # حساب عرض نسبة المعهد
                     t['institute_rate_display'] = _build_institute_rate_display(t)
-            except:
+            except Exception as e:
+                import traceback
+                logging.error(f"❌ خطأ في حساب البيانات المالية للمدرسين: {e}")
+                logging.error(traceback.format_exc())
+                # محاولة حساب فردي لكل مدرس بدلاً من تعيين 0
                 for t in teachers:
-                    t['total_received'] = 0
-                    t['total_remaining'] = 0
-                    t['institute_deduction'] = 0
-                    t['expected_deduction'] = 0
-                    t['teacher_due'] = 0
-                    t['withdrawn_total'] = 0
-                    t['remaining_balance'] = 0
-                    t['total_fees'] = 0
-                    t['in_person_count'] = 0
-                    t['electronic_count'] = 0
-                    t['blended_count'] = 0
-                    t['institute_rate_display'] = ''
-    except:
+                    try:
+                        tid = t['id']
+                        balance_info = finance_service.calculate_teacher_balance(tid)
+                        t['total_received'] = balance_info.get('total_received', 0)
+                        t['institute_deduction'] = balance_info.get('institute_deduction', 0)
+                        t['teacher_due'] = balance_info.get('teacher_due', 0)
+                        t['withdrawn_total'] = balance_info.get('withdrawn_total', 0)
+                        t['remaining_balance'] = max(0, balance_info.get('remaining_balance', 0))
+                        t['total_remaining'] = t['remaining_balance']
+                        t['total_fees'] = balance_info.get('total_fees', 0)
+                        # حساب أعداد الطلاب حسب النوع
+                        student_links = db.execute_query(
+                            "SELECT study_type FROM student_teacher WHERE teacher_id = %s AND status = 'مستمر'",
+                            (tid,)
+                        ) or []
+                        in_person = sum(1 for s in student_links if s.get('study_type') == 'حضوري')
+                        electronic = sum(1 for s in student_links if s.get('study_type') == 'الكتروني')
+                        blended = sum(1 for s in student_links if s.get('study_type') == 'مدمج')
+                        t['in_person_count'] = in_person
+                        t['electronic_count'] = electronic
+                        t['blended_count'] = blended
+                        t['expected_deduction'] = balance_info.get('institute_deduction', 0)
+                        t['institute_rate_display'] = _build_institute_rate_display(t)
+                    except Exception as inner_e:
+                        logging.error(f"❌ خطأ في حساب المدرس {t.get('id')}: {inner_e}")
+                        t['total_received'] = 0
+                        t['total_remaining'] = 0
+                        t['institute_deduction'] = 0
+                        t['expected_deduction'] = 0
+                        t['teacher_due'] = 0
+                        t['withdrawn_total'] = 0
+                        t['remaining_balance'] = 0
+                        t['total_fees'] = 0
+                        t['in_person_count'] = 0
+                        t['electronic_count'] = 0
+                        t['blended_count'] = 0
+                        t['institute_rate_display'] = ''
+    except Exception as e:
+        logging.error(f"خطأ في جلب قائمة المدرسين: {e}")
         teachers = []
 
     # الحصول على المواد - استعلام واحد
