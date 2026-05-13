@@ -15,6 +15,28 @@
    لا تتغير في الوضع الليلي مما يسبب تضاربات
 ========================= */
 html[data-theme="dark"] {
+    /* ألوان أساسية - إصدارات فاتحة للخلفية الداكنة */
+    --primary: #818cf8;
+    --primary-light: #a5b4fc;
+    --primary-dark: #6366f1;
+    --primary-darker: #4f46e5;
+    --secondary: #a78bfa;
+    --secondary-light: #c4b5fd;
+    --secondary-dark: #8b5cf6;
+    --success: #6ee7b7;
+    --success-light: #a7f3d0;
+    --success-dark: #34d399;
+    --warning: #fbbf24;
+    --warning-light: #fde68a;
+    --warning-dark: #f59e0b;
+    --danger: #fca5a5;
+    --danger-light: #fecaca;
+    --danger-dark: #f87171;
+    --info: #67e8f9;
+    --info-light: #a5f3fc;
+    --info-dark: #22d3ee;
+
+    /* محايد */
     --white: #1e2235;
     --light: #1a1e30;
     --light-bg: #0b0d16;
@@ -25,6 +47,8 @@ html[data-theme="dark"] {
     --text-muted: #787c9a;
     --dark: #0b0d16;
     --dark-light: #1e2235;
+    --muted: #787c9a;
+    --muted-light: #787c9a;
     --surface-section: #1e2235;
     --surface-body: #0b0d16;
     --surface-footer: #171a28;

@@ -115,12 +115,49 @@ html[data-theme="dark"] {
        تجاوز المتغيرات القديمة (style.css)
        لضمان توافق كل المكونات مع الوضع الليلي
     ================================ */
+
+    /* --- ألوان أساسية --- */
+    --primary: #818cf8;
+    --primary-light: #a5b4fc;
+    --primary-dark: #6366f1;
+    --primary-darker: #4f46e5;
+
+    /* --- ألوان فرعية --- */
+    --secondary: #a78bfa;
+    --secondary-light: #c4b5fd;
+    --secondary-dark: #8b5cf6;
+
+    /* --- ألوان النجاح --- */
+    --success: #6ee7b7;
+    --success-light: #a7f3d0;
+    --success-dark: #34d399;
+
+    /* --- ألوان التحذير --- */
+    --warning: #fbbf24;
+    --warning-light: #fde68a;
+    --warning-dark: #f59e0b;
+
+    /* --- ألوان الخطر --- */
+    --danger: #fca5a5;
+    --danger-light: #fecaca;
+    --danger-dark: #f87171;
+
+    /* --- ألوان المعلومات --- */
+    --info: #67e8f9;
+    --info-light: #a5f3fc;
+    --info-dark: #22d3ee;
+
+    /* --- محايد --- */
+    --dark: #0b0d16;
+    --dark-light: #1e2235;
+    --muted: #787c9a;
+    --muted-light: #787c9a;
+
     --white: #1e2235;
     --light: #222640;
     --light-bg: #1a1e30;
     --border: #333756;
     --border-light: #2a2e4a;
-    --muted-light: #787c9a;
     --text-primary: #f1f5f9;
     --text-secondary: #a8abC2;
     --text-muted: #787c9a;
