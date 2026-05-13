@@ -28,7 +28,7 @@ html[data-theme="dark"] {
     --surface-section: #1e2235;
     --surface-body: #0b0d16;
     --surface-footer: #171a28;
-    --surface-input: #1c2035;
+    --surface-input: transparent;
     --border-section: #333756;
     --border-input: #3d4266;
     --text-label: #a8abc2;

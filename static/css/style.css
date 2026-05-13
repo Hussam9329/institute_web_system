@@ -93,7 +93,7 @@
     --surface-section: #ffffff;
     --surface-body: #f8f9fb;
     --surface-footer: #f9fafb;
-    --surface-input: #ffffff;
+    --surface-input: transparent;
     --border-section: #eef0f3;
     --border-input: #e5e7eb;
     --text-label: #4b5563;

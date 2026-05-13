@@ -37,7 +37,7 @@
     --app-card-shadow-hover: 0 8px 24px rgba(26, 29, 46, 0.10);
 
     /* --- حقول الإدخال --- */
-    --app-input-bg: #ffffff;
+    --app-input-bg: transparent;
     --app-input-text: #1a1d2e;
     --app-input-border: #c8ccda;
     --app-input-focus-border: #5b5fc7;
@@ -90,7 +90,7 @@ html[data-theme="dark"] {
     --app-card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.45);
 
     /* --- حقول الإدخال --- */
-    --app-input-bg: #1c2035;
+    --app-input-bg: transparent;
     --app-input-text: #dfe1ed;
     --app-input-border: #3d4266;
     --app-input-focus-border: #8888e8;
@@ -127,7 +127,7 @@ html[data-theme="dark"] {
     --surface-section: #1e2235;
     --surface-body: #0b0d16;
     --surface-footer: #171a28;
-    --surface-input: #1c2035;
+    --surface-input: transparent;
     --border-section: #333756;
     --border-input: #3d4266;
     --text-label: #a8abC2;
