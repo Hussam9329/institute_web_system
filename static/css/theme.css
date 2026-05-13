@@ -109,6 +109,53 @@ html[data-theme="dark"] {
     /* --- شارات/دوال --- */
     --app-badge-soft-bg: #222640;
     --app-badge-soft-text: #a8abC2;
+
+
+    /* ================================
+       تجاوز المتغيرات القديمة (style.css)
+       لضمان توافق كل المكونات مع الوضع الليلي
+    ================================ */
+    --white: #1e2235;
+    --light: #222640;
+    --light-bg: #1a1e30;
+    --border: #333756;
+    --border-light: #2a2e4a;
+    --muted-light: #787c9a;
+    --text-primary: #f1f5f9;
+    --text-secondary: #a8abC2;
+    --text-muted: #787c9a;
+    --surface-section: #1e2235;
+    --surface-body: #0b0d16;
+    --surface-footer: #171a28;
+    --surface-input: #1c2035;
+    --border-section: #333756;
+    --border-input: #3d4266;
+    --text-label: #a8abC2;
+    --text-section-title: #f1f5f9;
+    --text-tag-amber: #fbbf24;
+    --bg-balance-ok: #0f2922;
+    --border-balance-ok: #166534;
+    --text-balance-ok: #86efac;
+    --bg-balance-partial: #2a2008;
+    --border-balance-partial: #78350f;
+    --text-balance-partial: #fde68a;
+    --bg-tag-amber: #2a2008;
+    --border-tag-amber: #78350f;
+
+    /* ظلال أعمق في الوضع الليلي */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.15);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.10);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.18);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.40), 0 8px 16px rgba(0, 0, 0, 0.22);
+    --shadow-2xl: 0 32px 64px rgba(0, 0, 0, 0.50), 0 16px 32px rgba(0, 0, 0, 0.28);
+
+    /* توهجات مُعدَّلة للدارك */
+    --primary-glow: rgba(136, 136, 232, 0.18);
+    --success-glow: rgba(16, 185, 129, 0.18);
+    --warning-glow: rgba(245, 158, 11, 0.18);
+    --danger-glow: rgba(239, 68, 68, 0.18);
+    --info-glow: rgba(6, 182, 212, 0.18);
 }
 
 
@@ -2337,4 +2384,257 @@ html[data-theme="dark"] .text-gradient-emerald {
     background: linear-gradient(135deg, #34d399, #6ee7b7) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
+}
+
+
+/* =========================
+   Searchable Select v2 - الدارك
+   (إصلاح شامل لجميع مكونات القائمة المنسدلة القابلة للبحث)
+========================= */
+
+/* زر التفعيل (Display Trigger) */
+html[data-theme="dark"] .ss-display {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] .ss-display:hover {
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ss-display.active {
+    border-color: var(--app-input-focus-border) !important;
+    box-shadow: var(--app-input-focus-shadow) !important;
+}
+html[data-theme="dark"] .ss-display .ss-selected-text {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ss-display .ss-placeholder {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ss-display .ss-arrow {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ss-display .ss-clear-btn {
+    background: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+}
+
+/* القائمة المنسدلة */
+html[data-theme="dark"] .ss-dropdown,
+html[data-theme="dark"] .ss-dropdown-fixed {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+/* شريط البحث */
+html[data-theme="dark"] .ss-search-wrap {
+    background-color: var(--app-surface-soft) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ss-search-icon {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ss-search-input {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] .ss-search-input:focus {
+    border-color: var(--app-input-focus-border) !important;
+    box-shadow: 0 0 0 2px var(--primary-glow) !important;
+}
+html[data-theme="dark"] .ss-search-input::placeholder {
+    color: var(--app-muted) !important;
+}
+
+/* الخيارات */
+html[data-theme="dark"] .ss-option {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ss-option:hover {
+    background-color: var(--app-surface-hover) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ss-option.selected {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ss-option.ss-focused {
+    background-color: var(--app-surface-hover) !important;
+    color: var(--app-primary) !important;
+    outline-color: var(--app-primary) !important;
+}
+
+/* لا توجد نتائج */
+html[data-theme="dark"] .ss-no-results {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ss-no-results-icon {
+    color: var(--app-muted) !important;
+}
+
+/* عدّاد النتائج */
+html[data-theme="dark"] .ss-count {
+    color: var(--app-muted) !important;
+}
+
+/* تمييز نص البحث */
+html[data-theme="dark"] .ss-highlight {
+    background-color: rgba(136, 136, 232, 0.25) !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   سهم الكومبو بوكس - الدارك
+   (إصلاح لون السهم في عناصر select)
+========================= */
+
+html[data-theme="dark"] select.sort-by-select,
+html[data-theme="dark"] select.sf-select,
+html[data-theme="dark"] select.ws-filter-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a8abc0' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+}
+
+html[data-theme="dark"] .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a8abc0' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") !important;
+}
+
+
+/* =========================
+   إصلاحات إضافية شاملة - الدارك
+========================= */
+
+/* Nav tabs في الدارك */
+html[data-theme="dark"] .nav-tabs {
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .nav-link {
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .nav-link:hover {
+    color: var(--app-text) !important;
+    border-color: var(--app-border) var(--app-border) var(--app-border) !important;
+}
+html[data-theme="dark"] .nav-link.active {
+    color: var(--app-primary) !important;
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) var(--app-border) var(--app-surface) !important;
+}
+
+/* Pagination في الدارك */
+html[data-theme="dark"] .page-link {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .page-link:hover {
+    background-color: var(--app-surface-hover) !important;
+    color: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .page-item.active .page-link {
+    background-color: var(--app-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .page-item.disabled .page-link {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-muted) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* Progress bar في الدارك */
+html[data-theme="dark"] .progress {
+    background-color: var(--app-surface-soft) !important;
+}
+
+/* Close button في الدارك */
+html[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Table striped في الدارك */
+html[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: var(--app-table-row-alt) !important;
+}
+
+/* List group في الدارك */
+html[data-theme="dark"] .list-group-item {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .list-group-item:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+
+/* Placeholder/empty state */
+html[data-theme="dark"] .empty-state {
+    color: var(--app-muted) !important;
+}
+
+/* Breadcrumb في الدارك */
+html[data-theme="dark"] .breadcrumb {
+    background-color: transparent !important;
+}
+html[data-theme="dark"] .breadcrumb-item {
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .breadcrumb-item.active {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .breadcrumb-item + .breadcrumb-item::before {
+    color: var(--app-muted) !important;
+}
+
+/* Border utilities في الدارك */
+html[data-theme="dark"] .border {
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .border-top {
+    border-top-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .border-bottom {
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .border-start {
+    border-left-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .border-end {
+    border-right-color: var(--app-border) !important;
+}
+
+/* hr في الدارك */
+html[data-theme="dark"] hr {
+    border-color: var(--app-border) !important;
+}
+
+/* Modal في الدارك */
+html[data-theme="dark"] .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.70) !important;
+}
+
+/* Tooltip في الدارك */
+html[data-theme="dark"] .tooltip-inner {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .tooltip .tooltip-arrow::before {
+    border-top-color: var(--app-surface-soft) !important;
+}
+
+/* Popover في الدارك */
+html[data-theme="dark"] .popover {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .popover-header {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .popover-body {
+    color: var(--app-text) !important;
 }
