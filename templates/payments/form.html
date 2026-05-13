@@ -359,6 +359,53 @@ html[data-theme="dark"] .t-badge.t-badge-fixed {
     background: rgba(59, 130, 246, 0.15);
     color: #93c5fd;
 }
+
+/* زر طباعة الوصل المتحرك */
+.alert-print-btn {
+    background: rgba(255, 255, 255, 0.35);
+    color: #fff;
+    font-size: 12px;
+    width: auto;
+    padding: 6px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.alert-print-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.48);
+    transform: translateY(-1px);
+}
+
+.receipt-print-shake {
+    animation: receiptPrintShake 1.1s ease-in-out infinite;
+}
+
+@keyframes receiptPrintShake {
+    0%, 100% {
+        transform: translateX(0) scale(1);
+    }
+    15% {
+        transform: translateX(-2px) rotate(-2deg) scale(1.03);
+    }
+    30% {
+        transform: translateX(2px) rotate(2deg) scale(1.03);
+    }
+    45% {
+        transform: translateX(-2px) rotate(-1deg) scale(1.03);
+    }
+    60% {
+        transform: translateX(2px) rotate(1deg) scale(1.03);
+    }
+    75% {
+        transform: translateX(0) scale(1);
+    }
+}
 </style>
 
 {% endblock %}
@@ -1093,11 +1140,27 @@ async function submitPayment(event) {
         return;
     }
 
-    // تحقق إضافي: هل المبلغ يتجاوز المتبقي؟
     var teacherData = teachersBalanceData[String(teacherId)];
-    if (teacherData && teacherData.remaining_balance > 0 && amount > teacherData.remaining_balance) {
-        showAlert('المبلغ (' + formatCurrency(amount) + ') يتجاوز المتبقي (' + formatCurrency(teacherData.remaining_balance) + ')', 'warning');
+    var remainingBalance = teacherData ? Number(teacherData.remaining_balance || 0) : 0;
+
+    // تحقق إضافي: هل المبلغ يتجاوز المتبقي؟
+    if (remainingBalance > 0 && amount > remainingBalance) {
+        showAlert('المبلغ (' + formatCurrency(amount) + ') يتجاوز المتبقي (' + formatCurrency(remainingBalance) + ')', 'warning');
         return;
+    }
+
+    // إذا دفع الطالب كل المتبقي، حوّل نوع القسط تلقائياً إلى دفع كامل
+    if (remainingBalance > 0 && amount >= remainingBalance) {
+        var payTypeEl = document.getElementById('pay_type');
+        var forInstContainer = document.getElementById('pay_for_installment_container');
+
+        if (payTypeEl) {
+            payTypeEl.value = 'دفع كامل';
+        }
+
+        if (forInstContainer) {
+            forInstContainer.classList.add('d-none');
+        }
     }
 
     // تحقق: هل التاريخ محدد؟
@@ -1123,11 +1186,16 @@ async function submitPayment(event) {
         notes: document.getElementById('pay_notes').value,
         for_installment: ''
     };
-    
-    // إذا كان النوع "دفعات"، أضف for_installment
+
+    // إذا كان النوع دفعات فقط، أرسل القسط التابع له
     if (data.installment_type === 'دفعات') {
         var forInstEl = document.getElementById('pay_for_installment');
         data.for_installment = forInstEl ? forInstEl.value : 'القسط الأول';
+    }
+
+    // حماية إضافية: إذا صار دفع كامل لا ترسل for_installment
+    if (data.installment_type === 'دفع كامل') {
+        data.for_installment = '';
     }
 
     try {
@@ -1150,8 +1218,8 @@ async function submitPayment(event) {
                     '<div class="d-flex align-items-center gap-3 p-3">' +
                         '<div class="alert-icon-wrap"><i class="fas fa-check-circle"></i></div>' +
                         '<div class="alert-text">' + successMessage + '</div>' +
-                        '<a href="' + receiptUrl + '" target="_blank" class="alert-close-btn" style="background:rgba(255,255,255,0.35);font-size:12px;width:auto;padding:4px 10px;border-radius:8px;text-decoration:none;">' +
-                            '<i class="fas fa-print me-1"></i>طباعة' +
+                        '<a href="' + receiptUrl + '" target="_blank" class="alert-print-btn receipt-print-shake">' +
+                            '<i class="fas fa-print me-1"></i>طباعة الوصل' +
                         '</a>' +
                         '<button type="button" class="alert-close-btn" onclick="dismissReceiptAlert(\'' + receiptId + '\')" title="إغلاق">' +
                             '<i class="fas fa-times"></i>' +

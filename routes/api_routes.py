@@ -618,8 +618,14 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         new_type = installment.installment_type
         
         # القواعد:
-        # 1. "دفع كامل" → مسموح إذا لم توجد أي أقساط سابقة، أو إذا وُجد القسط الأول فقط (تحويل من دفعات إلى دفع كامل)
-        if new_type == 'دفع كامل' and has_any_existing:
+        # 1. "دفع كامل" → مسموح إذا لم توجد أي أقساط سابقة، أو إذا وُجد القسط الأول فقط، أو إذا كان المبلغ يغطي كامل المتبقي
+        current_balance_preview = finance_service.calculate_student_teacher_balance(
+            installment.student_id, installment.teacher_id
+        )
+        remaining_preview = current_balance_preview['total_fee'] - current_balance_preview['paid_total']
+        will_close_balance = remaining_preview > 0 and installment.amount >= remaining_preview
+
+        if new_type == 'دفع كامل' and has_any_existing and not will_close_balance:
             # السماح بتحويل القسط الأول إلى دفع كامل (الطالب دفع القسط الأول ويريد تحويله لدفع كامل)
             if has_existing_first and not has_existing_second and not has_existing_full:
                 pass  # مسموح - تحويل من دفعات إلى دفع كامل
@@ -709,22 +715,17 @@ async def api_add_installment(request: Request, installment: AddInstallment):
                 "message": f"المبلغ يتجاوز القسط الكلي! القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)}، المتبقي {format_currency(remaining)}"
             }
 
-        # ===== تحويل تلقائي: إذا كان مبلغ القسط الأول يساوي أو يتجاوز المبلغ الكلي =====
-        # هذا يمنع خسارة المعهد لنصف نسبة الخصم عندما يدفع الطالب المبلغ الكلي كـ "قسط أول"
+        # ===== حساب المتبقي قبل الدفع لتحديد ما إذا كان سيغلق الرصيد =====
+        remaining_before_payment = total_fee - already_paid
+        will_close_balance = remaining_before_payment > 0 and installment.amount >= remaining_before_payment
+
+        # ===== تحويل تلقائي إلى دفع كامل عند تسديد كامل المتبقي =====
+        # الهدف: إذا دفع الطالب كل المتبقي، لا يبقى القسط مسجل كـ قسط أول أو دفعات
         auto_converted = False
-        if installment.installment_type == 'القسط الأول' and installment.amount >= total_fee and not has_existing_first:
-            # المبلغ يساوي القسط الكلي - تحويل تلقائي إلى "دفع كامل"
+        if remaining_before_payment > 0 and installment.amount >= remaining_before_payment:
             installment.installment_type = 'دفع كامل'
             installment.for_installment = ''
             auto_converted = True
-        
-        # ===== تحذير: إذا كان مبلغ القسط الأول يقارب المبلغ الكلي =====
-        # تنبيه المستخدم حتى لو لم يتم التحويل التلقائي
-        amount_warning = None
-        if not auto_converted and installment.installment_type == 'القسط الأول' and total_fee > 0:
-            ratio = installment.amount / total_fee
-            if ratio >= 0.8:  # 80% أو أكثر من القسط الكلي
-                amount_warning = f"تنبيه: مبلغ القسط الأول ({format_currency(installment.amount)}) يشكل {round(ratio*100)}% من القسط الكلي ({format_currency(total_fee)}). سيتم استقطاع نصف نسبة المعهد فقط. إذا كنت تريد استقطاع النسبة كاملةً، اختر 'دفع كامل'."
 
         from config import get_current_date as _get_current_date
         
@@ -753,9 +754,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         
         message = "تم إضافة القسط بنجاح"
         if auto_converted:
-            message = f"⚠️ تم تحويل القسط تلقائياً من 'القسط الأول' إلى 'دفع كامل' لأن المبلغ ({format_currency(installment.amount)}) يساوي القسط الكلي ({format_currency(total_fee)}). هذا يضمن استقطاع نسبة المعهد كاملةً بدلاً من نصفها فقط."
-        elif amount_warning:
-            message = f"تم إضافة القسط بنجاح. {amount_warning}"
+            message = f"تم تسجيل الدفع كـ 'دفع كامل' لأن المبلغ المدفوع ({format_currency(installment.amount)}) يغطي كامل المتبقي."
         
         _invalidate_dashboard_cache()
         return {
@@ -764,7 +763,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             "new_balance": new_balance,
             "installment_id": installment_id,
             "auto_converted": auto_converted,
-            "amount_warning": amount_warning
+            "amount_warning": None
         }
         
     except Exception as e:
