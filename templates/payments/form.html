@@ -23,7 +23,7 @@
 
                 <!-- ===== النموذج ===== -->
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom">
+                    <div class="card-header border-bottom">
                         <h6 class="mb-0 fw-bold">
                             <i class="fas fa-receipt me-2 text-warning"></i>بيانات القسط
                         </h6>
@@ -207,14 +207,14 @@
     gap: 5px;
     min-height: 38px;
     padding: 6px;
-    border: 1.5px dashed #e0e0e0;
+    border: 1.5px dashed var(--border, #e0e0e0);
     border-radius: 8px;
-    background: #fafafa;
-    transition: border-color 0.2s;
+    background: var(--surface-section, #fafafa);
+    transition: border-color 0.2s, background-color 0.2s;
 }
 .pay-teacher-buttons:has(.pay-teacher-btn) {
     border-color: #f0a500;
-    background: #fffdf7;
+    background: var(--surface-section, #fffdf7);
 }
 .pay-teacher-btn {
     display: inline-flex;
@@ -222,8 +222,8 @@
     gap: 5px;
     padding: 4px 10px;
     border-radius: 6px;
-    border: 1.5px solid #e5e7eb;
-    background: #fff;
+    border: 1.5px solid var(--border, #e5e7eb);
+    background: var(--white, #fff);
     font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -231,7 +231,7 @@
 }
 .pay-teacher-btn:hover {
     border-color: #f0a500;
-    background: #fff8ed;
+    background: var(--surface-section, #fff8ed);
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(240,165,0,0.15);
 }
@@ -246,15 +246,15 @@
 .pay-teacher-btn .t-icon { font-size: 0.85rem; color: #f0a500; }
 .pay-teacher-btn.selected .t-icon { color: #fff; }
 .pay-teacher-btn .t-name { font-weight: 600; }
-.pay-teacher-btn .t-subj { color: #888; font-size: 0.72rem; }
+.pay-teacher-btn .t-subj { color: var(--text-muted, #888); font-size: 0.72rem; }
 .pay-teacher-btn .t-badge {
     font-size: 0.65rem;
     padding: 1px 5px;
     border-radius: 4px;
     font-weight: 600;
 }
-.pay-teacher-btn .t-badge.badge-remain { background: #fde8e8; color: #dc2626; }
-.pay-teacher-btn .t-badge.badge-done { background: #e8fde8; color: #16a34a; }
+.pay-teacher-btn .t-badge.badge-remain { background: rgba(220,38,38,0.10); color: #dc2626; }
+.pay-teacher-btn .t-badge.badge-done { background: rgba(34,197,94,0.10); color: #16a34a; }
 .pay-teacher-btn.selected .t-badge.badge-remain { background: rgba(255,255,255,0.25); color: #fff; }
 .pay-teacher-btn.selected .t-badge.badge-done { background: rgba(255,255,255,0.25); color: #fff; }
 
@@ -263,6 +263,7 @@
     padding: 4px 2px;
     width: 100%;
     text-align: center;
+    color: var(--text-muted, inherit);
 }
 .pay-teacher-loading {
     font-size: 0.78rem;
@@ -273,7 +274,7 @@
 }
 .pay-teacher-empty {
     font-size: 0.78rem;
-    color: #999;
+    color: var(--text-muted, #999);
     padding: 4px 2px;
     width: 100%;
     text-align: center;
@@ -321,6 +322,42 @@
 .pay-btn-submit:hover {
     background: linear-gradient(135deg, #d99400, #cc8800);
     color: #fff;
+}
+
+/* شارات أزرار المدرسين - ألوان باستخدام CSS variables */
+.t-badge.t-badge-study {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--primary, #4f46e5);
+}
+.t-badge.t-badge-free {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+}
+.t-badge.t-badge-pct {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+.t-badge.t-badge-fixed {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+}
+
+/* الوضع الليلي - ألوان مناسبة */
+html[data-theme="dark"] .t-badge.t-badge-study {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+}
+html[data-theme="dark"] .t-badge.t-badge-free {
+    background: rgba(34, 197, 94, 0.15);
+    color: #6ee7b7;
+}
+html[data-theme="dark"] .t-badge.t-badge-pct {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fde68a;
+}
+html[data-theme="dark"] .t-badge.t-badge-fixed {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
 }
 </style>
 
@@ -508,19 +545,19 @@ function renderTeacherButtons() {
 
         // نوع الدراسة من الربط
         var studyType = t.study_type || 'حضوري';
-        var studyBadge = '<span class="t-badge" style="background:#eef2ff;color:#4f46e5;">' + escapeHtml(studyType) + '</span>';
+        var studyBadge = '<span class="t-badge t-badge-study">' + escapeHtml(studyType) + '</span>';
 
         // بادج الخصم
         var discountBadge = '';
         var discountInfo = t.discount_info;
         if (discountInfo && discountInfo.discount_type === 'free') {
-            discountBadge = '<span class="t-badge" style="background:#dcfce7;color:#16a34a;"><i class="fas fa-gift" style="font-size:0.6rem;"></i> مجاني</span>';
+            discountBadge = '<span class="t-badge t-badge-free"><i class="fas fa-gift" style="font-size:0.6rem;"></i> مجاني</span>';
         } else if (discountInfo && discountInfo.discount_type === 'percentage') {
-            discountBadge = '<span class="t-badge" style="background:#fef3c7;color:#d97706;"><i class="fas fa-percent" style="font-size:0.55rem;"></i> ' + discountInfo.discount_value + '%</span>';
+            discountBadge = '<span class="t-badge t-badge-pct"><i class="fas fa-percent" style="font-size:0.55rem;"></i> ' + discountInfo.discount_value + '%</span>';
         } else if (discountInfo && discountInfo.discount_type === 'custom') {
-            discountBadge = '<span class="t-badge" style="background:#fef3c7;color:#d97706;"><i class="fas fa-percent" style="font-size:0.55rem;"></i> ' + discountInfo.discount_value + '%</span>';
+            discountBadge = '<span class="t-badge t-badge-pct"><i class="fas fa-percent" style="font-size:0.55rem;"></i> ' + discountInfo.discount_value + '%</span>';
         } else if (discountInfo && discountInfo.discount_type === 'fixed') {
-            discountBadge = '<span class="t-badge" style="background:#dbeafe;color:#2563eb;"><i class="fas fa-coins" style="font-size:0.55rem;"></i> ' + formatCurrency(discountInfo.discount_value) + '</span>';
+            discountBadge = '<span class="t-badge t-badge-fixed"><i class="fas fa-coins" style="font-size:0.55rem;"></i> ' + formatCurrency(discountInfo.discount_value) + '</span>';
         }
 
         btn.innerHTML = '<i class="fas fa-chalkboard-teacher t-icon"></i>' +
