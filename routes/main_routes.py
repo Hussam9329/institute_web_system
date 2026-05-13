@@ -694,7 +694,7 @@ def _build_institute_rate_display(teacher: dict) -> str:
 
 
 def _build_teacher_fee_display(teacher: dict) -> str:
-    """عرض قسط الأستاذ حسب أنواع التدريس مع الإجمالي"""
+    """عرض قسط الأستاذ حسب أنواع التدريس"""
     teaching_types = (teacher.get('teaching_types') or 'حضوري').split(',')
     teaching_types = [t.strip() for t in teaching_types if t.strip()]
     
@@ -705,16 +705,13 @@ def _build_teacher_fee_display(teacher: dict) -> str:
     }
     
     displays = []
-    total_fee = 0
     for tt in teaching_types:
         if tt in type_fee_map:
             fee_val = teacher.get(type_fee_map[tt], 0) or 0
             if fee_val > 0:
                 displays.append(f"{tt}: {format_currency(fee_val)}")
-                total_fee += fee_val
     
     if len(displays) > 1:
-        displays.append(f"الإجمالي: {format_currency(total_fee)}")
         return ' | '.join(displays)
     elif len(displays) == 1:
         return displays[0]
