@@ -3,15 +3,9 @@
    ============================================ */
 
 @media print {
-    /* ===== إخفاء العناصر غير الضرورية ===== */
-    body * {
-        visibility: hidden;
-    }
+    body * { visibility: hidden; }
     
-    #printArea,
-    #printArea * {
-        visibility: visible;
-    }
+    #printArea, #printArea * { visibility: visible; }
     
     #printArea {
         position: absolute;
@@ -21,13 +15,11 @@
         padding: 20px;
     }
     
-    /* ===== إعدادات الصفحة ===== */
     @page {
         size: A4;
         margin: 1cm;
     }
     
-    /* ===== الخطوط للطباعة ===== */
     body {
         font-size: 12pt;
         line-height: 1.5;
@@ -35,7 +27,6 @@
         background: #fff !important;
     }
     
-    /* ===== الجداول للطباعة ===== */
     table {
         border-collapse: collapse;
         width: 100% !important;
@@ -45,6 +36,7 @@
         border: 1px solid #333 !important;
         padding: 8px !important;
         text-align: right !important;
+        color: #000 !important;
     }
     
     thead {
@@ -53,20 +45,17 @@
         print-color-adjust: exact;
     }
     
-    /* ===== الروابط ===== */
     a[href]::after {
         content: " (" attr(href) ")";
         font-size: 10pt;
         color: #666;
     }
     
-    /* ===== الصور ===== */
     img {
         max-width: 100% !important;
         page-break-inside: avoid;
     }
     
-    /* ===== تجنب تقسيم العناصر ===== */
     h1, h2, h3, h4, h5, h6 {
         page-break-after: avoid;
         page-break-inside: avoid;
@@ -76,47 +65,53 @@
         page-break-inside: avoid;
     }
     
-    /* ===== إظهار الروابط المكسورة ===== */
     a[href^="http"]:after {
         content: "";
     }
     
-    /* ===== رأس وتذييل كل صفحة ===== */
     @page :first {
         margin-top: 0;
     }
     
-    /* ===== ألوان الطباعة ===== */
-    .bg-primary,
-    .bg-success,
-    .bg-info,
-    .bg-warning,
-    .bg-danger {
+    .bg-primary, .bg-success, .bg-info, .bg-warning, .bg-danger {
         background: #f0f0f0 !important;
         color: #000 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
     
-    .text-primary,
-    .text-success,
-    .text-info,
-    .text-warning,
-    .text-danger {
+    .text-primary, .text-success, .text-info, .text-warning, .text-danger {
         color: #000 !important;
     }
     
-    /* ===== إخفاء الأزرار ===== */
-    .btn,
-    button,
-    [role="button"],
-    .no-print {
+    .btn, button, [role="button"], .no-print {
         display: none !important;
     }
     
-    /* ===== هوامش الطباعة ===== */
     .print-container {
         padding: 0;
         margin: 0;
+    }
+    
+    /* إلغاء الثيم الليلي عند الطباعة */
+    html[data-theme="dark"] body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    
+    .card, .table, .modal-content {
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border-color: #ddd !important;
+    }
+    
+    .table th, .table td {
+        color: #000000 !important;
+        border-color: #333 !important;
+    }
+    
+    .navbar, .sidebar, .theme-toggle-btn {
+        display: none !important;
     }
 }
