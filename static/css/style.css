@@ -1870,13 +1870,13 @@ select.ws-filter-select:focus {
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1.125rem;
-    border: 1.5px solid var(--border);
+    border: 1.5px solid var(--app-input-border);
     border-radius: var(--radius-lg);
-    background: var(--surface-input);
+    background: var(--app-input-bg);
     cursor: pointer;
     font-family: var(--font-family);
     font-size: 0.95rem;
-    color: var(--text-muted);
+    color: var(--app-muted);
     min-height: 48px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     gap: 8px;
@@ -1884,12 +1884,12 @@ select.ws-filter-select:focus {
 }
 
 .searchable-select .ss-display:hover {
-    border-color: var(--primary-light);
+    border-color: var(--app-primary);
 }
 
 .searchable-select .ss-display.active {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-glow);
+    border-color: var(--app-input-focus-border);
+    box-shadow: var(--app-input-focus-shadow);
 }
 
 .searchable-select .ss-display.ss-empty {
@@ -1901,7 +1901,7 @@ select.ws-filter-select:focus {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--text-primary);
+    color: var(--app-input-text);
 }
 
 .searchable-select .ss-display .ss-placeholder {
@@ -1909,12 +1909,12 @@ select.ws-filter-select:focus {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--text-muted);
+    color: var(--app-muted);
 }
 
 .searchable-select .ss-display .ss-arrow {
     flex-shrink: 0;
-    color: var(--muted-light);
+    color: var(--app-muted);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.75rem;
 }
@@ -1930,9 +1930,9 @@ select.ws-filter-select:focus {
     width: 20px;
     height: 20px;
     border: none;
-    background: var(--border);
+    background: var(--app-border);
     border-radius: 50%;
-    color: var(--text-muted);
+    color: var(--app-muted);
     font-size: 0.5rem;
     cursor: pointer;
     padding: 0;
@@ -1953,12 +1953,12 @@ select.ws-filter-select:focus {
 
 .searchable-select .ss-dropdown,
 .ss-dropdown-fixed {
-    border: 1.5px solid var(--border);
+    border: 1.5px solid var(--app-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xl);
     overflow: hidden;
     animation: customDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    background: var(--white);
+    background: var(--app-surface);
 }
 
 .searchable-select .ss-dropdown {
@@ -1991,10 +1991,11 @@ select.ws-filter-select:focus {
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.searchable-select .ss-search-wrap {
+.searchable-select .ss-search-wrap,
+.ss-dropdown-fixed .ss-search-wrap {
     padding: 8px 10px;
-    border-bottom: 1px solid var(--border-light);
-    background: var(--light);
+    border-bottom: 1px solid var(--app-border);
+    background: var(--app-surface);
     position: relative;
     display: flex;
     align-items: center;
@@ -2006,7 +2007,7 @@ select.ws-filter-select:focus {
     left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--muted-light);
+    color: var(--app-muted);
     font-size: 0.72rem;
     pointer-events: none;
 }
@@ -2014,26 +2015,27 @@ select.ws-filter-select:focus {
 .searchable-select .ss-search-input,
 .ss-dropdown-fixed .ss-search-input {
     width: 100%;
-    border: 1.5px solid var(--border);
+    border: 1.5px solid var(--app-input-border);
     border-radius: var(--radius-sm);
     padding: 8px 12px 8px 30px;
     font-family: var(--font-family);
     font-size: 0.88rem;
     outline: none;
-    background: var(--surface-input);
+    background: var(--app-input-bg);
     direction: rtl;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    color: var(--text-primary);
+    color: var(--app-input-text);
 }
 
 .searchable-select .ss-search-input:focus,
 .ss-dropdown-fixed .ss-search-input:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-glow);
+    border-color: var(--app-input-focus-border);
+    box-shadow: var(--app-input-focus-shadow);
 }
 
-.searchable-select .ss-search-input::placeholder {
-    color: var(--text-muted);
+.searchable-select .ss-search-input::placeholder,
+.ss-dropdown-fixed .ss-search-input::placeholder {
+    color: var(--app-muted);
 }
 
 .searchable-select .ss-options,
@@ -2051,7 +2053,7 @@ select.ws-filter-select:focus {
     cursor: pointer;
     border-radius: var(--radius-sm);
     font-size: 0.88rem;
-    color: var(--text-primary);
+    color: var(--app-input-text);
     transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
     direction: rtl;
     overflow: hidden;
@@ -2064,15 +2066,15 @@ select.ws-filter-select:focus {
 
 .searchable-select .ss-option:hover,
 .ss-dropdown-fixed .ss-option:hover {
-    background: var(--primary-glow);
-    color: var(--primary);
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
     transform: translateX(-2px);
 }
 
 .searchable-select .ss-option.selected,
 .ss-dropdown-fixed .ss-option.selected {
-    background: var(--primary-glow);
-    color: var(--primary);
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
     font-weight: 600;
 }
 
@@ -2088,9 +2090,9 @@ select.ws-filter-select:focus {
 
 .searchable-select .ss-option.ss-focused,
 .ss-dropdown-fixed .ss-option.ss-focused {
-    background: var(--primary-glow);
-    color: var(--primary);
-    outline: 2px solid var(--primary);
+    background: var(--app-primary-soft);
+    color: var(--app-primary);
+    outline: 2px solid var(--app-primary);
     outline-offset: -2px;
 }
 
@@ -2113,7 +2115,7 @@ select.ws-filter-select:focus {
 .ss-dropdown-fixed .ss-no-results {
     padding: 24px 14px;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--app-muted);
     font-size: 0.85rem;
     display: flex;
     flex-direction: column;
