@@ -45,6 +45,11 @@ function getTodayDate() {
  * @param {number} duration - مدة العرض بالملي ثانية
  */
 function showAlert(message, type = 'info', duration = 4000) {
+    const allowedTypes = ['success', 'error', 'warning', 'info'];
+    if (!allowedTypes.includes(type)) {
+        type = 'info';
+    }
+
     const container = document.getElementById('alert-container');
     if (!container) return;
 

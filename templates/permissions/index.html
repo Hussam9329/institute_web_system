@@ -4,40 +4,281 @@
 
 {% block content %}
 <style>
-    .level-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; letter-spacing: 0.3px; }
-    .level-view { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-    .level-preview { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-    .level-edit { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-    .level-admin { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .category-card { border-radius: 12px; border: 1px solid #e5e7eb; transition: all 0.2s; }
-    .category-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .category-header { padding: 10px 16px; border-bottom: 1px solid #e5e7eb; border-radius: 12px 12px 0 0; }
-    .perm-item { padding: 8px 12px; border-radius: 8px; transition: background 0.15s; }
-    .perm-item:hover { background: #f8fafc; }
-    .role-level-summary { display: flex; gap: 4px; flex-wrap: wrap; }
-    .role-level-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .user-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
-    .tab-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; }
+.permissions-page {
+    --perm-primary: #6366f1;
+    --perm-success: #10b981;
+    --perm-warning: #f59e0b;
+    --perm-danger: #ef4444;
+    --perm-muted: #64748b;
+    --perm-border: #e5e7eb;
+    --perm-bg: #f8fafc;
+}
+
+.permissions-page .page-title {
+    color: var(--perm-primary);
+    font-weight: 800;
+}
+
+.permissions-page .permission-help-box {
+    border: 1px solid var(--perm-border);
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.permissions-page .permission-warning-box {
+    border: 1px solid #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 0.85rem;
+}
+
+.permissions-page .roles-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.permissions-page .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 16px;
+}
+
+.permissions-page .role-card {
+    background: #fff;
+    border: 1px solid var(--perm-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    transition: 0.2s ease;
+}
+
+.permissions-page .role-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.10);
+}
+
+.permissions-page .role-card-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--perm-border);
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.permissions-page .role-card-header.is-default {
+    background: linear-gradient(135deg, #fff7ed, #fffbeb);
+}
+
+.permissions-page .role-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.permissions-page .role-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: var(--perm-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.permissions-page .role-icon.is-default {
+    background: var(--perm-warning);
+}
+
+.permissions-page .role-name {
+    font-weight: 800;
+    margin: 0;
+    color: #0f172a;
+}
+
+.permissions-page .role-description {
+    color: var(--perm-muted);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    min-height: 38px;
+}
+
+.permissions-page .role-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.permissions-page .role-stat-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.permissions-page .role-stat {
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.permissions-page .role-progress-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--perm-muted);
+    margin-bottom: 6px;
+}
+
+.permissions-page .role-progress {
+    height: 8px;
+    background: #eef2ff;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.permissions-page .role-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}
+
+.permissions-page .role-admin-note {
+    margin-top: 12px;
+    border-radius: 12px;
+    background: #fef2f2;
+    color: #991b1b;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    line-height: 1.7;
+}
+
+.permissions-page .level-badge {
+    font-size: 0.68rem;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.permissions-page .level-view {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.permissions-page .level-preview {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.permissions-page .level-edit {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.permissions-page .level-admin {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.permissions-page .permissions-modal-warning {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 0.84rem;
+    margin-bottom: 14px;
+}
+
+.permissions-page .permissions-category-card {
+    border: 1px solid var(--perm-border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: #fff;
+}
+
+.permissions-page .permissions-category-header {
+    background: #f8fafc;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--perm-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.permissions-page .permission-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.permissions-page .permission-item:last-child {
+    border-bottom: 0;
+}
+
+.permissions-page .permission-item:hover {
+    background: #f8fafc;
+}
+
+.user-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
+.tab-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; }
+
+@media (max-width: 768px) {
+    .permissions-page .roles-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .permissions-page .role-card-header {
+        flex-direction: column;
+    }
+
+    .permissions-page .role-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
 </style>
 
-<div class="page-transition">
+<div class="page-transition permissions-page">
 <div class="container-fluid">
 
     <!-- ===== عنوان الصفحة ===== -->
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
         <div>
-            <h4 class="fw-bold mb-1" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                <i class="fas fa-user-shield me-2" style="-webkit-text-fill-color: #6366f1;"></i>إدارة الصلاحيات
+            <h4 class="page-title mb-1">
+                <i class="fas fa-user-shield me-2"></i>
+                إدارة الصلاحيات
             </h4>
-            <p class="text-muted mb-0 small">إدارة المستخدمين والأدوار والصلاحيات والتحكم في مستويات الوصول</p>
+            <p class="text-muted mb-0 small">
+                تنظيم المستخدمين، الأدوار، ومستويات الوصول بطريقة آمنة وواضحة.
+            </p>
         </div>
-        <div class="d-flex gap-2">
-            <div class="d-flex align-items-center gap-1 small text-muted">
-                <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض</span>
-                <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
-                <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
-                <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
-            </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض</span>
+            <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
+            <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
+            <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
         </div>
     </div>
 
@@ -190,9 +431,9 @@
                                         {% if user.role_name == 'مدير عام' %}
                                         <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة كاملة</span>
                                         {% elif user.role_name == 'محاسب' %}
-                                        <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل + إضافة</span>
+                                        <span class="level-badge level-edit"><i class="fas fa-edit me-1"></i>تعديل + إضافة</span>
                                         {% elif user.role_name == 'مدخل بيانات' %}
-                                        <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>إدخال بيانات</span>
+                                        <span class="level-badge level-edit"><i class="fas fa-edit me-1"></i>إدخال بيانات</span>
                                         {% elif user.role_name == 'مشاهد' %}
                                         <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض فقط</span>
                                         {% else %}
@@ -246,67 +487,116 @@
 
         <!-- ===== تبويب الأدوار ===== -->
         <div class="tab-pane fade" id="rolesPanel" role="tabpanel">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="alert alert-light border py-2 px-3 mb-0" style="font-size:0.8rem;">
-                    <i class="fas fa-info-circle text-success me-1"></i>
-                    الأدوار تحدد مجموعة الصلاحيات الممنوحة للمستخدم. يمكنك إنشاء أدوار مخصصة حسب الحاجة.
+
+            <div class="roles-toolbar">
+                <div class="permission-help-box">
+                    <div class="fw-bold mb-1">
+                        <i class="fas fa-circle-info text-success me-1"></i>
+                        ما وظيفة الأدوار؟
+                    </div>
+                    <div>
+                        الدور هو مجموعة صلاحيات جاهزة يتم ربطها بالمستخدم. لا تمنح صلاحيات الإدارة إلا لمن يحتاجها فعليًا.
+                    </div>
                 </div>
-                <button class="btn btn-success btn-sm" onclick="openAddRoleModal()">
-                    <i class="fas fa-plus me-1"></i> إضافة دور
+
+                <button class="btn btn-success btn-sm px-3" onclick="openAddRoleModal()">
+                    <i class="fas fa-plus me-1"></i>
+                    إضافة دور
                 </button>
             </div>
 
-            <div class="row g-3">
+            <div class="permission-warning-box mb-3">
+                <i class="fas fa-triangle-exclamation me-1"></i>
+                تنبيه لمدير النظام: تعديل صلاحيات الأدوار يؤثر مباشرة على وصول المستخدمين للنظام.
+                راجع عدد المستخدمين المرتبطين بالدور قبل الحذف أو التعديل.
+            </div>
+
+            <div class="roles-grid">
                 {% for role in roles %}
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="card border-0 shadow-sm h-100 category-card">
-                        <div class="category-header d-flex align-items-center justify-content-between"
-                             style="background: {% if role.is_default == 1 %}linear-gradient(135deg, #fef3c7, #fde68a){% else %}linear-gradient(135deg, #eff6ff, #dbeafe){% endif %};">
-                            <div class="d-flex align-items-center gap-2">
-                                <div style="width:36px;height:36px;border-radius:10px;background:{% if role.is_default == 1 %}#f59e0b{% else %}#6366f1{% endif %};display:flex;align-items:center;justify-content:center;">
-                                    <i class="fas fa-user-tag text-white" style="font-size:0.85rem;"></i>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-0">{{ role.name }}</h6>
-                                    {% if role.is_default == 1 %}
-                                    <span class="badge bg-warning text-dark" style="font-size:0.55rem;">دور افتراضي</span>
-                                    {% endif %}
-                                </div>
+                {% set total_perms = [] %}
+                {% for cat, perms in permissions_by_category.items() %}
+                    {% set _ = total_perms.append(perms|length) %}
+                {% endfor %}
+                {% set all_permissions_count = total_perms|sum %}
+                {% set perm_pct = (role.permissions_count / all_permissions_count * 100)|round|int if all_permissions_count > 0 else 0 %}
+
+                <div class="role-card">
+                    <div class="role-card-header {% if role.is_default == 1 %}is-default{% endif %}">
+                        <div class="role-title-group">
+                            <div class="role-icon {% if role.is_default == 1 %}is-default{% endif %}">
+                                <i class="fas fa-user-shield"></i>
                             </div>
-                            <div class="action-btn-group">
-                                <button class="action-btn action-btn-primary" onclick="openPermissionsModal({{ role.id }}, '{{ role.name }}')" title="إدارة الصلاحيات">
-                                    <i class="fas fa-key"></i> الصلاحيات
-                                </button>
-                                {% if role.is_default != 1 %}
-                                <button class="action-btn action-btn-danger" onclick="deleteRole({{ role.id }}, '{{ role.name }}')" title="حذف">
-                                    <i class="fas fa-trash"></i> حذف
-                                </button>
+
+                            <div>
+                                <h6 class="role-name">{{ role.name }}</h6>
+
+                                {% if role.is_default == 1 %}
+                                <span class="badge bg-warning text-dark mt-1">
+                                    <i class="fas fa-lock me-1"></i>
+                                    دور أساسي
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border mt-1">
+                                    دور مخصص
+                                </span>
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="card-body py-3 px-3">
-                            <p class="text-muted mb-2" style="font-size:0.8rem;">{{ role.description }}</p>
-                            <div class="d-flex gap-2 mb-2">
-                                <span class="badge bg-primary-subtle text-primary" style="font-size:0.7rem;">
-                                    <i class="fas fa-users me-1"></i>{{ role.users_count }} مستخدم
-                                </span>
-                                <span class="badge bg-success-subtle text-success" style="font-size:0.7rem;">
-                                    <i class="fas fa-key me-1"></i>{{ role.permissions_count }} صلاحية
-                                </span>
-                            </div>
-                            <!-- شريط نسبة الصلاحيات -->
-                            {% set total_perms = [] %}
-                            {% for cat, perms in permissions_by_category.items() %}
-                                {% set _ = total_perms.append(perms|length) %}
-                            {% endfor %}
-                            {% set perm_pct = (role.permissions_count / total_perms|sum * 100)|round|int if total_perms|sum > 0 else 0 %}
-                            <div class="d-flex align-items-center gap-2 mt-2">
-                                <div class="progress flex-grow-1" style="height:6px;">
-                                    <div class="progress-bar" role="progressbar" style="width:{{ perm_pct }}%;background:linear-gradient(90deg,#6366f1,#8b5cf6);" aria-valuenow="{{ perm_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <span class="fw-bold" style="font-size:0.75rem;color:#6366f1;">{{ perm_pct }}%</span>
-                            </div>
+
+                        <div class="role-actions">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    onclick="openPermissionsModal({{ role.id }}, '{{ role.name }}', {{ role.is_default }}, {{ role.users_count }}, {{ role.permissions_count }})">
+                                <i class="fas fa-key me-1"></i>
+                                إدارة الصلاحيات
+                            </button>
+
+                            {% if role.is_default != 1 %}
+                            <button class="btn btn-sm btn-outline-danger"
+                                    onclick="deleteRole({{ role.id }}, '{{ role.name }}', {{ role.users_count }})">
+                                <i class="fas fa-trash me-1"></i>
+                                حذف
+                            </button>
+                            {% endif %}
                         </div>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <p class="role-description mb-3">
+                            {{ role.description or 'لا يوجد وصف لهذا الدور. يفضّل إضافة وصف يوضح استخدامه.' }}
+                        </p>
+
+                        <div class="role-stat-row">
+                            <span class="role-stat">
+                                <i class="fas fa-users me-1"></i>
+                                {{ role.users_count }} مستخدم
+                            </span>
+
+                            <span class="role-stat">
+                                <i class="fas fa-key me-1"></i>
+                                {{ role.permissions_count }} من {{ all_permissions_count }} صلاحية
+                            </span>
+                        </div>
+
+                        <div class="role-progress-label">
+                            <span>نسبة الصلاحيات الممنوحة</span>
+                            <strong>{{ perm_pct }}%</strong>
+                        </div>
+
+                        <div class="role-progress">
+                            <div class="role-progress-bar" style="width: {{ perm_pct }}%;"></div>
+                        </div>
+
+                        {% if role.permissions_count == all_permissions_count and all_permissions_count > 0 %}
+                        <div class="role-admin-note">
+                            <i class="fas fa-triangle-exclamation me-1"></i>
+                            هذا الدور يملك كل الصلاحيات. يجب أن يكون مخصصًا لمدير النظام فقط.
+                        </div>
+                        {% elif role.permissions_count == 0 %}
+                        <div class="permission-warning-box mt-3">
+                            <i class="fas fa-circle-exclamation me-1"></i>
+                            هذا الدور لا يملك أي صلاحية. المستخدم المرتبط به قد لا يستطيع استخدام النظام.
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -315,9 +605,9 @@
 
         <!-- ===== تبويب مصفوفة الصلاحيات ===== -->
         <div class="tab-pane fade" id="matrixPanel" role="tabpanel">
-            <div class="alert alert-light border py-2 px-3 mb-3" style="font-size:0.8rem;">
-                <i class="fas fa-info-circle text-primary me-1"></i>
-                مصفوفة الصلاحيات تعرض مقارنة بين الأدوار والصلاحيات المتاحة لكل دور. الأيقونات تمثل مستوى الصلاحية.
+            <div class="permission-warning-box mb-3">
+                <i class="fas fa-circle-info me-1"></i>
+                هذه المصفوفة للعرض والمراجعة فقط. لتعديل الصلاحيات استخدم زر "إدارة الصلاحيات" داخل بطاقة الدور.
             </div>
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-0">
@@ -355,13 +645,13 @@
                                         <div class="d-flex align-items-center justify-content-between">
                                             <span>{{ perm.name }}</span>
                                             {% if perm.level == 'view' %}
-                                            <span class="level-badge level-view"><i class="fas fa-eye"></i></span>
+                                            <span class="level-badge level-view" title="عرض"><i class="fas fa-eye"></i></span>
                                             {% elif perm.level == 'preview' %}
-                                            <span class="level-badge level-preview"><i class="fas fa-search"></i></span>
+                                            <span class="level-badge level-preview" title="معاينة"><i class="fas fa-search"></i></span>
                                             {% elif perm.level == 'edit' %}
-                                            <span class="level-badge level-edit"><i class="fas fa-pen"></i></span>
+                                            <span class="level-badge level-edit" title="تعديل"><i class="fas fa-edit"></i></span>
                                             {% elif perm.level == 'admin' %}
-                                            <span class="level-badge level-admin"><i class="fas fa-crown"></i></span>
+                                            <span class="level-badge level-admin" title="إدارة"><i class="fas fa-crown"></i></span>
                                             {% endif %}
                                         </div>
                                         <small class="text-muted d-block" style="font-size:0.68rem;">{{ perm.description }}</small>
@@ -507,29 +797,50 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); overflow:hidden;">
-                <h5 class="modal-title"><i class="fas fa-key me-2"></i>صلاحيات دور: <span id="permRoleName"></span></h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-key me-2"></i>
+                    إدارة صلاحيات الدور:
+                    <span id="permRoleName"></span>
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="permissionsForm">
                 <input type="hidden" id="perm_role_id">
+
+                <div id="permissionsRoleWarning" class="permissions-modal-warning d-none">
+                    <div class="fw-bold mb-1">
+                        <i class="fas fa-triangle-exclamation me-1"></i>
+                        تحذير قبل الحفظ
+                    </div>
+                    <div id="permissionsRoleWarningText">
+                        تعديل هذه الصلاحيات قد يؤثر على المستخدمين المرتبطين بهذا الدور.
+                    </div>
+                </div>
+
                 <div class="modal-body p-3 p-md-4" style="max-height: 65vh; overflow-y: auto;">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex gap-2 align-items-center">
                             <span class="text-muted small">مستويات الصلاحية:</span>
                             <span class="level-badge level-view"><i class="fas fa-eye me-1"></i>عرض</span>
                             <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
-                            <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
+                            <span class="level-badge level-edit"><i class="fas fa-edit me-1"></i>تعديل</span>
                             <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
                         </div>
-                        <div class="action-btn-group">
-                            <button type="button" class="action-btn action-btn-primary" onclick="toggleAllPermissions(true)">تحديد الكل</button>
-                            <button type="button" class="action-btn action-btn-secondary" onclick="toggleAllPermissions(false)">إلغاء الكل</button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="confirmToggleAllPermissions(true)">
+                                <i class="fas fa-check-double me-1"></i>
+                                تحديد الكل
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="confirmToggleAllPermissions(false)">
+                                <i class="fas fa-ban me-1"></i>
+                                إلغاء الكل
+                            </button>
                         </div>
                     </div>
 
                     {% for category, perms in permissions_by_category.items() %}
-                    <div class="category-card mb-3">
-                        <div class="category-header d-flex align-items-center justify-content-between" style="background:#f8fafc;">
+                    <div class="permissions-category-card">
+                        <div class="permissions-category-header">
                             <div class="d-flex align-items-center gap-2">
                                 {% if category == 'لوحة التحكم' %}<i class="fas fa-home text-primary"></i>
                                 {% elif category == 'الطلاب' %}<i class="fas fa-user-graduate text-primary"></i>
@@ -548,7 +859,7 @@
                         </div>
                         <div class="p-2">
                             {% for perm in perms %}
-                            <div class="perm-item d-flex align-items-center justify-content-between" data-category="{{ category }}">
+                            <div class="permission-item d-flex align-items-center justify-content-between gap-3" data-category="{{ category }}">
                                 <div class="d-flex align-items-center gap-2">
                                     <input class="form-check-input perm-checkbox" type="checkbox" value="{{ perm.id }}" id="perm_{{ perm.id }}" data-category="{{ category }}">
                                     <label class="form-check-label" for="perm_{{ perm.id }}" style="cursor:pointer;">
@@ -561,7 +872,7 @@
                                 {% elif perm.level == 'preview' %}
                                 <span class="level-badge level-preview"><i class="fas fa-search me-1"></i>معاينة</span>
                                 {% elif perm.level == 'edit' %}
-                                <span class="level-badge level-edit"><i class="fas fa-pen me-1"></i>تعديل</span>
+                                <span class="level-badge level-edit"><i class="fas fa-edit me-1"></i>تعديل</span>
                                 {% elif perm.level == 'admin' %}
                                 <span class="level-badge level-admin"><i class="fas fa-crown me-1"></i>إدارة</span>
                                 {% endif %}
@@ -660,26 +971,89 @@ document.getElementById('addRoleForm').addEventListener('submit', async function
     } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 });
 
-async function deleteRole(id, name) {
-    if (!confirm(`هل أنت متأكد من حذف الدور "${name}"؟`)) return;
+async function deleteRole(id, name, usersCount = 0) {
+    if (Number(usersCount) > 0) {
+        showAlert('لا يمكن حذف هذا الدور لأنه مرتبط بمستخدمين. انقل المستخدمين إلى دور آخر أولًا.', 'warning', 7000);
+        return;
+    }
+
+    const confirmed = confirm(
+        `تحذير: سيتم حذف الدور "${name}" نهائيًا.\nهل أنت متأكد من المتابعة؟`
+    );
+
+    if (!confirmed) return;
+
     try {
-        const result = await apiRequest(`/permissions/api/roles/${id}`, { method: 'DELETE' });
-        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
-        else { showAlert(result.message, 'error'); }
-    } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
+        const result = await apiRequest(`/permissions/api/roles/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (result.success) {
+            showAlert(result.message, 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showAlert(result.message, 'error', 7000);
+        }
+    } catch (error) {
+        showAlert('تعذر حذف الدور بسبب مشكلة في الاتصال أو الخادم.', 'error', 7000);
+    }
 }
 
 // ===== صلاحيات الأدوار =====
-function openPermissionsModal(roleId, roleName) {
+function openPermissionsModal(roleId, roleName, isDefault = 0, usersCount = 0, permissionsCount = 0) {
     document.getElementById('perm_role_id').value = roleId;
     document.getElementById('permRoleName').textContent = roleName;
+
     const currentPerms = rolePermissionsMap[roleId] || [];
-    document.querySelectorAll('.perm-checkbox').forEach(cb => { cb.checked = currentPerms.includes(cb.value); });
+
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        cb.checked = currentPerms.includes(cb.value);
+    });
+
+    const warningBox = document.getElementById('permissionsRoleWarning');
+    const warningText = document.getElementById('permissionsRoleWarningText');
+
+    if (warningBox && warningText) {
+        warningBox.classList.remove('d-none');
+
+        if (Number(isDefault) === 1) {
+            warningText.innerHTML = `
+                هذا دور أساسي في النظام. أي تعديل عليه قد يؤثر على صلاحيات مدير النظام أو الصلاحيات الافتراضية.
+                عدد المستخدمين المرتبطين بهذا الدور: <strong>${usersCount}</strong>.
+            `;
+        } else if (Number(usersCount) > 0) {
+            warningText.innerHTML = `
+                يوجد <strong>${usersCount}</strong> مستخدم مرتبط بهذا الدور.
+                أي تعديل سيتم تطبيقه عليهم مباشرة بعد الحفظ.
+            `;
+        } else {
+            warningText.innerHTML = `
+                هذا الدور غير مرتبط بأي مستخدم حاليًا، ومع ذلك يجب مراجعة الصلاحيات قبل الحفظ.
+            `;
+        }
+    }
+
     new bootstrap.Modal(document.getElementById('permissionsModal')).show();
 }
 
 function toggleAllPermissions(checked) {
     document.querySelectorAll('.perm-checkbox').forEach(cb => { cb.checked = checked; });
+}
+
+function confirmToggleAllPermissions(checked) {
+    const message = checked
+        ? 'سيتم منح جميع الصلاحيات لهذا الدور. هل أنت متأكد؟'
+        : 'سيتم إزالة جميع الصلاحيات من هذا الدور. قد يفقد المستخدمون إمكانية الوصول للنظام. هل أنت متأكد؟';
+
+    if (!confirm(message)) return;
+
+    toggleAllPermissions(checked);
+
+    showAlert(
+        checked ? 'تم تحديد جميع الصلاحيات مؤقتًا. اضغط حفظ لتطبيق التغيير.' : 'تم إلغاء جميع الصلاحيات مؤقتًا. اضغط حفظ لتطبيق التغيير.',
+        checked ? 'warning' : 'error',
+        6000
+    );
 }
 
 function toggleCategoryPermissions(category, checked) {
@@ -693,8 +1067,16 @@ document.getElementById('permissionsForm').addEventListener('submit', async func
     document.querySelectorAll('.perm-checkbox:checked').forEach(cb => { permissionIds.push(parseInt(cb.value)); });
     try {
         const result = await apiRequest(`/permissions/api/roles/${roleId}/permissions`, { method: 'PUT', body: JSON.stringify({ permission_ids: permissionIds }) });
-        if (result.success) { showAlert(result.message, 'success'); bootstrap.Modal.getInstance(document.getElementById('permissionsModal')).hide(); location.reload(); }
-        else { showAlert(result.message, 'error'); }
+        if (result.success) {
+            showAlert(result.message || 'تم تحديث الصلاحيات بنجاح', 'success');
+
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('permissionsModal'));
+            if (modalInstance) modalInstance.hide();
+
+            setTimeout(() => location.reload(), 900);
+        } else {
+            showAlert(result.message || 'فشل تحديث الصلاحيات', 'error', 7000);
+        }
     } catch (error) { showAlert('خطأ في الاتصال', 'error'); }
 });
 </script>

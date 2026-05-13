@@ -476,6 +476,24 @@ def init_db():
                     conn.commit()
                 except Exception:
                     conn.rollback()
+
+                try:
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_installments_teacher_date
+                        ON installments (teacher_id, payment_date)
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                try:
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_withdrawals_teacher_date
+                        ON teacher_withdrawals (teacher_id, withdrawal_date)
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
                 
                 # ===== إدراج البيانات الافتراضية =====
                 existing_perms = cursor.execute("SELECT COUNT(*) FROM permissions")

@@ -156,22 +156,68 @@ async def update_role_permissions(request: Request, role_id: int, data: RolePerm
     db = Database()
     conn = db.get_connection()
     cursor = conn.cursor()
+
     try:
-        # حذف الصلاحيات الحالية
-        cursor.execute('DELETE FROM role_permissions WHERE role_id = ?', (role_id,))
-        
-        # إضافة الصلاحيات الجديدة
-        for perm_id in data.permission_ids:
+        role = db.execute_query(
+            'SELECT id, name, is_default FROM roles WHERE id = %s',
+            (role_id,)
+        )
+
+        if not role:
+            return {
+                "success": False,
+                "message": "الدور غير موجود"
+            }
+
+        if role[0]["is_default"] == 1 and len(data.permission_ids) == 0:
+            return {
+                "success": False,
+                "message": "لا يمكن إزالة جميع الصلاحيات من دور أساسي في النظام."
+            }
+
+        valid_permissions = db.execute_query(
+            'SELECT id FROM permissions WHERE id = ANY(%s)',
+            (data.permission_ids,)
+        ) if data.permission_ids else []
+
+        valid_permission_ids = {p["id"] for p in valid_permissions}
+
+        invalid_ids = [
+            permission_id for permission_id in data.permission_ids
+            if permission_id not in valid_permission_ids
+        ]
+
+        if invalid_ids:
+            return {
+                "success": False,
+                "message": "توجد صلاحيات غير صحيحة. يرجى تحديث الصفحة والمحاولة مرة أخرى."
+            }
+
+        cursor.execute(
+            'DELETE FROM role_permissions WHERE role_id = %s',
+            (role_id,)
+        )
+
+        for permission_id in data.permission_ids:
             cursor.execute(
-                'INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
-                (role_id, perm_id)
+                'INSERT INTO role_permissions (role_id, permission_id) VALUES (%s, %s)',
+                (role_id, permission_id)
             )
-        
+
         conn.commit()
-        return {"success": True, "message": "تم تحديث الصلاحيات بنجاح"}
+
+        return {
+            "success": True,
+            "message": "تم تحديث صلاحيات الدور بنجاح. تم تطبيق التغييرات على المستخدمين المرتبطين بهذا الدور."
+        }
+
     except Exception as e:
         conn.rollback()
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {
+            "success": False,
+            "message": f"تعذر تحديث الصلاحيات: {str(e)}"
+        }
+
     finally:
         cursor.close()
         conn.close()

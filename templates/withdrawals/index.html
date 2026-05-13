@@ -274,7 +274,7 @@
                         </div>
                         <div class="col-5">
                             <label class="form-label fw-bold">التاريخ:</label>
-                            <input type="date" class="form-control form-control-lg" id="aw_date" required>
+                            <input type="date" class="form-control form-control-lg" id="aw_date" required onchange="onTeacherChange()">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold">ملاحظات:</label>
@@ -383,25 +383,35 @@ async function openAddWithdrawalModal() {
 async function onTeacherChange() {
     const select = document.getElementById('aw_teacher_id');
     const teacherId = parseInt(select.value);
+    const withdrawalDate = document.getElementById('aw_date').value;
     const alertEl = document.getElementById('aw_balance_alert');
     const balanceEl = document.getElementById('aw_available_balance');
-    
+
     if (!teacherId) {
         alertEl.classList.add('d-none');
         return;
     }
-    
-    // جلب رصيد المدرس المختار فقط
+
+    if (!withdrawalDate) {
+        alertEl.classList.remove('d-none');
+        balanceEl.textContent = 'اختر تاريخ السحب أولاً';
+        balanceEl.dataset.balance = 0;
+        document.getElementById('aw_amount').removeAttribute('max');
+        return;
+    }
+
     try {
-        const balanceResult = await apiRequest(`/api/teachers/${teacherId}/balance`);
+        const balanceResult = await apiRequest(`/api/teachers/${teacherId}/balance-at-date?date=${encodeURIComponent(withdrawalDate)}`);
         const balance = balanceResult.data.remaining_balance || 0;
+
         alertEl.classList.remove('d-none');
         balanceEl.textContent = formatCurrency(balance);
         balanceEl.dataset.balance = balance;
+
         document.getElementById('aw_amount').max = Math.ceil(balance / 1000);
     } catch (e) {
         alertEl.classList.remove('d-none');
-        balanceEl.textContent = 'خطأ في التحميل';
+        balanceEl.textContent = 'خطأ في تحميل الرصيد حسب التاريخ';
         balanceEl.dataset.balance = 0;
     }
 }
@@ -527,10 +537,24 @@ async function submitAddWithdrawal(event) {
         return;
     }
 
+    const withdrawalDate = document.getElementById('aw_date').value;
+
+    if (!withdrawalDate) {
+        showAlert('يرجى تحديد تاريخ السحب', 'warning');
+        return;
+    }
+
+    const availableBalance = parseInt(document.getElementById('aw_available_balance').dataset.balance || '0');
+
+    if (availableBalance > 0 && amount > availableBalance) {
+        showAlert('المبلغ أكبر من الرصيد المتاح في تاريخ السحب المحدد', 'error');
+        return;
+    }
+
     const data = {
         teacher_id: teacherId,
         amount: amount,
-        withdrawal_date: document.getElementById('aw_date').value,
+        withdrawal_date: withdrawalDate,
         notes: document.getElementById('aw_notes').value
     };
 

@@ -326,9 +326,10 @@ class FinanceService:
             return result[0]['count'] if result[0]['count'] else 0
         return 0
     
-    def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0) -> int:
+    def calculate_institute_deduction(self, teacher_id: int, total_received: int = 0, as_of_date: str = None) -> int:
         """
         حساب خصم المعهد - يدعم نسبة مئوية أو مبلغ يدوي لكل نوع تدريس
+        as_of_date: عند تحديده، لا تحتسب دفعات الطلاب المستقبلية عن هذا التاريخ
         """
         db = self.db
         
@@ -359,7 +360,15 @@ class FinanceService:
             LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
             WHERE i.teacher_id = %s
         '''
-        installments = db.execute_query(query, (teacher_id,))
+
+        params = [teacher_id]
+
+        # عند حساب الرصيد بتاريخ سحب معيّن، لا تحتسب دفعات الطلاب المستقبلية
+        if as_of_date:
+            query += " AND i.payment_date <= %s"
+            params.append(as_of_date)
+
+        installments = db.execute_query(query, tuple(params))
         
         # Also get "free without waiver" students
         free_no_waiver_query = '''
@@ -571,6 +580,104 @@ class FinanceService:
             return result[0]['total'] if result[0]['total'] else 0
         return 0
     
+    def get_teacher_students_paid_total_until(self, teacher_id: int, as_of_date: str) -> int:
+        """حساب مجموع دفعات الطلاب للمدرس لغاية تاريخ محدد فقط"""
+        query = '''
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM installments
+            WHERE teacher_id = %s
+              AND payment_date <= %s
+        '''
+        result = self.db.execute_query(query, (teacher_id, as_of_date))
+
+        if result and len(result) > 0:
+            return result[0]['total'] if result[0]['total'] else 0
+        return 0
+
+    def get_teacher_withdrawn_total_until(self, teacher_id: int, as_of_date: str, exclude_withdrawal_id: int = None) -> int:
+        """حساب مجموع سحوبات المدرس لغاية تاريخ محدد فقط، مع إمكانية استثناء سحب عند التعديل"""
+        query = '''
+            SELECT COALESCE(SUM(amount), 0) as total
+            FROM teacher_withdrawals
+            WHERE teacher_id = %s
+              AND withdrawal_date <= %s
+        '''
+        params = [teacher_id, as_of_date]
+
+        if exclude_withdrawal_id:
+            query += " AND id != %s"
+            params.append(exclude_withdrawal_id)
+
+        result = self.db.execute_query(query, tuple(params))
+
+        if result and len(result) > 0:
+            return result[0]['total'] if result[0]['total'] else 0
+        return 0
+
+    def calculate_teacher_due_until(self, teacher_id: int, as_of_date: str) -> dict:
+        """حساب مستحق المدرس لغاية تاريخ محدد فقط"""
+        total_received = self.get_teacher_students_paid_total_until(teacher_id, as_of_date)
+        institute_deduction = self.calculate_institute_deduction(
+            teacher_id,
+            total_received,
+            as_of_date=as_of_date
+        )
+        teacher_due = total_received - institute_deduction
+
+        return {
+            'total_received': total_received,
+            'institute_deduction': institute_deduction,
+            'paying_students_count': self.get_teacher_paying_students_count(teacher_id),
+            'teacher_due': teacher_due
+        }
+
+    def calculate_teacher_balance_until(self, teacher_id: int, as_of_date: str, exclude_withdrawal_id: int = None) -> dict:
+        """حساب رصيد المدرس المتاح حسب تاريخ السحب، وليس حسب كل النظام"""
+        due_info = self.calculate_teacher_due_until(teacher_id, as_of_date)
+        withdrawn_total = self.get_teacher_withdrawn_total_until(
+            teacher_id,
+            as_of_date,
+            exclude_withdrawal_id=exclude_withdrawal_id
+        )
+
+        real_remaining = due_info['teacher_due'] - withdrawn_total
+        display_remaining = max(0, real_remaining)
+
+        return {
+            'teacher_due': due_info['teacher_due'],
+            'withdrawn_total': withdrawn_total,
+            'remaining_balance': display_remaining,
+            'has_over_withdrawal': real_remaining < 0,
+            'over_withdrawal_amount': abs(real_remaining) if real_remaining < 0 else 0,
+            'can_withdraw': real_remaining > 0,
+            **due_info
+        }
+
+    def can_teacher_withdraw_on_date(self, teacher_id: int, amount: int, withdrawal_date: str, exclude_withdrawal_id: int = None) -> tuple:
+        """منع السحب إذا كان المبلغ غير متوفر فعلياً في تاريخ السحب"""
+        if not withdrawal_date:
+            return False, "يجب تحديد تاريخ السحب", 0
+
+        if amount <= 0:
+            return False, "المبلغ يجب أن يكون أكبر من صفر", 0
+
+        balance_info = self.calculate_teacher_balance_until(
+            teacher_id,
+            withdrawal_date,
+            exclude_withdrawal_id=exclude_withdrawal_id
+        )
+
+        current_balance = balance_info['remaining_balance']
+
+        if amount > current_balance:
+            return False, (
+                f"لا يمكن تسجيل السحب بتاريخ {withdrawal_date}. "
+                f"الرصيد المتاح في هذا التاريخ هو {format_currency(current_balance)} فقط. "
+                f"لا يجوز احتساب دفعات طلاب بتاريخ لاحق للسحب."
+            ), current_balance
+
+        return True, "يمكن إجراء السحب", current_balance
+
     def calculate_teacher_balance(self, teacher_id: int) -> Dict[str, Any]:
         """حساب الرصيد المتبقي للمدرس"""
         due_info = self.calculate_teacher_due(teacher_id)

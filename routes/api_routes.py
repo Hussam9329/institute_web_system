@@ -193,6 +193,25 @@ async def api_get_teacher_balance(request: Request, teacher_id: int):
     return {"success": True, "data": balance}
 
 
+@router.get("/teachers/{teacher_id}/balance-at-date")
+async def api_get_teacher_balance_at_date(request: Request, teacher_id: int, date: str):
+    """الحصول على رصيد المدرس المتاح بتاريخ محدد"""
+    check_permission(request, 'view_teacher_balance')
+
+    if not date:
+        return {
+            "success": False,
+            "message": "يجب تحديد التاريخ"
+        }
+
+    balance = finance_service.calculate_teacher_balance_until(teacher_id, date)
+
+    return {
+        "success": True,
+        "data": balance
+    }
+
+
 @router.get("/teachers/{teacher_id}/students")
 async def api_get_teacher_students(request: Request, teacher_id: int):
     """الحصول على قائمة طلاب مدرس"""
@@ -1202,12 +1221,14 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
     
     try:
         amount = withdrawal.amount
-        balance_info = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
-        available = balance_info['remaining_balance']
 
-        can_withdraw, message, balance = finance_service.can_teacher_withdraw(
-            withdrawal.teacher_id, 
-            amount
+        if not withdrawal.withdrawal_date:
+            return {"success": False, "message": "يجب تحديد تاريخ السحب"}
+
+        can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
+            withdrawal.teacher_id,
+            amount,
+            withdrawal.withdrawal_date
         )
         
         if not can_withdraw:
@@ -1288,12 +1309,19 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
             return {"success": False, "message": "السحب غير موجود"}
         
         teacher_id = old[0]['teacher_id']
-        balance_info = finance_service.calculate_teacher_balance(teacher_id)
-        other_withdrawn = balance_info['withdrawn_total'] - old[0]['amount']
-        max_allowed = balance_info['teacher_due'] - other_withdrawn
-        
-        if amount > max_allowed:
-            return {"success": False, "message": f"المبلغ يتجاوز الرصيد المتاح ({format_currency(max_allowed)})"}
+
+        if not withdrawal_date:
+            return {"success": False, "message": "يجب تحديد تاريخ السحب"}
+
+        can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
+            teacher_id,
+            amount,
+            withdrawal_date,
+            exclude_withdrawal_id=withdrawal_id
+        )
+
+        if not can_withdraw:
+            return {"success": False, "message": message}
         
         db.execute_query(
             "UPDATE teacher_withdrawals SET amount = %s, withdrawal_date = %s, notes = %s WHERE id = %s",
