@@ -2228,3 +2228,294 @@ async def api_update_user_theme(request: Request, data: ThemeUpdate):
     except Exception as e:
         # لا نعرض خطأ للمستخدم - localStorage يكفي
         return {"success": True, "theme": data.theme}
+
+
+# ===== فحص وتنظيف قاعدة البيانات (مؤقت) =====
+
+@router.post("/admin/inspect-and-clean-db")
+async def api_inspect_and_clean_db(request: Request):
+    """فحص شامل لقاعدة البيانات وتنظيف أي بيانات متضاربة أو عشوائية أو يتيمة"""
+    db = Database()
+    issues = {}
+    cleaned = {}
+    
+    # ===== 1. فحص عدد السجلات =====
+    tables = ['subjects', 'students', 'teachers', 'student_teacher', 'installments', 
+              'teacher_withdrawals', 'weekly_schedule', 'rooms', 'roles', 'permissions', 
+              'role_permissions', 'users']
+    counts = {}
+    for t in tables:
+        try:
+            r = db.execute_query(f"SELECT COUNT(*) as cnt FROM {t}")
+            counts[t] = r[0]['cnt'] if r else 0
+        except Exception:
+            counts[t] = 'N/A'
+    issues['table_counts'] = counts
+    
+    # ===== 2. روابط يتيمة (طالب أو مدرس محذوف) =====
+    orphan_links = db.execute_query("""
+        SELECT st.student_id, st.teacher_id 
+        FROM student_teacher st
+        LEFT JOIN students s ON st.student_id = s.id
+        LEFT JOIN teachers t ON st.teacher_id = t.id
+        WHERE s.id IS NULL OR t.id IS NULL
+    """) or []
+    issues['orphan_links'] = len(orphan_links)
+    if orphan_links:
+        for ol in orphan_links:
+            db.execute_query("DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+                           (ol['student_id'], ol['teacher_id']))
+        cleaned['orphan_links_deleted'] = len(orphan_links)
+    
+    # ===== 3. أقساط يتيمة (طالب أو مدرس محذوف) =====
+    orphan_inst = db.execute_query("""
+        SELECT i.id FROM installments i
+        LEFT JOIN students s ON i.student_id = s.id
+        LEFT JOIN teachers t ON i.teacher_id = t.id
+        WHERE s.id IS NULL OR t.id IS NULL
+    """) or []
+    issues['orphan_installments'] = len(orphan_inst)
+    if orphan_inst:
+        ids = [str(oi['id']) for oi in orphan_inst]
+        db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
+        cleaned['orphan_installments_deleted'] = len(orphan_inst)
+    
+    # ===== 4. أقساط بدون رابط طالب-مدرس =====
+    no_link_inst = db.execute_query("""
+        SELECT i.id, i.student_id, i.teacher_id
+        FROM installments i
+        LEFT JOIN student_teacher st ON i.student_id = st.student_id AND i.teacher_id = st.teacher_id
+        WHERE st.student_id IS NULL
+    """) or []
+    issues['installments_no_link'] = len(no_link_inst)
+    if no_link_inst:
+        ids = [str(ni['id']) for ni in no_link_inst]
+        db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
+        cleaned['installments_no_link_deleted'] = len(no_link_inst)
+    
+    # ===== 5. أقساط بمبلغ <= 0 =====
+    bad_amount = db.execute_query("""
+        SELECT id FROM installments WHERE amount <= 0
+    """) or []
+    issues['bad_amount_installments'] = len(bad_amount)
+    if bad_amount:
+        ids = [str(ba['id']) for ba in bad_amount]
+        db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
+        cleaned['bad_amount_installments_deleted'] = len(bad_amount)
+    
+    # ===== 6. أقساط بنوع غير صالح =====
+    bad_type = db.execute_query("""
+        SELECT id FROM installments 
+        WHERE installment_type NOT IN ('القسط الأول', 'القسط الثاني', 'دفع كامل', 'دفعات')
+    """) or []
+    issues['bad_type_installments'] = len(bad_type)
+    if bad_type:
+        ids = [str(bt['id']) for bt in bad_type]
+        db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
+        cleaned['bad_type_installments_deleted'] = len(bad_type)
+    
+    # ===== 7. دفعات بدون for_installment =====
+    bad_splits = db.execute_query("""
+        SELECT id FROM installments 
+        WHERE installment_type = 'دفعات' AND (for_installment IS NULL OR for_installment = '')
+    """) or []
+    issues['splits_no_for'] = len(bad_splits)
+    if bad_splits:
+        ids = [str(bs['id']) for bs in bad_splits]
+        db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
+        cleaned['splits_no_for_deleted'] = len(bad_splits)
+    
+    # ===== 8. تكرار أنواع أقساط رئيسية =====
+    dup_types = db.execute_query("""
+        SELECT student_id, teacher_id, installment_type, COUNT(*) as cnt
+        FROM installments
+        WHERE installment_type IN ('القسط الأول', 'القسط الثاني', 'دفع كامل')
+        GROUP BY student_id, teacher_id, installment_type
+        HAVING COUNT(*) > 1
+    """) or []
+    issues['dup_installment_types'] = len(dup_types)
+    if dup_types:
+        for dt in dup_types:
+            # حذف الأقدم والإبقاء على الأحدث
+            db.execute_query("""
+                DELETE FROM installments WHERE id IN (
+                    SELECT id FROM installments 
+                    WHERE student_id = %s AND teacher_id = %s AND installment_type = %s
+                    ORDER BY id DESC OFFSET 1
+                )
+            """, (dt['student_id'], dt['teacher_id'], dt['installment_type']))
+        cleaned['dup_installment_types_fixed'] = len(dup_types)
+    
+    # ===== 9. سحوبات يتيمة =====
+    orphan_with = db.execute_query("""
+        SELECT tw.id FROM teacher_withdrawals tw
+        LEFT JOIN teachers t ON tw.teacher_id = t.id
+        WHERE t.id IS NULL
+    """) or []
+    issues['orphan_withdrawals'] = len(orphan_with)
+    if orphan_with:
+        ids = [str(ow['id']) for ow in orphan_with]
+        db.execute_query(f"DELETE FROM teacher_withdrawals WHERE id IN ({','.join(ids)})")
+        cleaned['orphan_withdrawals_deleted'] = len(orphan_with)
+    
+    # ===== 10. سحوبات بمبلغ <= 0 =====
+    bad_with = db.execute_query("""
+        SELECT id FROM teacher_withdrawals WHERE amount <= 0
+    """) or []
+    issues['bad_withdrawals'] = len(bad_with)
+    if bad_with:
+        ids = [str(bw['id']) for bw in bad_with]
+        db.execute_query(f"DELETE FROM teacher_withdrawals WHERE id IN ({','.join(ids)})")
+        cleaned['bad_withdrawals_deleted'] = len(bad_with)
+    
+    # ===== 11. جداول أسبوعية يتيمة =====
+    orphan_sched = db.execute_query("""
+        SELECT ws.id FROM weekly_schedule ws
+        LEFT JOIN teachers t ON ws.teacher_id = t.id
+        LEFT JOIN rooms r ON ws.room_id = r.id
+        WHERE t.id IS NULL OR r.id IS NULL
+    """) or []
+    issues['orphan_schedule'] = len(orphan_sched)
+    if orphan_sched:
+        ids = [str(os['id']) for os in orphan_sched]
+        db.execute_query(f"DELETE FROM weekly_schedule WHERE id IN ({','.join(ids)})")
+        cleaned['orphan_schedule_deleted'] = len(orphan_sched)
+    
+    # ===== 12. أساتذة بمادة غير موجودة =====
+    no_subject = db.execute_query("""
+        SELECT t.id, t.name, t.subject FROM teachers t
+        LEFT JOIN subjects s ON t.subject = s.name
+        WHERE s.name IS NULL
+    """) or []
+    issues['teachers_no_subject'] = len(no_subject)
+    # لا نحذف الأساتذة تلقائياً - فقط نسجل المشكلة
+    
+    # ===== 13. طلاب بدون أي رابط (يتيمة) =====
+    orphan_students = db.execute_query("""
+        SELECT s.id, s.name FROM students s 
+        LEFT JOIN student_teacher st ON s.id = st.student_id 
+        WHERE st.student_id IS NULL
+    """) or []
+    issues['students_no_links'] = len(orphan_students)
+    # لا نحذف الطلاب يتيمة تلقائياً - يمكن أن يكونوا جدد
+    
+    # ===== 14. تصحيح حالة الطلاب =====
+    status_mismatch = db.execute_query("""
+        SELECT s.id, s.status as declared_status,
+            CASE 
+                WHEN (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) = 0 THEN 'غير مربوط'
+                WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) = 
+                     (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) THEN 'منسحب'
+                WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) > 0 THEN 'مدمج'
+                ELSE 'مستمر'
+            END as actual_status
+        FROM students s
+        WHERE s.status != CASE 
+                WHEN (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) = 0 THEN 'غير مربوط'
+                WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) = 
+                     (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) THEN 'منسحب'
+                WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) > 0 THEN 'مدمج'
+                ELSE 'مستمر'
+            END
+    """) or []
+    issues['status_mismatch'] = len(status_mismatch)
+    if status_mismatch:
+        for sm in status_mismatch:
+            actual = sm['actual_status']
+            db.execute_query("UPDATE students SET status = %s WHERE id = %s", (actual, sm['id']))
+        cleaned['status_fixed'] = len(status_mismatch)
+    
+    # ===== 15. طلاب مربوطين بأكثر من مدرس لنفس المادة (مستمر) =====
+    same_subject = db.execute_query("""
+        SELECT st.student_id, t.subject, 
+               COUNT(*) as cnt,
+               STRING_AGG(t.id::text, ',') as teacher_ids,
+               STRING_AGG(t.name, ' | ') as teacher_names
+        FROM student_teacher st
+        JOIN students s ON st.student_id = s.id
+        JOIN teachers t ON st.teacher_id = t.id
+        WHERE st.status = 'مستمر'
+        GROUP BY st.student_id, t.subject
+        HAVING COUNT(*) > 1
+    """) or []
+    issues['same_subject_multi'] = len(same_subject)
+    if same_subject:
+        for ss in same_subject:
+            # الإبقاء على أحدث رابط وتحويل الباقي لمنسحب
+            tids = ss['teacher_ids'].split(',')
+            for tid in tids[1:]:  # تخطي الأول
+                db.execute_query("""
+                    UPDATE student_teacher SET status = 'منسحب' 
+                    WHERE student_id = %s AND teacher_id = %s
+                """, (ss['student_id'], int(tid)))
+            # إعادة حساب حالة الطالب
+            sync_student_status(ss['student_id'])
+        cleaned['same_subject_fixed'] = len(same_subject)
+    
+    # ===== 16. روابط بحالة دراسة غير صالحة =====
+    bad_link_types = db.execute_query("""
+        SELECT student_id, teacher_id, study_type, status 
+        FROM student_teacher 
+        WHERE study_type NOT IN ('حضوري', 'الكتروني', 'مدمج')
+           OR status NOT IN ('مستمر', 'منسحب')
+    """) or []
+    issues['bad_link_types'] = len(bad_link_types)
+    if bad_link_types:
+        for blt in bad_link_types:
+            fix_study = blt['study_type'] if blt['study_type'] in ('حضوري', 'الكتروني', 'مدمج') else 'حضوري'
+            fix_status = blt['status'] if blt['status'] in ('مستمر', 'منسحب') else 'مستمر'
+            db.execute_query("""
+                UPDATE student_teacher SET study_type = %s, status = %s 
+                WHERE student_id = %s AND teacher_id = %s
+            """, (fix_study, fix_status, blt['student_id'], blt['teacher_id']))
+        cleaned['bad_link_types_fixed'] = len(bad_link_types)
+    
+    # ===== 17. مستخدمون بدون دور =====
+    users_no_role = db.execute_query("""
+        SELECT u.id FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE r.id IS NULL
+    """) or []
+    issues['users_no_role'] = len(users_no_role)
+    
+    # ===== 18. مواد بدون أساتذة =====
+    subjects_no_teachers = db.execute_query("""
+        SELECT s.id, s.name FROM subjects s
+        LEFT JOIN teachers t ON s.name = t.subject
+        WHERE t.id IS NULL
+    """) or []
+    issues['subjects_no_teachers'] = len(subjects_no_teachers)
+    
+    # ===== 19. طلاب بدون باركود صحيح =====
+    bad_barcode = db.execute_query("""
+        SELECT id, name FROM students 
+        WHERE barcode IS NULL OR barcode = '' OR barcode LIKE 'TEMP-%'
+    """) or []
+    issues['bad_barcode'] = len(bad_barcode)
+    if bad_barcode:
+        for bb in bad_barcode:
+            from config import generate_barcode
+            new_barcode = generate_barcode(bb['id'])
+            db.execute_query("UPDATE students SET barcode = %s WHERE id = %s", (new_barcode, bb['id']))
+        cleaned['bad_barcode_fixed'] = len(bad_barcode)
+    
+    # ===== 20. إعادة حساب حالة جميع الطلاب =====
+    all_students = db.execute_query("SELECT id FROM students") or []
+    synced = 0
+    for s in all_students:
+        try:
+            sync_student_status(s['id'])
+            synced += 1
+        except Exception:
+            pass
+    cleaned['students_status_synced'] = synced
+    
+    # إلغاء التخزين المؤقت
+    cache_service.invalidate_pattern('dashboard_')
+    cache_service.invalidate_pattern('finance_')
+    
+    return {
+        "success": True,
+        "issues_found": issues,
+        "cleaning_done": cleaned
+    }
