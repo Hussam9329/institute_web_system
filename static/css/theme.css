@@ -645,16 +645,373 @@ html[data-theme="dark"] .alert-stack-container {
 /* =========================
    الجدول الأسبوعي - الدارك
 ========================= */
-html[data-theme="dark"] .ws-card,
-html[data-theme="dark"] .ws-stat-card,
-html[data-theme="dark"] .ws-slot {
+
+/* --- الهيدر --- */
+html[data-theme="dark"] .ws-header-title h4 {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-header-title small {
+    color: var(--app-muted) !important;
+}
+
+/* --- شريط التحكم (الكومبوبوكس + الفلاتر) --- */
+html[data-theme="dark"] .ws-controls {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+    border: 1px solid var(--app-border) !important;
+}
+
+/* كومبوبوكس الفلتر */
+html[data-theme="dark"] select.ws-filter-select {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] select.ws-filter-select:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] select.ws-filter-select:focus {
+    border-color: var(--app-input-focus-border) !important;
+    box-shadow: var(--app-input-focus-shadow) !important;
+}
+html[data-theme="dark"] select.ws-filter-select option {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+
+/* أزرار الغرف (Room Pills) */
+html[data-theme="dark"] .ws-room-pill {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-room-pill:hover {
+    border-color: var(--app-primary) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-room-pill.active {
+    background-color: var(--app-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-room-pill:not(.active) .pill-num {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+
+/* فلاتر النوع (Type Pills) */
+html[data-theme="dark"] .ws-type-pills {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .ws-type-pill {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-type-pill:hover {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-type-pill.active-all {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+/* active-lecture و active-exam تبقى كما هي لأنها ملونة */
+
+/* الفاصل */
+html[data-theme="dark"] .ws-ctrl-divider {
+    background-color: var(--app-border) !important;
+}
+
+/* تبديل العرض (View Toggle) */
+html[data-theme="dark"] .ws-view-toggle {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .ws-view-btn {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-view-btn:hover {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-view-btn.active {
+    background-color: var(--app-surface) !important;
+    color: var(--app-primary) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+}
+
+/* --- بطاقات الإحصائيات --- */
+html[data-theme="dark"] .ws-stat-card {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+    border: 1px solid var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-stat-icon {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .ws-stat-icon.blue {
+    background-color: rgba(59,130,246,0.12) !important;
+    color: #60a5fa !important;
+}
+html[data-theme="dark"] .ws-stat-icon.orange {
+    background-color: rgba(249,115,22,0.12) !important;
+    color: #fb923c !important;
+}
+html[data-theme="dark"] .ws-stat-icon.purple {
+    background-color: rgba(124,58,237,0.12) !important;
+    color: #a78bfa !important;
+}
+html[data-theme="dark"] .ws-stat-icon.green {
+    background-color: rgba(5,150,105,0.12) !important;
+    color: #34d399 !important;
+}
+html[data-theme="dark"] .ws-stat-num {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-stat-label {
+    color: var(--app-muted) !important;
+}
+
+/* --- قسم القاعة --- */
+html[data-theme="dark"] .ws-room-section {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+    border: 1px solid var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-room-section-header {
+    background: linear-gradient(135deg, var(--app-surface-soft), var(--app-surface-soft)) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-room-section-title h5 {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-room-section-title .room-meta {
+    color: var(--app-muted) !important;
+}
+
+/* --- شبكة الجدول --- */
+html[data-theme="dark"] .ws-grid-wrap {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+    border: 1px solid var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-grid th {
+    background-color: var(--app-table-head-bg) !important;
+    color: var(--app-text) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-grid th.ws-time-col {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .ws-grid td {
+    border-color: var(--app-border-light) !important;
+}
+html[data-theme="dark"] .ws-grid td.ws-time-cell {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-muted) !important;
+    border-right-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-grid td.ws-blocked {
+    background: repeating-linear-gradient(45deg, rgba(239,68,68,0.06), rgba(239,68,68,0.06) 4px, rgba(239,68,68,0.12) 4px, rgba(239,68,68,0.12) 8px) !important;
+}
+
+/* --- بطاقات الأحداث في الشبكة --- */
+html[data-theme="dark"] .ws-ev.ws-lec {
+    background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.08)) !important;
+    border-right-color: #3b82f6 !important;
+}
+html[data-theme="dark"] .ws-ev.ws-exm {
+    background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.08)) !important;
+    border-right-color: #f97316 !important;
+}
+html[data-theme="dark"] .ws-lec .ws-ev-subj {
+    color: #93bbfd !important;
+}
+html[data-theme="dark"] .ws-exm .ws-ev-subj {
+    color: #fdba74 !important;
+}
+html[data-theme="dark"] .ws-lec .ws-ev-info {
+    color: #60a5fa !important;
+}
+html[data-theme="dark"] .ws-exm .ws-ev-info {
+    color: #fb923c !important;
+}
+html[data-theme="dark"] .ws-ev .ws-ev-room-tag {
+    background: rgba(136,136,232,0.15) !important;
+    color: var(--app-primary) !important;
+}
+
+/* زر الإضافة في الخلايا الفارغة */
+html[data-theme="dark"] .ws-add-btn {
+    border-color: var(--app-border) !important;
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-add-btn:hover {
+    border-color: var(--app-primary) !important;
+    color: var(--app-primary) !important;
+    background-color: var(--app-primary-soft) !important;
+}
+
+/* --- ترقيم الصفحات --- */
+html[data-theme="dark"] .ws-page-btn {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-page-btn:hover {
+    border-color: var(--app-primary) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-page-btn.active {
+    background-color: var(--app-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-page-info {
+    color: var(--app-muted) !important;
+}
+
+/* --- عرض القائمة --- */
+html[data-theme="dark"] .ws-list-group {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+    border: 1px solid var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-list-group-hd {
+    background-color: var(--app-surface-soft) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-list-group-hd:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+html[data-theme="dark"] .ws-list-group-hd .grp-title {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-list-group-hd .grp-count {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-list-group-hd .grp-chevron {
+    color: var(--app-muted) !important;
+}
+
+/* صف الحدث في القائمة */
+html[data-theme="dark"] .ws-lv {
+    border-color: var(--app-border-light) !important;
+}
+html[data-theme="dark"] .ws-lv:hover {
+    border-color: var(--app-primary) !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.2) !important;
+}
+html[data-theme="dark"] .ws-lv.ws-lv-lec {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.04)) !important;
+    border-right-color: #3b82f6 !important;
+}
+html[data-theme="dark"] .ws-lv.ws-lv-exm {
+    background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(249,115,22,0.04)) !important;
+    border-right-color: #f97316 !important;
+}
+html[data-theme="dark"] .ws-lv .ws-lv-subj {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-lv .ws-lv-meta {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-lv .ws-lv-meta i {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-lv-lec .ws-lv-badge {
+    background: rgba(59,130,246,0.15) !important;
+    color: #60a5fa !important;
+}
+html[data-theme="dark"] .ws-lv-exm .ws-lv-badge {
+    background: rgba(249,115,22,0.15) !important;
+    color: #fb923c !important;
+}
+html[data-theme="dark"] .ws-lv .ws-lv-acts button {
+    background-color: var(--app-surface-soft) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+}
+
+/* --- الحالة الفارغة --- */
+html[data-theme="dark"] .ws-empty {
+    color: var(--app-muted) !important;
+}
+
+/* --- لوحة الغرف --- */
+html[data-theme="dark"] .ws-rooms-panel {
+    background-color: var(--app-surface) !important;
+    box-shadow: var(--app-card-shadow) !important;
+    border: 1px solid var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-rooms-panel h6 {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-rooms-add input {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] .ws-rooms-add input:focus {
+    border-color: var(--app-input-focus-border) !important;
+}
+html[data-theme="dark"] .ws-room-row {
+    background-color: var(--app-surface-soft) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-room-row:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-hover) !important;
+}
+html[data-theme="dark"] .ws-room-row .rr-icon {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-room-row .rr-name {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .ws-room-row .rr-id {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-room-row .rr-cap {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .ws-room-row .rr-acts button {
     background-color: var(--app-surface) !important;
     border-color: var(--app-border) !important;
     color: var(--app-text) !important;
 }
 
-html[data-theme="dark"] .ws-stat-icon {
+/* --- نافذة الحدث (Modal) --- */
+html[data-theme="dark"] .ws-fld-label {
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .ws-evtype-btn {
     background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-evtype-btn:hover {
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .ws-modal .modal-footer {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .ws-modal .modal-footer .btn-secondary {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .ws-modal .modal-footer .btn-secondary:hover {
+    background-color: var(--app-surface-hover) !important;
+}
+
+/* --- عناصر عامة في الجدول الأسبوعي --- */
+html[data-theme="dark"] .ws-card,
+html[data-theme="dark"] .ws-slot {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
 }
 
 html[data-theme="dark"] .ws-day-header {
@@ -876,34 +1233,6 @@ html[data-theme="dark"] .link-teacher-card .tc-type-badge {
 }
 html[data-theme="dark"] .link-teacher-empty {
     color: var(--app-muted) !important;
-}
-
-/* مكونات الجدول الأسبوعي */
-html[data-theme="dark"] .ws-btn-outline {
-    background-color: var(--app-surface) !important;
-    color: var(--app-primary) !important;
-    border-color: var(--app-border) !important;
-}
-html[data-theme="dark"] .ws-btn-outline:hover {
-    border-color: var(--app-primary) !important;
-    background-color: var(--app-surface-soft) !important;
-}
-html[data-theme="dark"] .ws-control-bar {
-    background-color: var(--app-surface) !important;
-    border-color: var(--app-border) !important;
-}
-html[data-theme="dark"] .ws-time-label {
-    color: var(--app-muted) !important;
-}
-html[data-theme="dark"] .ws-schedule-grid {
-    background-color: var(--app-surface) !important;
-    border-color: var(--app-border) !important;
-}
-html[data-theme="dark"] .ws-cell {
-    border-color: var(--app-border) !important;
-}
-html[data-theme="dark"] .ws-stat-icon {
-    background-color: var(--app-surface-soft) !important;
 }
 
 /* صفحة تسجيل الدخول */
