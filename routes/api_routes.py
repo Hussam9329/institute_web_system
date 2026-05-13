@@ -2228,3 +2228,56 @@ async def api_update_user_theme(request: Request, data: ThemeUpdate):
     except Exception as e:
         # لا نعرض خطأ للمستخدم - localStorage يكفي
         return {"success": True, "theme": data.theme}
+
+
+# ===== حذف جميع البيانات (مؤقت) =====
+
+@router.post("/admin/clear-all-data")
+async def api_clear_all_data(request: Request):
+    """حذف جميع بيانات الطلاب والأساتذة والأقساط والمواد - مع الاحتفاظ بالمستخدمين والصلاحيات"""
+    db = Database()
+    
+    try:
+        # عد السجلات قبل الحذف
+        counts = {}
+        for table in ['installments', 'student_teacher', 'teacher_withdrawals', 'weekly_schedule', 'students', 'teachers', 'subjects']:
+            try:
+                result = db.execute_query(f"SELECT COUNT(*) as cnt FROM {table}")
+                counts[table] = result[0]['cnt'] if result else 0
+            except Exception:
+                counts[table] = 'N/A'
+        
+        # حذف البيانات بالترتيب الصحيح (احترام القيود الأجنبية)
+        # 1. حذف الأقساط أولاً (تعتمد على students و teachers)
+        db.execute_query("DELETE FROM installments")
+        # 2. حذف الجدول الأسبوعي (يعتمد على teachers)
+        db.execute_query("DELETE FROM weekly_schedule")
+        # 3. حذف سحوبات المدرسين (تعتمد على teachers)
+        db.execute_query("DELETE FROM teacher_withdrawals")
+        # 4. حذف روابط الطلاب بالمدرسين (تعتمد على students و teachers)
+        db.execute_query("DELETE FROM student_teacher")
+        # 5. حذف الطلاب
+        db.execute_query("DELETE FROM students")
+        # 6. حذف الأساتذة
+        db.execute_query("DELETE FROM teachers")
+        # 7. حذف المواد
+        db.execute_query("DELETE FROM subjects")
+        
+        # إعادة تعيين التسلسلات (SERIAL IDs)
+        for seq_table in ['installments', 'students', 'teachers', 'subjects', 'teacher_withdrawals', 'weekly_schedule']:
+            try:
+                db.execute_query(f"ALTER SEQUENCE IF EXISTS {seq_table}_id_seq RESTART WITH 1")
+            except Exception:
+                pass
+        
+        # إلغاء التخزين المؤقت
+        cache_service.invalidate_pattern('dashboard_')
+        cache_service.invalidate_pattern('finance_')
+        
+        return {
+            "success": True,
+            "message": "تم حذف جميع البيانات بنجاح",
+            "deleted_counts": counts
+        }
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في حذف البيانات: {str(e)}"}
