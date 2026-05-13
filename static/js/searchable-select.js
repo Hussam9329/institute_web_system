@@ -486,14 +486,9 @@
             const event = new Event('change', { bubbles: true });
             this.selectEl.dispatchEvent(event);
 
-            // تنفيذ onchange handler من HTML attribute
-            if (this.onchangeHandler) {
-                try {
-                    new Function('value', this.onchangeHandler)(opt.value);
-                } catch (e) {
-                    console.warn('SearchableSelect onchange error:', e);
-                }
-            }
+            // ملاحظة: تم تعطيل الاستدعاء اليدوي لـ onchangeHandler
+            // لأن dispatchEvent أعلاه ينفّذ onchange الأصلي بالسياق الصحيح
+            // الاستدعاء اليدوي كان يسبب مشكلة this = window مما يحوّل القيمة إلى NaN
 
             // تنفيذ callback مخصّص
             if (this.config.onChange && typeof this.config.onChange === 'function') {
@@ -718,11 +713,8 @@
             const event = new Event('change', { bubbles: true });
             this.selectEl.dispatchEvent(event);
 
-            if (this.onchangeHandler) {
-                try {
-                    new Function('value', this.onchangeHandler)('');
-                } catch (e) { /* silent */ }
-            }
+            // ملاحظة: تم تعطيل الاستدعاء اليدوي لـ onchangeHandler
+            // نفس السبب في _selectOption - dispatchEvent يكفي
 
             if (this.config.onChange && typeof this.config.onChange === 'function') {
                 try {

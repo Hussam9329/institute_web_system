@@ -714,6 +714,40 @@
     display: flex; align-items: center; gap: 6px;
 }
 
+/* Cross-type blocked slots */
+.ws-blocked-cross {
+    position: relative;
+    cursor: not-allowed;
+}
+.ws-blocked-by-exam {
+    background: repeating-linear-gradient(45deg, rgba(249,115,22,0.08), rgba(249,115,22,0.08) 4px, rgba(249,115,22,0.15) 4px, rgba(249,115,22,0.15) 8px);
+}
+.ws-blocked-by-lecture {
+    background: repeating-linear-gradient(45deg, rgba(59,130,246,0.08), rgba(59,130,246,0.08) 4px, rgba(59,130,246,0.15) 4px, rgba(59,130,246,0.15) 8px);
+}
+.ws-cross-block-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    padding: 2px;
+    border-radius: 4px;
+    width: 100%;
+    height: 100%;
+    min-height: 42px;
+}
+.ws-cross-block-label.exam {
+    color: #c2410c;
+    background: rgba(249,115,22,0.10);
+}
+.ws-cross-block-label.lecture {
+    color: #1d4ed8;
+    background: rgba(59,130,246,0.10);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .ws-controls { padding: 10px 12px; gap: 8px; }
@@ -1196,12 +1230,55 @@ function renderCurrentView() {
     }
 }
 
+// ===== HELPER: Does event overlap with a time slot? =====
+function isTimeOverlappingSlot(ev, time) {
+    // Check if event overlaps with the given time slot (not just starts at it)
+    return ev.start_time <= time && ev.end_time > time;
+}
+
+// ===== HELPER: Get slot block info (for cross-type shading) =====
+function getSlotBlockInfo(roomId, day, time) {
+    // Returns info about what's blocking this slot, considering ALL event types
+    const blockingEvents = allSchedule.filter(ev =>
+        ev.room_id === roomId && ev.day_of_week === day && isTimeOverlappingSlot(ev, time)
+    );
+    if (blockingEvents.length === 0) return null;
+
+    // Check if there's an event of the same type as the current filter
+    const sameTypeEvents = blockingEvents.filter(ev => ev.event_type === currentEventTypeFilter);
+    const otherTypeEvents = blockingEvents.filter(ev => ev.event_type !== currentEventTypeFilter);
+
+    if (currentEventTypeFilter === 'all') {
+        // All types visible — just show as occupied
+        return { blocked: true, crossBlock: false };
+    }
+
+    if (sameTypeEvents.length > 0) {
+        // Same type event is here (will be rendered as an event card)
+        return { blocked: true, crossBlock: false };
+    }
+
+    if (otherTypeEvents.length > 0) {
+        // Only other-type events block this slot
+        const otherType = otherTypeEvents[0].event_type;
+        const isExam = otherType === 'امتحان';
+        return {
+            blocked: true,
+            crossBlock: true,
+            cssClass: isExam ? 'ws-blocked-by-exam' : 'ws-blocked-by-lecture',
+            labelClass: isExam ? 'exam' : 'lecture',
+            labelText: isExam ? 'امتحان محجوز' : 'محاضرة محجوزة',
+            title: otherTypeEvents.map(ev => escapeHtml(ev.subject) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time).join('\n')
+        };
+    }
+
+    return null;
+}
+
 // ===== HELPER: Is slot occupied =====
 function isSlotOccupied(roomId, day, time) {
-    return allSchedule.some(ev => {
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
-        return typeMatch && ev.room_id === roomId && ev.day_of_week === day && ev.start_time <= time && ev.end_time > time;
-    });
+    const info = getSlotBlockInfo(roomId, day, time);
+    return info !== null;
 }
 
 // ===== HELPER: Get events at slot for a specific room =====
@@ -1278,9 +1355,17 @@ function buildRoomGridTable(room) {
                 });
                 html += '</td>';
             } else {
-                const isBlocked = isSlotOccupied(room.id, day, time);
-                if (isBlocked) {
-                    html += '<td class="ws-blocked"></td>';
+                const blockInfo = getSlotBlockInfo(room.id, day, time);
+                if (blockInfo) {
+                    if (blockInfo.crossBlock) {
+                        // Slot blocked by other event type — show cross-block label
+                        html += '<td class="ws-blocked-cross ' + blockInfo.cssClass + '" title="' + blockInfo.title + '">';
+                        html += '<div class="ws-cross-block-label ' + blockInfo.labelClass + '">' + blockInfo.labelText + '</div>';
+                        html += '</td>';
+                    } else {
+                        // Same type or all-types — generic blocked
+                        html += '<td class="ws-blocked"></td>';
+                    }
                 } else {
                     html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
                 }

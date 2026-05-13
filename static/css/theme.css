@@ -1180,6 +1180,22 @@ html[data-theme="dark"] .ws-room-row [style*="background: #f0fdf4"] {
     color: #6ee7b7 !important;
 }
 
+/* --- تظليل الأوقات المحجوزة من النوع الآخر (Cross-blocking) --- */
+html[data-theme="dark"] .ws-blocked-by-exam {
+    background: repeating-linear-gradient(45deg, rgba(249,115,22,0.06), rgba(249,115,22,0.06) 4px, rgba(249,115,22,0.12) 4px, rgba(249,115,22,0.12) 8px) !important;
+}
+html[data-theme="dark"] .ws-blocked-by-lecture {
+    background: repeating-linear-gradient(45deg, rgba(59,130,246,0.06), rgba(59,130,246,0.06) 4px, rgba(59,130,246,0.12) 4px, rgba(59,130,246,0.12) 8px) !important;
+}
+html[data-theme="dark"] .ws-cross-block-label.exam {
+    color: #fb923c !important;
+    background: rgba(249,115,22,0.12) !important;
+}
+html[data-theme="dark"] .ws-cross-block-label.lecture {
+    color: #60a5fa !important;
+    background: rgba(59,130,246,0.12) !important;
+}
+
 
 /* =========================
    صفحة الأقساط - الدارك
