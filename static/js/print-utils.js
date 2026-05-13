@@ -237,7 +237,7 @@ const PrintUtils = {
             ${kpiHTML}
             ${filtersHTML}
             ${sectionsHTML}
-            <div class="footer-text">نظام إدارة المعهد - HussamVision</div>
+            <div class="footer-text">نظام إدارة المعهد - Visions</div>
         </div>
     </div>
     <script>

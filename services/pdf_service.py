@@ -148,7 +148,7 @@ class PageNumberCanvas:
 
         # اسم النظام - يمين
         canvas.setFont('Calibri', 6)
-        canvas.drawRightString(x_right, y_line - 5 * mm, "HussamVision")
+        canvas.drawRightString(x_right, y_line - 5 * mm, "Visions")
 
         canvas.restoreState()
 
@@ -1042,7 +1042,7 @@ class PDFService:
         elements.append(HRFlowable(width="35%", thickness=0.5, color=C.DARK, spaceBefore=0, spaceAfter=2))
         elements.append(ar_para("توقيع المسؤول", ParagraphStyle('sig', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.TEXT_SECONDARY, leading=10)))
         elements.append(Spacer(1, SP_XS))
-        elements.append(ar_para("نظام إدارة المعهد || HussamVision", footer_s))
+        elements.append(ar_para("نظام إدارة المعهد || Visions", footer_s))
 
         doc.build(elements)
         return filepath
