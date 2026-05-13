@@ -5,6 +5,18 @@
  */
 
 const PrintUtils = {
+    getActiveSortLabel() {
+        if (typeof window.getActiveSmartSortText === 'function') {
+            const smartSortText = window.getActiveSmartSortText();
+            if (smartSortText) return smartSortText;
+        }
+        const select = document.getElementById('sortBySelect');
+        if (select && select.value) {
+            return select.options[select.selectedIndex]?.text || '';
+        }
+        return '';
+    },
+
     // CSS styles matching base_report.html for consistent professional output
     getReportCSS() {
         return `
@@ -388,11 +400,8 @@ const PrintUtils = {
         if (teacherFilter && teacherFilter.value) filters.push('المدرس: ' + teacherFilter.options[teacherFilter.selectedIndex].text);
         const studyTypeFilter = document.getElementById('filterStudyType')?.value;
         if (studyTypeFilter) filters.push('نوع الدراسة: ' + studyTypeFilter);
-        const sortVal = document.getElementById('sortBySelect')?.value;
-        if (sortVal) {
-            const sortText = document.getElementById('sortBySelect').options[document.getElementById('sortBySelect').selectedIndex].text;
-            filters.push('الترتيب: ' + sortText);
-        }
+        const sortText = this.getActiveSortLabel();
+        if (sortText) filters.push('الترتيب: ' + sortText);
 
         this.openReport({
             title: 'تقرير الطلاب',
@@ -478,11 +487,8 @@ const PrintUtils = {
         if (searchVal) filters.push('بحث: ' + searchVal);
         const subjectFilter = document.querySelector('select[name="subject"]');
         if (subjectFilter && subjectFilter.value) filters.push('المادة: ' + subjectFilter.options[subjectFilter.selectedIndex].text);
-        const sortVal = document.getElementById('sortBySelect')?.value;
-        if (sortVal) {
-            const sortText = document.getElementById('sortBySelect').options[document.getElementById('sortBySelect').selectedIndex].text;
-            filters.push('الترتيب: ' + sortText);
-        }
+        const sortText = this.getActiveSortLabel();
+        if (sortText) filters.push('الترتيب: ' + sortText);
 
         this.openReport({
             title: 'تقرير المدرسين الشامل',
@@ -536,11 +542,8 @@ const PrintUtils = {
         const filters = [];
         const searchVal = document.getElementById('subjectLiveSearch')?.value;
         if (searchVal) filters.push('بحث: ' + searchVal);
-        const sortVal = document.getElementById('sortBySelect')?.value;
-        if (sortVal) {
-            const sortText = document.getElementById('sortBySelect').options[document.getElementById('sortBySelect').selectedIndex].text;
-            filters.push('الترتيب: ' + sortText);
-        }
+        const sortText = this.getActiveSortLabel();
+        if (sortText) filters.push('الترتيب: ' + sortText);
 
         this.openReport({
             title: 'تقرير المواد الدراسية',
@@ -622,11 +625,8 @@ const PrintUtils = {
                 }
             }
         });
-        const sortVal = document.getElementById('sortBySelect')?.value;
-        if (sortVal) {
-            const sortText = document.getElementById('sortBySelect').options[document.getElementById('sortBySelect').selectedIndex].text;
-            filters.push('الترتيب: ' + sortText);
-        }
+        const sortText = this.getActiveSortLabel();
+        if (sortText) filters.push('الترتيب: ' + sortText);
 
         // Collect financial summary stats from the page header cards
         const summaryCards = document.querySelectorAll('.bg-gradient-emerald, .bg-gradient-blue, .bg-gradient-purple');
@@ -703,11 +703,8 @@ const PrintUtils = {
         const dateTo = document.getElementById('w_filter_date_to')?.value;
         if (dateFrom) filters.push('من: ' + dateFrom);
         if (dateTo) filters.push('إلى: ' + dateTo);
-        const sortVal = document.getElementById('sortBySelect')?.value;
-        if (sortVal) {
-            const sortText = document.getElementById('sortBySelect').options[document.getElementById('sortBySelect').selectedIndex].text;
-            filters.push('الترتيب: ' + sortText);
-        }
+        const sortText = this.getActiveSortLabel();
+        if (sortText) filters.push('الترتيب: ' + sortText);
 
         this.openReport({
             title: 'تقرير السحوبات',
@@ -797,11 +794,8 @@ const PrintUtils = {
         const dateTo = document.getElementById('acc_filter_date_to')?.value;
         if (dateFrom) filters.push('من: ' + dateFrom);
         if (dateTo) filters.push('إلى: ' + dateTo);
-        const sortVal = document.getElementById('sortBySelect')?.value;
-        if (sortVal) {
-            const sortText = document.getElementById('sortBySelect').options[document.getElementById('sortBySelect').selectedIndex].text;
-            filters.push('الترتيب: ' + sortText);
-        }
+        const sortText = this.getActiveSortLabel();
+        if (sortText) filters.push('الترتيب: ' + sortText);
 
         this.openReport({
             title: 'تقرير محاسبة المدرسين الشامل',

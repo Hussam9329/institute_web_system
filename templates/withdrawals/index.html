@@ -56,16 +56,17 @@
             <p class="text-muted mb-0 small">إدارة جميع سحوبات المدرسين</p>
         </div>
         <div class="d-flex gap-2 align-items-center flex-wrap">
-            <div class="sort-by-wrapper">
-                <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
-                <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
-                    <option value="date-desc">التاريخ (الأحدث)</option>
-                    <option value="date-asc">التاريخ (الأقدم)</option>
-                    <option value="name-asc">المدرس (أ-ي)</option>
-                    <option value="name-desc">المدرس (ي-أ)</option>
-                    <option value="amount-desc">المبلغ (الأعلى)</option>
-                    <option value="amount-asc">المبلغ (الأقل)</option>
-                </select>
+            <div class="smart-sort-toolbar" aria-label="ترتيب السحوبات" data-current-sort="date-desc">
+                <span class="smart-sort-title"><i class="fas fa-wand-magic-sparkles me-1"></i>ترتيب ذكي</span>
+                <button type="button" class="smart-sort-chip active" data-sort-cycle="date-desc,date-asc" onclick="applySmartSort(this)">
+                    <i class="fas fa-calendar-day"></i><span>التاريخ</span>
+                </button>
+                <button type="button" class="smart-sort-chip" data-sort-cycle="name-asc,name-desc" onclick="applySmartSort(this)">
+                    <i class="fas fa-arrow-down-a-z"></i><span>المدرس</span>
+                </button>
+                <button type="button" class="smart-sort-chip" data-sort-cycle="amount-desc,amount-asc" onclick="applySmartSort(this)">
+                    <i class="fas fa-money-bill-wave"></i><span>المبلغ</span>
+                </button>
             </div>
             <button class="btn btn-outline-info btn-sm" onclick="PrintUtils.printWithdrawals()" title="طباعة القائمة">
                 <i class="fas fa-print me-1"></i><span class="d-none d-sm-inline">طباعة</span>

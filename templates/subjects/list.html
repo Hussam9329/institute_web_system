@@ -38,14 +38,14 @@
             <p class="text-muted mb-0 small">{{ subjects|length }} مادة</p>
         </div>
         <div class="d-flex gap-2 align-items-center flex-wrap">
-            <div class="sort-by-wrapper">
-                <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
-                <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
-                    <option value="name-asc">الاسم (أ-ي)</option>
-                    <option value="name-desc">الاسم (ي-أ)</option>
-                    <option value="teachers-desc">عدد المدرسين (الأعلى)</option>
-                    <option value="teachers-asc">عدد المدرسين (الأقل)</option>
-                </select>
+            <div class="smart-sort-toolbar" aria-label="ترتيب المواد" data-current-sort="name-asc">
+                <span class="smart-sort-title"><i class="fas fa-wand-magic-sparkles me-1"></i>ترتيب ذكي</span>
+                <button type="button" class="smart-sort-chip active" data-sort-cycle="name-asc,name-desc" onclick="applySmartSort(this)">
+                    <i class="fas fa-arrow-down-a-z"></i><span>الأبجدية</span>
+                </button>
+                <button type="button" class="smart-sort-chip" data-sort-cycle="teachers-desc,teachers-asc" onclick="applySmartSort(this)">
+                    <i class="fas fa-chalkboard-teacher"></i><span>عدد المدرسين</span>
+                </button>
             </div>
             <div class="btn-group btn-group-sm view-toggle-group" role="group">
                 <button type="button" class="btn btn-outline-primary active" onclick="switchView('table', this)" title="عرض جدول">

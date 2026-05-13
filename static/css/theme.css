@@ -3001,3 +3001,21 @@ html[data-theme="dark"] .popover-header {
 html[data-theme="dark"] .popover-body {
     color: var(--app-text) !important;
 }
+
+/* Smart Sort Toolbar - dark theme */
+html[data-theme="dark"] .smart-sort-toolbar {
+    border-color: rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.72);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+html[data-theme="dark"] .smart-sort-title,
+html[data-theme="dark"] .smart-sort-chip {
+    color: var(--app-text-secondary, #cbd5e1);
+}
+html[data-theme="dark"] .smart-sort-chip:hover {
+    background: rgba(96, 165, 250, 0.14);
+    color: #bfdbfe;
+}
+html[data-theme="dark"] .smart-sort-chip.active {
+    color: #fff;
+}

@@ -127,3 +127,95 @@ document.addEventListener('submit', function(event) {
 });
 
 
+// ===== Smart Sort Toolbar =====
+(function () {
+    function getSortDirection(sortKey) {
+        const parts = String(sortKey || '').split('-');
+        return parts[1] || 'asc';
+    }
+
+    function decorateSmartSortChip(chip, sortKey) {
+        if (!chip) return;
+        const direction = getSortDirection(sortKey || chip.dataset.sortCycle?.split(',')[0]);
+        chip.dataset.activeDirection = direction;
+
+        let icon = chip.querySelector('.sort-direction-icon');
+        if (!icon) {
+            icon = document.createElement('i');
+            icon.className = 'fas fa-arrow-down sort-direction-icon';
+            chip.appendChild(icon);
+        }
+        icon.title = direction === 'asc' ? 'تصاعدي' : 'تنازلي';
+    }
+
+    function animateSortedLists(toolbar) {
+        const containers = [
+            document.querySelector('tbody'),
+            document.getElementById('studentCards'),
+            document.getElementById('teacherCards'),
+            document.getElementById('subjectCards'),
+            document.getElementById('paymentCards'),
+            document.getElementById('accountingCards'),
+            document.getElementById('withdrawalCards')
+        ].filter(Boolean);
+
+        toolbar?.classList.add('sorting');
+        containers.forEach(el => {
+            el.classList.remove('sort-animating');
+            void el.offsetWidth;
+            el.classList.add('sort-animating');
+        });
+        window.setTimeout(() => toolbar?.classList.remove('sorting'), 180);
+    }
+
+    window.applySmartSort = function (button) {
+        const toolbar = button?.closest('.smart-sort-toolbar');
+        if (!toolbar) return;
+
+        const cycle = (button.dataset.sortCycle || '').split(',').map(v => v.trim()).filter(Boolean);
+        if (!cycle.length) return;
+
+        const currentSort = toolbar.dataset.currentSort || cycle[0];
+        const isActive = button.classList.contains('active');
+        let nextSort = cycle[0];
+
+        if (isActive) {
+            const currentIndex = cycle.indexOf(currentSort);
+            nextSort = cycle[(currentIndex + 1) % cycle.length] || cycle[0];
+        }
+
+        toolbar.dataset.currentSort = nextSort;
+        toolbar.querySelectorAll('.smart-sort-chip').forEach(chip => {
+            chip.classList.toggle('active', chip === button);
+            decorateSmartSortChip(chip, chip === button ? nextSort : chip.dataset.sortCycle?.split(',')[0]);
+        });
+
+        if (typeof window.applySorting === 'function') {
+            window.applySorting(nextSort);
+            animateSortedLists(toolbar);
+        }
+    };
+
+    window.getActiveSmartSortText = function () {
+        const active = document.querySelector('.smart-sort-toolbar .smart-sort-chip.active');
+        if (!active) return '';
+        const direction = getSortDirection(active.closest('.smart-sort-toolbar')?.dataset.currentSort || active.dataset.sortCycle);
+        const label = active.innerText.replace(/[\n\r]+/g, ' ').trim();
+        return label + (direction === 'asc' ? ' تصاعدي' : ' تنازلي');
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.smart-sort-toolbar').forEach(toolbar => {
+            const active = toolbar.querySelector('.smart-sort-chip.active') || toolbar.querySelector('.smart-sort-chip');
+            if (!active) return;
+            const initialSort = toolbar.dataset.currentSort || active.dataset.sortCycle?.split(',')[0];
+            toolbar.dataset.currentSort = initialSort;
+            toolbar.querySelectorAll('.smart-sort-chip').forEach(chip => {
+                decorateSmartSortChip(chip, chip === active ? initialSort : chip.dataset.sortCycle?.split(',')[0]);
+            });
+            if (typeof window.applySorting === 'function' && initialSort) {
+                window.applySorting(initialSort);
+            }
+        });
+    });
+})();

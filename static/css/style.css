@@ -3167,3 +3167,96 @@ textarea:focus-visible {
     .table th, .table td { padding: 0.5rem; }
     .stat-card { break-inside: avoid; page-break-inside: avoid; }
 }
+
+/* --- Smart Sort Toolbar: بديل احترافي للقائمة المنسدلة القديمة --- */
+.smart-sort-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 5px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.055);
+    backdrop-filter: blur(10px);
+}
+
+.smart-sort-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px 0 4px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+}
+
+.smart-sort-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 30px;
+    padding: 6px 11px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted, #64748b);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+}
+
+.smart-sort-chip:hover {
+    transform: translateY(-1px);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--primary-color, #2563eb);
+}
+
+.smart-sort-chip.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary-color, #2563eb), var(--accent-color, #0ea5e9));
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+}
+
+.smart-sort-chip .sort-direction-icon {
+    font-size: 9px;
+    opacity: .9;
+    transition: transform .18s ease;
+}
+
+.smart-sort-chip[data-active-direction="asc"] .sort-direction-icon {
+    transform: rotate(180deg);
+}
+
+.smart-sort-toolbar.sorting .smart-sort-chip.active {
+    transform: scale(.98);
+}
+
+.sort-animating {
+    animation: smartSortFade .22s ease;
+}
+
+@keyframes smartSortFade {
+    from { opacity: .62; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .smart-sort-toolbar {
+        width: 100%;
+        border-radius: 18px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .smart-sort-toolbar::-webkit-scrollbar { display: none; }
+    .smart-sort-chip { flex: 0 0 auto; }
+}

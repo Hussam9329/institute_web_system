@@ -30,17 +30,23 @@
             <h4 class="fw-bold mb-1 text-gradient-blue"><i class="fas fa-calculator me-2"></i>محاسبة المدرسين</h4>
             <p class="text-muted mb-0 small">ملخص مالي شامل لجميع المدرسين</p>
         </div>
-        <div class="sort-by-wrapper">
-            <span class="sort-by-label"><i class="fas fa-sort-amount-down me-1"></i>ترتيب:</span>
-            <select class="sort-by-select" id="sortBySelect" onchange="applySorting(this.value)">
-                <option value="name-asc">الاسم (أ-ي)</option>
-                <option value="name-desc">الاسم (ي-أ)</option>
-                <option value="subject-asc">المادة</option>
-                <option value="remaining-desc">المتبقي (الأعلى)</option>
-                <option value="remaining-asc">المتبقي (الأقل)</option>
-                <option value="received-desc">المدفوع (الأعلى)</option>
-                <option value="students-desc">عدد الطلاب (الأعلى)</option>
-            </select>
+        <div class="smart-sort-toolbar" aria-label="ترتيب محاسبة المدرسين" data-current-sort="name-asc">
+            <span class="smart-sort-title"><i class="fas fa-wand-magic-sparkles me-1"></i>ترتيب ذكي</span>
+            <button type="button" class="smart-sort-chip active" data-sort-cycle="name-asc,name-desc" onclick="applySmartSort(this)">
+                <i class="fas fa-arrow-down-a-z"></i><span>الأبجدية</span>
+            </button>
+            <button type="button" class="smart-sort-chip" data-sort-cycle="subject-asc,subject-desc" onclick="applySmartSort(this)">
+                <i class="fas fa-book"></i><span>المادة</span>
+            </button>
+            <button type="button" class="smart-sort-chip" data-sort-cycle="remaining-desc,remaining-asc" onclick="applySmartSort(this)">
+                <i class="fas fa-wallet"></i><span>المتبقي</span>
+            </button>
+            <button type="button" class="smart-sort-chip" data-sort-cycle="received-desc,received-asc" onclick="applySmartSort(this)">
+                <i class="fas fa-hand-holding-dollar"></i><span>المدفوع</span>
+            </button>
+            <button type="button" class="smart-sort-chip" data-sort-cycle="students-desc,students-asc" onclick="applySmartSort(this)">
+                <i class="fas fa-users"></i><span>الطلاب</span>
+            </button>
         </div>
         <button class="btn btn-outline-info btn-sm" onclick="PrintUtils.printAccounting()" title="طباعة القائمة">
             <i class="fas fa-print me-1"></i><span class="d-none d-sm-inline">طباعة</span>
