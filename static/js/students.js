@@ -136,7 +136,7 @@ async function viewInstallments(studentId, teacherId) {
             <h6 class="mb-3">إجمالي المدفوع: <strong class="text-success">${formatCurrency(result.total_paid)}</strong></h6>
             <div class="table-responsive">
                 <table class="table table-sm table-bordered">
-                    <thead class="table-light">
+                    <thead class="table-dark">
                         <tr>
                             <th>#</th>
                             <th>المبلغ</th>

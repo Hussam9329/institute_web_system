@@ -102,6 +102,9 @@
     --bg-balance-ok: #f0fdf4;
     --border-balance-ok: #bbf7d0;
     --text-balance-ok: #166534;
+    --bg-balance-partial: #fffbeb;
+    --border-balance-partial: #fbbf24;
+    --text-balance-partial: #92400e;
     --bg-tag-amber: #fffbeb;
     --border-tag-amber: #fbbf24;
 }
