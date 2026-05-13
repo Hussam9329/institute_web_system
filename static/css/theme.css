@@ -1027,6 +1027,191 @@ html[data-theme="dark"] .ws-empty-slot {
 
 
 /* =========================
+   صفحة الأقساط - الدارك
+========================= */
+
+/* حاوية أزرار المدرسين */
+html[data-theme="dark"] .pay-teacher-buttons {
+    background-color: var(--app-surface-soft) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .pay-teacher-buttons:has(.pay-teacher-btn) {
+    background-color: var(--app-surface-soft) !important;
+    border-color: var(--app-primary) !important;
+}
+
+/* أزرار المدرسين */
+html[data-theme="dark"] .pay-teacher-btn {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .pay-teacher-btn:hover {
+    background-color: var(--app-surface-hover) !important;
+    border-color: var(--app-primary) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-subj {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-badge {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-badge.badge-remain {
+    background-color: rgba(239,68,68,0.12) !important;
+    color: #fca5a5 !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-badge.badge-done {
+    background-color: rgba(16,185,129,0.12) !important;
+    color: #6ee7b7 !important;
+}
+
+/* عنوان قسم الدفع */
+html[data-theme="dark"] .pay-section-title {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .pay-field-label {
+    color: var(--app-text-secondary) !important;
+}
+
+/* كومبوبوكس الترتيب في صفحة الأقساط */
+html[data-theme="dark"] select.sort-by-select {
+    background-color: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+html[data-theme="dark"] select.sort-by-select:hover {
+    border-color: var(--app-primary) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] select.sort-by-select:focus {
+    border-color: var(--app-input-focus-border) !important;
+    box-shadow: var(--app-input-focus-shadow) !important;
+}
+html[data-theme="dark"] select.sort-by-select option {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .sort-by-label {
+    color: var(--app-text-secondary) !important;
+}
+
+/* لوحة الفلترة في صفحة الأقساط */
+html[data-theme="dark"] .alert-light {
+    background-color: var(--app-surface-soft) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* تبديل العرض */
+html[data-theme="dark"] .view-toggle-group .btn-outline-primary {
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .view-toggle-group .btn-outline-primary.active {
+    background-color: var(--app-primary) !important;
+    color: #ffffff !important;
+    border-color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .view-toggle-group .btn-outline-primary:hover {
+    border-color: var(--app-primary) !important;
+    color: var(--app-primary) !important;
+}
+
+/* placeholders في صفحة الأقساط */
+html[data-theme="dark"] .pay-teacher-placeholder {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] .pay-teacher-empty {
+    color: var(--app-muted) !important;
+}
+
+/* badge تحذير في الدارك */
+html[data-theme="dark"] .badge.bg-warning {
+    background-color: rgba(251, 191, 36, 0.15) !important;
+    color: #fde68a !important;
+}
+
+/* بطاقات الإحصائيات في صفحة الأقساط */
+html[data-theme="dark"] .bg-gradient-emerald {
+    background: linear-gradient(135deg, #065f46, #059669) !important;
+}
+html[data-theme="dark"] .bg-gradient-blue {
+    background: linear-gradient(135deg, #1e3a5f, #2563eb) !important;
+}
+html[data-theme="dark"] .bg-gradient-purple {
+    background: linear-gradient(135deg, #3b1f6e, #7c3aed) !important;
+}
+
+
+/* =========================
+   إصلاح اللون الأبيض المشع في الدارك
+========================= */
+
+/* منع الخلفية البيضاء الصلبة على العناصر في الوضع الليلي */
+html[data-theme="dark"] .card-body {
+    background-color: transparent !important;
+}
+
+html[data-theme="dark"] .card-header.bg-white,
+html[data-theme="dark"] .card-header[style*="background: white"],
+html[data-theme="dark"] .card-header[style*="background: #fff"],
+html[data-theme="dark"] .card-header[style*="background:#fff"] {
+    background-color: var(--app-surface-soft) !important;
+    border-bottom-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+}
+
+/* إصلاح أزرار المدرسين الديناميكية (JavaScript) */
+html[data-theme="dark"] .pay-teacher-btn .t-badge[style*="background:#eef2ff"] {
+    background-color: var(--app-primary-soft) !important;
+    color: var(--app-primary) !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-badge[style*="background:#dcfce7"] {
+    background-color: rgba(16,185,129,0.12) !important;
+    color: #6ee7b7 !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-badge[style*="background:#fef3c7"] {
+    background-color: rgba(251,191,36,0.12) !important;
+    color: #fde68a !important;
+}
+html[data-theme="dark"] .pay-teacher-btn .t-badge[style*="background:#dbeafe"] {
+    background-color: rgba(59,130,246,0.12) !important;
+    color: #93c5fd !important;
+}
+
+/* إصلاح الخلفيات الدافئة inline styles */
+html[data-theme="dark"] [style*="background: #fffdf7"],
+html[data-theme="dark"] [style*="background:#fffdf7"] {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] [style*="background: #fff8ed"],
+html[data-theme="dark"] [style*="background:#fff8ed"] {
+    background-color: var(--app-surface-hover) !important;
+}
+
+/* إصلاح ألوان النصوص الداكنة inline في صفحة الأقساط */
+html[data-theme="dark"] [style*="color: #333"],
+html[data-theme="dark"] [style*="color:#333"] {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] [style*="color: #666"],
+html[data-theme="dark"] [style*="color:#666"] {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] [style*="color: #888"],
+html[data-theme="dark"] [style*="color:#888"] {
+    color: var(--app-muted) !important;
+}
+html[data-theme="dark"] [style*="color: #999"],
+html[data-theme="dark"] [style*="color:#999"] {
+    color: var(--app-muted) !important;
+}
+
+
+/* =========================
    صفحة تسجيل الدخول - الدارك
 ========================= */
 html[data-theme="dark"] .login-card {
