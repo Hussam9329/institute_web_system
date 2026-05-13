@@ -11,6 +11,7 @@ from typing import List, Dict, Any, Optional
 import logging
 from database import Database
 from config import format_currency
+from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class FinanceService:
         
         # استعلام واحد يجمع بيانات المدرس والربط والمدفوعات
         query = '''
-            SELECT t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+            SELECT t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings,
                    st.study_type, st.discount_type, st.discount_value, st.institute_waiver,
                    COALESCE(i.paid, 0) as paid_total
             FROM teachers t
@@ -112,14 +113,7 @@ class FinanceService:
         }
         
         # تحديد القسط حسب نوع الدراسة
-        if study_type == 'الكتروني' and r.get('fee_electronic', 0) > 0:
-            original_fee = r['fee_electronic']
-        elif study_type == 'مدمج' and r.get('fee_blended', 0) > 0:
-            original_fee = r['fee_blended']
-        elif study_type == 'حضوري' and r.get('fee_in_person', 0) > 0:
-            original_fee = r['fee_in_person']
-        else:
-            original_fee = r['total_fee']
+        original_fee = self._get_fee_for_study_type(r, study_type)
         
         effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
         paid_total = r['paid_total']
@@ -154,7 +148,7 @@ class FinanceService:
         query = f'''
             SELECT st.student_id, st.teacher_id, st.study_type,
                    st.discount_type, st.discount_value, st.institute_waiver,
-                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings,
                    COALESCE(i.paid, 0) as paid_total
             FROM student_teacher st
             INNER JOIN teachers t ON t.id = st.teacher_id
@@ -174,7 +168,7 @@ class FinanceService:
                 query2 = f'''
                     SELECT st.student_id, st.teacher_id, st.study_type,
                            st.discount_type, st.discount_value, st.institute_waiver,
-                           t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended
+                           t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings
                     FROM student_teacher st
                     INNER JOIN teachers t ON t.id = st.teacher_id
                     WHERE st.student_id IN ({placeholders}) AND st.status = 'مستمر'
@@ -216,14 +210,7 @@ class FinanceService:
             }
             
             # تحديد القسط حسب نوع الدراسة
-            if study_type == 'الكتروني' and r.get('fee_electronic', 0) > 0:
-                original_fee = r['fee_electronic']
-            elif study_type == 'مدمج' and r.get('fee_blended', 0) > 0:
-                original_fee = r['fee_blended']
-            elif study_type == 'حضوري' and r.get('fee_in_person', 0) > 0:
-                original_fee = r['fee_in_person']
-            else:
-                original_fee = r['total_fee']
+            original_fee = self._get_fee_for_study_type(r, study_type)
             
             effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
             paid = r['paid_total']
@@ -243,7 +230,7 @@ class FinanceService:
         query = '''
             SELECT t.id, t.name, t.subject, t.total_fee, st.study_type as study_type, st.status as link_status,
                    st.discount_type, st.discount_value, st.institute_waiver, st.discount_notes,
-                   t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings,
                    COALESCE(i.paid, 0) as paid_total
             FROM teachers t
             INNER JOIN student_teacher st ON t.id = st.teacher_id
@@ -263,7 +250,7 @@ class FinanceService:
             query2 = '''
                 SELECT t.id, t.name, t.subject, t.total_fee, st.study_type as study_type, st.status as link_status,
                        st.discount_type, st.discount_value, st.institute_waiver, st.discount_notes,
-                       t.fee_in_person, t.fee_electronic, t.fee_blended
+                       t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings
                 FROM teachers t
                 INNER JOIN student_teacher st ON t.id = st.teacher_id
                 WHERE st.student_id = %s
@@ -284,14 +271,7 @@ class FinanceService:
                 'discount_notes': teacher.get('discount_notes', '') or '',
             }
             
-            if study_type == 'الكتروني' and teacher.get('fee_electronic', 0) > 0:
-                original_fee = teacher['fee_electronic']
-            elif study_type == 'مدمج' and teacher.get('fee_blended', 0) > 0:
-                original_fee = teacher['fee_blended']
-            elif study_type == 'حضوري' and teacher.get('fee_in_person', 0) > 0:
-                original_fee = teacher['fee_in_person']
-            else:
-                original_fee = teacher['total_fee']
+            original_fee = self._get_fee_for_study_type(teacher, study_type)
             
             effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
             paid_total = teacher['paid_total']
@@ -358,7 +338,7 @@ class FinanceService:
                    institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
                    inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
                    inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
-                   teaching_types
+                   teaching_types, custom_type_settings
             FROM teachers WHERE id = %s
         '''
         result = db.execute_query(query, (teacher_id,))
@@ -548,42 +528,22 @@ class FinanceService:
         return result
     
     def _get_deduction_for_study_type(self, teacher_data: dict, study_type: str) -> tuple:
-        """إرجاع (نوع الخصم, القيمة) حسب نوع الدراسة"""
-        type_map = {
-            'حضوري': ('in_person', 'pct_in_person', 'ded_type_in_person', 'ded_manual_in_person'),
-            'الكتروني': ('electronic', 'pct_electronic', 'ded_type_electronic', 'ded_manual_electronic'),
-            'مدمج': ('blended', 'pct_blended', 'ded_type_blended', 'ded_manual_blended'),
-        }
-
-        keys = type_map.get(study_type, type_map['حضوري'])
-        ded_type = teacher_data.get('inst_' + keys[2]) or 'percentage'
-
-        fallback_pct = teacher_data.get('institute_deduction_value', 0) or 0
-
-        if ded_type == 'manual':
-            manual_val = teacher_data.get('inst_' + keys[3]) or 0
-            if manual_val > 0:
-                return ('manual', manual_val)
+        """إرجاع (نوع الخصم, القيمة) حسب نوع الدراسة - يدعم الأنواع المخصصة"""
+        ded_type, ded_value = get_deduction_for_study_type(teacher_data, study_type)
+        # Fallback إلى إعداد خصم المعهد العام إذا لم يوجد خصم خاص بالنوع
+        if ded_value <= 0:
+            fallback_pct = teacher_data.get('institute_deduction_value', 0) or 0
             if fallback_pct > 0:
                 return ('percentage', fallback_pct)
-            return ('manual', 0)
-        else:
-            pct_val = teacher_data.get('institute_' + keys[1]) or 0
-            if pct_val > 0:
-                return ('percentage', pct_val)
-            if fallback_pct > 0:
-                return ('percentage', fallback_pct)
-            return ('percentage', 0)
+        return (ded_type, ded_value)
     
     def _get_fee_for_study_type(self, teacher_data: dict, study_type: str) -> int:
-        """إرجاع القسط الكلي حسب نوع الدراسة"""
-        if study_type == 'الكتروني' and teacher_data.get('fee_electronic', 0) > 0:
-            return teacher_data['fee_electronic']
-        elif study_type == 'مدمج' and teacher_data.get('fee_blended', 0) > 0:
-            return teacher_data['fee_blended']
-        elif study_type == 'حضوري' and teacher_data.get('fee_in_person', 0) > 0:
-            return teacher_data['fee_in_person']
-        return teacher_data.get('total_fee', 0)
+        """إرجاع القسط الكلي حسب نوع الدراسة - يدعم الأنواع المخصصة"""
+        fee = get_fee_for_study_type(teacher_data, study_type)
+        # Fallback إلى total_fee فقط للأنواع الأساسية ذات القسط صفر
+        if fee <= 0 and study_type in ('حضوري', 'الكتروني', 'مدمج'):
+            return teacher_data.get('total_fee', 0)
+        return fee
     
     def calculate_teacher_due(self, teacher_id: int) -> Dict[str, Any]:
         """حساب مستحق المدرس بعد خصم المعهد"""
@@ -677,7 +637,7 @@ class FinanceService:
         query = '''
             SELECT s.id, s.name, st.study_type as study_type, st.status as status, s.barcode,
                    st.discount_type, st.discount_value, st.institute_waiver,
-                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings,
                    COALESCE(i.paid, 0) as paid_total
             FROM students s
             INNER JOIN student_teacher st ON s.id = st.student_id
@@ -698,7 +658,7 @@ class FinanceService:
             query2 = '''
                 SELECT s.id, s.name, st.study_type as study_type, st.status as status, s.barcode,
                        st.discount_type, st.discount_value, st.institute_waiver,
-                       t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended
+                       t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings
                 FROM students s
                 INNER JOIN student_teacher st ON s.id = st.student_id
                 INNER JOIN teachers t ON t.id = st.teacher_id
@@ -718,14 +678,7 @@ class FinanceService:
                 'institute_waiver': student.get('institute_waiver', 0) or 0,
             }
             
-            if study_type == 'الكتروني' and student.get('fee_electronic', 0) > 0:
-                original_fee = student['fee_electronic']
-            elif study_type == 'مدمج' and student.get('fee_blended', 0) > 0:
-                original_fee = student['fee_blended']
-            elif study_type == 'حضوري' and student.get('fee_in_person', 0) > 0:
-                original_fee = student['fee_in_person']
-            else:
-                original_fee = student['total_fee']
+            original_fee = self._get_fee_for_study_type(student, study_type)
             
             effective_fee = self._apply_discount_to_fee(original_fee, discount_info)
             paid = student['paid_total']
@@ -759,43 +712,13 @@ class FinanceService:
         db = self.db
         placeholders = ','.join(['%s'] * len(teacher_ids))
         
-        # استعلام يحسب القسط الفعلي لكل رابط طالب-مدرس للمدرسين المحددين
+        # جلب بيانات الروابط مع بيانات المدرسين وحساب القسط الفعلي في Python
+        # هذا يدعم الأنواع الأساسية والمخصصة
         query = f'''
-            SELECT st.teacher_id,
-                   CASE
-                       WHEN st.study_type = 'الكتروني' AND t.fee_electronic > 0 THEN
-                           CASE st.discount_type
-                               WHEN 'free' THEN 0
-                               WHEN 'percentage' THEN GREATEST(0, t.fee_electronic - ROUND(t.fee_electronic * COALESCE(st.discount_value, 0) / 100))
-                               WHEN 'fixed' THEN GREATEST(0, t.fee_electronic - COALESCE(st.discount_value, 0))
-                               WHEN 'custom' THEN GREATEST(0, t.fee_electronic - ROUND(t.fee_electronic * COALESCE(st.discount_value, 0) / 100))
-                               ELSE t.fee_electronic
-                           END
-                       WHEN st.study_type = 'مدمج' AND t.fee_blended > 0 THEN
-                           CASE st.discount_type
-                               WHEN 'free' THEN 0
-                               WHEN 'percentage' THEN GREATEST(0, t.fee_blended - ROUND(t.fee_blended * COALESCE(st.discount_value, 0) / 100))
-                               WHEN 'fixed' THEN GREATEST(0, t.fee_blended - COALESCE(st.discount_value, 0))
-                               WHEN 'custom' THEN GREATEST(0, t.fee_blended - ROUND(t.fee_blended * COALESCE(st.discount_value, 0) / 100))
-                               ELSE t.fee_blended
-                           END
-                       WHEN st.study_type = 'حضوري' AND t.fee_in_person > 0 THEN
-                           CASE st.discount_type
-                               WHEN 'free' THEN 0
-                               WHEN 'percentage' THEN GREATEST(0, t.fee_in_person - ROUND(t.fee_in_person * COALESCE(st.discount_value, 0) / 100))
-                               WHEN 'fixed' THEN GREATEST(0, t.fee_in_person - COALESCE(st.discount_value, 0))
-                               WHEN 'custom' THEN GREATEST(0, t.fee_in_person - ROUND(t.fee_in_person * COALESCE(st.discount_value, 0) / 100))
-                               ELSE t.fee_in_person
-                           END
-                       ELSE
-                           CASE st.discount_type
-                               WHEN 'free' THEN 0
-                               WHEN 'percentage' THEN GREATEST(0, t.total_fee - ROUND(t.total_fee * COALESCE(st.discount_value, 0) / 100))
-                               WHEN 'fixed' THEN GREATEST(0, t.total_fee - COALESCE(st.discount_value, 0))
-                               WHEN 'custom' THEN GREATEST(0, t.total_fee - ROUND(t.total_fee * COALESCE(st.discount_value, 0) / 100))
-                               ELSE t.total_fee
-                           END
-                   END as effective_fee
+            SELECT st.teacher_id, st.study_type,
+                   st.discount_type, st.discount_value, st.institute_waiver,
+                   t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
+                   t.custom_type_settings
             FROM student_teacher st
             INNER JOIN teachers t ON t.id = st.teacher_id
             WHERE st.teacher_id IN ({placeholders}) AND st.status = 'مستمر'
@@ -806,9 +729,21 @@ class FinanceService:
             fees_map = {}
             for r in results:
                 tid = r['teacher_id']
+                study_type = r.get('study_type', 'حضوري') or 'حضوري'
+                discount_info = {
+                    'discount_type': r.get('discount_type', 'none') or 'none',
+                    'discount_value': r.get('discount_value', 0) or 0,
+                    'institute_waiver': r.get('institute_waiver', 0) or 0,
+                }
+                fee = self._get_fee_for_study_type(r, study_type)
+                effective_fee = self._apply_discount_to_fee(fee, discount_info)
                 if tid not in fees_map:
                     fees_map[tid] = 0
-                fees_map[tid] += r['effective_fee']
+                fees_map[tid] += effective_fee
+            # ضمان وجود قيمة لكل مدرس
+            for tid in teacher_ids:
+                if tid not in fees_map:
+                    fees_map[tid] = 0
             return fees_map
         except Exception as e:
             logger.error(f"خطأ في حساب الأقساط الكلية للمدرسين: {e}")
@@ -848,7 +783,7 @@ class FinanceService:
                        institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
                        inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
                        inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
-                       teaching_types
+                       teaching_types, custom_type_settings
                 FROM teachers WHERE id IN ({placeholders})
             '''
             teachers_data = db.execute_query(teachers_query, tuple(teacher_ids))
@@ -948,7 +883,7 @@ class FinanceService:
             "institute_pct_in_person, institute_pct_electronic, institute_pct_blended, "
             "inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended, "
             "inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended, "
-            "teaching_types FROM teachers WHERE id = %s",
+            "teaching_types, custom_type_settings FROM teachers WHERE id = %s",
             (teacher_id,)
         )
         if not teacher_data:

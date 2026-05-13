@@ -284,6 +284,27 @@
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>{% if has_linked_students %}<strong class="text-danger">جميع البيانات مقفلة بسبب وجود طلاب مرتبطين.</strong> يمكنك فقط <strong class="text-success">إضافة نوع تدريسي جديد</strong> لم يكن مفعلاً سابقاً.{% elif has_payments %}<strong class="text-danger">الأقساط وخصم المعهد مقفلة بسبب وجود مدفوعات مسجلة.</strong> لتغييرها يجب حذف جميع الأقساط أولاً.{% else %}القيمة المدخلة للأقسط بالألف (مثلاً 850 = 850,000 د.ع). النسبة المئوية من القسط تُقسم بالتساوي على القسطين الأول والثاني.{% endif %}
                             </div>
+
+                            <!-- أنواع إضافية -->
+                            <div class="card border mb-2 p-2" style="border-color: #a855f7 !important;">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="form-check">
+                                        <label class="form-check-label fw-semibold">
+                                            <i class="fas fa-plus-circle me-1 text-purple"></i>أنواع إضافية
+                                            <span class="badge bg-purple me-1" style="font-size:0.65rem;background:#a855f7;">مخصص</span>
+                                        </label>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-purple" onclick="addCustomType()" style="color:#a855f7;border-color:#a855f7;">
+                                        <i class="fas fa-plus me-1"></i>إضافة نوع جديد
+                                    </button>
+                                </div>
+                                <div id="customTypesContainer" class="mt-2">
+                                    <!-- صفوف الأنواع المخصصة تُضاف هنا ديناميكياً -->
+                                </div>
+                                <div class="form-text mt-1" style="font-size:0.7rem">
+                                    <i class="fas fa-info-circle me-1"></i>أضف أنواع تدريس مخصصة مثل دورة رمضان، دورة صيفية، مراجعة مركزة... القيم بالألف.
+                                </div>
+                            </div>
                         </div>
 
                         <!-- ملاحظات -->
@@ -345,6 +366,202 @@ function toggleDedField(type, value) {
         pctEl.classList.remove('d-none');
         manualEl.classList.add('d-none');
     }
+}
+
+// ===== أنواع التدريس المخصصة =====
+let customTypeCounter = 0;
+const BASE_TYPE_NAMES = ['حضوري', 'الكتروني', 'مدمج'];
+
+function addCustomType(name, fee, dedType, dedPct, dedManual) {
+    name = name || '';
+    fee = fee || '';
+    dedType = dedType || 'percentage';
+    dedPct = dedPct || '';
+    dedManual = dedManual || '';
+
+    const idx = customTypeCounter++;
+    const container = document.getElementById('customTypesContainer');
+
+    const row = document.createElement('div');
+    row.className = 'card border mb-2 p-2 custom-type-row';
+    row.id = 'custom_type_row_' + idx;
+    row.style.borderColor = '#d8b4fe';
+
+    row.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="badge" style="background:#a855f7;font-size:0.7rem"><i class="fas fa-tag me-1"></i>نوع مخصص</span>
+            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeCustomType(this)" style="font-size:0.75rem">
+                <i class="fas fa-trash me-1"></i>حذف
+            </button>
+        </div>
+        <div class="row g-2 mb-2">
+            <div class="col-12">
+                <label class="form-label small">اسم النوع:</label>
+                <input type="text" class="form-control form-control-sm custom-type-name" placeholder="مثلاً: دورة رمضان"
+                       value="${name}" maxlength="50">
+                <div class="invalid-feedback custom-name-err"></div>
+            </div>
+        </div>
+        <div class="row g-2 mb-2">
+            <div class="col-6">
+                <label class="form-label small">القسط (بالألف):</label>
+                <input type="number" class="form-control form-control-sm custom-type-fee" min="0" placeholder="850"
+                       value="${fee}">
+            </div>
+            <div class="col-6">
+                <label class="form-label small">نوع خصم المعهد:</label>
+                <select class="form-select form-select-sm custom-type-ded-type" onchange="toggleCustomDedField(this)">
+                    <option value="percentage" ${dedType === 'percentage' ? 'selected' : ''}>نسبة مئوية %</option>
+                    <option value="manual" ${dedType === 'manual' ? 'selected' : ''}>مبلغ يدوي</option>
+                </select>
+            </div>
+        </div>
+        <div class="row g-2">
+            <div class="col-6 custom-ded-pct-field">
+                <label class="form-label small">النسبة %: <small class="text-muted">(1 - 99)</small></label>
+                <input type="number" class="form-control form-control-sm custom-type-pct" min="1" max="99" step="1" placeholder="20"
+                       value="${dedPct}">
+            </div>
+            <div class="col-6 custom-ded-manual-field ${dedType === 'manual' ? '' : 'd-none'}">
+                <label class="form-label small">المبلغ (بالألف):</label>
+                <input type="number" class="form-control form-control-sm custom-type-manual" min="0" placeholder="100"
+                       value="${dedManual}">
+            </div>
+        </div>
+    `;
+
+    container.appendChild(row);
+}
+
+function removeCustomType(btn) {
+    const row = btn.closest('.custom-type-row');
+    if (row) {
+        row.remove();
+    }
+}
+
+function toggleCustomDedField(selectEl) {
+    const row = selectEl.closest('.custom-type-row');
+    if (!row) return;
+    const pctField = row.querySelector('.custom-ded-pct-field');
+    const manualField = row.querySelector('.custom-ded-manual-field');
+    if (selectEl.value === 'manual') {
+        if (pctField) pctField.classList.add('d-none');
+        if (manualField) manualField.classList.remove('d-none');
+    } else {
+        if (pctField) pctField.classList.remove('d-none');
+        if (manualField) manualField.classList.add('d-none');
+    }
+}
+
+function toggleCustomTypeFields(selectEl) {
+    toggleCustomDedField(selectEl);
+}
+
+function collectCustomTypes() {
+    const rows = document.querySelectorAll('.custom-type-row');
+    const result = [];
+    rows.forEach(row => {
+        const name = row.querySelector('.custom-type-name')?.value?.trim() || '';
+        const fee = parseInt(row.querySelector('.custom-type-fee')?.value) || 0;
+        const dedType = row.querySelector('.custom-type-ded-type')?.value || 'percentage';
+        const dedPct = parseInt(row.querySelector('.custom-type-pct')?.value) || 0;
+        const dedManual = parseInt(row.querySelector('.custom-type-manual')?.value) || 0;
+        if (name) {
+            result.push({ name, fee, dedType, dedPct, dedManual });
+        }
+    });
+    return result;
+}
+
+function validateCustomTypes() {
+    let allValid = true;
+    const rows = document.querySelectorAll('.custom-type-row');
+    const seenNames = new Set();
+    const baseTypes = new Set(BASE_TYPE_NAMES);
+
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.custom-type-name');
+        const name = nameInput?.value?.trim() || '';
+        const errEl = row.querySelector('.custom-name-err');
+
+        // إزالة تنبيهات سابقة
+        if (nameInput) nameInput.classList.remove('is-invalid', 'is-valid');
+        if (errEl) errEl.textContent = '';
+
+        if (!name) {
+            // اسم فارغ - تجاهل الصف
+            return;
+        }
+
+        // التحقق من تكرار الاسم
+        if (baseTypes.has(name)) {
+            if (nameInput) nameInput.classList.add('is-invalid');
+            if (errEl) errEl.textContent = 'لا يمكن استخدام اسم نوع أساسي';
+            showAlert('لا يمكن استخدام أسماء الأنواع الأساسية (حضوري / الكتروني / مدمج) كنوع مخصص!', 'error');
+            allValid = false;
+            return;
+        }
+
+        if (seenNames.has(name)) {
+            if (nameInput) nameInput.classList.add('is-invalid');
+            if (errEl) errEl.textContent = 'اسم النوع مكرر';
+            showAlert('اسم النوع المخصص "' + name + '" مكرر!', 'error');
+            allValid = false;
+            return;
+        }
+        seenNames.add(name);
+
+        // التحقق من القسط
+        const feeInput = row.querySelector('.custom-type-fee');
+        const feeVal = parseInt(feeInput?.value) || 0;
+        if (feeInput) {
+            feeInput.classList.remove('is-invalid', 'is-valid');
+            if (feeVal <= 0) {
+                feeInput.classList.add('is-invalid');
+                showAlert('القسط لنوع التدريس المخصص "' + name + '" مطلوب!', 'error');
+                allValid = false;
+            } else {
+                feeInput.classList.add('is-valid');
+            }
+        }
+
+        // التحقق من نسبة الخصم
+        const dedType = row.querySelector('.custom-type-ded-type')?.value || 'percentage';
+        if (dedType === 'percentage') {
+            const pctInput = row.querySelector('.custom-type-pct');
+            const pctVal = parseInt(pctInput?.value) || 0;
+            if (pctInput) {
+                pctInput.classList.remove('is-invalid', 'is-valid');
+                if (pctVal < 1 || pctVal > 99) {
+                    pctInput.classList.add('is-invalid');
+                    showAlert('نسبة الخصم لنوع التدريس المخصص "' + name + '" يجب أن تكون بين 1 و 99!', 'error');
+                    allValid = false;
+                } else {
+                    pctInput.classList.add('is-valid');
+                }
+            }
+        } else {
+            const manualInput = row.querySelector('.custom-type-manual');
+            const manualVal = parseInt(manualInput?.value) || 0;
+            if (manualInput) {
+                manualInput.classList.remove('is-invalid', 'is-valid');
+                if (manualVal > feeVal) {
+                    manualInput.classList.add('is-invalid');
+                    showAlert('مبلغ خصم المعهد لنوع التدريس المخصص "' + name + '" لا يمكن أن يتجاوز القسط!', 'error');
+                    allValid = false;
+                } else if (manualVal > 0) {
+                    manualInput.classList.add('is-valid');
+                }
+            }
+        }
+
+        if (nameInput && !nameInput.classList.contains('is-invalid')) {
+            nameInput.classList.add('is-valid');
+        }
+    });
+
+    return allValid;
 }
 
 // ===== التحقق من نسبة المعهد (1 - 99) أرقام صحيحة فقط بدون اعشار =====
@@ -489,6 +706,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // ===== تعبئة الأنواع المخصصة في وضع التعديل =====
+    const existingCustomTypes = {{ teacher_custom_type_settings | tojson if teacher_custom_type_settings else '{}' }};
+    if (existingCustomTypes && typeof existingCustomTypes === 'object') {
+        for (const [ctName, ctData] of Object.entries(existingCustomTypes)) {
+            addCustomType(
+                ctName,
+                ctData.fee ? Math.round(ctData.fee / 1000) : '',
+                ctData.deduction_type || 'percentage',
+                ctData.deduction_pct || '',
+                ctData.deduction_manual ? Math.round(ctData.deduction_manual / 1000) : ''
+            );
+        }
+    }
+
     const hasPayments = {{ 'true' if has_payments else 'false' }};
     const hasLinkedStudents = {{ 'true' if has_linked_students else 'false' }};
 
@@ -504,6 +735,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!validateAllManualDedFields()) {
             e.preventDefault();
             showAlert('يرجى تصحيح حقول مبلغ خصم المعهد قبل الحفظ! لا يمكن أن يتجاوز المبلغ القسط الكلي.', 'error');
+            return;
+        }
+
+        // التحقق من حقول الأنواع المخصصة
+        if (!validateCustomTypes()) {
+            e.preventDefault();
+            showAlert('يرجى تصحيح حقول الأنواع المخصصة قبل الحفظ!', 'error');
             return;
         }
 
@@ -552,9 +790,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (document.getElementById('type_in_person').checked) types.push('حضوري');
         if (document.getElementById('type_electronic').checked) types.push('الكتروني');
         if (document.getElementById('type_blended').checked) types.push('مدمج');
+
+        // إضافة أسماء الأنواع المخصصة
+        const customTypes = collectCustomTypes();
+        customTypes.forEach(ct => types.push(ct.name));
+
         if (types.length === 0) {
             e.preventDefault();
-            showAlert('يجب اختيار نوع تدريس واحد على الأقل (حضوري / الكتروني / مدمج)', 'warning');
+            showAlert('يجب اختيار نوع تدريس واحد على الأقل (حضوري / الكتروني / مدمج / نوع مخصص)', 'warning');
             return;
         }
 
@@ -581,6 +824,55 @@ document.addEventListener('DOMContentLoaded', function() {
         typesInput.value = types.join(',');
         this.appendChild(typesInput);
 
+        // ===== إضافة حقول مخفية للأنواع المخصصة =====
+        customTypes.forEach(ct => {
+            const nameInput = document.createElement('input');
+            nameInput.type = 'hidden';
+            nameInput.name = 'custom_type_names[]';
+            nameInput.value = ct.name;
+            this.appendChild(nameInput);
+
+            const feeInput2 = document.createElement('input');
+            feeInput2.type = 'hidden';
+            feeInput2.name = 'custom_type_fees[]';
+            feeInput2.value = ct.fee * 1000; // بالدينار الكامل
+            this.appendChild(feeInput2);
+
+            const dedTypeInput = document.createElement('input');
+            dedTypeInput.type = 'hidden';
+            dedTypeInput.name = 'custom_type_ded_types[]';
+            dedTypeInput.value = ct.dedType;
+            this.appendChild(dedTypeInput);
+
+            const dedPctInput = document.createElement('input');
+            dedPctInput.type = 'hidden';
+            dedPctInput.name = 'custom_type_ded_pcts[]';
+            dedPctInput.value = ct.dedPct;
+            this.appendChild(dedPctInput);
+
+            const dedManualInput = document.createElement('input');
+            dedManualInput.type = 'hidden';
+            dedManualInput.name = 'custom_type_ded_manuals[]';
+            dedManualInput.value = ct.dedManual * 1000; // بالدينار الكامل
+            this.appendChild(dedManualInput);
+        });
+
+        // حفظ بيانات الأنواع المخصصة كـ JSON
+        const customDataInput = document.createElement('input');
+        customDataInput.type = 'hidden';
+        customDataInput.name = 'custom_teaching_data';
+        const customDataMap = {};
+        customTypes.forEach(ct => {
+            customDataMap[ct.name] = {
+                fee: ct.fee * 1000,
+                deduction_type: ct.dedType,
+                deduction_pct: ct.dedPct,
+                deduction_manual: ct.dedManual * 1000
+            };
+        });
+        customDataInput.value = JSON.stringify(customDataMap);
+        this.appendChild(customDataInput);
+
         // حساب الأجر الكلي كأعلى قسط
         const fees = [];
         if (document.getElementById('type_in_person').checked) {
@@ -595,6 +887,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const v = document.querySelector('input[name="fee_blended"]');
             if (v && v.value) fees.push(parseInt(v.value));
         }
+        // إضافة أقساط الأنواع المخصصة (بعد الضرب بـ 1000)
+        customTypes.forEach(ct => {
+            if (ct.fee > 0) fees.push(ct.fee * 1000);
+        });
 
         const feeInput = document.getElementById('total_fee');
         if (fees.length > 0) {

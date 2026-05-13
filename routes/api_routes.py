@@ -9,6 +9,7 @@ from typing import Optional, List
 from database import Database
 from services.finance_service import finance_service, sync_student_status
 from services.cache_service import cache_service
+from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings
 from config import get_current_date, format_currency
 from auth import check_permission
 
@@ -164,7 +165,7 @@ async def api_get_all_teachers(request: Request):
     """الحصول على قائمة جميع المدرسين"""
     check_permission(request, 'view_teachers_list')
     db = Database()
-    query = "SELECT id, name, subject, total_fee, notes, teaching_types, fee_in_person, fee_electronic, fee_blended FROM teachers ORDER BY name"
+    query = "SELECT id, name, subject, total_fee, notes, teaching_types, fee_in_person, fee_electronic, fee_blended, custom_type_settings FROM teachers ORDER BY name"
     results = db.execute_query(query)
     
     return {"success": True, "data": [dict(r) for r in results] if results else []}
@@ -941,7 +942,7 @@ async def api_data_integrity_check(request: Request):
                    s.name as student_name, t.name as teacher_name,
                    st.discount_type, st.discount_value, st.institute_waiver,
                    t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
-                   st.study_type
+                   t.custom_type_settings, st.study_type
             FROM installments i
             JOIN students s ON i.student_id = s.id
             JOIN teachers t ON i.teacher_id = t.id
@@ -954,14 +955,7 @@ async def api_data_integrity_check(request: Request):
             for inst in first_installments:
                 # حساب القسط الفعلي
                 study_type = inst.get('study_type', 'حضوري') or 'حضوري'
-                if study_type == 'الكتروني' and (inst.get('fee_electronic', 0) or 0) > 0:
-                    original_fee = inst['fee_electronic']
-                elif study_type == 'مدمج' and (inst.get('fee_blended', 0) or 0) > 0:
-                    original_fee = inst['fee_blended']
-                elif study_type == 'حضوري' and (inst.get('fee_in_person', 0) or 0) > 0:
-                    original_fee = inst['fee_in_person']
-                else:
-                    original_fee = inst.get('total_fee', 0)
+                original_fee = get_fee_for_study_type(inst, study_type)
                 
                 # تطبيق خصم الطالب
                 discount_type = inst.get('discount_type', 'none') or 'none'
@@ -996,7 +990,7 @@ async def api_data_integrity_check(request: Request):
                    s.name as student_name, t.name as teacher_name,
                    st.discount_type, st.discount_value, st.institute_waiver,
                    t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
-                   st.study_type
+                   t.custom_type_settings, st.study_type
             FROM installments i
             JOIN students s ON i.student_id = s.id
             JOIN teachers t ON i.teacher_id = t.id
@@ -1004,7 +998,7 @@ async def api_data_integrity_check(request: Request):
             GROUP BY i.student_id, i.teacher_id, s.name, t.name, 
                      st.discount_type, st.discount_value, st.institute_waiver,
                      t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
-                     st.study_type
+                     t.custom_type_settings, st.study_type
             HAVING SUM(i.amount) > 0
         '''
         payment_totals = db.execute_query(query2)
@@ -1012,14 +1006,7 @@ async def api_data_integrity_check(request: Request):
         if payment_totals:
             for pt in payment_totals:
                 study_type = pt.get('study_type', 'حضوري') or 'حضوري'
-                if study_type == 'الكتروني' and (pt.get('fee_electronic', 0) or 0) > 0:
-                    original_fee = pt['fee_electronic']
-                elif study_type == 'مدمج' and (pt.get('fee_blended', 0) or 0) > 0:
-                    original_fee = pt['fee_blended']
-                elif study_type == 'حضوري' and (pt.get('fee_in_person', 0) or 0) > 0:
-                    original_fee = pt['fee_in_person']
-                else:
-                    original_fee = pt.get('total_fee', 0)
+                original_fee = get_fee_for_study_type(pt, study_type)
                 
                 discount_type = pt.get('discount_type', 'none') or 'none'
                 discount_value = pt.get('discount_value', 0) or 0
@@ -1154,7 +1141,7 @@ async def api_fix_first_to_full(request: Request):
                    s.name as student_name, t.name as teacher_name,
                    st.discount_type, st.discount_value, st.institute_waiver,
                    t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended,
-                   st.study_type
+                   t.custom_type_settings, st.study_type
             FROM installments i
             JOIN students s ON i.student_id = s.id
             JOIN teachers t ON i.teacher_id = t.id
@@ -1167,14 +1154,7 @@ async def api_fix_first_to_full(request: Request):
         if first_installments:
             for inst in first_installments:
                 study_type = inst.get('study_type', 'حضوري') or 'حضوري'
-                if study_type == 'الكتروني' and (inst.get('fee_electronic', 0) or 0) > 0:
-                    original_fee = inst['fee_electronic']
-                elif study_type == 'مدمج' and (inst.get('fee_blended', 0) or 0) > 0:
-                    original_fee = inst['fee_blended']
-                elif study_type == 'حضوري' and (inst.get('fee_in_person', 0) or 0) > 0:
-                    original_fee = inst['fee_in_person']
-                else:
-                    original_fee = inst.get('total_fee', 0)
+                original_fee = get_fee_for_study_type(inst, study_type)
                 
                 discount_type = inst.get('discount_type', 'none') or 'none'
                 discount_value = inst.get('discount_value', 0) or 0

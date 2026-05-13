@@ -79,6 +79,14 @@
                             <span class="badge bg-warning text-dark">{{ study_counts.blended }}</span>
                         </div>
                         {% endif %}
+                        {% if teacher_custom_type_settings %}
+                            {% for ct_name, ct_data in teacher_custom_type_settings.items() %}
+                        <div class="profile-info-item">
+                            <span class="text-muted">{{ ct_name }}</span>
+                            <span class="badge" style="background:#a855f7;color:#fff;">{{ study_counts.get(ct_name, 0) if study_counts.get is defined else 0 }}</span>
+                        </div>
+                            {% endfor %}
+                        {% endif %}
                         {% if teacher.notes %}
                         <div class="profile-info-item flex-column align-items-start">
                             <span class="text-muted mb-1">ملاحظات</span>
@@ -120,6 +128,13 @@
                                         <div class="small">{{ tt_trim }}: {{ format_currency(teacher.fee_blended) }}</div>
                                     {% endif %}
                                 {% endfor %}
+                                {% if teacher_custom_type_settings %}
+                                    {% for ct_name, ct_data in teacher_custom_type_settings.items() %}
+                                        {% if ct_data.fee and ct_data.fee > 0 %}
+                                        <div class="small">{{ ct_name }}: {{ format_currency(ct_data.fee) }}</div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-6 col-md-4">
@@ -149,6 +164,15 @@
                                         {% endif %}
                                     {% endif %}
                                 {% endfor %}
+                                {% if teacher_custom_type_settings %}
+                                    {% for ct_name, ct_data in teacher_custom_type_settings.items() %}
+                                        {% if ct_data.deduction_type == 'manual' and (ct_data.deduction_manual or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">{{ ct_name }}: {{ format_currency(ct_data.deduction_manual) }}</small>
+                                        {% elif (ct_data.deduction_pct or 0) > 0 %}
+                                            <small class="opacity-75 d-none d-md-block">{{ ct_name }}: {{ ct_data.deduction_pct }}%</small>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
                         <div class="col-6 col-md-4">

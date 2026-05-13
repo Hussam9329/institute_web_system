@@ -323,7 +323,8 @@ def init_db():
                         inst_ded_type_blended TEXT DEFAULT 'percentage',
                         inst_ded_manual_in_person INTEGER DEFAULT 0,
                         inst_ded_manual_electronic INTEGER DEFAULT 0,
-                        inst_ded_manual_blended INTEGER DEFAULT 0
+                        inst_ded_manual_blended INTEGER DEFAULT 0,
+                        custom_type_settings TEXT DEFAULT '{}'
                     )
                 ''')
                 
@@ -374,6 +375,12 @@ def init_db():
                 # ===== إضافة عمود discount_notes إذا لم يكن موجوداً =====
                 try:
                     cursor.execute("ALTER TABLE student_teacher ADD COLUMN IF NOT EXISTS discount_notes TEXT DEFAULT ''")
+                except Exception:
+                    pass
+                
+                # ===== إضافة عمود custom_type_settings للمدرسين إذا لم يكن موجوداً =====
+                try:
+                    cursor.execute("ALTER TABLE teachers ADD COLUMN IF NOT EXISTS custom_type_settings TEXT DEFAULT '{}'")
                 except Exception:
                     pass
                 

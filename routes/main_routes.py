@@ -11,6 +11,12 @@ from fastapi.templating import Jinja2Templates
 from database import Database
 from services.finance_service import finance_service, sync_student_status
 from services.cache_service import cache_service
+from services.teaching_types import (
+    parse_custom_type_settings, dump_custom_type_settings,
+    get_fee_for_study_type, get_deduction_for_study_type,
+    get_all_teaching_types, validate_custom_type_data,
+    build_custom_type_settings_from_form
+)
 from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
 from auth import check_permission
 
@@ -247,7 +253,7 @@ async def student_form(request: Request, error: str = "", detail: str = ""):
     """نموذج إضافة طالب جديد"""
     check_permission(request, 'add_students')
     db = Database()
-    teachers = db.execute_query("SELECT id, name, subject, teaching_types FROM teachers ORDER BY name")
+    teachers = db.execute_query("SELECT id, name, subject, teaching_types, custom_type_settings FROM teachers ORDER BY name")
     # جلب قائمة المواد الدراسية للفرز
     subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
     subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
@@ -368,7 +374,7 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
         return RedirectResponse(url="/students?error=not_found", status_code=303)
 
     student = dict(result[0])
-    teachers = db.execute_query("SELECT id, name, subject, teaching_types FROM teachers ORDER BY name")
+    teachers = db.execute_query("SELECT id, name, subject, teaching_types, custom_type_settings FROM teachers ORDER BY name")
 
     # المدرسين المرتبطين بالطالب مع بيانات الربط
     linked = db.execute_query(
@@ -653,7 +659,7 @@ async def student_delete(request: Request, student_id: int):
 # ===== المدرسين =====
 
 def _build_institute_rate_display(teacher: dict) -> str:
-    """عرض نسبة/مبلغ خصم المعهد - يدعم العرض حسب أنواع التدريس المختلفة"""
+    """عرض نسبة/مبلغ خصم المعهد - يدعم العرض حسب أنواع التدريس المختلفة بما فيها الأنواع المخصصة"""
     # محاولة عرض معلومات الخصم حسب نوع التدريس
     teaching_types = (teacher.get('teaching_types') or 'حضوري').split(',')
     teaching_types = [t.strip() for t in teaching_types if t.strip()]
@@ -663,6 +669,9 @@ def _build_institute_rate_display(teacher: dict) -> str:
         'الكتروني': ('institute_pct_electronic', 'inst_ded_type_electronic', 'inst_ded_manual_electronic'),
         'مدمج': ('institute_pct_blended', 'inst_ded_type_blended', 'inst_ded_manual_blended'),
     }
+    
+    # تحليل الأنواع المخصصة
+    custom_settings = parse_custom_type_settings(teacher.get('custom_type_settings'))
     
     displays = []
     for tt in teaching_types:
@@ -678,6 +687,32 @@ def _build_institute_rate_display(teacher: dict) -> str:
                 pct_val = teacher.get(pct_key, 0) or 0
                 if pct_val > 0:
                     displays.append(f"{tt}: {pct_val}%")
+        elif tt in custom_settings:
+            # نوع مخصص
+            type_data = custom_settings[tt]
+            ded_type = type_data.get('deduction_type', 'percentage')
+            if ded_type == 'manual':
+                manual_val = type_data.get('deduction_manual', 0) or 0
+                if manual_val > 0:
+                    displays.append(f"{tt}: {format_currency(manual_val)}")
+            else:
+                pct_val = type_data.get('deduction_pct', 0) or 0
+                if pct_val > 0:
+                    displays.append(f"{tt}: {pct_val}%")
+    
+    # إضافة أي أنواع مخصصة ليست في teaching_types
+    for ct in custom_settings:
+        if ct not in teaching_types:
+            type_data = custom_settings[ct]
+            ded_type = type_data.get('deduction_type', 'percentage')
+            if ded_type == 'manual':
+                manual_val = type_data.get('deduction_manual', 0) or 0
+                if manual_val > 0:
+                    displays.append(f"{ct}: {format_currency(manual_val)}")
+            else:
+                pct_val = type_data.get('deduction_pct', 0) or 0
+                if pct_val > 0:
+                    displays.append(f"{ct}: {pct_val}%")
     
     if displays:
         return ' | '.join(displays)
@@ -694,7 +729,7 @@ def _build_institute_rate_display(teacher: dict) -> str:
 
 
 def _build_teacher_fee_display(teacher: dict) -> str:
-    """عرض قسط الأستاذ حسب أنواع التدريس"""
+    """عرض قسط الأستاذ حسب أنواع التدريس - يدعم الأنواع الأساسية والمخصصة"""
     teaching_types = (teacher.get('teaching_types') or 'حضوري').split(',')
     teaching_types = [t.strip() for t in teaching_types if t.strip()]
     
@@ -704,12 +739,27 @@ def _build_teacher_fee_display(teacher: dict) -> str:
         'مدمج': 'fee_blended',
     }
     
+    # تحليل الأنواع المخصصة
+    custom_settings = parse_custom_type_settings(teacher.get('custom_type_settings'))
+    
     displays = []
     for tt in teaching_types:
         if tt in type_fee_map:
             fee_val = teacher.get(type_fee_map[tt], 0) or 0
             if fee_val > 0:
                 displays.append(f"{tt}: {format_currency(fee_val)}")
+        elif tt in custom_settings:
+            # نوع مخصص
+            fee_val = custom_settings[tt].get('fee', 0) or 0
+            if fee_val > 0:
+                displays.append(f"{tt}: {format_currency(fee_val)}")
+    
+    # إضافة أي أنواع مخصصة ليست في teaching_types
+    for ct in custom_settings:
+        if ct not in teaching_types:
+            fee_val = custom_settings[ct].get('fee', 0) or 0
+            if fee_val > 0:
+                displays.append(f"{ct}: {format_currency(fee_val)}")
     
     if len(displays) > 1:
         return ' | '.join(displays)
@@ -939,7 +989,8 @@ async def teacher_form(request: Request, error: str = ""):
         "subjects": subjects,
         "error": error,
         "has_payments": False,
-        "has_linked_students": False
+        "has_linked_students": False,
+        "teacher_custom_type_settings": {}
     })
 
 
@@ -992,6 +1043,37 @@ async def teacher_add(
 
     db = Database()
 
+    # معالجة الأنواع التدريسية المخصصة
+    form_data = await request.form()
+    custom_settings, custom_errors = build_custom_type_settings_from_form(form_data)
+    
+    if custom_errors:
+        import urllib.parse
+        error_msg = urllib.parse.quote(' | '.join(custom_errors))
+        return RedirectResponse(url=f"/teachers/add?error=custom_type&detail={error_msg}", status_code=303)
+    
+    # التحقق من نسب الخصم للأنواع المخصصة (1-99)
+    for ct_name, ct_data in custom_settings.items():
+        ded_type = ct_data.get('deduction_type', 'percentage')
+        if ded_type == 'percentage':
+            pct_val = ct_data.get('deduction_pct', 0)
+            if pct_val != 0 and (pct_val < 1 or pct_val > 99):
+                return RedirectResponse(url=f"/teachers/add?error=invalid_pct&label={ct_name}&val={pct_val}", status_code=303)
+        elif ded_type == 'manual':
+            manual_val = ct_data.get('deduction_manual', 0)
+            fee_val = ct_data.get('fee', 0)
+            if manual_val > 0 and fee_val > 0 and manual_val > fee_val:
+                return RedirectResponse(url=f"/teachers/add?error=invalid_manual_ded&label={ct_name}&val={manual_val}&fee={fee_val}", status_code=303)
+    
+    # إضافة أسماء الأنواع المخصصة إلى teaching_types
+    if custom_settings:
+        base_types = [t.strip() for t in teaching_types.split(',') if t.strip()]
+        custom_type_names = list(custom_settings.keys())
+        merged_types = base_types + [ct for ct in custom_type_names if ct not in base_types]
+        teaching_types = ','.join(merged_types)
+    
+    custom_type_json = dump_custom_type_settings(custom_settings)
+
     try:
         existing_subject = db.execute_query("SELECT id FROM subjects WHERE name = %s", (subject,))
         if not existing_subject:
@@ -1005,15 +1087,17 @@ async def teacher_add(
                 teaching_types, fee_in_person, fee_electronic, fee_blended,
                 institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
                 inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
-                inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
+                custom_type_settings)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         '''
 
         db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(),
             teaching_types, fee_in_person, fee_electronic, fee_blended,
             institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
             inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
-            inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended))
+            inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
+            custom_type_json))
 
         print(f"تم إضافة المدرس بنجاح: {name} - {subject}")
     except Exception as e:
@@ -1053,14 +1137,19 @@ async def teacher_edit_form(request: Request, teacher_id: int, error: str = ""):
     )
     has_payments = payments_check and payments_check[0]['cnt'] > 0
 
+    # تحليل الأنواع المخصصة
+    teacher_dict = dict(result[0])
+    teacher_custom_type_settings = parse_custom_type_settings(teacher_dict.get('custom_type_settings'))
+
     return templates.TemplateResponse("teachers/form.html", {
         "request": request,
-        "teacher": dict(result[0]),
+        "teacher": teacher_dict,
         "mode": "edit",
         "subjects": subjects,
         "error": error,
         "has_payments": has_payments,
-        "has_linked_students": has_linked_students
+        "has_linked_students": has_linked_students,
+        "teacher_custom_type_settings": teacher_custom_type_settings
     })
 
 
@@ -1114,6 +1203,28 @@ async def teacher_update(
 
     db = Database()
 
+    # معالجة الأنواع التدريسية المخصصة
+    form_data = await request.form()
+    custom_settings, custom_errors = build_custom_type_settings_from_form(form_data)
+    
+    if custom_errors:
+        import urllib.parse
+        error_msg = urllib.parse.quote(' | '.join(custom_errors))
+        return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=custom_type&detail={error_msg}", status_code=303)
+    
+    # التحقق من نسب الخصم للأنواع المخصصة (1-99)
+    for ct_name, ct_data in custom_settings.items():
+        ded_type = ct_data.get('deduction_type', 'percentage')
+        if ded_type == 'percentage':
+            pct_val = ct_data.get('deduction_pct', 0)
+            if pct_val != 0 and (pct_val < 1 or pct_val > 99):
+                return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=invalid_pct&label={ct_name}&val={pct_val}", status_code=303)
+        elif ded_type == 'manual':
+            manual_val = ct_data.get('deduction_manual', 0)
+            fee_val = ct_data.get('fee', 0)
+            if manual_val > 0 and fee_val > 0 and manual_val > fee_val:
+                return RedirectResponse(url=f"/teachers/{teacher_id}/edit?error=invalid_manual_ded&label={ct_name}&val={manual_val}&fee={fee_val}", status_code=303)
+
     existing_subject = db.execute_query("SELECT id FROM subjects WHERE name = %s", (subject,))
     if not existing_subject:
         try:
@@ -1166,6 +1277,18 @@ async def teacher_update(
         inst_ded_manual_electronic = c['inst_ded_manual_electronic']
         inst_ded_manual_blended = c['inst_ded_manual_blended']
 
+        # معالجة الأنواع المخصصة مع وجود طلاب مرتبطين
+        # الحفاظ على الأنواع المخصصة الحالية، والسماح بإضافة أنواع جديدة فقط
+        current_custom_settings = parse_custom_type_settings(c.get('custom_type_settings'))
+        merged_custom_settings = dict(current_custom_settings)  # نسخة من الحالي
+        
+        # إضافة الأنواع المخصصة الجديدة فقط
+        for ct_name, ct_data in custom_settings.items():
+            if ct_name not in current_custom_settings:
+                merged_custom_settings[ct_name] = ct_data
+        
+        custom_type_json = dump_custom_type_settings(merged_custom_settings)
+
         # السماح بإضافة أنواع تدريس جديدة فقط مع أقساطها ونسبها
         if added_types:
             # دمج الأنواع القديمة مع الجديدة
@@ -1173,7 +1296,6 @@ async def teacher_update(
             teaching_types = ','.join(merged_types)
 
             # إضافة أقساط ونسب الأنواع الجديدة من النموذج
-            form_data = await request.form()
             if 'الكتروني' in added_types:
                 fee_electronic = int(form_data.get('fee_electronic', 0) or 0)
                 institute_pct_electronic = int(form_data.get('institute_pct_electronic', 0) or 0)
@@ -1191,13 +1313,21 @@ async def teacher_update(
                 inst_ded_manual_in_person = int(form_data.get('inst_ded_manual_in_person', 0) or 0)
         else:
             teaching_types = c['teaching_types']
+        
+        # إضافة أسماء الأنواع المخصصة الجديدة إلى teaching_types
+        if custom_settings:
+            base_types = [t.strip() for t in teaching_types.split(',') if t.strip()]
+            custom_type_names = list(merged_custom_settings.keys())
+            merged_types = base_types + [ct for ct in custom_type_names if ct not in base_types]
+            teaching_types = ','.join(merged_types)
 
         update_query = '''
             UPDATE teachers
             SET notes=%s, teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
                 institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s,
                 inst_ded_type_in_person=%s, inst_ded_type_electronic=%s, inst_ded_type_blended=%s,
-                inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s
+                inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s,
+                custom_type_settings=%s
             WHERE id = %s
         '''
         db.execute_query(update_query, (
@@ -1205,11 +1335,21 @@ async def teacher_update(
             institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
             inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
             inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
-            teacher_id))
+            custom_type_json, teacher_id))
 
-        if added_types:
+        if added_types or custom_settings:
             return RedirectResponse(url="/teachers?msg=updated_new_type_added", status_code=303)
         return RedirectResponse(url="/teachers?msg=updated_no_change", status_code=303)
+
+    # لا يوجد طلاب مرتبطين - يمكن التعديل بحرية
+    # إضافة أسماء الأنواع المخصصة إلى teaching_types
+    if custom_settings:
+        base_types = [t.strip() for t in teaching_types.split(',') if t.strip()]
+        custom_type_names = list(custom_settings.keys())
+        merged_types = base_types + [ct for ct in custom_type_names if ct not in base_types]
+        teaching_types = ','.join(merged_types)
+    
+    custom_type_json = dump_custom_type_settings(custom_settings)
 
     update_query = '''
         UPDATE teachers
@@ -1217,7 +1357,8 @@ async def teacher_update(
             teaching_types=%s, fee_in_person=%s, fee_electronic=%s, fee_blended=%s,
             institute_pct_in_person=%s, institute_pct_electronic=%s, institute_pct_blended=%s,
             inst_ded_type_in_person=%s, inst_ded_type_electronic=%s, inst_ded_type_blended=%s,
-            inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s
+            inst_ded_manual_in_person=%s, inst_ded_manual_electronic=%s, inst_ded_manual_blended=%s,
+            custom_type_settings=%s
         WHERE id = %s
     '''
 
@@ -1226,7 +1367,7 @@ async def teacher_update(
         institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
         inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
         inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
-        teacher_id))
+        custom_type_json, teacher_id))
 
     return RedirectResponse(url="/teachers?msg=updated", status_code=303)
 
@@ -1247,6 +1388,9 @@ async def teacher_detail(request: Request, teacher_id: int):
     students_list = finance_service.get_teacher_students_list(teacher_id)
     financial_info = finance_service.calculate_teacher_balance(teacher_id)
 
+    # تحليل الأنواع المخصصة
+    teacher_custom_type_settings = parse_custom_type_settings(teacher.get('custom_type_settings'))
+
     counts_query = '''
         SELECT
             COUNT(*) as total,
@@ -1264,7 +1408,8 @@ async def teacher_detail(request: Request, teacher_id: int):
         "students_list": students_list,
         "financial_info": financial_info,
         "study_counts": study_counts,
-        "format_currency": format_currency
+        "format_currency": format_currency,
+        "teacher_custom_type_settings": teacher_custom_type_settings
     })
 
 

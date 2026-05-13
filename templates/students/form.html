@@ -128,7 +128,7 @@
                                         {% set has_in_person = 'حضوري' in tt_list %}
                                         {% set has_electronic = 'الكتروني' in tt_list %}
                                         {% set has_blended = 'مدمج' in tt_list %}
-                                        {% set single_type = (not has_in_person or not has_electronic or not has_blended) and ((has_in_person and not has_electronic and not has_blended) or (not has_in_person and has_electronic and not has_blended) or (not has_in_person and not has_electronic and has_blended)) %}
+                                        {% set single_type = (not has_in_person or not has_electronic or not has_blended) and ((has_in_person and not has_electronic and not has_blended) or (not has_in_person and has_electronic and not has_blended) or (not has_in_person and not has_electronic and has_blended)) and not (teacher_custom_type_settings and teacher.id in teacher_custom_type_settings and teacher_custom_type_settings[teacher.id]|length > 0) %}
                                         {% set current_discount_type = ld.get('discount_type', 'none') if ld else 'none' %}
                                         {% set current_discount_value = ld.get('discount_value', 0) if ld else 0 %}
                                         {% set current_institute_waiver = ld.get('institute_waiver', 0) if ld else 0 %}
@@ -169,6 +169,11 @@
                                                         {% endif %}
                                                         {% if has_blended %}
                                                         <option value="مدمج" {% if ld and ld.get('study_type') == 'مدمج' %}selected{% endif %}>مدمج</option>
+                                                        {% endif %}
+                                                        {% if teacher_custom_type_settings and teacher.id in teacher_custom_type_settings %}
+                                                            {% for ct_name, ct_data in teacher_custom_type_settings[teacher.id].items() %}
+                                                        <option value="{{ ct_name }}" {% if ld and ld.get('study_type') == ct_name %}selected{% endif %}>{{ ct_name }}</option>
+                                                            {% endfor %}
                                                         {% endif %}
                                                     </select>
                                                     {% endif %}
@@ -466,10 +471,10 @@
 // قائمة المدرسين المرتبطين أصلاً (في وضع التعديل)
 const originallyLinked = [{% if mode == 'edit' and linked_teacher_ids %}{{ linked_teacher_ids | join(',') }}{% endif %}];
 
-// ===== خريطة المدرسين: {id: {name, subject, fees}} =====
+// ===== خريطة المدرسين: {id: {name, subject, fees, custom_settings}} =====
 const teachersMap = {
     {% for teacher in teachers %}
-    {{ teacher.id }}: { name: "{{ teacher.name }}", subject: "{{ teacher.subject }}", fee_in_person: {{ teacher.fee_in_person or 0 }}, fee_electronic: {{ teacher.fee_electronic or 0 }}, fee_blended: {{ teacher.fee_blended or 0 }}, total_fee: {{ teacher.total_fee or 0 }} },
+    {{ teacher.id }}: { name: "{{ teacher.name }}", subject: "{{ teacher.subject }}", fee_in_person: {{ teacher.fee_in_person or 0 }}, fee_electronic: {{ teacher.fee_electronic or 0 }}, fee_blended: {{ teacher.fee_blended or 0 }}, total_fee: {{ teacher.total_fee or 0 }}, custom_settings: {{ teacher_custom_type_settings.get(teacher.id, {}) | tojson if teacher_custom_type_settings else '{}' }} },
     {% endfor %}
 };
 
@@ -643,6 +648,22 @@ function onDiscountTypeChange(teacherId) {
     updateDiscountBtn(teacherId, discountType);
 }
 
+function getTeacherFeeByStudyType(teacherId, studyType) {
+    const t = teachersMap[teacherId];
+    if (!t) return 0;
+
+    if (studyType === 'حضوري') return t.fee_in_person || 0;
+    if (studyType === 'الكتروني') return t.fee_electronic || 0;
+    if (studyType === 'مدمج') return t.fee_blended || 0;
+
+    // نوع مخصص - البحث في custom_settings
+    if (t.custom_settings && t.custom_settings[studyType]) {
+        return t.custom_settings[studyType].fee || 0;
+    }
+
+    return t.total_fee || 0;
+}
+
 function onDiscountValueChange(teacherId) {
     const valInput = document.getElementById('disc_pct_val_' + teacherId);
     const preview = document.getElementById('disc_pct_preview_' + teacherId);
@@ -664,10 +685,7 @@ function onDiscountValueChange(teacherId) {
         if (studyTypeSelect) studyType = studyTypeSelect.value;
         else if (hiddenStudyType) studyType = hiddenStudyType.value;
 
-        let totalFee = t.total_fee;
-        if (studyType === 'الكتروني' && t.fee_electronic > 0) totalFee = t.fee_electronic;
-        else if (studyType === 'مدمج' && t.fee_blended > 0) totalFee = t.fee_blended;
-        else if (studyType === 'حضوري' && t.fee_in_person > 0) totalFee = t.fee_in_person;
+        let totalFee = getTeacherFeeByStudyType(teacherId, studyType);
 
         if (totalFee > 0) {
             const discountAmount = Math.round(totalFee * discountValue / 100);
@@ -701,10 +719,7 @@ function onDiscountFixedChange(teacherId) {
         if (studyTypeSelect) studyType = studyTypeSelect.value;
         else if (hiddenStudyType) studyType = hiddenStudyType.value;
 
-        let totalFee = t.total_fee;
-        if (studyType === 'الكتروني' && t.fee_electronic > 0) totalFee = t.fee_electronic;
-        else if (studyType === 'مدمج' && t.fee_blended > 0) totalFee = t.fee_blended;
-        else if (studyType === 'حضوري' && t.fee_in_person > 0) totalFee = t.fee_in_person;
+        let totalFee = getTeacherFeeByStudyType(teacherId, studyType);
 
         const fixedAmount = discountValue * 1000; // تحويل من ألف إلى القيمة الكاملة
         if (totalFee > 0) {
