@@ -293,8 +293,8 @@
                                 <div class="d-flex align-items-center justify-content-between">
                                     <div class="form-check">
                                         <label class="form-check-label fw-semibold">
-                                            <i class="fas fa-plus-circle me-1 text-purple"></i>أنواع إضافية
-                                            <span class="badge bg-purple me-1" style="font-size:0.65rem;background:#a855f7;">مخصص</span>
+                                            <i class="fas fa-plus-circle me-1 text-purple"></i>أنواع إضافية خاصة بهذا المدرس
+                                            <span class="badge bg-purple me-1" style="font-size:0.65rem;background:#a855f7;">مخصص لهذا المدرس فقط</span>
                                         </label>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-outline-purple" onclick="addCustomType()" style="color:#a855f7;border-color:#a855f7;">
@@ -305,7 +305,7 @@
                                     <!-- صفوف الأنواع المخصصة تُضاف هنا ديناميكياً -->
                                 </div>
                                 <div class="form-text mt-1" style="font-size:0.7rem">
-                                    <i class="fas fa-info-circle me-1"></i>أضف أنواع تدريس مخصصة مثل دورة رمضان، دورة صيفية، مراجعة مركزة... القيم بالألف.
+                                    <i class="fas fa-info-circle me-1"></i>أضف أنواع تدريس مخصصة لهذا المدرس فقط (مثل: دورة صيفية، مراجعة مركزة)... القيم بالألف.
                                 </div>
                             </div>
                         </div>
@@ -392,7 +392,7 @@ function addCustomType(name, fee, dedType, dedPct, dedManual) {
 
     row.innerHTML = `
         <div class="d-flex align-items-center justify-content-between mb-1">
-            <span class="badge" style="background:#a855f7;font-size:0.7rem"><i class="fas fa-tag me-1"></i>نوع مخصص</span>
+            <span class="badge" style="background:#a855f7;font-size:0.7rem"><i class="fas fa-tag me-1"></i>نوع مخصص لهذا المدرس</span>
             <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="removeCustomType(this)" style="font-size:0.75rem">
                 <i class="fas fa-trash me-1"></i>حذف
             </button>
@@ -400,7 +400,7 @@ function addCustomType(name, fee, dedType, dedPct, dedManual) {
         <div class="row g-2 mb-2">
             <div class="col-12">
                 <label class="form-label small">اسم النوع:</label>
-                <input type="text" class="form-control form-control-sm custom-type-name" placeholder="مثلاً: دورة رمضان"
+                <input type="text" class="form-control form-control-sm custom-type-name" placeholder="مثلاً: دورة صيفية"
                        value="${name}" maxlength="50">
                 <div class="invalid-feedback custom-name-err"></div>
             </div>
