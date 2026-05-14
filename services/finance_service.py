@@ -370,14 +370,7 @@ class FinanceService:
 
         installments = db.execute_query(query, tuple(params))
         
-        # Also get "free without waiver" students
-        free_no_waiver_query = '''
-            SELECT st.student_id, st.study_type, st.discount_type, st.discount_value, st.institute_waiver
-            FROM student_teacher st
-            WHERE st.teacher_id = %s AND st.discount_type = 'free' AND (st.institute_waiver = 0 OR st.institute_waiver IS NULL)
-        '''
-        free_no_waiver_students = db.execute_query(free_no_waiver_query, (teacher_id,))
-        if not installments and not free_no_waiver_students:
+        if not installments:
             return 0
         
         # Group installments by student
@@ -421,19 +414,11 @@ class FinanceService:
                     else:
                         has_splits_first = True
             
+            # ===== الطالب المجاني لا يولّد أي خصم معهد نهائياً =====
+            if discount_type == 'free':
+                continue
+
             ded_type, ded_value = self._get_deduction_for_study_type(t, study_type)
-            
-            if discount_type == 'free' and institute_waiver:
-                continue
-            
-            if discount_type == 'free' and not institute_waiver:
-                student_total_fee = self._get_fee_for_study_type(t, study_type)
-                if student_total_fee > 0 and ded_value > 0:
-                    if ded_type == 'manual':
-                        total_deduction += ded_value
-                    else:
-                        total_deduction += round((student_total_fee * ded_value) / 100)
-                continue
 
             if ded_value <= 0:
                 continue
@@ -475,7 +460,8 @@ class FinanceService:
                 elif has_second or has_splits_second:
                     total_deduction += other_half_ded
             else:
-                full_deduction = round((fee_for_deduction * ded_value) / 100)
+                # حساب الخصم النسبي من القسط الفعلي (بعد خصم الطالب) وليس من القسط الكلي
+                full_deduction = round((effective_fee * ded_value) / 100)
                 half_deduction = full_deduction // 2
                 other_half_deduction = full_deduction - half_deduction
                 
@@ -495,25 +481,6 @@ class FinanceService:
                     total_deduction += half_deduction
                 elif has_second or has_splits_second:
                     total_deduction += other_half_deduction
-        
-        # معالجة الطلاب مجاني بدون تنازل بدون أقساط
-        if free_no_waiver_students:
-            students_with_payments = set(student_payments.keys()) if student_payments else set()
-            
-            for fw_student in free_no_waiver_students:
-                fw_sid = fw_student['student_id']
-                if fw_sid in students_with_payments:
-                    continue
-                
-                fw_study_type = fw_student.get('study_type', 'حضوري') or 'حضوري'
-                ded_type, ded_value = self._get_deduction_for_study_type(t, fw_study_type)
-                student_total_fee = self._get_fee_for_study_type(t, fw_study_type)
-                
-                if student_total_fee > 0 and ded_value > 0:
-                    if ded_type == 'manual':
-                        total_deduction += ded_value
-                    else:
-                        total_deduction += round((student_total_fee * ded_value) / 100)
         
         return total_deduction
     
@@ -947,14 +914,14 @@ class FinanceService:
                     ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
                     
                     if ded_value > 0 and effective_fee > 0:
-                        # تخطي الطلاب مجانيين مع تنازل المعهد
-                        if discount_type == 'free' and institute_waiver:
-                            pass  # لا خصم
+                        # ===== الطالب المجاني لا يولّد أي خصم معهد نهائياً =====
+                        if discount_type == 'free':
+                            pass  # لا خصم معهد للطالب المجاني
                         elif ded_type == 'manual':
                             # المبلغ اليدوي هو المبلغ الكامل للقسطين معاً
                             result[tid]['expected_deduction'] += ded_value
                         else:
-                            # نسبة مئوية من القسط الفعلي
+                            # نسبة مئوية من القسط الفعلي (بعد خصم الطالب)
                             result[tid]['expected_deduction'] += round(effective_fee * ded_value / 100)
                 except Exception as link_err:
                     logger.error(f"خطأ في حساب رابط الطالب {link.get('student_id')} للمدرس {link.get('teacher_id')}: {link_err}")
@@ -1022,6 +989,10 @@ class FinanceService:
             elif study_type == 'مدمج':
                 r['blended_count'] += 1
             
+            if discount_type == 'free':
+                # الطالب المجاني لا يولّد أي خصم معهد نهائياً
+                continue
+
             fee = self._get_fee_for_study_type(teacher, study_type)
             discount_info = {
                 'discount_type': discount_type,
@@ -1033,16 +1004,170 @@ class FinanceService:
             
             ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
             if ded_value > 0 and effective_fee > 0:
-                if discount_type == 'free' and institute_waiver:
-                    pass
-                elif ded_type == 'manual':
+                if ded_type == 'manual':
                     r['expected_deduction'] += ded_value
                 else:
+                    # حساب الخصم النسبي من القسط الفعلي (بعد خصم الطالب)
                     r['expected_deduction'] += round(effective_fee * ded_value / 100)
         
         r['teacher_due'] = r['total_fees'] - r['expected_deduction']
         return r
     
+    # =====================================================
+    # تقرير التنبيهات المالية
+    # =====================================================
+
+    def get_financial_warnings(self, db=None) -> List[Dict]:
+        """
+        تقرير تنبيهات مالية للبيانات القديمة التي قد تحتاج مراجعة يدوية.
+        الإصلاحات تمنع الأخطاء الجديدة، لكن البيانات القديمة تحتاج مراجعة.
+        """
+        if db is None:
+            db = self.db
+        warnings = []
+
+        try:
+            # 1. المدرسون الذين لديهم سحوبات أكبر من المستحق
+            teachers = db.execute_query("SELECT id, name FROM teachers ORDER BY name")
+            if teachers:
+                for t in teachers:
+                    balance_info = self.calculate_teacher_balance(t['id'])
+                    if balance_info.get('has_over_withdrawal') and balance_info.get('over_withdrawal_amount', 0) > 0:
+                        warnings.append({
+                            'type': 'over_withdrawal',
+                            'severity': 'high',
+                            'teacher_id': t['id'],
+                            'teacher_name': t['name'],
+                            'teacher_due': balance_info['teacher_due'],
+                            'withdrawn_total': balance_info['withdrawn_total'],
+                            'over_amount': balance_info['over_withdrawal_amount'],
+                            'message': f"المدرس {t['name']} لديه سحوبات ({format_currency(balance_info['withdrawn_total'])}) تتجاوز مستحقه ({format_currency(balance_info['teacher_due'])}) بمبلغ {format_currency(balance_info['over_withdrawal_amount'])}"
+                        })
+
+            # 2. الطلاب الذين لديهم دفعات أكبر من القسط الفعلي
+            overpayment_query = '''
+                SELECT st.student_id, st.teacher_id, s.name as student_name, t.name as teacher_name,
+                       st.discount_type, st.discount_value, st.study_type,
+                       t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings,
+                       COALESCE(i.paid, 0) as paid_total
+                FROM student_teacher st
+                JOIN students s ON s.id = st.student_id
+                JOIN teachers t ON t.id = st.teacher_id
+                LEFT JOIN LATERAL (
+                    SELECT COALESCE(SUM(amount), 0) as paid
+                    FROM installments
+                    WHERE installments.student_id = st.student_id AND installments.teacher_id = st.teacher_id
+                ) i ON true
+                WHERE st.status = 'مستمر'
+            '''
+            try:
+                links = db.execute_query(overpayment_query)
+            except Exception:
+                # Fallback بدون LATERAL
+                links_query = '''
+                    SELECT st.student_id, st.teacher_id, s.name as student_name, t.name as teacher_name,
+                           st.discount_type, st.discount_value, st.study_type,
+                           t.total_fee, t.fee_in_person, t.fee_electronic, t.fee_blended, t.custom_type_settings
+                    FROM student_teacher st
+                    JOIN students s ON s.id = st.student_id
+                    JOIN teachers t ON t.id = st.teacher_id
+                    WHERE st.status = 'مستمر'
+                '''
+                links = db.execute_query(links_query)
+                if links:
+                    paid_map = {}
+                    paid_query = '''
+                        SELECT student_id, teacher_id, COALESCE(SUM(amount), 0) as paid_total
+                        FROM installments
+                        GROUP BY student_id, teacher_id
+                    '''
+                    paid_results = db.execute_query(paid_query)
+                    if paid_results:
+                        for p in paid_results:
+                            paid_map[(p['student_id'], p['teacher_id'])] = p['paid_total']
+                    for link in links:
+                        link['paid_total'] = paid_map.get((link['student_id'], link['teacher_id']), 0)
+
+            if links:
+                for link in links:
+                    try:
+                        study_type = link.get('study_type', 'حضوري') or 'حضوري'
+                        discount_info = {
+                            'discount_type': link.get('discount_type', 'none') or 'none',
+                            'discount_value': link.get('discount_value', 0) or 0,
+                            'institute_waiver': link.get('institute_waiver', 0) or 0,
+                        }
+                        fee = self._get_fee_for_study_type(link, study_type)
+                        effective_fee = self._apply_discount_to_fee(fee, discount_info)
+                        paid = link.get('paid_total', 0)
+
+                        if effective_fee > 0 and paid > effective_fee:
+                            overpayment = paid - effective_fee
+                            warnings.append({
+                                'type': 'overpayment',
+                                'severity': 'medium',
+                                'student_id': link['student_id'],
+                                'student_name': link.get('student_name', ''),
+                                'teacher_name': link.get('teacher_name', ''),
+                                'paid_total': paid,
+                                'effective_fee': effective_fee,
+                                'overpayment': overpayment,
+                                'message': f"الطالب {link.get('student_name', '')} عند المدرس {link.get('teacher_name', '')}: المدفوع ({format_currency(paid)}) يتجاوز القسط الفعلي ({format_currency(effective_fee)}) بمبلغ {format_currency(overpayment)}"
+                            })
+                    except Exception:
+                        continue
+
+            # 3. أنواع التدريس ذات الأقساط غير المنطقية
+            from services.teaching_types import MAX_REASONABLE_FEE
+            all_teachers = db.execute_query(
+                "SELECT id, name, fee_in_person, fee_electronic, fee_blended, custom_type_settings FROM teachers"
+            )
+            if all_teachers:
+                for t in all_teachers:
+                    for fee_col, label in [('fee_in_person', 'حضوري'), ('fee_electronic', 'الكتروني'), ('fee_blended', 'مدمج')]:
+                        fee_val = t.get(fee_col, 0) or 0
+                        if fee_val > MAX_REASONABLE_FEE:
+                            warnings.append({
+                                'type': 'unreasonable_fee',
+                                'severity': 'low',
+                                'teacher_id': t['id'],
+                                'teacher_name': t['name'],
+                                'fee_type': label,
+                                'fee_value': fee_val,
+                                'message': f"المدرس {t['name']}: قسط نوع {label} ({format_currency(fee_val)}) مرتفع جداً ويتجاوز الحد المنطقي ({format_currency(MAX_REASONABLE_FEE)}). يرجى التأكد من أن المبلغ بالدينار العراقي."
+                            })
+
+            # 4. الطلاب المجانيون الذين لديهم أقساط مسجلة
+            free_with_payments = db.execute_query('''
+                SELECT i.id, i.amount, s.name as student_name, t.name as teacher_name
+                FROM installments i
+                JOIN students s ON i.student_id = s.id
+                JOIN teachers t ON i.teacher_id = t.id
+                JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id
+                WHERE st.discount_type = 'free'
+            ''')
+            if free_with_payments:
+                for fwp in free_with_payments:
+                    warnings.append({
+                        'type': 'free_student_with_payment',
+                        'severity': 'high',
+                        'installment_id': fwp['id'],
+                        'student_name': fwp['student_name'],
+                        'teacher_name': fwp['teacher_name'],
+                        'amount': fwp['amount'],
+                        'message': f"الطالب {fwp['student_name']} مجاني لكن لديه قسط مسجل (#{fwp['id']}) بمبلغ {format_currency(fwp['amount'])} عند المدرس {fwp['teacher_name']}"
+                    })
+
+        except Exception as e:
+            logger.error(f"خطأ في جلب التنبيهات المالية: {e}")
+            warnings.append({
+                'type': 'system_error',
+                'severity': 'critical',
+                'message': f"حدث خطأ أثناء جلب التنبيهات المالية: {str(e)}"
+            })
+
+        return warnings
+
     # =====================================================
     # دوال الإحصائيات العامة - محسّنة بسرعة فائقة
     # =====================================================

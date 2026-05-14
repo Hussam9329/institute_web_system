@@ -151,7 +151,7 @@
                                 <th class="text-center" style="min-width:100px">المدفوع</th>
                                 <th class="text-center" style="min-width:110px">قسط الأستاذ</th>
                                 <th class="text-center" style="min-width:110px">{{ UI_LABELS.institute_rate }}</th>
-                                <th class="text-center" style="min-width:100px">مستحق المدرس</th>
+                                <th class="text-center" style="min-width:120px">مستحق المدرس المتوقع</th>
                                 <th class="text-center" style="min-width:90px">المسحوب</th>
                                 <th class="text-center" style="min-width:100px">متبقي المدرس</th>
                                 <th class="text-center" style="min-width:120px; width:140px;">الإجراءات</th>
@@ -188,7 +188,11 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center" style="font-size:0.78rem; line-height:1.5;">
-                                    <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
+                                    {% if teacher.total_received and teacher.total_received > 0 %}
+                                        <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
+                                    {% else %}
+                                        <span class="text-muted" style="font-size:0.72rem;">لم تُدفع أقساط بعد</span>
+                                    {% endif %}
                                     {% if teacher.institute_rate_display and teacher.institute_rate_display != '-' %}
                                         {% for part in teacher.institute_rate_display.split(' | ') %}
                                             <div class="text-muted" style="font-size:0.7rem;">{{ part }}</div>
@@ -197,6 +201,7 @@
                                 </td>
                                 <td class="text-center fw-bold text-info">
                                     {{ format_currency(teacher.teacher_due) }}
+                                    <div class="text-muted" style="font-size:0.68rem;">متوقع</div>
                                 </td>
                                 <td class="text-center fw-bold" style="color: var(--warning-dark);">
                                     {{ format_currency(teacher.withdrawn_total) }}
@@ -287,7 +292,11 @@
                             <div class="info-item">
                                 <div class="info-label">{{ UI_LABELS.institute_rate }}</div>
                                 <div class="info-value" style="font-size:0.78rem; line-height:1.4;">
-                                    <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
+                                    {% if teacher.total_received and teacher.total_received > 0 %}
+                                        <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
+                                    {% else %}
+                                        <span class="text-muted" style="font-size:0.72rem;">لم تُدفع أقساط بعد</span>
+                                    {% endif %}
                                     {% if teacher.institute_rate_display and teacher.institute_rate_display != '-' %}
                                         {% for part in teacher.institute_rate_display.split(' | ') %}
                                             <div class="text-muted" style="font-size:0.7rem;">{{ part }}</div>
@@ -296,7 +305,7 @@
                                 </div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">مستحق المدرس</div>
+                                <div class="info-label">مستحق المدرس المتوقع</div>
                                 <div class="info-value text-info">{{ format_currency(teacher.teacher_due) }}</div>
                             </div>
                             <div class="info-item">

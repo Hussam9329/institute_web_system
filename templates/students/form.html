@@ -53,8 +53,8 @@
                         <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
                             <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
                             <div>
-                                <strong>خطأ في نسبة الخصم!</strong>
-                                نسبة الخصم يجب أن تكون بين 1% و 100%.
+                                <strong>خطأ في بيانات الخصم!</strong>
+                                يرجى التأكد من صحة بيانات الخصم المدخلة.
                                 {% if error_detail %}
                                 <br>
                                 <span class="text-muted">{{ error_detail }}</span>
@@ -318,10 +318,13 @@
                                                             <div class="d-none mb-2" id="disc_fixed_section_{{ teacher.id }}">
                                                                 <div class="input-group input-group-sm">
                                                                     <input type="number" class="form-control" name="discount_fixed_value_{{ teacher.id }}" id="disc_fixed_val_{{ teacher.id }}"
-                                                                           min="1" placeholder="مبلغ الخصم (بالألف د.ع)"
+                                                                           min="1" inputmode="numeric" placeholder="مبلغ الخصم (بالألف د.ع)"
                                                                            value="{{ (current_discount_value // 1000) if current_discount_type == 'fixed' and current_discount_value else '' }}"
                                                                            oninput="onDiscountFixedChange({{ teacher.id }})">
                                                                     <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border-color:#f97316;">ألف د.ع</span>
+                                                                </div>
+                                                                <div class="invalid-feedback">
+                                                                    مبلغ الخصم الثابت يجب أن يكون أكبر من صفر.
                                                                 </div>
                                                                 <small class="text-muted d-none mt-1" id="disc_fixed_preview_{{ teacher.id }}"></small>
                                                             </div>
@@ -851,33 +854,46 @@ function validateStudentDiscountsBeforeSubmit() {
     for (const row of activeTeacherRows) {
         const teacherId = row.id.replace('teacher_row_', '');
         const selectedType = document.querySelector('input[name="discount_type_' + teacherId + '"]:checked');
+        const teacherName = row.querySelector('.fw-semibold')?.textContent?.trim() || 'هذا المدرس';
 
-        if (!selectedType || selectedType.value !== 'percentage') {
-            continue;
-        }
+        if (!selectedType) continue;
 
-        const discountInput = document.getElementById('disc_pct_val_' + teacherId);
-        const discountValue = Number(discountInput?.value || 0);
+        // ===== تحقق نسبة الخصم (percentage): من 1 إلى 100 =====
+        if (selectedType.value === 'percentage') {
+            const discountInput = document.getElementById('disc_pct_val_' + teacherId);
+            const discountValue = Number(discountInput?.value || 0);
 
-        if (!Number.isFinite(discountValue) || discountValue < 1 || discountValue > 100) {
-            const teacherName = row.querySelector('.fw-semibold')?.textContent?.trim() || 'هذا المدرس';
-            const panel = document.getElementById('discount_panel_' + teacherId);
-
-            if (panel) {
-                panel.classList.remove('d-none');
+            if (!Number.isFinite(discountValue) || discountValue < 1 || discountValue > 100) {
+                const panel = document.getElementById('discount_panel_' + teacherId);
+                if (panel) panel.classList.remove('d-none');
+                if (discountInput) {
+                    discountInput.classList.add('is-invalid');
+                    discountInput.focus();
+                }
+                showAlert('نسبة الخصم للمدرس "' + teacherName + '" يجب أن تكون بين 1% و 100%.', 'warning');
+                return false;
             }
 
-            if (discountInput) {
-                discountInput.classList.add('is-invalid');
-                discountInput.focus();
-            }
-
-            showAlert('نسبة الخصم للمدرس "' + teacherName + '" يجب أن تكون بين 1% و 100%.', 'warning');
-            return false;
+            if (discountInput) discountInput.classList.remove('is-invalid');
         }
 
-        if (discountInput) {
-            discountInput.classList.remove('is-invalid');
+        // ===== تحقق الخصم الثابت (fixed): يجب أن يكون رقمياً وأكبر من صفر =====
+        if (selectedType.value === 'fixed') {
+            const fixedInput = document.getElementById('disc_fixed_val_' + teacherId);
+            const fixedValue = Number(fixedInput?.value || 0);
+
+            if (!Number.isFinite(fixedValue) || fixedValue <= 0) {
+                const panel = document.getElementById('discount_panel_' + teacherId);
+                if (panel) panel.classList.remove('d-none');
+                if (fixedInput) {
+                    fixedInput.classList.add('is-invalid');
+                    fixedInput.focus();
+                }
+                showAlert('مبلغ الخصم الثابت للمدرس "' + teacherName + '" يجب أن يكون أكبر من صفر.', 'warning');
+                return false;
+            }
+
+            if (fixedInput) fixedInput.classList.remove('is-invalid');
         }
     }
 

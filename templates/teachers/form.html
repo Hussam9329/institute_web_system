@@ -145,9 +145,10 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="form-label small">القسط (بالألف):</label>
-                                            <input type="number" class="form-control form-control-sm" name="fee_in_person" min="0" placeholder="850"
+                                            <input type="number" class="form-control form-control-sm" name="fee_in_person" min="0" max="50000" placeholder="850"
                                                    value="{% if teacher and teacher.fee_in_person %}{{ (teacher.fee_in_person // 1000) }}{% endif %}"
                                                    {% if has_linked_students and teacher and ('حضوري' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <small class="text-muted" style="font-size:0.68rem;">أدخل المبلغ بالألف د.ع. مثال: 850 = 850,000</small>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
@@ -196,9 +197,10 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="form-label small">القسط (بالألف):</label>
-                                            <input type="number" class="form-control form-control-sm" name="fee_electronic" min="0" placeholder="500"
+                                            <input type="number" class="form-control form-control-sm" name="fee_electronic" min="0" max="50000" placeholder="500"
                                                    value="{% if teacher and teacher.fee_electronic %}{{ (teacher.fee_electronic // 1000) }}{% endif %}"
                                                    {% if has_linked_students and teacher and ('الكتروني' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <small class="text-muted" style="font-size:0.68rem;">أدخل المبلغ بالألف د.ع. مثال: 500 = 500,000</small>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
@@ -247,9 +249,10 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="form-label small">القسط (بالألف):</label>
-                                            <input type="number" class="form-control form-control-sm" name="fee_blended" min="0" placeholder="700"
+                                            <input type="number" class="form-control form-control-sm" name="fee_blended" min="0" max="50000" placeholder="700"
                                                    value="{% if teacher and teacher.fee_blended %}{{ (teacher.fee_blended // 1000) }}{% endif %}"
                                                    {% if has_linked_students and teacher and ('مدمج' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
+                                            <small class="text-muted" style="font-size:0.68rem;">أدخل المبلغ بالألف د.ع. مثال: 700 = 700,000</small>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
@@ -405,8 +408,9 @@ function addCustomType(name, fee, dedType, dedPct, dedManual) {
         <div class="row g-2 mb-2">
             <div class="col-6">
                 <label class="form-label small">القسط (بالألف):</label>
-                <input type="number" class="form-control form-control-sm custom-type-fee" min="0" placeholder="850"
+                <input type="number" class="form-control form-control-sm custom-type-fee" min="0" max="50000" placeholder="850"
                        value="${fee}">
+                <small class="text-muted" style="font-size:0.68rem;">أدخل المبلغ بالألف د.ع. مثال: 850 = 850,000</small>
             </div>
             <div class="col-6">
                 <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
@@ -724,6 +728,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const hasLinkedStudents = {{ 'true' if has_linked_students else 'false' }};
 
     document.getElementById('teacherForm').addEventListener('submit', function(e) {
+        // تحذير من الأسماء الاختبارية
+        const teacherName = document.getElementById('name').value.trim();
+        const suspiciousWords = ['خصم', 'test', 'تجربة', 'اختبار', 'demo'];
+        if (suspiciousWords.some(word => teacherName.toLowerCase().includes(word.toLowerCase()))) {
+            const confirmed = confirm('اسم المدرس يحتوي كلمة قد تبدو اختبارية. هل تريد المتابعة؟');
+            if (!confirmed) {
+                e.preventDefault();
+                return;
+            }
+        }
+
         // التحقق من حقول النسبة المئوية أولاً
         if (!validateAllPctFields()) {
             e.preventDefault();

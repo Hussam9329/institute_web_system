@@ -347,21 +347,21 @@
                                         </td>
                                         <td class="text-center fw-bold">
                                             {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
-                                                <span>{{ format_currency(ts.total_fee) }}</span>
-                                                <br><small class="text-warning"><i class="fas fa-percent me-1" style="font-size:0.65em"></i>{{ ts.discount_info.discount_value }}%</small>
+                                                <div>{{ format_currency(ts.total_fee) }}</div>
+                                                <div class="text-muted" style="font-size:0.72rem;">خصم {{ ts.discount_info.discount_value }}%</div>
                                             {% elif ts.discount_info and ts.discount_info.discount_type == 'fixed' %}
-                                                <span>{{ format_currency(ts.total_fee) }}</span>
-                                                <br><small class="text-warning"><i class="fas fa-coins me-1" style="font-size:0.65em"></i>خصم {{ format_currency(ts.discount_info.discount_value) }}</small>
+                                                <div>{{ format_currency(ts.total_fee) }}</div>
+                                                <div class="text-muted" style="font-size:0.72rem;">خصم مبلغ {{ format_currency(ts.discount_info.discount_value) }}</div>
                                             {% elif ts.discount_info and ts.discount_info.discount_type == 'free' %}
                                                 <span class="badge bg-success"><i class="fas fa-gift me-1"></i>مجاني</span>
                                                 {% if ts.discount_info.institute_waiver %}
-                                                    <br><small class="text-warning"><i class="fas fa-building me-1"></i>تنازل المعهد</small>
+                                                    <div class="text-muted" style="font-size:0.72rem;"><i class="fas fa-building me-1"></i>تنازل المعهد</div>
                                                 {% endif %}
                                             {% elif ts.discount_info and ts.discount_info.discount_type == 'custom' %}
-                                                <span>{{ format_currency(ts.total_fee) }}</span>
-                                                <br><small class="text-warning"><i class="fas fa-tag me-1" style="font-size:0.65em"></i>خصم مخصص {{ ts.discount_info.discount_value }}%</small>
+                                                <div>{{ format_currency(ts.total_fee) }}</div>
+                                                <div class="text-muted" style="font-size:0.72rem;">خصم مخصص {{ ts.discount_info.discount_value }}%</div>
                                             {% else %}
-                                                <span>{{ format_currency(ts.total_fee) }}</span>
+                                                <div>{{ format_currency(ts.total_fee) }}</div>
                                             {% endif %}
                                         </td>
                                         <td class="text-center">

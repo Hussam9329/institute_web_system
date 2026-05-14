@@ -34,30 +34,70 @@ templates.env.globals['format_currency'] = format_currency
 templates.env.globals['UI_LABELS'] = UI_LABELS
 
 
-def validate_discount_inputs(form_data, teacher_ids):
+def get_teacher_name_map(db, teacher_ids):
+    """
+    جلب خريطة أسماء المدرسين دفعة واحدة لتجنب استعلام داخل loop.
+    يُرجع: {teacher_id: teacher_name}
+    """
+    if not teacher_ids:
+        return {}
+    valid_ids = [int(t) for t in teacher_ids if t]
+    if not valid_ids:
+        return {}
+    placeholders = ','.join(['%s'] * len(valid_ids))
+    try:
+        results = db.execute_query(
+            f"SELECT id, name FROM teachers WHERE id IN ({placeholders})",
+            tuple(valid_ids)
+        )
+        return {r['id']: r['name'] for r in results} if results else {}
+    except Exception:
+        return {}
+
+
+# أنواع الخصم المسموحة
+ALLOWED_DISCOUNT_TYPES = ("none", "percentage", "fixed", "custom", "free")
+
+
+def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None):
     """
     يتحقق من خصومات الطالب قبل الحفظ.
     مهم حتى لو تم تعطيل JavaScript أو التلاعب بالـ HTML من المتصفح.
+    
+    teacher_name_map: خريطة {teacher_id: name} لعرض اسم المدرس في رسائل الخطأ بدل رقمه.
     """
+    if teacher_name_map is None:
+        teacher_name_map = {}
+
     for tid in teacher_ids:
         if not tid:
             continue
 
+        tid_int = int(tid)
+        teacher_display = teacher_name_map.get(tid_int, f"المدرس")
+
         discount_type = form_data.get(f"discount_type_{tid}", "none")
+
+        # التحقق من نوع الخصم
+        if discount_type not in ALLOWED_DISCOUNT_TYPES:
+            return False, f"نوع الخصم لـ{teacher_display} غير صالح."
 
         try:
             discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
-        except ValueError:
-            return False, f"قيمة الخصم للمدرس رقم {tid} غير صالحة."
+        except (ValueError, TypeError):
+            return False, f"يرجى إدخال قيمة خصم صحيحة لـ{teacher_display}."
 
+        # نسبة الخصم: من 1 إلى 100
         if discount_type == "percentage" and (discount_value < 1 or discount_value > 100):
-            return False, f"نسبة الخصم للمدرس رقم {tid} هي {discount_value}%، والمسموح فقط من 1% إلى 100%."
+            return False, f"نسبة الخصم لـ{teacher_display} يجب أن تكون بين 1% و 100%."
 
-        if discount_type == "fixed" and discount_value < 0:
-            return False, f"قيمة الخصم الثابت للمدرس رقم {tid} غير صالحة."
+        # خصم مخصص: يُعامل كنسبة (من 1 إلى 100)
+        if discount_type == "custom" and (discount_value < 1 or discount_value > 100):
+            return False, f"نسبة الخصم المخصص لـ{teacher_display} يجب أن تكون بين 1% و 100%."
 
-        if discount_type not in ("none", "percentage", "fixed", "custom", "free"):
-            return False, f"نوع الخصم للمدرس رقم {tid} غير صالح."
+        # خصم ثابت: يجب أن يكون أكبر من صفر
+        if discount_type == "fixed" and discount_value <= 0:
+            return False, f"مبلغ الخصم الثابت لـ{teacher_display} يجب أن يكون أكبر من صفر."
 
     return True, ""
 
@@ -360,7 +400,8 @@ async def student_add(
 
     # فحص الخصوم قبل إنشاء الطالب
     teacher_ids = form_data.getlist("teacher_ids")
-    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids)
+    teacher_name_map = get_teacher_name_map(db, teacher_ids)
+    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids, teacher_name_map)
     if not is_valid_discount:
         return RedirectResponse(
             url=f"/students/add?error=invalid_discount_percentage&detail={quote(discount_error)}",
@@ -521,6 +562,85 @@ async def student_update(
     check_permission(request, 'edit_students')
     db = Database()
 
+    form_data = await request.form()
+    teacher_ids = form_data.getlist("teacher_ids")
+
+    # ===== التحقق من الخصوم أولاً - قبل أي كتابة في قاعدة البيانات =====
+    teacher_name_map = get_teacher_name_map(db, teacher_ids)
+    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids, teacher_name_map)
+    if not is_valid_discount:
+        # لا نكتب أي شيء في قاعدة البيانات
+        # نعيد عرض النموذج مع البيانات المدخلة حتى لا يفقدها المستخدم
+        student = dict(db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))[0]) if db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,)) else None
+        if not student:
+            return RedirectResponse(url="/students?error=not_found", status_code=303)
+
+        teachers = db.execute_query("SELECT id, name, subject, teaching_types, custom_type_settings FROM teachers ORDER BY name")
+        linked = db.execute_query(
+            "SELECT teacher_id, study_type, status, discount_type, discount_value, institute_waiver, discount_notes FROM student_teacher WHERE student_id = %s",
+            (student_id,)
+        )
+        linked_ids = [r['teacher_id'] for r in linked] if linked else []
+        linked_data = {r['teacher_id']: dict(r) for r in linked} if linked else {}
+
+        # تحديث linked_data ببيانات form_data المدخلة حتى لا يفقدها المستخدم
+        for tid in teacher_ids:
+            if not tid:
+                continue
+            tid_int = int(tid)
+            if tid_int not in linked_data:
+                linked_data[tid_int] = {}
+            linked_data[tid_int].update({
+                'teacher_id': tid_int,
+                'study_type': form_data.get(f"study_type_{tid}", "حضوري"),
+                'status': form_data.get(f"status_{tid}", "مستمر"),
+                'discount_type': form_data.get(f"discount_type_{tid}", "none"),
+                'discount_value': int(form_data.get(f"discount_value_{tid}", 0) or 0),
+                'institute_waiver': int(form_data.get(f"institute_waiver_{tid}", 0) or 0),
+                'discount_notes': form_data.get(f"discount_notes_{tid}", ""),
+            })
+
+        # حساب installment_counts و completed_teachers
+        installment_counts = {}
+        completed_teachers = set()
+        if linked_ids:
+            counts = db.execute_query(
+                "SELECT teacher_id, COUNT(*) as cnt FROM installments WHERE student_id = %s GROUP BY teacher_id",
+                (student_id,)
+            )
+            if counts:
+                for c in counts:
+                    installment_counts[c['teacher_id']] = c['cnt']
+            for tid_check in linked_ids:
+                balance = finance_service.calculate_student_teacher_balance(student_id, tid_check)
+                if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
+                    completed_teachers.add(tid_check)
+
+        subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
+        subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
+        all_subjects = set()
+        if subjects_from_table:
+            all_subjects.update(s['name'] for s in subjects_from_table)
+        if subjects_from_teachers:
+            all_subjects.update(s['name'] for s in subjects_from_teachers)
+        subjects_list = sorted(all_subjects)
+
+        return templates.TemplateResponse("students/form.html", {
+            "request": request,
+            "student": {**student, 'name': name, 'notes': notes},
+            "mode": "edit",
+            "teachers": teachers,
+            "subjects": subjects_list,
+            "linked_teacher_ids": linked_ids,
+            "linked_data": linked_data,
+            "installment_counts": installment_counts,
+            "completed_teachers": completed_teachers,
+            "error": "invalid_discount_percentage",
+            "error_detail": discount_error,
+        }, status_code=400)
+
+    # ===== بعد نجاح التحقق - يمكننا تحديث قاعدة البيانات بأمان =====
+
     update_query = '''
         UPDATE students
         SET name=%s, notes=%s
@@ -533,15 +653,6 @@ async def student_update(
     ))
 
     # تحديث ربط المدرسين مع نوع الدراسة والحالة
-    form_data = await request.form()
-    teacher_ids = form_data.getlist("teacher_ids")
-
-    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids)
-    if not is_valid_discount:
-        return RedirectResponse(
-            url=f"/students/{student_id}/edit?error=invalid_discount_percentage&detail={quote(discount_error)}",
-            status_code=303
-        )
 
     # حذف كل الروابط القديمة أولاً
     old_links = db.execute_query("SELECT teacher_id FROM student_teacher WHERE student_id = %s", (student_id,))

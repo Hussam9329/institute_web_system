@@ -715,6 +715,19 @@
         </div>
     </div>
 
+    <!-- ===== تنبيهات مالية ===== -->
+    <div id="financialWarningsContainer" class="d-none" style="margin-bottom: 1.5rem;">
+        <div class="card border-0 shadow-sm" style="border-left: 4px solid #ef4444 !important; border-radius: var(--radius-xl);">
+            <div class="card-header bg-white border-bottom d-flex align-items-center gap-2" style="border-radius: var(--radius-xl) var(--radius-xl) 0 0;">
+                <i class="fas fa-exclamation-triangle text-danger"></i>
+                <h6 class="mb-0 fw-bold text-danger">تنبيهات مالية</h6>
+                <span id="warningsCount" class="badge bg-danger ms-auto">0</span>
+            </div>
+            <div class="card-body p-0" id="warningsList">
+            </div>
+        </div>
+    </div>
+
     <!-- ===== آخر المدفوعات ===== -->
     <div class="dash-recent dash-animate dash-delay-6">
         <div class="dash-recent-header">
@@ -800,5 +813,42 @@
 </div>
 </div>
 
+<script>
+// تحميل التنبيهات المالية
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/financial-warnings')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.data && data.data.length > 0) {
+                const container = document.getElementById('financialWarningsContainer');
+                const list = document.getElementById('warningsList');
+                const count = document.getElementById('warningsCount');
+                
+                count.textContent = data.data.length;
+                container.classList.remove('d-none');
+                
+                let html = '';
+                data.data.forEach(function(w) {
+                    const severityClass = w.severity === 'high' ? 'danger' : w.severity === 'medium' ? 'warning' : 'info';
+                    const severityIcon = w.severity === 'high' ? 'exclamation-circle' : w.severity === 'medium' ? 'exclamation-triangle' : 'info-circle';
+                    html += '<div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom" style="border-bottom-color: var(--app-border) !important;">';
+                    html += '<i class="fas fa-' + severityIcon + ' text-' + severityClass + ' mt-1" style="font-size:0.85rem;"></i>';
+                    html += '<div style="min-width:0;">';
+                    html += '<div class="small fw-semibold text-' + severityClass + '">' + escapeHtmlSimple(w.type.replace(/_/g, ' ')) + '</div>';
+                    html += '<div class="small text-muted">' + escapeHtmlSimple(w.message) + '</div>';
+                    html += '</div></div>';
+                });
+                list.innerHTML = html;
+            }
+        })
+        .catch(function() {});
+
+    function escapeHtmlSimple(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+});
+</script>
 
 {% endblock %}

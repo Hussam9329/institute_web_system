@@ -765,6 +765,136 @@
     .ws-room-section-title h5 { font-size: 14px; }
     .ws-page-btn { width: 32px; height: 32px; font-size: 12px; }
 }
+
+/* ===== DARK MODE ===== */
+html[data-theme="dark"] .ws-controls {
+    background: var(--bg-primary, #1e1e2e);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
+html[data-theme="dark"] .ws-room-pill {
+    background: var(--bg-primary, #1e1e2e);
+    border-color: var(--border-color, #3a3a4e);
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-room-pill.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+html[data-theme="dark"] .ws-type-pill {
+    color: var(--text-muted, #888);
+}
+html[data-theme="dark"] .ws-type-pill.active-all {
+    background: var(--bg-secondary, #2a2a3e);
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-stat-card {
+    background: var(--bg-primary, #1e1e2e);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+html[data-theme="dark"] .ws-stat-num {
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-stat-label {
+    color: var(--text-muted, #888);
+}
+html[data-theme="dark"] .ws-room-section {
+    background: var(--bg-primary, #1e1e2e);
+}
+html[data-theme="dark"] .ws-room-section-header {
+    background: var(--bg-secondary, #2a2a3e);
+    border-bottom-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-room-section-title h5 {
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-grid-wrap {
+    background: var(--bg-primary, #1e1e2e);
+}
+html[data-theme="dark"] .ws-grid th {
+    background: var(--bg-secondary, #2a2a3e);
+    color: var(--text-primary, #e0e0e0);
+    border-bottom-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-grid th.ws-time-col {
+    background: var(--bg-secondary, #2a2a3e);
+}
+html[data-theme="dark"] .ws-grid td {
+    border-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-grid td.ws-time-cell {
+    background: var(--bg-secondary, #2a2a3e);
+    color: var(--text-muted, #888);
+    border-right-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-add-btn {
+    border-color: var(--border-color, #3a3a4e);
+    color: var(--text-muted, #888);
+    background: transparent;
+}
+html[data-theme="dark"] .ws-add-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: rgba(99,102,241,0.08);
+}
+html[data-theme="dark"] .ws-ev.ws-lec {
+    background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.06));
+    border-right-color: #3b82f6;
+}
+html[data-theme="dark"] .ws-ev.ws-exm {
+    background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(249,115,22,0.06));
+    border-right-color: #f97316;
+}
+html[data-theme="dark"] .ws-lec .ws-ev-subj {
+    color: #93c5fd;
+}
+html[data-theme="dark"] .ws-exm .ws-ev-subj {
+    color: #fdba74;
+}
+html[data-theme="dark"] .ws-list-group {
+    background: var(--bg-primary, #1e1e2e);
+}
+html[data-theme="dark"] .ws-list-group-hd {
+    background: var(--bg-secondary, #2a2a3e);
+    border-bottom-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-list-group-hd .grp-title {
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-lv {
+    border-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-lv .ws-lv-subj {
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-lv.ws-lv-lec {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03));
+}
+html[data-theme="dark"] .ws-lv.ws-lv-exm {
+    background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(249,115,22,0.03));
+}
+html[data-theme="dark"] .ws-rooms-panel {
+    background: var(--bg-primary, #1e1e2e);
+}
+html[data-theme="dark"] .ws-room-row {
+    border-color: var(--border-color, #3a3a4e);
+}
+html[data-theme="dark"] .ws-room-row .rr-name {
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-page-btn {
+    background: var(--bg-primary, #1e1e2e);
+    border-color: var(--border-color, #3a3a4e);
+    color: var(--text-primary, #e0e0e0);
+}
+html[data-theme="dark"] .ws-page-btn.active {
+    background: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+html[data-theme="dark"] .ws-ctrl-divider {
+    background: var(--border-color, #3a3a4e);
+}
 </style>
 {% endblock %}
 

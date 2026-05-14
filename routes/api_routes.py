@@ -87,7 +87,7 @@ async def api_add_subject(request: Request, subject: SubjectCreate):
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم إضافة المادة بنجاح"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.put("/subjects/{subject_id}")
@@ -108,7 +108,7 @@ async def api_update_subject(request: Request, subject_id: int, subject: Subject
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم تحديث المادة بنجاح"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.delete("/subjects/{subject_id}")
@@ -125,7 +125,7 @@ async def api_delete_subject(request: Request, subject_id: int):
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف المادة"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== عمليات الطلاب =====
@@ -280,7 +280,7 @@ async def api_link_student_teacher(request: Request, link: LinkStudentTeacher):
     except HTTPException:
         raise
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.post("/link-student-teachers")
@@ -335,7 +335,7 @@ async def api_link_student_teachers(request: Request, data: dict):
         _invalidate_dashboard_cache()
         return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.put("/update-student-discount/{student_id}/{teacher_id}")
@@ -354,7 +354,7 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
             return {"success": False, "message": "نوع الخصم غير صالح"}
         
         if discount_type in ('percentage', 'custom') and (discount_value < 0 or discount_value > 100):
-            return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 0 و 100"}
+            return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 1% و 100%"}
         
         if discount_type == 'fixed' and discount_value <= 0:
             return {"success": False, "message": "قيمة الخصم الثابت يجب أن تكون أكبر من صفر"}
@@ -443,7 +443,7 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         }
         
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.get("/student-discount/{student_id}/{teacher_id}")
@@ -507,7 +507,7 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم التحديث بنجاح"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.delete("/unlink-student-teacher/{student_id}/{teacher_id}")
@@ -564,7 +564,7 @@ async def api_unlink_student_teacher(request: Request, student_id: int, teacher_
 
         return {"success": True, "message": "تم إلغاء الربط بنجاح", "preserved_installments": 0}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== عمليات الأقساط =====
@@ -743,7 +743,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             remaining = total_fee - already_paid
             return {
                 "success": False,
-                "message": f"المبلغ يتجاوز القسط الكلي! القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)}، المتبقي {format_currency(remaining)}"
+                "message": f"لا يمكن تسجيل دفعة أكبر من المتبقي. المتبقي الحالي هو {format_currency(remaining)} د.ع. (القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)})"
             }
 
         # ===== حساب المتبقي قبل الدفع لتحديد ما إذا كان سيغلق الرصيد =====
@@ -807,7 +807,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
         }
         
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.get("/installments/student/{student_id}/teacher/{teacher_id}")
@@ -907,7 +907,7 @@ async def api_get_allowed_installment_types(request: Request, student_id: int, t
             "split_options": split_options if not has_full else []
         }
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.get("/installments/recent")
@@ -942,6 +942,8 @@ async def api_delete_installment(request: Request, installment_id: int):
         db = Database()
         db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))
         
+        _invalidate_dashboard_cache()
+        
         return {
             "success": True, 
             "message": "تم حذف القسط",
@@ -949,7 +951,7 @@ async def api_delete_installment(request: Request, installment_id: int):
         }
         
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== فحص سلامة البيانات =====
@@ -1217,7 +1219,7 @@ async def api_fix_first_to_full(request: Request):
         }
         
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== عمليات السحوبات =====
@@ -1234,6 +1236,7 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
         if not withdrawal.withdrawal_date:
             return {"success": False, "message": "يجب تحديد تاريخ السحب"}
 
+        # ===== التحقق: لا يمكن سحب مبلغ أكبر من مستحق المدرس المتاح =====
         can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
             withdrawal.teacher_id,
             amount,
@@ -1241,7 +1244,7 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
         )
         
         if not can_withdraw:
-            return {"success": False, "message": message}
+            return {"success": False, "message": f"لا يمكن تسجيل السحب. الرصيد المتاح للمدرس هو {format_currency(balance)} فقط. {message}"}
         
         insert_query = '''
             INSERT INTO teacher_withdrawals (teacher_id, amount, withdrawal_date, notes)
@@ -1256,6 +1259,7 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
         ))
         
         new_balance = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
+        _invalidate_dashboard_cache()
 
         log_action(
             request,
@@ -1272,7 +1276,7 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
         }
         
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.get("/withdrawals/teacher/{teacher_id}")
@@ -1301,9 +1305,10 @@ async def api_delete_withdrawal(request: Request, withdrawal_id: int):
         
         db = Database()
         db.execute_query("DELETE FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف السحب"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.put("/withdrawals/{withdrawal_id}")
@@ -1329,6 +1334,7 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
         if not withdrawal_date:
             return {"success": False, "message": "يجب تحديد تاريخ السحب"}
 
+        # ===== التحقق: لا يمكن سحب مبلغ أكبر من مستحق المدرس المتاح =====
         can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
             teacher_id,
             amount,
@@ -1337,15 +1343,16 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
         )
 
         if not can_withdraw:
-            return {"success": False, "message": message}
+            return {"success": False, "message": f"لا يمكن تعديل السحب. الرصيد المتاح للمدرس هو {format_currency(balance)} فقط. {message}"}
         
         db.execute_query(
             "UPDATE teacher_withdrawals SET amount = %s, withdrawal_date = %s, notes = %s WHERE id = %s",
             (amount, withdrawal_date, notes, withdrawal_id)
         )
+        _invalidate_dashboard_cache()
         return {"success": True, "message": "تم تعديل السحب بنجاح"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== إحصائيات =====
@@ -1356,6 +1363,14 @@ async def api_get_statistics(request: Request):
     check_permission(request, 'view_dashboard')
     stats = finance_service.get_system_statistics()
     return {"success": True, "data": stats}
+
+
+@router.get("/financial-warnings")
+async def api_get_financial_warnings(request: Request):
+    """الحصول على تنبيهات مالية للبيانات القديمة"""
+    check_permission(request, 'view_reports')
+    warnings = finance_service.get_financial_warnings()
+    return {"success": True, "data": warnings, "count": len(warnings)}
 
 
 # ===== فحص سلامة قاعدة البيانات =====
@@ -1821,7 +1836,7 @@ async def api_get_rooms():
         rooms = db.execute_query("SELECT * FROM rooms ORDER BY name")
         return {"success": True, "data": [dict(r) for r in rooms] if rooms else []}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.post("/rooms")
@@ -1848,7 +1863,7 @@ async def api_add_room(request: Request, data: dict = Body(...)):
         new_id = result[0]['id'] if result else None
         return {"success": True, "message": "تم إضافة القاعة بنجاح", "id": new_id}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.put("/rooms/{room_id}")
@@ -1878,7 +1893,7 @@ async def api_update_room(request: Request, room_id: int, data: dict = Body(...)
         )
         return {"success": True, "message": "تم تحديث القاعة بنجاح"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.delete("/rooms/{room_id}")
@@ -1894,7 +1909,7 @@ async def api_delete_room(request: Request, room_id: int):
         db.execute_query("DELETE FROM rooms WHERE id = %s", (room_id,))
         return {"success": True, "message": "تم حذف القاعة"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== عمليات الجدول الأسبوعي =====
@@ -1926,7 +1941,7 @@ async def api_get_weekly_schedule(room_id: int = None):
         
         return {"success": True, "data": [dict(r) for r in results] if results else []}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.post("/weekly-schedule")
@@ -2022,7 +2037,7 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
         return {"success": True, "message": f"تم إضافة {event_label} بنجاح", "id": new_id}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.put("/weekly-schedule/{lecture_id}")
@@ -2113,7 +2128,7 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
         return {"success": True, "message": f"تم تحديث {event_label} بنجاح"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 @router.delete("/weekly-schedule/{lecture_id}")
@@ -2129,7 +2144,7 @@ async def api_delete_weekly_lecture(request: Request, lecture_id: int):
         db.execute_query("DELETE FROM weekly_schedule WHERE id = %s", (lecture_id,))
         return {"success": True, "message": "تم حذف المحاضرة"}
     except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
 
 # ===== بحث بالباركود / QR =====

@@ -15,6 +15,9 @@ from typing import Dict, Any, Optional, Tuple
 # الأنواع الأساسية الثابتة
 BASE_TEACHING_TYPES = ['حضوري', 'الكتروني', 'مدمج']
 
+# الحد الأعلى المنطقي لقسط نوع التدريس (بالدينار العراقي)
+MAX_REASONABLE_FEE = 50_000_000  # 50 مليون د.ع
+
 # خريطة الأنواع الأساسية لحقل القسط في جدول teachers
 BASE_FEE_MAP = {
     'حضوري': 'fee_in_person',
@@ -225,6 +228,8 @@ def validate_custom_type_data(type_name: str, type_data: Dict) -> Optional[str]:
     fee = int(type_data.get('fee', 0) or 0)
     if fee <= 0:
         return f'قسط النوع "{type_name}" يجب أن يكون أكبر من صفر'
+    if fee > MAX_REASONABLE_FEE:
+        return f'قسط نوع التدريس مرتفع جداً. يرجى إدخال المبلغ بالدينار العراقي، والحد الأعلى المسموح هو 50,000,000 د.ع.'
     
     ded_type = type_data.get('deduction_type', 'percentage')
     if ded_type == 'percentage':
