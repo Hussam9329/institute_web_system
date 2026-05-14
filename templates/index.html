@@ -324,6 +324,18 @@
     color: var(--app-badge-soft-text) !important;
     border: 1px solid var(--app-border);
 }
+.dash-recent-table .dash-student-link {
+    color: var(--app-primary);
+}
+.dash-recent-table .dash-student-link:hover {
+    color: var(--app-primary-hover);
+}
+.dash-recent-table .dash-teacher-link {
+    color: var(--app-text);
+}
+.dash-recent-table .dash-teacher-link:hover {
+    color: var(--app-primary);
+}
 
 /* Mobile payment cards */
 .dash-payment-card {
@@ -726,10 +738,10 @@
                     {% for inst in recent_installments %}
                     <tr>
                         <td class="fw-semibold">
-                            <a href="/students/{{ inst.student_id }}" class="text-decoration-none text-primary">{{ inst.student_name }}</a>
+                            <a href="/students/{{ inst.student_id }}" class="text-decoration-none dash-student-link">{{ inst.student_name }}</a>
                         </td>
                         <td>
-                            <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none" style="color: var(--app-text, var(--text-primary));">{{ inst.teacher_name }}</a>
+                            <a href="/teachers/{{ inst.teacher_id }}" class="text-decoration-none dash-teacher-link">{{ inst.teacher_name }}</a>
                         </td>
                         <td>
                             <span class="badge dash-subject-badge" style="font-size:0.75rem;">{{ inst.subject }}</span>
