@@ -88,15 +88,18 @@ def get_discount_value_from_form(form_data, tid, discount_type=None):
     return val
 
 
-def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None):
+def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None, teachers_data=None):
     """
     يتحقق من خصومات الطالب قبل الحفظ.
     مهم حتى لو تم تعطيل JavaScript أو التلاعب بالـ HTML من المتصفح.
     
     teacher_name_map: خريطة {teacher_id: name} لعرض اسم المدرس في رسائل الخطأ بدل رقمه.
+    teachers_data: خريطة {teacher_id: teacher_dict} لجلب القسط والتحقق من حد الخصم الثابت.
     """
     if teacher_name_map is None:
         teacher_name_map = {}
+    if teachers_data is None:
+        teachers_data = {}
 
     for tid in teacher_ids:
         if not tid:
@@ -114,17 +117,26 @@ def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None):
         # ===== معالجة قيمة الخصم حسب النوع =====
         discount_value = get_discount_value_from_form(form_data, tid, discount_type)
 
-        # نسبة الخصم: من 1 إلى 100
-        if discount_type == "percentage" and (discount_value < 1 or discount_value > 100):
-            return False, f"نسبة الخصم لـ{teacher_display} يجب أن تكون بين 1% و 100%."
+        # نسبة الخصم: من 1 إلى 99 (100% = مجاني، نوع منفصل)
+        if discount_type == "percentage" and (discount_value < 1 or discount_value > 99):
+            return False, f"نسبة الخصم لـ{teacher_display} يجب أن تكون بين 1% و 99%. إذا كنت تريد خصم 100% اختر نوع 'مجاني'."
 
-        # خصم مخصص: يُعامل كنسبة (من 1 إلى 100)
-        if discount_type == "custom" and (discount_value < 1 or discount_value > 100):
-            return False, f"نسبة الخصم المخصص لـ{teacher_display} يجب أن تكون بين 1% و 100%."
+        # خصم مخصص: يُعامل كنسبة (من 1 إلى 99)
+        if discount_type == "custom" and (discount_value < 1 or discount_value > 99):
+            return False, f"نسبة الخصم المخصص لـ{teacher_display} يجب أن تكون بين 1% و 99%."
 
-        # خصم ثابت: يجب أن يكون أكبر من صفر
-        if discount_type == "fixed" and discount_value <= 0:
-            return False, f"مبلغ الخصم الثابت لـ{teacher_display} يجب أن يكون أكبر من صفر."
+        # خصم ثابت: يجب أن يكون أكبر من صفر ولا يتجاوز القسط الكلي
+        if discount_type == "fixed":
+            if discount_value <= 0:
+                return False, f"مبلغ الخصم الثابت لـ{teacher_display} يجب أن يكون أكبر من صفر."
+            # فحص الحد الأعلى: لا يمكن أن يتجاوز القسط الكلي للمدرس
+            teacher_info = teachers_data.get(tid_int)
+            if teacher_info:
+                study_type = form_data.get(f"study_type_{tid}", "حضوري")
+                teacher_fee = get_fee_for_study_type(teacher_info, study_type)
+                if teacher_fee > 0 and discount_value > teacher_fee:
+                    from config import format_currency
+                    return False, f"مبلغ الخصم الثابت لـ{teacher_display} ({format_currency(discount_value)}) يتجاوز القسط الكلي ({format_currency(teacher_fee)}). الحد الأقصى المسموح: {format_currency(teacher_fee)}."
 
     return True, ""
 
@@ -457,7 +469,19 @@ async def student_add(
     # فحص الخصوم قبل إنشاء الطالب
     teacher_ids = form_data.getlist("teacher_ids")
     teacher_name_map = get_teacher_name_map(db, teacher_ids)
-    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids, teacher_name_map)
+    # جلب بيانات المدرسين لفحص حد الخصم الثابت
+    teachers_for_validation = {}
+    if teacher_ids:
+        valid_ids = [int(t) for t in teacher_ids if t]
+        if valid_ids:
+            placeholders = ','.join(['%s'] * len(valid_ids))
+            t_rows = db.execute_query(
+                f"SELECT id, name, fee_in_person, fee_electronic, fee_blended, total_fee, custom_type_settings FROM teachers WHERE id IN ({placeholders})",
+                tuple(valid_ids)
+            )
+            if t_rows:
+                teachers_for_validation = {r['id']: dict(r) for r in t_rows}
+    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids, teacher_name_map, teachers_for_validation)
     if not is_valid_discount:
         return RedirectResponse(
             url=f"/students/add?error=invalid_discount_percentage&detail={quote(discount_error)}",
@@ -625,7 +649,19 @@ async def student_update(
 
     # ===== التحقق من الخصوم أولاً - قبل أي كتابة في قاعدة البيانات =====
     teacher_name_map = get_teacher_name_map(db, teacher_ids)
-    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids, teacher_name_map)
+    # جلب بيانات المدرسين لفحص حد الخصم الثابت
+    teachers_for_validation = {}
+    if teacher_ids:
+        valid_ids = [int(t) for t in teacher_ids if t]
+        if valid_ids:
+            placeholders = ','.join(['%s'] * len(valid_ids))
+            t_rows = db.execute_query(
+                f"SELECT id, name, fee_in_person, fee_electronic, fee_blended, total_fee, custom_type_settings FROM teachers WHERE id IN ({placeholders})",
+                tuple(valid_ids)
+            )
+            if t_rows:
+                teachers_for_validation = {r['id']: dict(r) for r in t_rows}
+    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids, teacher_name_map, teachers_for_validation)
     if not is_valid_discount:
         # لا نكتب أي شيء في قاعدة البيانات
         # نعيد عرض النموذج مع البيانات المدخلة حتى لا يفقدها المستخدم

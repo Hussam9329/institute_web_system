@@ -303,17 +303,18 @@
                                                                            name="discount_value_{{ teacher.id }}"
                                                                            id="disc_pct_val_{{ teacher.id }}"
                                                                            min="1"
-                                                                           max="100"
+                                                                           max="99"
                                                                            inputmode="numeric"
-                                                                           placeholder="نسبة الخصم"
+                                                                           placeholder="نسبة الخصم (1% - 99%)"
                                                                            value="{{ current_discount_value if current_discount_type == 'percentage' else '' }}"
                                                                            oninput="onDiscountValueChange({{ teacher.id }})">
                                                                     <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f0a500,#e6960a);color:#fff;border-color:#f0a500;">%</span>
                                                                 </div>
-                                                                <div class="invalid-feedback">
-                                                                    نسبة الخصم يجب أن تكون بين 1% و 100%.
+                                                                <div class="invalid-feedback" id="disc_pct_error_{{ teacher.id }}">
+                                                                    نسبة الخصم يجب أن تكون بين 1% و 99%.
                                                                 </div>
                                                                 <small class="text-muted d-none mt-1" id="disc_pct_preview_{{ teacher.id }}"></small>
+                                                                <div class="d-none mt-1" id="disc_pct_warning_{{ teacher.id }}"></div>
                                                             </div>
                                                             <!-- مبلغ الخصم الثابت -->
                                                             <div class="d-none mb-2" id="disc_fixed_section_{{ teacher.id }}">
@@ -324,10 +325,11 @@
                                                                            oninput="onDiscountFixedChange({{ teacher.id }})">
                                                                     <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border-color:#f97316;">ألف د.ع</span>
                                                                 </div>
-                                                                <div class="invalid-feedback">
+                                                                <div class="invalid-feedback" id="disc_fixed_error_{{ teacher.id }}">
                                                                     مبلغ الخصم الثابت يجب أن يكون أكبر من صفر.
                                                                 </div>
                                                                 <small class="text-muted d-none mt-1" id="disc_fixed_preview_{{ teacher.id }}"></small>
+                                                                <div class="d-none mt-1" id="disc_fixed_warning_{{ teacher.id }}"></div>
                                                             </div>
                                                             <!-- خيار مجاني -->
                                                             <div class="d-none" id="disc_free_section_{{ teacher.id }}">
@@ -710,12 +712,31 @@ function getTeacherFeeByStudyType(teacherId, studyType) {
 function onDiscountValueChange(teacherId) {
     const valInput = document.getElementById('disc_pct_val_' + teacherId);
     const preview = document.getElementById('disc_pct_preview_' + teacherId);
+    const warningDiv = document.getElementById('disc_pct_warning_' + teacherId);
     const discountValue = parseInt(valInput?.value) || 0;
 
     if (!preview) return;
 
-    if (discountValue <= 0 || discountValue > 100) {
+    // إخفاء التحذيرات السابقة
+    if (warningDiv) {
+        warningDiv.classList.add('d-none');
+        warningDiv.innerHTML = '';
+    }
+    if (valInput) valInput.classList.remove('is-invalid');
+
+    if (discountValue <= 0) {
         preview.classList.add('d-none');
+        return;
+    }
+
+    // فحص الحد الأعلى: لا يسمح بأكثر من 99%
+    if (discountValue > 99) {
+        preview.classList.add('d-none');
+        if (valInput) valInput.classList.add('is-invalid');
+        if (warningDiv) {
+            warningDiv.innerHTML = '<div class="alert alert-danger py-1 px-2 mb-0 small d-flex align-items-center" style="border-radius:6px;"><i class="fas fa-exclamation-triangle text-danger me-2" style="font-size:0.8rem;"></i><span>الحد الأقصى لنسبة الخصم هو <strong>99%</strong>. إذا كنت تريد خصم 100% اختر نوع <strong>\'مجاني\'</strong>.</span></div>';
+            warningDiv.classList.remove('d-none');
+        }
         return;
     }
 
@@ -744,9 +765,17 @@ function onDiscountValueChange(teacherId) {
 function onDiscountFixedChange(teacherId) {
     const valInput = document.getElementById('disc_fixed_val_' + teacherId);
     const preview = document.getElementById('disc_fixed_preview_' + teacherId);
+    const warningDiv = document.getElementById('disc_fixed_warning_' + teacherId);
     const discountValue = parseInt(valInput?.value) || 0;
 
     if (!preview) return;
+
+    // إخفاء التحذيرات السابقة
+    if (warningDiv) {
+        warningDiv.classList.add('d-none');
+        warningDiv.innerHTML = '';
+    }
+    if (valInput) valInput.classList.remove('is-invalid');
 
     if (discountValue <= 0) {
         preview.classList.add('d-none');
@@ -765,6 +794,19 @@ function onDiscountFixedChange(teacherId) {
         let totalFee = getTeacherFeeByStudyType(teacherId, studyType);
 
         const fixedAmount = discountValue * 1000; // تحويل من ألف إلى القيمة الكاملة
+
+        // فحص الحد الأعلى: لا يمكن أن يتجاوز القسط الكلي
+        if (totalFee > 0 && fixedAmount > totalFee) {
+            preview.classList.add('d-none');
+            if (valInput) valInput.classList.add('is-invalid');
+            const maxThousands = Math.floor(totalFee / 1000);
+            if (warningDiv) {
+                warningDiv.innerHTML = '<div class="alert alert-danger py-1 px-2 mb-0 small d-flex align-items-center" style="border-radius:6px;"><i class="fas fa-exclamation-triangle text-danger me-2" style="font-size:0.8rem;"></i><span>مبلغ الخصم <strong>(' + formatCurrency(fixedAmount) + ')</strong> يتجاوز القسط الكلي <strong>(' + formatCurrency(totalFee) + ')</strong>.<br>الحد الأقصى المسموح: <strong>' + maxThousands + '</strong> ألف د.ع (' + formatCurrency(totalFee) + ')</span></div>';
+                warningDiv.classList.remove('d-none');
+            }
+            return;
+        }
+
         if (totalFee > 0) {
             const newFee = Math.max(0, totalFee - fixedAmount);
             preview.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>القسط: ' + formatCurrency(totalFee) + ' ← بعد الخصم: ' + formatCurrency(newFee) + ' (خصم ' + formatCurrency(fixedAmount) + ')';
@@ -860,29 +902,39 @@ function validateStudentDiscountsBeforeSubmit() {
 
         if (!selectedType) continue;
 
-        // ===== تحقق نسبة الخصم (percentage): من 1 إلى 100 =====
+        // ===== تحقق نسبة الخصم (percentage): من 1 إلى 99 =====
         if (selectedType.value === 'percentage') {
             const discountInput = document.getElementById('disc_pct_val_' + teacherId);
             const discountValue = Number(discountInput?.value || 0);
 
-            if (!Number.isFinite(discountValue) || discountValue < 1 || discountValue > 100) {
+            if (!Number.isFinite(discountValue) || discountValue < 1 || discountValue > 99) {
                 const panel = document.getElementById('discount_panel_' + teacherId);
                 if (panel) panel.classList.remove('d-none');
                 if (discountInput) {
                     discountInput.classList.add('is-invalid');
                     discountInput.focus();
                 }
-                showAlert('نسبة الخصم للمدرس "' + teacherName + '" يجب أن تكون بين 1% و 100%.', 'warning');
+                // تحديث رسالة الخطأ
+                const errorDiv = document.getElementById('disc_pct_error_' + teacherId);
+                if (errorDiv) {
+                    if (discountValue >= 100) {
+                        errorDiv.textContent = 'الحد الأقصى لنسبة الخصم هو 99%. إذا كنت تريد خصم 100% اختر نوع "مجاني".';
+                    } else {
+                        errorDiv.textContent = 'نسبة الخصم يجب أن تكون بين 1% و 99%.';
+                    }
+                }
+                showAlert('نسبة الخصم للمدرس "' + teacherName + '" يجب أن تكون بين 1% و 99%.', 'warning');
                 return false;
             }
 
             if (discountInput) discountInput.classList.remove('is-invalid');
         }
 
-        // ===== تحقق الخصم الثابت (fixed): يجب أن يكون رقمياً وأكبر من صفر =====
+        // ===== تحقق الخصم الثابت (fixed): يجب أن يكون رقمياً وأكبر من صفر ولا يتجاوز القسط =====
         if (selectedType.value === 'fixed') {
             const fixedInput = document.getElementById('disc_fixed_val_' + teacherId);
             const fixedValue = Number(fixedInput?.value || 0);
+            const fixedAmountFull = fixedValue * 1000;
 
             if (!Number.isFinite(fixedValue) || fixedValue <= 0) {
                 const panel = document.getElementById('discount_panel_' + teacherId);
@@ -892,6 +944,30 @@ function validateStudentDiscountsBeforeSubmit() {
                     fixedInput.focus();
                 }
                 showAlert('مبلغ الخصم الثابت للمدرس "' + teacherName + '" يجب أن يكون أكبر من صفر.', 'warning');
+                return false;
+            }
+
+            // فحص الحد الأعلى: لا يمكن أن يتجاوز القسط الكلي
+            const studyTypeSelect = document.querySelector('select[name="study_type_' + teacherId + '"]');
+            const hiddenStudyType = document.querySelector('input[name="study_type_' + teacherId + '"]');
+            let studyType = 'حضوري';
+            if (studyTypeSelect) studyType = studyTypeSelect.value;
+            else if (hiddenStudyType) studyType = hiddenStudyType.value;
+            let totalFee = getTeacherFeeByStudyType(teacherId, studyType);
+
+            if (totalFee > 0 && fixedAmountFull > totalFee) {
+                const panel = document.getElementById('discount_panel_' + teacherId);
+                if (panel) panel.classList.remove('d-none');
+                if (fixedInput) {
+                    fixedInput.classList.add('is-invalid');
+                    fixedInput.focus();
+                }
+                // تحديث رسالة الخطأ
+                const errorDiv = document.getElementById('disc_fixed_error_' + teacherId);
+                if (errorDiv) {
+                    errorDiv.textContent = 'مبلغ الخصم (' + formatCurrency(fixedAmountFull) + ') يتجاوز القسط الكلي (' + formatCurrency(totalFee) + '). الحد الأقصى: ' + Math.floor(totalFee / 1000) + ' ألف د.ع';
+                }
+                showAlert('مبلغ الخصم الثابت للمدرس "' + teacherName + '" (' + formatCurrency(fixedAmountFull) + ') يتجاوز القسط الكلي (' + formatCurrency(totalFee) + ').', 'warning');
                 return false;
             }
 

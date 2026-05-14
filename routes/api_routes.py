@@ -370,11 +370,28 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         if discount_type not in ('none', 'percentage', 'fixed', 'custom', 'free'):
             return {"success": False, "message": "نوع الخصم غير صالح"}
         
-        if discount_type in ('percentage', 'custom') and (discount_value < 0 or discount_value > 100):
-            return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 1% و 100%"}
+        if discount_type in ('percentage', 'custom') and (discount_value < 1 or discount_value > 99):
+            return {"success": False, "message": "نسبة الخصم يجب أن تكون بين 1% و 99%. إذا كنت تريد خصم 100% اختر نوع 'مجاني'."}
         
         if discount_type == 'fixed' and discount_value <= 0:
             return {"success": False, "message": "قيمة الخصم الثابت يجب أن تكون أكبر من صفر"}
+        
+        # فحص حد الخصم الثابت: لا يمكن أن يتجاوز القسط الكلي للمدرس
+        if discount_type == 'fixed' and discount_value > 0:
+            teacher_row = db.execute_query(
+                "SELECT fee_in_person, fee_electronic, fee_blended, total_fee, custom_type_settings FROM teachers WHERE id = %s",
+                (teacher_id,)
+            )
+            if teacher_row:
+                from services.teaching_types import get_fee_for_study_type
+                link_row = db.execute_query(
+                    "SELECT study_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+                    (student_id, teacher_id)
+                )
+                study_type = link_row[0]['study_type'] if link_row else 'حضوري'
+                teacher_fee = get_fee_for_study_type(dict(teacher_row[0]), study_type)
+                if teacher_fee > 0 and discount_value > teacher_fee:
+                    return {"success": False, "message": f"مبلغ الخصم الثابت ({format_currency(discount_value)}) يتجاوز القسط الكلي ({format_currency(teacher_fee)}). الحد الأقصى المسموح: {format_currency(teacher_fee)}."}
         
         if discount_type == 'free' and institute_waiver not in (0, 1):
             return {"success": False, "message": "قيمة تنازل المعهد غير صالحة"}
