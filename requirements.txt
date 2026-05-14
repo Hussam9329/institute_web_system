@@ -4,7 +4,7 @@
 
 # إطار العمل الرئيسي
 fastapi==0.104.1
-uvicorn[standard]==0.24.0
+uvicorn==0.24.0
 
 # قوالب HTML
 jinja2==3.1.2

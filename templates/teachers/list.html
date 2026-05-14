@@ -150,7 +150,7 @@
                                 <th class="text-center" style="min-width:90px">الطلاب</th>
                                 <th class="text-center" style="min-width:100px">المدفوع</th>
                                 <th class="text-center" style="min-width:110px">قسط الأستاذ</th>
-                                <th class="text-center" style="min-width:110px">خصم المعهد</th>
+                                <th class="text-center" style="min-width:110px">{{ UI_LABELS.institute_rate }}</th>
                                 <th class="text-center" style="min-width:100px">مستحق المدرس</th>
                                 <th class="text-center" style="min-width:90px">المسحوب</th>
                                 <th class="text-center" style="min-width:100px">متبقي المدرس</th>
@@ -285,7 +285,7 @@
                                 </div>
                             </div>
                             <div class="info-item">
-                                <div class="info-label">خصم المعهد</div>
+                                <div class="info-label">{{ UI_LABELS.institute_rate }}</div>
                                 <div class="info-value" style="font-size:0.78rem; line-height:1.4;">
                                     <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
                                     {% if teacher.institute_rate_display and teacher.institute_rate_display != '-' %}

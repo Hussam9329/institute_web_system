@@ -17,7 +17,7 @@ from services.teaching_types import (
     get_all_teaching_types, validate_custom_type_data,
     build_custom_type_settings_from_form
 )
-from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
+from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS
 from services.audit_service import log_action
 from urllib.parse import quote
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
@@ -31,6 +31,7 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 # إضافة دوال عامة للقوالب
 templates.env.globals['format_date'] = format_date
 templates.env.globals['format_currency'] = format_currency
+templates.env.globals['UI_LABELS'] = UI_LABELS
 
 
 @router.get("/", response_class=HTMLResponse)

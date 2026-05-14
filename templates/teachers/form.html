@@ -48,7 +48,7 @@
                     {% if error == 'invalid_manual_ded' %}
                     <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-times-circle me-2"></i>
-                        <div><strong>مبلغ خصم غير صالح!</strong> مبلغ خصم المعهد لنوع التدريس "{{ request.args.get('label', '') }}" هو {{ request.args.get('val', '') }} وهو أعلى من القسط الكلي ({{ request.args.get('fee', '') }}). لا يمكن أن يتجاوز مبلغ خصم المعهد القسط الكلي.</div>
+                        <div><strong>مبلغ خصم غير صالح!</strong> مبلغ {{ UI_LABELS.institute_rate }} لنوع التدريس "{{ request.args.get('label', '') }}" هو {{ request.args.get('val', '') }} وهو أعلى من القسط الكلي ({{ request.args.get('fee', '') }}). لا يمكن أن يتجاوز مبلغ {{ UI_LABELS.institute_rate }} القسط الكلي.</div>
                     </div>
                     {% endif %}
 
@@ -67,7 +67,7 @@
                     {% elif has_payments %}
                     <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        <div><strong>تنبيه:</strong> يوجد مدفوعات مسجلة لهذا المدرس. لا يمكن تغيير الأقساط وخصم المعهد.</div>
+                        <div><strong>تنبيه:</strong> يوجد مدفوعات مسجلة لهذا المدرس. لا يمكن تغيير الأقساط و{{ UI_LABELS.institute_rate }}.</div>
                     </div>
                     {% endif %}
 
@@ -150,7 +150,7 @@
                                                    {% if has_linked_students and teacher and ('حضوري' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small">نوع خصم المعهد:</label>
+                                            <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
                                             <select class="form-select form-select-sm" name="inst_ded_type_in_person" onchange="toggleDedField('in_person', this.value)" {% if has_linked_students and teacher and ('حضوري' in (teacher.teaching_types or '')) %}disabled{% elif has_payments %}disabled{% endif %}>
                                                 <option value="percentage" {% if teacher and teacher.inst_ded_type_in_person == 'percentage' %}selected{% elif not teacher %}selected{% endif %}>نسبة مئوية %</option>
                                                 <option value="manual" {% if teacher and teacher.inst_ded_type_in_person == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
@@ -201,7 +201,7 @@
                                                    {% if has_linked_students and teacher and ('الكتروني' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small">نوع خصم المعهد:</label>
+                                            <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
                                             <select class="form-select form-select-sm" name="inst_ded_type_electronic" onchange="toggleDedField('electronic', this.value)" {% if has_linked_students and teacher and ('الكتروني' in (teacher.teaching_types or '')) %}disabled{% elif has_payments %}disabled{% endif %}>
                                                 <option value="percentage" {% if teacher and teacher.inst_ded_type_electronic == 'percentage' %}selected{% elif not teacher %}selected{% endif %}>نسبة مئوية %</option>
                                                 <option value="manual" {% if teacher and teacher.inst_ded_type_electronic == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
@@ -252,7 +252,7 @@
                                                    {% if has_linked_students and teacher and ('مدمج' in (teacher.teaching_types or '')) %}readonly{% elif has_payments %}readonly{% endif %}>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small">نوع خصم المعهد:</label>
+                                            <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
                                             <select class="form-select form-select-sm" name="inst_ded_type_blended" onchange="toggleDedField('blended', this.value)" {% if has_linked_students and teacher and ('مدمج' in (teacher.teaching_types or '')) %}disabled{% elif has_payments %}disabled{% endif %}>
                                                 <option value="percentage" {% if teacher and teacher.inst_ded_type_blended == 'percentage' %}selected{% elif not teacher %}selected{% endif %}>نسبة مئوية %</option>
                                                 <option value="manual" {% if teacher and teacher.inst_ded_type_blended == 'manual' %}selected{% endif %}>مبلغ يدوي</option>
@@ -282,7 +282,7 @@
                             </div>
                             
                             <div class="form-text mt-2">
-                                <i class="fas fa-info-circle me-1"></i>{% if has_linked_students %}<strong class="text-danger">جميع البيانات مقفلة بسبب وجود طلاب مرتبطين.</strong> يمكنك فقط <strong class="text-success">إضافة نوع تدريسي جديد</strong> لم يكن مفعلاً سابقاً.{% elif has_payments %}<strong class="text-danger">الأقساط وخصم المعهد مقفلة بسبب وجود مدفوعات مسجلة.</strong> لتغييرها يجب حذف جميع الأقساط أولاً.{% else %}القيمة المدخلة للأقسط بالألف (مثلاً 850 = 850,000 د.ع). النسبة المئوية من القسط تُقسم بالتساوي على القسطين الأول والثاني.{% endif %}
+                                <i class="fas fa-info-circle me-1"></i>{% if has_linked_students %}<strong class="text-danger">جميع البيانات مقفلة بسبب وجود طلاب مرتبطين.</strong> يمكنك فقط <strong class="text-success">إضافة نوع تدريسي جديد</strong> لم يكن مفعلاً سابقاً.{% elif has_payments %}<strong class="text-danger">الأقساط و{{ UI_LABELS.institute_rate }} مقفلة بسبب وجود مدفوعات مسجلة.</strong> لتغييرها يجب حذف جميع الأقساط أولاً.{% else %}القيمة المدخلة للأقسط بالألف (مثلاً 850 = 850,000 د.ع). النسبة المئوية من القسط تُقسم بالتساوي على القسطين الأول والثاني.{% endif %}
                             </div>
 
                             <!-- أنواع إضافية -->
@@ -409,7 +409,7 @@ function addCustomType(name, fee, dedType, dedPct, dedManual) {
                        value="${fee}">
             </div>
             <div class="col-6">
-                <label class="form-label small">نوع خصم المعهد:</label>
+                <label class="form-label small">نوع {{ UI_LABELS.institute_rate }}:</label>
                 <select class="form-select form-select-sm custom-type-ded-type" onchange="toggleCustomDedField(this)">
                     <option value="percentage" ${dedType === 'percentage' ? 'selected' : ''}>نسبة مئوية %</option>
                     <option value="manual" ${dedType === 'manual' ? 'selected' : ''}>مبلغ يدوي</option>
@@ -548,7 +548,7 @@ function validateCustomTypes() {
                 manualInput.classList.remove('is-invalid', 'is-valid');
                 if (manualVal > feeVal) {
                     manualInput.classList.add('is-invalid');
-                    showAlert('مبلغ خصم المعهد لنوع التدريس المخصص "' + name + '" لا يمكن أن يتجاوز القسط!', 'error');
+                    showAlert('مبلغ {{ UI_LABELS.institute_rate }} لنوع التدريس المخصص "' + name + '" لا يمكن أن يتجاوز القسط!', 'error');
                     allValid = false;
                 } else if (manualVal > 0) {
                     manualInput.classList.add('is-valid');
@@ -620,14 +620,14 @@ function validateManualDed(input) {
     if (val < 0) {
         input.classList.add('is-invalid');
         if (errEl) errEl.textContent = 'المبلغ لا يمكن أن يكون سالباً';
-        showAlert('مبلغ خصم المعهد لا يمكن أن يكون سالباً!', 'error');
+        showAlert('مبلغ {{ UI_LABELS.institute_rate }} لا يمكن أن يكون سالباً!', 'error');
         return false;
     }
     
     if (feeVal > 0 && val > feeVal) {
         input.classList.add('is-invalid');
-        if (errEl) errEl.textContent = 'مبلغ خصم المعهد لا يمكن أن يتجاوز القسط (' + feeVal + ')';
-        showAlert('مبلغ خصم المعهد (' + val + ') لا يمكن أن يتجاوز القسط الكلي (' + feeVal + ')!', 'error');
+        if (errEl) errEl.textContent = 'مبلغ {{ UI_LABELS.institute_rate }} لا يمكن أن يتجاوز القسط (' + feeVal + ')';
+        showAlert('مبلغ {{ UI_LABELS.institute_rate }} (' + val + ') لا يمكن أن يتجاوز القسط الكلي (' + feeVal + ')!', 'error');
         return false;
     }
     
@@ -653,7 +653,7 @@ function validateAllPctFields() {
         const typeKey = fieldName.replace('institute_pct_', '');
         const dedTypeSelect = document.querySelector('select[name="inst_ded_type_' + typeKey + '"]');
         
-        // تحقق فقط إذا كان نوع التدريس مختار وخصم المعهد نسبة مئوية
+        // تحقق فقط إذا كان نوع التدريس مختار و{{ UI_LABELS.institute_rate }} نسبة مئوية
         if (input && checkbox && checkbox.checked && dedTypeSelect && dedTypeSelect.value === 'percentage') {
             if (!validatePct(input)) {
                 allValid = false;
@@ -680,7 +680,7 @@ function validateAllManualDedFields() {
         const typeKey = fieldName.replace('inst_ded_manual_', '');
         const dedTypeSelect = document.querySelector('select[name="inst_ded_type_' + typeKey + '"]');
         
-        // تحقق فقط إذا كان نوع التدريس مختار وخصم المعهد مبلغ يدوي
+        // تحقق فقط إذا كان نوع التدريس مختار و{{ UI_LABELS.institute_rate }} مبلغ يدوي
         if (input && checkbox && checkbox.checked && dedTypeSelect && dedTypeSelect.value === 'manual') {
             if (!validateManualDed(input)) {
                 allValid = false;
@@ -734,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // التحقق من حقول المبلغ اليدوي للخصم
         if (!validateAllManualDedFields()) {
             e.preventDefault();
-            showAlert('يرجى تصحيح حقول مبلغ خصم المعهد قبل الحفظ! لا يمكن أن يتجاوز المبلغ القسط الكلي.', 'error');
+            showAlert('يرجى تصحيح حقول مبلغ {{ UI_LABELS.institute_rate }} قبل الحفظ! لا يمكن أن يتجاوز المبلغ القسط الكلي.', 'error');
             return;
         }
 

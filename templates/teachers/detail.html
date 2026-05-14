@@ -139,7 +139,7 @@
                         </div>
                         <div class="col-6 col-md-4">
                             <div class="card bg-gradient-purple text-white border-0 p-2 p-md-3 text-center h-100">
-                                <small class="opacity-75 d-block">خصم المعهد</small>
+                                <small class="opacity-75 d-block">{{ UI_LABELS.institute_rate }}</small>
                                 <h5 class="fw-bold mb-0 fs-6 fs-md-5">{{ format_currency(financial_info.institute_deduction) }}</h5>
                                 {% set teaching_types = (teacher.teaching_types or 'حضوري').split(',') %}
                                 {% for tt in teaching_types %}
