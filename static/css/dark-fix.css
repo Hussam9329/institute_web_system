@@ -680,3 +680,101 @@ html[data-theme="dark"] .dash-recent-table .dash-student-link {
 html[data-theme="dark"] .dash-recent-table .dash-student-link:hover {
     color: var(--app-primary-hover) !important;
 }
+
+
+/* =========================
+   Unified Component Dark Mode
+   Centralized sf-panel, sort-by, filter-input, etc.
+========================= */
+
+/* sf-panel dark mode */
+html[data-theme="dark"] .sf-panel {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .sf-panel-title {
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .sf-panel-body {
+    border-top-color: var(--app-border-light) !important;
+}
+html[data-theme="dark"] .sf-panel-toggle {
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .sf-panel-toggle:hover {
+    color: var(--app-primary) !important;
+}
+
+/* sf-filter-badge dark mode */
+html[data-theme="dark"] .sf-filter-badge {
+    background: rgba(99, 102, 241, 0.12) !important;
+    color: #a5b4fc !important;
+    border-color: rgba(99, 102, 241, 0.20) !important;
+}
+html[data-theme="dark"] .sf-filter-badge .remove-filter {
+    background: var(--app-primary) !important;
+    color: #ffffff !important;
+}
+
+/* sf-btn dark mode */
+html[data-theme="dark"] .sf-btn-apply {
+    background: linear-gradient(135deg, var(--app-primary), var(--app-primary-hover)) !important;
+    color: #ffffff !important;
+}
+html[data-theme="dark"] .sf-btn-apply:hover {
+    box-shadow: 0 3px 8px rgba(136, 136, 232, 0.30) !important;
+}
+html[data-theme="dark"] .sf-btn-clear {
+    background: var(--app-surface-soft) !important;
+    color: var(--app-text-secondary) !important;
+    border-color: var(--app-border) !important;
+}
+html[data-theme="dark"] .sf-btn-clear:hover {
+    border-color: #fca5a5 !important;
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.10) !important;
+}
+
+/* sf-stat dark mode */
+html[data-theme="dark"] .sf-stat.blue { background-color: rgba(99, 102, 241, 0.12) !important; color: #a5b4fc !important; }
+html[data-theme="dark"] .sf-stat.green { background-color: rgba(16, 185, 129, 0.12) !important; color: #6ee7b7 !important; }
+html[data-theme="dark"] .sf-stat.red { background-color: rgba(239, 68, 68, 0.12) !important; color: #fca5a5 !important; }
+html[data-theme="dark"] .sf-stat.yellow { background-color: rgba(245, 158, 11, 0.12) !important; color: #fde68a !important; }
+html[data-theme="dark"] .sf-stat.purple { background-color: rgba(139, 92, 246, 0.12) !important; color: #c4b5fd !important; }
+
+/* sf-field-label dark mode */
+html[data-theme="dark"] .sf-field-label {
+    color: var(--app-text-secondary) !important;
+}
+
+/* sort-by-label dark mode */
+html[data-theme="dark"] .sort-by-label {
+    color: var(--app-text-secondary) !important;
+}
+
+/* filter-input dark mode */
+html[data-theme="dark"] .filter-input:disabled {
+    background-color: var(--app-surface-soft) !important;
+}
+html[data-theme="dark"] .filter-input:not(:disabled) {
+    border-color: #f0a500 !important;
+    box-shadow: 0 0 0 1px rgba(240, 165, 0, 0.25) !important;
+}
+html[data-theme="dark"] .filter-checkbox:checked {
+    background-color: #f0a500 !important;
+    border-color: #f0a500 !important;
+}
+
+/* info-item backgrounds dark mode */
+html[data-theme="dark"] .info-item.info-success { background: rgba(16, 185, 129, 0.12) !important; }
+html[data-theme="dark"] .info-item.info-danger { background: rgba(239, 68, 68, 0.12) !important; }
+html[data-theme="dark"] .info-item.info-warning { background: rgba(251, 191, 36, 0.12) !important; }
+html[data-theme="dark"] .info-item.info-primary { background: rgba(99, 102, 241, 0.12) !important; }
+
+/* page-hint dark mode */
+html[data-theme="dark"] .page-hint {
+    color: var(--app-text-secondary) !important;
+}
+html[data-theme="dark"] .page-hint i {
+    color: var(--app-primary) !important;
+}

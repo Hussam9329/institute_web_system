@@ -2,6 +2,25 @@
 
 {% block title %}إدارة الأقساط والمدفوعات - نظام إدارة المعهد{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Filter Input Styles - uses centralized .filter-input and .filter-checkbox from style.css */
+.filter-input:not(:disabled) {
+    border-color: var(--warning);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15);
+}
+.filter-checkbox:checked {
+    background-color: var(--warning);
+    border-color: var(--warning);
+}
+#activeFiltersBadge {
+    font-size: 0.68rem;
+    min-width: 18px;
+}
+/* Sort-by and mobile card view are now centralized in style.css */
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-transition">
 <div class="container-fluid">
@@ -178,56 +197,6 @@
         </div>
     </div>
 
-    <style>
-    /* أنماط لوحة الفلترة */
-    .filter-input:disabled {
-        opacity: 0.45;
-        background-color: var(--surface-section, #f8f9fa);
-    }
-    .filter-input:not(:disabled) {
-        border-color: #f0a500;
-        box-shadow: 0 0 0 1px rgba(240,165,0,0.15);
-    }
-    .filter-checkbox:checked {
-        background-color: #f0a500;
-        border-color: #f0a500;
-    }
-    .filter-checkbox {
-        cursor: pointer;
-    }
-    .transition-icon {
-        transition: transform 0.25s ease;
-    }
-    .transition-icon.rotated {
-        transform: rotate(180deg);
-    }
-    #activeFiltersBadge {
-        font-size: 0.68rem;
-        min-width: 18px;
-    }
-
-    /* ===== SORT BY ===== */
-    .sort-by-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .sort-by-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-muted, #64748b);
-        white-space: nowrap;
-    }
-    /* sort-by-select base styles are in style.css */
-
-    /* ===== MOBILE: Force card view ===== */
-    @media (max-width: 991.98px) {
-        #tableView { display: none !important; }
-        #cardView { display: block !important; }
-        .view-toggle-group { display: none !important; }
-    }
-    </style>
-
     {% if installments %}
     <!-- ===== جدول الأقساط ===== -->
     <div id="tableView">
@@ -330,7 +299,7 @@
 
                         <!-- المبلغ والتاريخ والمتبقي -->
                         <div class="list-card-info" style="grid-template-columns: 1fr 1fr 1fr;">
-                            <div class="info-item" style="background: var(--success-glow);">
+                            <div class="info-item info-success">
                                 <div class="info-label">المبلغ</div>
                                 <div class="info-value text-success">{{ format_currency(inst.amount) }}</div>
                             </div>
@@ -339,12 +308,12 @@
                                 <div class="info-value" style="font-size: 0.82rem;">{{ format_date(inst.payment_date) }}</div>
                             </div>
                             {% if inst.remaining > 0 %}
-                            <div class="info-item" style="background: rgba(220,38,38,0.08);">
+                            <div class="info-item info-danger">
                                 <div class="info-label">المتبقي</div>
                                 <div class="info-value text-danger">{{ format_currency(inst.remaining) }}</div>
                             </div>
                             {% else %}
-                            <div class="info-item" style="background: rgba(34,197,94,0.08);">
+                            <div class="info-item info-success">
                                 <div class="info-label">الحالة</div>
                                 <div class="info-value text-success"><i class="fas fa-check-circle"></i> مكتمل</div>
                             </div>
