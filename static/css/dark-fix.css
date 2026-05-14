@@ -659,18 +659,20 @@ html[data-theme="dark"] .dash-payment-card:hover {
     background-color: var(--app-table-row-hover) !important;
 }
 
-html[data-theme="dark"] .dash-recent-table .dash-student-link {
-    color: var(--app-primary) !important;
-}
-
-html[data-theme="dark"] .dash-recent-table .dash-student-link:hover {
-    color: var(--app-primary-hover) !important;
-}
-
+/* Teacher column inside recent payments table */
 html[data-theme="dark"] .dash-recent-table .dash-teacher-link {
     color: var(--app-text) !important;
 }
 
 html[data-theme="dark"] .dash-recent-table .dash-teacher-link:hover {
     color: var(--app-primary) !important;
+}
+
+/* Student column inside recent payments table */
+html[data-theme="dark"] .dash-recent-table .dash-student-link {
+    color: var(--app-primary) !important;
+}
+
+html[data-theme="dark"] .dash-recent-table .dash-student-link:hover {
+    color: var(--app-primary-hover) !important;
 }
