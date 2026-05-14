@@ -246,6 +246,29 @@ def validate_custom_type_data(type_name: str, type_data: Dict) -> Optional[str]:
     return None
 
 
+def normalize_thousand_or_dinar_amount(value: Any) -> int:
+    """
+    يقبل القيمة إذا وصلت بالألف أو بالدينار.
+    مثال:
+    400 => 400,000
+    400000 => 400,000
+    """
+    try:
+        raw = int(float(value or 0))
+    except (ValueError, TypeError):
+        return 0
+
+    if raw <= 0:
+        return 0
+
+    # إذا القيمة 50,000 أو أقل نعتبرها مدخلة بالألف
+    if raw <= 50000:
+        return raw * 1000
+
+    # إذا أكبر من 50,000 نعتبرها دينار فعلي
+    return raw
+
+
 def build_custom_type_settings_from_form(form_data: Dict) -> Tuple[Dict[str, Dict], list]:
     """
     بناء بيانات الأنواع المخصصة من بيانات الفورم
@@ -283,7 +306,7 @@ def build_custom_type_settings_from_form(form_data: Dict) -> Tuple[Dict[str, Dic
         fee_val = 0
         if i < len(fees):
             try:
-                fee_val = int(float(fees[i]) * 1000)  # القيمة بالألف
+                fee_val = normalize_thousand_or_dinar_amount(fees[i])
             except (ValueError, TypeError):
                 fee_val = 0
         
@@ -301,7 +324,7 @@ def build_custom_type_settings_from_form(form_data: Dict) -> Tuple[Dict[str, Dic
         ded_manual = 0
         if i < len(ded_manuals):
             try:
-                ded_manual = int(float(ded_manuals[i]) * 1000)  # القيمة بالألف
+                ded_manual = normalize_thousand_or_dinar_amount(ded_manuals[i])
             except (ValueError, TypeError):
                 ded_manual = 0
         

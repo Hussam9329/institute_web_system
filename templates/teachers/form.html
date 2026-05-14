@@ -850,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const feeInput2 = document.createElement('input');
             feeInput2.type = 'hidden';
             feeInput2.name = 'custom_type_fees[]';
-            feeInput2.value = ct.fee * 1000; // بالدينار الكامل
+            feeInput2.value = ct.fee; // بالألف - لا نضرب بـ 1000 لأن الخلفية تضربها
             this.appendChild(feeInput2);
 
             const dedTypeInput = document.createElement('input');
@@ -868,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const dedManualInput = document.createElement('input');
             dedManualInput.type = 'hidden';
             dedManualInput.name = 'custom_type_ded_manuals[]';
-            dedManualInput.value = ct.dedManual * 1000; // بالدينار الكامل
+            dedManualInput.value = ct.dedManual; // بالألف - لا نضرب بـ 1000 لأن الخلفية تضربها
             this.appendChild(dedManualInput);
         });
 
@@ -879,10 +879,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const customDataMap = {};
         customTypes.forEach(ct => {
             customDataMap[ct.name] = {
-                fee: ct.fee * 1000,
+                fee: ct.fee,
                 deduction_type: ct.dedType,
                 deduction_pct: ct.dedPct,
-                deduction_manual: ct.dedManual * 1000
+                deduction_manual: ct.dedManual
             };
         });
         customDataInput.value = JSON.stringify(customDataMap);
@@ -904,7 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         // إضافة أقساط الأنواع المخصصة (بعد الضرب بـ 1000)
         customTypes.forEach(ct => {
-            if (ct.fee > 0) fees.push(ct.fee * 1000);
+            if (ct.fee > 0) fees.push(ct.fee); // الأقساط المخصصة بالألف (كما هي)
         });
 
         const feeInput = document.getElementById('total_fee');

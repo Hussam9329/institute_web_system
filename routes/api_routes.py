@@ -80,9 +80,17 @@ async def api_add_subject(request: Request, subject: SubjectCreate):
         if existing:
             return {"success": False, "message": "هذه المادة موجودة مسبقاً"}
         
-        db.execute_query(
-            "INSERT INTO subjects (name, created_at) VALUES (%s, %s)",
+        result = db.execute_query(
+            "INSERT INTO subjects (name, created_at) VALUES (%s, %s) RETURNING id",
             (subject.name, get_current_date(get_client_timestamp(request)))
+        )
+        subject_id = result[0]['id'] if result else ""
+        log_action(
+            request,
+            action="create",
+            entity="subject",
+            entity_id=subject_id,
+            description=f"إضافة مادة: {subject.name}"
         )
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم إضافة المادة بنجاح"}
@@ -121,7 +129,16 @@ async def api_delete_subject(request: Request, subject_id: int):
             return guard.to_dict()
         
         db = Database()
+        subject_row = db.execute_query("SELECT name FROM subjects WHERE id = %s", (subject_id,))
+        subject_name = subject_row[0]['name'] if subject_row else str(subject_id)
         db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
+        log_action(
+            request,
+            action="delete",
+            entity="subject",
+            entity_id=subject_id,
+            description=f"حذف مادة: {subject_name}"
+        )
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف المادة"}
     except Exception as e:

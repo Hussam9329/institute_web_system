@@ -184,7 +184,18 @@ async def subject_add(request: Request, name: str = Form(...)):
         existing = db.execute_query("SELECT id FROM subjects WHERE name = %s", (name,))
         if existing:
             return RedirectResponse(url="/subjects?error=exists", status_code=303)
-        db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (name, get_current_date(client_ts)))
+        result = db.execute_query(
+            "INSERT INTO subjects (name, created_at) VALUES (%s, %s) RETURNING id",
+            (name, get_current_date(client_ts))
+        )
+        subject_id = result[0]['id'] if result else ""
+        log_action(
+            request,
+            action="create",
+            entity="subject",
+            entity_id=subject_id,
+            description=f"إضافة مادة: {name}"
+        )
     except:
         pass
     return RedirectResponse(url="/subjects?msg=added", status_code=303)
@@ -194,6 +205,12 @@ async def subject_add(request: Request, name: str = Form(...)):
 async def subject_delete(request: Request, subject_id: int):
     """حذف مادة - مع حماية إذا كان فيها أساتذة"""
     check_permission(request, 'delete_subjects')
+    # استخراج توقيت العميل
+    try:
+        form_data = await request.form()
+        request.state.client_timestamp = form_data.get("client_timestamp") or get_client_timestamp(request)
+    except Exception:
+        request.state.client_timestamp = get_client_timestamp(request)
     guard = deletion_guard.can_delete_subject(subject_id)
     if not guard.allowed:
         return RedirectResponse(
@@ -201,7 +218,16 @@ async def subject_delete(request: Request, subject_id: int):
             status_code=303,
         )
     db = Database()
+    subject_row = db.execute_query("SELECT name FROM subjects WHERE id = %s", (subject_id,))
+    subject_name = subject_row[0]['name'] if subject_row else str(subject_id)
     db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
+    log_action(
+        request,
+        action="delete",
+        entity="subject",
+        entity_id=subject_id,
+        description=f"حذف مادة: {subject_name}"
+    )
     return RedirectResponse(url="/subjects?msg=deleted", status_code=303)
 
 
@@ -1355,14 +1381,23 @@ async def teacher_add(
                 inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
                 custom_type_settings)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         '''
 
-        db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(client_ts),
+        result = db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(client_ts),
             teaching_types, fee_in_person, fee_electronic, fee_blended,
             institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
             inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
             inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
             custom_type_json))
+        teacher_id = result[0]['id'] if result else ""
+        log_action(
+            request,
+            action="create",
+            entity="teacher",
+            entity_id=teacher_id,
+            description=f"إضافة مدرس: {name} - المادة: {subject}"
+        )
 
         print(f"تم إضافة المدرس بنجاح: {name} - {subject}")
     except Exception as e:
@@ -1470,6 +1505,7 @@ async def teacher_update(
 
     # معالجة الأنواع التدريسية المخصصة
     form_data = await request.form()
+    request.state.client_timestamp = form_data.get("client_timestamp") or get_client_timestamp(request)  # لاستخدامه في log_action
     custom_settings, custom_errors = build_custom_type_settings_from_form(form_data)
     
     if custom_errors:
@@ -1546,13 +1582,27 @@ async def teacher_update(
         inst_ded_manual_blended = c['inst_ded_manual_blended']
 
         # معالجة الأنواع المخصصة مع وجود طلاب مرتبطين
-        # الحفاظ على الأنواع المخصصة الحالية، والسماح بإضافة أنواع جديدة فقط
+        # الحفاظ على الأنواع المخصصة المستخدمة، والسماح بتعديل غير المستخدمة
         current_custom_settings = parse_custom_type_settings(c.get('custom_type_settings'))
         merged_custom_settings = dict(current_custom_settings)  # نسخة من الحالي
         
-        # إضافة الأنواع المخصصة الجديدة فقط
+        # فحص استخدام كل نوع مخصص قبل الدمج
         for ct_name, ct_data in custom_settings.items():
-            if ct_name not in current_custom_settings:
+            usage = db.execute_query(
+                """
+                SELECT COUNT(*) as cnt
+                FROM student_teacher
+                WHERE teacher_id = %s AND study_type = %s
+                """,
+                (teacher_id, ct_name)
+            )
+            is_used = usage and usage[0]['cnt'] > 0
+
+            if ct_name in current_custom_settings and is_used:
+                # النوع مستخدم، نحافظ على قيمته القديمة
+                merged_custom_settings[ct_name] = current_custom_settings[ct_name]
+            else:
+                # النوع جديد أو غير مستخدم، مسموح تحديثه
                 merged_custom_settings[ct_name] = ct_data
         
         custom_type_json = dump_custom_type_settings(merged_custom_settings)
@@ -1605,6 +1655,14 @@ async def teacher_update(
             inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
             custom_type_json, teacher_id))
 
+        log_action(
+            request,
+            action="update",
+            entity="teacher",
+            entity_id=teacher_id,
+            description=f"تعديل بيانات المدرس: {name}"
+        )
+
         if added_types or custom_settings:
             return RedirectResponse(url="/teachers?msg=updated_new_type_added", status_code=303)
         return RedirectResponse(url="/teachers?msg=updated_no_change", status_code=303)
@@ -1636,6 +1694,14 @@ async def teacher_update(
         inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
         inst_ded_manual_in_person, inst_ded_manual_electronic, inst_ded_manual_blended,
         custom_type_json, teacher_id))
+
+    log_action(
+        request,
+        action="update",
+        entity="teacher",
+        entity_id=teacher_id,
+        description=f"تعديل بيانات المدرس: {name}"
+    )
 
     return RedirectResponse(url="/teachers?msg=updated", status_code=303)
 
@@ -1686,6 +1752,13 @@ async def teacher_delete(request: Request, teacher_id: int):
     """حذف مدرس - مع حماية إذا كان مرتبط بطلاب أو لديه سجلات مالية"""
     check_permission(request, 'delete_teachers')
     
+    # استخراج توقيت العميل من بيانات النموذج
+    try:
+        form_data = await request.form()
+        request.state.client_timestamp = form_data.get("client_timestamp") or get_client_timestamp(request)
+    except Exception:
+        request.state.client_timestamp = get_client_timestamp(request)
+
     guard = deletion_guard.can_delete_teacher(teacher_id)
     if not guard.allowed:
         return RedirectResponse(
@@ -1695,9 +1768,18 @@ async def teacher_delete(request: Request, teacher_id: int):
     
     # لا توجد سجلات مالية - يمكن الحذف بأمان
     db = Database()
+    teacher_row = db.execute_query("SELECT name FROM teachers WHERE id = %s", (teacher_id,))
+    teacher_name = teacher_row[0]['name'] if teacher_row else str(teacher_id)
     db.execute_query("DELETE FROM teacher_withdrawals WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM teachers WHERE id = %s", (teacher_id,))
+    log_action(
+        request,
+        action="delete",
+        entity="teacher",
+        entity_id=teacher_id,
+        description=f"حذف مدرس: {teacher_name}"
+    )
     return RedirectResponse(url="/teachers?msg=deleted", status_code=303)
 
 

@@ -46,12 +46,7 @@
                 <button type="button" class="smart-sort-chip" data-sort-cycle="subject-asc,subject-desc" onclick="applySmartSort(this)">
                     <i class="fas fa-book"></i><span>المادة</span>
                 </button>
-                <button type="button" class="smart-sort-chip" data-sort-cycle="received-desc,received-asc" onclick="applySmartSort(this)">
-                    <i class="fas fa-hand-holding-dollar"></i><span>المدفوع</span>
-                </button>
-                <button type="button" class="smart-sort-chip" data-sort-cycle="remaining-desc,remaining-asc" onclick="applySmartSort(this)">
-                    <i class="fas fa-wallet"></i><span>المتبقي</span>
-                </button>
+
                 <button type="button" class="smart-sort-chip" data-sort-cycle="students-desc,students-asc" onclick="applySmartSort(this)">
                     <i class="fas fa-users"></i><span>الطلاب</span>
                 </button>
@@ -76,7 +71,7 @@
     <!-- ===== تلميح ===== -->
     <div class="alert alert-light border mb-3 py-2">
         <i class="fas fa-info-circle text-primary me-2"></i>
-        <small class="text-muted">كل مدرس مرتبط بمادة دراسية. لا يمكن حذف مدرس مرتبط بطلاب. اضغط على اسم المدرس لعرض التفاصيل المالية الكاملة.</small>
+        <small class="text-muted">قائمة المدرسين تعرض المعلومات العامة فقط. التفاصيل المالية الكاملة موجودة في المحاسبة.</small>
     </div>
 
     <!-- ===== تنبيه خطأ الحذف ===== -->
@@ -148,18 +143,14 @@
                                 <th style="min-width:140px">الاسم</th>
                                 <th class="text-center" style="min-width:80px">المادة</th>
                                 <th class="text-center" style="min-width:90px">الطلاب</th>
-                                <th class="text-center" style="min-width:100px">المدفوع</th>
                                 <th class="text-center" style="min-width:110px">قسط الأستاذ</th>
                                 <th class="text-center" style="min-width:110px">{{ UI_LABELS.institute_rate }}</th>
-                                <th class="text-center" style="min-width:120px">مستحق المدرس المتوقع</th>
-                                <th class="text-center" style="min-width:90px">المسحوب</th>
-                                <th class="text-center" style="min-width:100px">متبقي المدرس</th>
                                 <th class="text-center" style="min-width:120px; width:140px;">الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for teacher in teachers %}
-                            <tr class="teacher-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.total_received or 0 }}" data-deduction="{{ teacher.institute_deduction or 0 }}" data-teacher-due="{{ teacher.teacher_due or 0 }}" data-withdrawn="{{ teacher.withdrawn_total or 0 }}" data-rate-display="{{ teacher.institute_rate_display }}" data-fee-display="{{ teacher.fee_display }}" data-remaining="{{ teacher.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
+                            <tr class="teacher-row" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-rate-display="{{ teacher.institute_rate_display }}" data-fee-display="{{ teacher.fee_display }}" data-students="{{ teacher.students_count or 0 }}">
                                 <td class="index-col fw-bold text-muted">{{ loop.index }}</td>
                                 <td>
                                     <a href="/teachers/{{ teacher.id }}" class="text-decoration-none fw-semibold text-success">
@@ -175,9 +166,6 @@
                                 <td class="text-center">
                                     <span class="badge bg-light text-dark">{{ teacher.students_count or 0 }}</span>
                                 </td>
-                                <td class="text-center fw-bold text-success">
-                                    {{ format_currency(teacher.total_received) }}
-                                </td>
                                 <td class="text-center" style="font-size:0.78rem; line-height:1.5;">
                                     {% if teacher.fee_display and teacher.fee_display != '-' %}
                                         {% for part in teacher.fee_display.split(' | ') %}
@@ -188,28 +176,13 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center" style="font-size:0.78rem; line-height:1.5;">
-                                    {% if teacher.total_received and teacher.total_received > 0 %}
-                                        <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
-                                    {% else %}
-                                        <span class="text-muted" style="font-size:0.72rem;">لم تُدفع أقساط بعد</span>
-                                    {% endif %}
                                     {% if teacher.institute_rate_display and teacher.institute_rate_display != '-' %}
                                         {% for part in teacher.institute_rate_display.split(' | ') %}
-                                            <div class="text-muted" style="font-size:0.7rem;">{{ part }}</div>
+                                            <div>{{ part }}</div>
                                         {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
-                                </td>
-                                <td class="text-center fw-bold text-info">
-                                    {{ format_currency(teacher.teacher_due) }}
-                                    <div class="text-muted" style="font-size:0.68rem;">متوقع</div>
-                                </td>
-                                <td class="text-center fw-bold" style="color: var(--warning-dark);">
-                                    {{ format_currency(teacher.withdrawn_total) }}
-                                </td>
-                                <td class="text-center">
-                                    <span class="fw-bold {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
-                                        {{ format_currency(teacher.remaining_balance) }}
-                                    </span>
                                 </td>
                                 <td class="text-center">
                                     <div class="action-btn-group justify-content-center">
@@ -254,7 +227,7 @@
     <div id="cardView" class="d-none">
         <div class="row g-3" id="teacherCards">
             {% for teacher in teachers %}
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 teacher-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.total_received or 0 }}" data-remaining="{{ teacher.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 teacher-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-students="{{ teacher.students_count or 0 }}">
                 <div class="list-card list-card-accent accent-emerald h-100">
                     <div class="card-body">
                         <!-- رأس الكارت -->
@@ -271,12 +244,8 @@
                             </div>
                         </div>
 
-                        <!-- التفاصيل المالية -->
+                        <!-- التفاصيل -->
                         <div class="list-card-info">
-                            <div class="info-item">
-                                <div class="info-label">المدفوع</div>
-                                <div class="info-value text-success">{{ format_currency(teacher.total_received) }}</div>
-                            </div>
                             <div class="info-item">
                                 <div class="info-label">قسط الأستاذ</div>
                                 <div class="info-value" style="font-size:0.78rem; line-height:1.4;">
@@ -292,30 +261,13 @@
                             <div class="info-item">
                                 <div class="info-label">{{ UI_LABELS.institute_rate }}</div>
                                 <div class="info-value" style="font-size:0.78rem; line-height:1.4;">
-                                    {% if teacher.total_received and teacher.total_received > 0 %}
-                                        <div class="text-danger fw-bold">{{ format_currency(teacher.institute_deduction) }}</div>
-                                    {% else %}
-                                        <span class="text-muted" style="font-size:0.72rem;">لم تُدفع أقساط بعد</span>
-                                    {% endif %}
                                     {% if teacher.institute_rate_display and teacher.institute_rate_display != '-' %}
                                         {% for part in teacher.institute_rate_display.split(' | ') %}
-                                            <div class="text-muted" style="font-size:0.7rem;">{{ part }}</div>
+                                            <div>{{ part }}</div>
                                         {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">مستحق المدرس المتوقع</div>
-                                <div class="info-value text-info">{{ format_currency(teacher.teacher_due) }}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">المسحوب</div>
-                                <div class="info-value" style="color: var(--warning-dark);">{{ format_currency(teacher.withdrawn_total) }}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">متبقي المدرس</div>
-                                <div class="info-value {% if teacher.remaining_balance > 0 %}text-success{% else %}text-muted{% endif %}">
-                                    {{ format_currency(teacher.remaining_balance) }}
                                 </div>
                             </div>
                         </div>
@@ -398,8 +350,6 @@ function applySorting(sortKey) {
             let va, vb;
             if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
             else if (field === 'subject') { va = a.dataset.subject || ''; vb = b.dataset.subject || ''; }
-            else if (field === 'received') { va = parseInt(a.dataset.received) || 0; vb = parseInt(b.dataset.received) || 0; }
-            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
             else if (field === 'students') { va = parseInt(a.dataset.students) || 0; vb = parseInt(b.dataset.students) || 0; }
             if (typeof va === 'number') return (va - vb) * asc;
             return va.localeCompare(vb, 'ar') * asc;
@@ -415,8 +365,6 @@ function applySorting(sortKey) {
             let va, vb;
             if (field === 'name') { va = a.dataset.name || ''; vb = b.dataset.name || ''; }
             else if (field === 'subject') { va = a.dataset.subject || ''; vb = b.dataset.subject || ''; }
-            else if (field === 'received') { va = parseInt(a.dataset.received) || 0; vb = parseInt(b.dataset.received) || 0; }
-            else if (field === 'remaining') { va = parseInt(a.dataset.remaining) || 0; vb = parseInt(b.dataset.remaining) || 0; }
             else if (field === 'students') { va = parseInt(a.dataset.students) || 0; vb = parseInt(b.dataset.students) || 0; }
             if (typeof va === 'number') return (va - vb) * asc;
             return va.localeCompare(vb, 'ar') * asc;
