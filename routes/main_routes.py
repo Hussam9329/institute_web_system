@@ -34,6 +34,34 @@ templates.env.globals['format_currency'] = format_currency
 templates.env.globals['UI_LABELS'] = UI_LABELS
 
 
+def validate_discount_inputs(form_data, teacher_ids):
+    """
+    يتحقق من خصومات الطالب قبل الحفظ.
+    مهم حتى لو تم تعطيل JavaScript أو التلاعب بالـ HTML من المتصفح.
+    """
+    for tid in teacher_ids:
+        if not tid:
+            continue
+
+        discount_type = form_data.get(f"discount_type_{tid}", "none")
+
+        try:
+            discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+        except ValueError:
+            return False, f"قيمة الخصم للمدرس رقم {tid} غير صالحة."
+
+        if discount_type == "percentage" and (discount_value < 1 or discount_value > 100):
+            return False, f"نسبة الخصم للمدرس رقم {tid} هي {discount_value}%، والمسموح فقط من 1% إلى 100%."
+
+        if discount_type == "fixed" and discount_value < 0:
+            return False, f"قيمة الخصم الثابت للمدرس رقم {tid} غير صالحة."
+
+        if discount_type not in ("none", "percentage", "fixed", "custom", "free"):
+            return False, f"نوع الخصم للمدرس رقم {tid} غير صالح."
+
+    return True, ""
+
+
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """الصفحة الرئيسية - Dashboard مع التخزين المؤقت ومعالجة الأخطاء"""
@@ -330,6 +358,15 @@ async def student_add(
             status_code=303
         )
 
+    # فحص الخصوم قبل إنشاء الطالب
+    teacher_ids = form_data.getlist("teacher_ids")
+    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids)
+    if not is_valid_discount:
+        return RedirectResponse(
+            url=f"/students/add?error=invalid_discount_percentage&detail={quote(discount_error)}",
+            status_code=303
+        )
+
     # توليد باركود حقيقي مباشرة باستخدام RETURNING
     import time
     import random
@@ -352,9 +389,6 @@ async def student_add(
         log_action(request, action="create", entity="student", entity_id=student_id, description=f"إضافة الطالب: {name}")
 
     # ربط الطالب بالمدرسين المحددين
-    form_data = await request.form()
-    teacher_ids = form_data.getlist("teacher_ids")
-
     if teacher_ids:
         # ===== فحص تكرار المادة: لا يسمح بربط الطالب بأكثر من مدرس لنفس المادة =====
         # (إلا إذا كانت حالة الطالب مع المدرس الأول "منسحب")
@@ -501,6 +535,13 @@ async def student_update(
     # تحديث ربط المدرسين مع نوع الدراسة والحالة
     form_data = await request.form()
     teacher_ids = form_data.getlist("teacher_ids")
+
+    is_valid_discount, discount_error = validate_discount_inputs(form_data, teacher_ids)
+    if not is_valid_discount:
+        return RedirectResponse(
+            url=f"/students/{student_id}/edit?error=invalid_discount_percentage&detail={quote(discount_error)}",
+            status_code=303
+        )
 
     # حذف كل الروابط القديمة أولاً
     old_links = db.execute_query("SELECT teacher_id FROM student_teacher WHERE student_id = %s", (student_id,))

@@ -49,6 +49,20 @@
                         </div>
                         {% endif %}
 
+                        {% if error == 'invalid_discount_percentage' %}
+                        <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+                            <div>
+                                <strong>خطأ في نسبة الخصم!</strong>
+                                نسبة الخصم يجب أن تكون بين 1% و 100%.
+                                {% if error_detail %}
+                                <br>
+                                <span class="text-muted">{{ error_detail }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
                         {% if error == 'similar_name' %}
                         <div class="alert alert-warning d-flex align-items-start mb-4" role="alert">
                             <i class="fas fa-exclamation-triangle fa-lg me-3 mt-1"></i>
@@ -283,11 +297,20 @@
                                                             <!-- نسبة الخصم -->
                                                             <div class="d-none mb-2" id="disc_pct_section_{{ teacher.id }}">
                                                                 <div class="input-group input-group-sm">
-                                                                    <input type="number" class="form-control" name="discount_value_{{ teacher.id }}" id="disc_pct_val_{{ teacher.id }}"
-                                                                           min="1" max="100" placeholder="نسبة الخصم"
+                                                                    <input type="number"
+                                                                           class="form-control"
+                                                                           name="discount_value_{{ teacher.id }}"
+                                                                           id="disc_pct_val_{{ teacher.id }}"
+                                                                           min="1"
+                                                                           max="100"
+                                                                           inputmode="numeric"
+                                                                           placeholder="نسبة الخصم"
                                                                            value="{{ current_discount_value if current_discount_type == 'percentage' else '' }}"
                                                                            oninput="onDiscountValueChange({{ teacher.id }})">
                                                                     <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f0a500,#e6960a);color:#fff;border-color:#f0a500;">%</span>
+                                                                </div>
+                                                                <div class="invalid-feedback">
+                                                                    نسبة الخصم يجب أن تكون بين 1% و 100%.
                                                                 </div>
                                                                 <small class="text-muted d-none mt-1" id="disc_pct_preview_{{ teacher.id }}"></small>
                                                             </div>
@@ -822,8 +845,52 @@ function formatCurrency(amount) {
     return Number(amount).toLocaleString('ar-IQ') + ' د.ع';
 }
 
+function validateStudentDiscountsBeforeSubmit() {
+    const activeTeacherRows = document.querySelectorAll('.teacher-row.active');
+
+    for (const row of activeTeacherRows) {
+        const teacherId = row.id.replace('teacher_row_', '');
+        const selectedType = document.querySelector('input[name="discount_type_' + teacherId + '"]:checked');
+
+        if (!selectedType || selectedType.value !== 'percentage') {
+            continue;
+        }
+
+        const discountInput = document.getElementById('disc_pct_val_' + teacherId);
+        const discountValue = Number(discountInput?.value || 0);
+
+        if (!Number.isFinite(discountValue) || discountValue < 1 || discountValue > 100) {
+            const teacherName = row.querySelector('.fw-semibold')?.textContent?.trim() || 'هذا المدرس';
+            const panel = document.getElementById('discount_panel_' + teacherId);
+
+            if (panel) {
+                panel.classList.remove('d-none');
+            }
+
+            if (discountInput) {
+                discountInput.classList.add('is-invalid');
+                discountInput.focus();
+            }
+
+            showAlert('نسبة الخصم للمدرس "' + teacherName + '" يجب أن تكون بين 1% و 100%.', 'warning');
+            return false;
+        }
+
+        if (discountInput) {
+            discountInput.classList.remove('is-invalid');
+        }
+    }
+
+    return true;
+}
+
 // تحذير إضافي عند إرسال النموذج إذا تم إلغاء تحديد مدرسين
 document.getElementById('studentForm')?.addEventListener('submit', function(e) {
+    if (!validateStudentDiscountsBeforeSubmit()) {
+        e.preventDefault();
+        return;
+    }
+
     {% if mode == 'edit' %}
     const unchecked = originallyLinked.filter(tid => {
         const cb = document.getElementById('teacher_' + tid);
