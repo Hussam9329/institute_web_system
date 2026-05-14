@@ -19,6 +19,8 @@ from services.teaching_types import (
 )
 from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode
 from services.audit_service import log_action
+from urllib.parse import quote
+from services.deletion_guard_service import _deletion_guard_service as deletion_guard
 from auth import check_permission
 
 logger = logging.getLogger(__name__)
@@ -120,11 +122,13 @@ async def subject_add(request: Request, name: str = Form(...)):
 async def subject_delete(request: Request, subject_id: int):
     """حذف مادة - مع حماية إذا كان فيها أساتذة"""
     check_permission(request, 'delete_subjects')
+    guard = deletion_guard.can_delete_subject(subject_id)
+    if not guard.allowed:
+        return RedirectResponse(
+            url=f"/subjects?error=delete_blocked&reason={quote(guard.message)}",
+            status_code=303,
+        )
     db = Database()
-    teachers_count = db.execute_query("SELECT COUNT(*) as cnt FROM teachers WHERE subject = (SELECT name FROM subjects WHERE id = %s)", (subject_id,))
-    if teachers_count and teachers_count[0]['cnt'] > 0:
-        cnt = teachers_count[0]['cnt']
-        return RedirectResponse(url=f"/subjects?error=has_teachers&count={cnt}", status_code=303)
     db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
     return RedirectResponse(url="/subjects?msg=deleted", status_code=303)
 
@@ -670,23 +674,16 @@ async def student_profile(request: Request, student_id: int):
 async def student_delete(request: Request, student_id: int):
     """حذف طالب - يمكن حذف أي طالب غير مرتبط بمدرسين (لا يوجد روابط نشطة)"""
     check_permission(request, 'delete_students')
-    db = Database()
     
-    # فحص إذا كان الطالب مرتبط بمدرسين بحالة مستمر
-    active_links = db.execute_query(
-        "SELECT COUNT(*) as cnt FROM student_teacher WHERE student_id = %s AND status = 'مستمر'", 
-        (student_id,)
-    )
-    if active_links and active_links[0]['cnt'] > 0:
-        cnt = active_links[0]['cnt']
-        student = db.execute_query("SELECT name FROM students WHERE id = %s", (student_id,))
-        student_name = student[0]['name'] if student else ''
+    guard = deletion_guard.can_delete_student(student_id)
+    if not guard.allowed:
         return RedirectResponse(
-            url=f"/students?error=has_teachers&count={cnt}&name={student_name}", 
-            status_code=303
+            url=f"/students?error=delete_blocked&reason={quote(guard.message)}",
+            status_code=303,
         )
     
     # لا توجد روابط نشطة - يمكن الحذف
+    db = Database()
     # حذف الأقساط المرتبطة بالروابط المنسحبة أولاً
     db.execute_query("DELETE FROM installments WHERE student_id = %s", (student_id,))
     # حذف جميع الروابط (منسحبة وغيرها)
@@ -1461,34 +1458,16 @@ async def teacher_detail(request: Request, teacher_id: int):
 async def teacher_delete(request: Request, teacher_id: int):
     """حذف مدرس - مع حماية إذا كان مرتبط بطلاب أو لديه سجلات مالية"""
     check_permission(request, 'delete_teachers')
-    db = Database()
     
-    # فحص إذا كان المدرس مرتبط بطلاب (حالة مستمر)
-    active_students = db.execute_query(
-        "SELECT COUNT(*) as cnt FROM student_teacher WHERE teacher_id = %s AND status = 'مستمر'", 
-        (teacher_id,)
-    )
-    if active_students and active_students[0]['cnt'] > 0:
-        cnt = active_students[0]['cnt']
-        teacher = db.execute_query("SELECT name FROM teachers WHERE id = %s", (teacher_id,))
-        teacher_name = teacher[0]['name'] if teacher else ''
-        return RedirectResponse(url=f"/teachers?error=has_students&count={cnt}&name={teacher_name}", status_code=303)
-    
-    # فحص إذا كان المدرس لديه أقساط مسجلة (سجلات مالية)
-    installments_count = db.execute_query(
-        "SELECT COUNT(*) as cnt FROM installments WHERE teacher_id = %s", 
-        (teacher_id,)
-    )
-    if installments_count and installments_count[0]['cnt'] > 0:
-        cnt = installments_count[0]['cnt']
-        teacher = db.execute_query("SELECT name FROM teachers WHERE id = %s", (teacher_id,))
-        teacher_name = teacher[0]['name'] if teacher else ''
+    guard = deletion_guard.can_delete_teacher(teacher_id)
+    if not guard.allowed:
         return RedirectResponse(
-            url=f"/teachers?error=has_financial_records&count={cnt}&name={teacher_name}", 
-            status_code=303
+            url=f"/teachers?error=delete_blocked&reason={quote(guard.message)}",
+            status_code=303,
         )
     
     # لا توجد سجلات مالية - يمكن الحذف بأمان
+    db = Database()
     db.execute_query("DELETE FROM teacher_withdrawals WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM student_teacher WHERE teacher_id = %s", (teacher_id,))
     db.execute_query("DELETE FROM teachers WHERE id = %s", (teacher_id,))

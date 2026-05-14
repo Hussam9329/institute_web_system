@@ -74,6 +74,9 @@ function checkUrlMessages() {
         showAlert('يجب اختيار نوع تدريس واحد على الأقل', 'warning');
     } else if (error === 'cannot_remove_type') {
         showAlert('لا يمكن حذف نوع تدريس مرتبط بطلاب! يمكنك فقط إضافة أنواع تدريس جديدة.', 'error');
+    } else if (error === 'delete_blocked') {
+        const reason = params.get('reason') || 'لا يمكن الحذف لأن هذا السجل مرتبط ببيانات أخرى.';
+        showAlert(decodeURIComponent(reason), 'warning', 7000);
     }
 
     // تنظيف URL - فقط إزالة msg و error مع الحفاظ على باقي المعاملات
@@ -83,6 +86,7 @@ function checkUrlMessages() {
         params.delete('error');
         params.delete('count');
         params.delete('name');
+        params.delete('reason');
         const remaining = params.toString();
         const newUrl = window.location.pathname + (remaining ? '?' + remaining : '');
         window.history.replaceState({}, '', newUrl);

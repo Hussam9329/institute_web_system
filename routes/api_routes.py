@@ -13,6 +13,7 @@ from services.teaching_types import get_fee_for_study_type, get_deduction_for_st
 from config import get_current_date, format_currency
 from auth import check_permission
 from services.audit_service import log_action
+from services.deletion_guard_service import _deletion_guard_service as deletion_guard
 
 router = APIRouter(prefix="/api")
 
@@ -114,20 +115,12 @@ async def api_update_subject(request: Request, subject_id: int, subject: Subject
 async def api_delete_subject(request: Request, subject_id: int):
     """حذف مادة دراسية"""
     check_permission(request, 'delete_subjects')
-    db = Database()
     try:
-        # فحص وجود مدرسين مرتبطين بالمادة
-        subject_info = db.execute_query("SELECT name FROM subjects WHERE id = %s", (subject_id,))
-        if not subject_info:
-            return {"success": False, "message": "المادة غير موجودة"}
+        guard = deletion_guard.can_delete_subject(subject_id)
+        if not guard.allowed:
+            return guard.to_dict()
         
-        teachers_count = db.execute_query(
-            "SELECT COUNT(*) as cnt FROM teachers WHERE subject = %s",
-            (subject_info[0]['name'],)
-        )
-        if teachers_count and teachers_count[0]['cnt'] > 0:
-            return {"success": False, "message": f"لا يمكن حذف المادة - يوجد {teachers_count[0]['cnt']} مدرس مرتبط بها"}
-        
+        db = Database()
         db.execute_query("DELETE FROM subjects WHERE id = %s", (subject_id,))
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف المادة"}
@@ -938,27 +931,15 @@ async def api_get_recent_installments(request: Request, limit: int = 20):
 async def api_delete_installment(request: Request, installment_id: int):
     """حذف قسط - مسموح فقط لمدير النظام، مع إرجاع تفاصيل القسط المحذوف"""
     check_permission(request, 'delete_payments')
-    db = Database()
     
     try:
-        installment = db.execute_query("SELECT * FROM installments WHERE id = %s", (installment_id,))
-        
-        if not installment:
-            return {"success": False, "message": "القسط غير موجود"}
-        
-        # ===== التحقق: فقط مدير النظام يمكنه حذف الأقساط المدفوعة =====
         user = getattr(request.state, 'user', None)
-        if user:
-            user_role = user.get('role_name', '')
-            if user_role != 'مدير عام':
-                return {
-                    "success": False,
-                    "message": "لا يمكن حذف القسط! فقط مدير النظام يمكنه حذف الأقساط المدفوعة"
-                }
-        else:
-            return {"success": False, "message": "يجب تسجيل الدخول"}
+        guard = deletion_guard.can_delete_installment(installment_id, user)
+        if not guard.allowed:
+            return guard.to_dict()
         
-        inst_data = dict(installment[0])
+        inst_data = guard.details.get('installment', {})
+        db = Database()
         db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))
         
         return {
@@ -1312,14 +1293,13 @@ async def api_get_withdrawals(request: Request, teacher_id: int, limit: int = 10
 async def api_delete_withdrawal(request: Request, withdrawal_id: int):
     """حذف سحب"""
     check_permission(request, 'delete_withdrawals')
-    db = Database()
     
     try:
-        # فحص وجود السحب قبل الحذف
-        existing = db.execute_query("SELECT id FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
-        if not existing:
-            return {"success": False, "message": "السحب غير موجود"}
+        guard = deletion_guard.can_delete_withdrawal(withdrawal_id)
+        if not guard.allowed:
+            return guard.to_dict()
         
+        db = Database()
         db.execute_query("DELETE FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         return {"success": True, "message": "تم حذف السحب"}
     except Exception as e:
@@ -1905,19 +1885,14 @@ async def api_update_room(request: Request, room_id: int, data: dict = Body(...)
 async def api_delete_room(request: Request, room_id: int):
     """حذف قاعة"""
     check_permission(request, 'delete_subjects')
-    db = Database()
     try:
-        # فحص وجود محاضرات مرتبطة
-        schedule_count = db.execute_query(
-            "SELECT COUNT(*) as cnt FROM weekly_schedule WHERE room_id = %s", (room_id,)
-        )
-        cnt = schedule_count[0]['cnt'] if schedule_count else 0
-        if cnt > 0:
-            # حذف المحاضرات المرتبطة أولاً
-            db.execute_query("DELETE FROM weekly_schedule WHERE room_id = %s", (room_id,))
+        guard = deletion_guard.can_delete_room(room_id)
+        if not guard.allowed:
+            return guard.to_dict()
         
+        db = Database()
         db.execute_query("DELETE FROM rooms WHERE id = %s", (room_id,))
-        return {"success": True, "message": "تم حذف القاعة وما يتعلق بها من محاضرات"}
+        return {"success": True, "message": "تم حذف القاعة"}
     except Exception as e:
         return {"success": False, "message": f"خطأ: {str(e)}"}
 
@@ -2145,8 +2120,12 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
 async def api_delete_weekly_lecture(request: Request, lecture_id: int):
     """حذف محاضرة من الجدول الأسبوعي"""
     check_permission(request, 'delete_subjects')
-    db = Database()
     try:
+        guard = deletion_guard.can_delete_weekly_schedule(lecture_id)
+        if not guard.allowed:
+            return guard.to_dict()
+        
+        db = Database()
         db.execute_query("DELETE FROM weekly_schedule WHERE id = %s", (lecture_id,))
         return {"success": True, "message": "تم حذف المحاضرة"}
     except Exception as e:

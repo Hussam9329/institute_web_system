@@ -142,8 +142,9 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         {% if subject.teachers_count > 0 %}
-                                        <button type="button" class="action-btn action-btn-danger" disabled
-                                                title="لا يمكن الحذف - يوجد {{ subject.teachers_count }} مدرسين مسجلين">
+                                        <button type="button" class="action-btn action-btn-danger"
+                                                onclick="showDeleteBlocked('لا يمكن حذف مادة {{ subject.name | e }} لأنها مرتبطة بـ {{ subject.teachers_count }} مدرس. انقل المدرسين إلى مادة أخرى أو احذف ارتباطهم أولاً.')"
+                                                title="اضغط لمعرفة سبب منع الحذف">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         {% else %}
@@ -201,8 +202,9 @@
                                 <i class="fas fa-print"></i>
                             </a>
                             {% if subject.teachers_count > 0 %}
-                            <button type="button" class="action-btn action-btn-danger" disabled
-                                    title="لا يمكن الحذف - يوجد {{ subject.teachers_count }} مدرسين مسجلين">
+                            <button type="button" class="action-btn action-btn-danger"
+                                    onclick="showDeleteBlocked('لا يمكن حذف مادة {{ subject.name | e }} لأنها مرتبطة بـ {{ subject.teachers_count }} مدرس. انقل المدرسين إلى مادة أخرى أو احذف ارتباطهم أولاً.')"
+                                    title="اضغط لمعرفة سبب منع الحذف">
                                 <i class="fas fa-trash"></i>
                             </button>
                             {% else %}

@@ -109,6 +109,15 @@ function confirmAction(message) {
 }
 
 /**
+ * عرض رسالة منع الحذف مع السبب
+ * @param {string} reason - سبب المنع (اختياري)
+ */
+function showDeleteBlocked(reason) {
+    const message = reason || 'لا يمكن الحذف لأن هذا السجل مرتبط ببيانات أخرى.';
+    showAlert(message, 'warning', 7000);
+}
+
+/**
  * طلب API عام
  * @param {string} url - عنوان API
  * @param {object} options - خيارات الطلب
@@ -334,6 +343,7 @@ window.getTodayDate = getTodayDate;
 window.showAlert = showAlert;
 window.dismissAlert = dismissAlert;
 window.confirmAction = confirmAction;
+window.showDeleteBlocked = showDeleteBlocked;
 window.apiRequest = apiRequest;
 window.populateSelect = populateSelect;
 window.toggleButtonLoading = toggleButtonLoading;
