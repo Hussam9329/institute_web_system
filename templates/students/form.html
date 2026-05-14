@@ -258,6 +258,7 @@
                                                 </div>
                                             </div>
                                             {% endif %}
+                                            {% if not is_completed %}
                                             <div class="discount-panel d-none" id="discount_panel_{{ teacher.id }}">
                                                 <div class="px-3 pb-3 pt-1">
                                                     <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fffbeb,#fff8ed);border:1px solid #fbbf24 !important;border-radius:10px;">
@@ -361,6 +362,7 @@
                                                 </div>
                                             </div>
 
+                                            {% endif %}
                                         </div>
                                         {% endfor %}
                                     </div>

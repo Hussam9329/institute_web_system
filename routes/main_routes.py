@@ -59,6 +59,35 @@ def get_teacher_name_map(db, teacher_ids):
 ALLOWED_DISCOUNT_TYPES = ("none", "percentage", "fixed", "custom", "free")
 
 
+def get_discount_value_from_form(form_data, tid, discount_type=None):
+    """
+    قراءة قيمة الخصم من بيانات الفورم مع دعم الخصم الثابت.
+    - نسبة/مخصص: تُقرأ من discount_value_X
+    - ثابت: تُقرأ من discount_value_X (إذا ضبطها JS)، وإلا من discount_fixed_value_X × 1000
+    - مجاني/بدون: القيمة 0
+    """
+    if discount_type is None:
+        discount_type = form_data.get(f"discount_type_{tid}", "none")
+    
+    if discount_type in ("none", "free"):
+        return 0
+    
+    try:
+        val = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+    except (ValueError, TypeError):
+        val = 0
+    
+    # للخصم الثابت: لو val = 0، نحاول نقرأ من discount_fixed_value (بالألف د.ع)
+    if discount_type == "fixed" and val <= 0:
+        try:
+            fixed_thousands = int(form_data.get(f"discount_fixed_value_{tid}", 0) or 0)
+            val = fixed_thousands * 1000
+        except (ValueError, TypeError):
+            val = 0
+    
+    return val
+
+
 def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None):
     """
     يتحقق من خصومات الطالب قبل الحفظ.
@@ -82,10 +111,8 @@ def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None):
         if discount_type not in ALLOWED_DISCOUNT_TYPES:
             return False, f"نوع الخصم لـ{teacher_display} غير صالح."
 
-        try:
-            discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
-        except (ValueError, TypeError):
-            return False, f"يرجى إدخال قيمة خصم صحيحة لـ{teacher_display}."
+        # ===== معالجة قيمة الخصم حسب النوع =====
+        discount_value = get_discount_value_from_form(form_data, tid, discount_type)
 
         # نسبة الخصم: من 1 إلى 100
         if discount_type == "percentage" and (discount_value < 1 or discount_value > 100):
@@ -499,7 +526,7 @@ async def student_add(
             study_type = form_data.get(f"study_type_{tid}", "حضوري")
             status = form_data.get(f"status_{tid}", "مستمر")
             discount_type = form_data.get(f"discount_type_{tid}", "none")
-            discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+            discount_value = get_discount_value_from_form(form_data, tid, discount_type)
             institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
             discount_notes = form_data.get(f"discount_notes_{tid}", "")
             try:
@@ -626,7 +653,7 @@ async def student_update(
                 'study_type': form_data.get(f"study_type_{tid}", "حضوري"),
                 'status': form_data.get(f"status_{tid}", "مستمر"),
                 'discount_type': form_data.get(f"discount_type_{tid}", "none"),
-                'discount_value': int(form_data.get(f"discount_value_{tid}", 0) or 0),
+                'discount_value': get_discount_value_from_form(form_data, tid),
                 'institute_waiver': int(form_data.get(f"institute_waiver_{tid}", 0) or 0),
                 'discount_notes': form_data.get(f"discount_notes_{tid}", ""),
             })
@@ -695,7 +722,7 @@ async def student_update(
         new_study_type = form_data.get(f"study_type_{tid}", "حضوري")
         status = form_data.get(f"status_{tid}", "مستمر")
         new_discount_type = form_data.get(f"discount_type_{tid}", "none")
-        new_discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+        new_discount_value = get_discount_value_from_form(form_data, tid, new_discount_type)
         new_institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
         new_discount_notes = form_data.get(f"discount_notes_{tid}", "")
         
@@ -788,7 +815,7 @@ async def student_update(
             study_type = form_data.get(f"study_type_{tid}", "حضوري")
             status = form_data.get(f"status_{tid}", "مستمر")
             discount_type = form_data.get(f"discount_type_{tid}", "none")
-            discount_value = int(form_data.get(f"discount_value_{tid}", 0) or 0)
+            discount_value = get_discount_value_from_form(form_data, tid, discount_type)
             institute_waiver = int(form_data.get(f"institute_waiver_{tid}", 0) or 0)
             discount_notes = form_data.get(f"discount_notes_{tid}", "")
             try:
