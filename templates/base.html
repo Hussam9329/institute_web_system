@@ -904,6 +904,23 @@
     }
     </script>
     
+    <!-- حقن توقيت الجهاز المحلي في جميع النماذج تلقائياً -->
+    <script>
+    document.addEventListener('submit', function(e) {
+        const form = e.target;
+        if (form.tagName !== 'FORM') return;
+        // إزالة أي حقل مخفي سابق
+        const existing = form.querySelector('input[name="client_timestamp"]');
+        if (existing) existing.remove();
+        // إضافة حقل مخفي بتوقيت الجهاز المحلي
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'client_timestamp';
+        hidden.value = getClientDateTime();
+        form.appendChild(hidden);
+    });
+    </script>
+
     {% block extra_js %}{% endblock %}
 
 </body>

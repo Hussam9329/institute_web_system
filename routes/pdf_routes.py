@@ -9,6 +9,7 @@ import os
 
 from services.pdf_service import pdf_service
 from auth import check_permission
+from config import get_client_timestamp
 
 router = APIRouter(prefix="/pdf")
 
@@ -20,7 +21,8 @@ async def generate_student_pdf(request: Request, student_id: int):
     """
     check_permission(request, 'print_reports')
     try:
-        filepath = pdf_service.generate_student_report(student_id)
+        client_ts = get_client_timestamp(request)
+        filepath = pdf_service.generate_student_report(student_id, client_ts)
         
         if not os.path.exists(filepath):
             raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
@@ -46,7 +48,8 @@ async def generate_teacher_pdf(request: Request, teacher_id: int):
     """
     check_permission(request, 'print_reports')
     try:
-        filepath = pdf_service.generate_teacher_report(teacher_id)
+        client_ts = get_client_timestamp(request)
+        filepath = pdf_service.generate_teacher_report(teacher_id, client_ts)
         
         if not os.path.exists(filepath):
             raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
@@ -72,7 +75,8 @@ async def generate_receipt_pdf(request: Request, installment_id: int):
     """
     check_permission(request, 'print_receipt')
     try:
-        filepath = pdf_service.generate_receipt(installment_id)
+        client_ts = get_client_timestamp(request)
+        filepath = pdf_service.generate_receipt(installment_id, client_ts)
         
         if not os.path.exists(filepath):
             raise HTTPException(status_code=500, detail="فشل في إنشاء الوصل")
@@ -96,7 +100,8 @@ async def generate_subject_pdf(request: Request, subject_name: str):
     """توليد تقرير PDF لمادة معينة"""
     check_permission(request, 'print_reports')
     try:
-        filepath = pdf_service.generate_subject_report(subject_name)
+        client_ts = get_client_timestamp(request)
+        filepath = pdf_service.generate_subject_report(subject_name, client_ts)
         if not os.path.exists(filepath):
             raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
         filename = os.path.basename(filepath)
@@ -111,7 +116,8 @@ async def generate_all_subjects_pdf(request: Request):
     """توليد تقرير PDF شامل لجميع المواد"""
     check_permission(request, 'print_reports')
     try:
-        filepath = pdf_service.generate_all_subjects_report()
+        client_ts = get_client_timestamp(request)
+        filepath = pdf_service.generate_all_subjects_report(client_ts)
         if not os.path.exists(filepath):
             raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
         filename = os.path.basename(filepath)

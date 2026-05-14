@@ -3,11 +3,11 @@
 # ============================================
 
 from database import Database
-from config import get_current_datetime
+from config import get_current_datetime, get_client_timestamp
 
 
 def log_action(request, action: str, entity: str, entity_id: str = "", description: str = ""):
-    """تسجيل عملية في سجل العمليات"""
+    """تسجيل عملية في سجل العمليات - يستخدم توقيت العميل إن وُجد"""
     try:
         db = Database()
 
@@ -23,6 +23,9 @@ def log_action(request, action: str, entity: str, entity_id: str = "", descripti
 
         user_agent = request.headers.get("user-agent", "")[:500] if hasattr(request, 'headers') else ""
 
+        # استخدام توقيت العميل إن وُجد، وإلا توقيت السيرفر
+        client_ts = get_client_timestamp(request)
+
         db.execute_query("""
             INSERT INTO operation_logs 
             (user_id, username, action, entity, entity_id, description, ip_address, user_agent, created_at)
@@ -36,7 +39,7 @@ def log_action(request, action: str, entity: str, entity_id: str = "", descripti
             description,
             ip_address,
             user_agent,
-            get_current_datetime()
+            get_current_datetime(client_ts)
         ))
     except Exception:
         pass

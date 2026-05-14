@@ -203,6 +203,17 @@ async def auth_middleware(request: Request, call_next):
     if user.get('role_name') == 'مدير عام':
         request.state.user_permissions = ['all']
 
+    # ===== استخراج توقيت العميل من HTTP Header =====
+    # يُستخدم في سجل العمليات (logs) بدلاً من توقيت السيرفر
+    try:
+        header_ts = request.headers.get('x-client-timestamp', '')
+        if header_ts:
+            request.state.client_timestamp = header_ts
+        else:
+            request.state.client_timestamp = None
+    except Exception:
+        request.state.client_timestamp = None
+
     response = await call_next(request)
     return response
 

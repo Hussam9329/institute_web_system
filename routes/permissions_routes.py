@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from database import Database
 from models import RoleCreate, RoleUpdate, UserCreate, UserUpdate, RolePermissionsUpdate
-from config import BASE_DIR, format_date
+from config import BASE_DIR, format_date, get_client_timestamp, get_current_datetime
 from auth import hash_password, check_permission
 from services.audit_service import log_action
 from datetime import datetime as dt
@@ -82,7 +82,7 @@ async def create_role(request: Request, role: RoleCreate):
     """إنشاء دور جديد"""
     check_permission(request, 'manage_roles')
     db = Database()
-    now = dt.now().strftime('%Y-%m-%d %H:%M')
+    now = get_current_datetime(get_client_timestamp(request))[:16]  # YYYY-MM-DD HH:MM
     try:
         result = db.execute_query('''
             INSERT INTO roles (name, description, is_default, created_at)
@@ -231,7 +231,7 @@ async def create_user(request: Request, user: UserCreate):
     """إنشاء مستخدم جديد"""
     check_permission(request, 'manage_users')
     db = Database()
-    now = dt.now().strftime('%Y-%m-%d %H:%M')
+    now = get_current_datetime(get_client_timestamp(request))[:16]  # YYYY-MM-DD HH:MM
     try:
         password_hash = hash_password(user.password)
         result = db.execute_query('''

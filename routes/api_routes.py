@@ -10,7 +10,7 @@ from database import Database
 from services.finance_service import finance_service, sync_student_status
 from services.cache_service import cache_service
 from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings
-from config import get_current_date, format_currency
+from config import get_current_date, format_currency, get_client_timestamp
 from auth import check_permission
 from services.audit_service import log_action
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
@@ -82,7 +82,7 @@ async def api_add_subject(request: Request, subject: SubjectCreate):
         
         db.execute_query(
             "INSERT INTO subjects (name, created_at) VALUES (%s, %s)",
-            (subject.name, get_current_date())
+            (subject.name, get_current_date(get_client_timestamp(request)))
         )
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم إضافة المادة بنجاح"}
@@ -760,6 +760,8 @@ async def api_add_installment(request: Request, installment: AddInstallment):
 
         from config import get_current_date as _get_current_date
         
+        _client_ts = get_client_timestamp(request)
+
         insert_query = '''
             INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, for_installment, notes, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -774,7 +776,7 @@ async def api_add_installment(request: Request, installment: AddInstallment):
             installment.installment_type,
             installment.for_installment or '',
             installment.notes,
-            _get_current_date()
+            _get_current_date(_client_ts)
         ))
         installment_id = result[0]['id'] if result else None
         
@@ -1858,7 +1860,7 @@ async def api_add_room(request: Request, data: dict = Body(...)):
         
         result = db.execute_query(
             "INSERT INTO rooms (name, capacity, notes, created_at) VALUES (%s, %s, %s, %s) RETURNING id",
-            (name, capacity, notes, get_current_date())
+            (name, capacity, notes, get_current_date(get_client_timestamp(request)))
         )
         new_id = result[0]['id'] if result else None
         return {"success": True, "message": "تم إضافة القاعة بنجاح", "id": new_id}
@@ -2455,7 +2457,7 @@ async def api_inspect_and_clean_db(request: Request):
             for ns in no_subject:
                 try:
                     db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", 
-                                   (ns['subject'], get_current_date()))
+                                   (ns['subject'], get_current_date(get_client_timestamp(request))))
                 except Exception:
                     pass  # قد تكون المادة موجودة فعلاً
             cleaned['teachers_missing_subjects_added'] = len(no_subject)

@@ -17,7 +17,7 @@ from services.teaching_types import (
     get_all_teaching_types, validate_custom_type_data,
     build_custom_type_settings_from_form
 )
-from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS
+from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS, get_client_timestamp
 from services.audit_service import log_action
 from urllib.parse import quote
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
@@ -178,10 +178,13 @@ async def subject_add(request: Request, name: str = Form(...)):
     check_permission(request, 'add_subjects')
     db = Database()
     try:
+        form_data = await request.form()
+        client_ts = form_data.get("client_timestamp") or get_client_timestamp(request)
+        request.state.client_timestamp = client_ts  # لاستخدامه في log_action
         existing = db.execute_query("SELECT id FROM subjects WHERE name = %s", (name,))
         if existing:
             return RedirectResponse(url="/subjects?error=exists", status_code=303)
-        db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (name, get_current_date()))
+        db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (name, get_current_date(client_ts)))
     except:
         pass
     return RedirectResponse(url="/subjects?msg=added", status_code=303)
@@ -413,6 +416,8 @@ async def student_add(
     import random
 
     current_user_id = getattr(request.state, "user", {}).get("id")
+    client_ts = form_data.get("client_timestamp") or get_client_timestamp(request)
+    request.state.client_timestamp = client_ts  # لاستخدامه في log_action
 
     insert_query = '''
         INSERT INTO students (name, barcode, notes, created_at, created_by)
@@ -421,7 +426,7 @@ async def student_add(
     '''
 
     temp_barcode = f"TEMP-{int(time.time()*1000)}-{random.randint(1000,9999)}"
-    result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date(), current_user_id))
+    result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date(client_ts), current_user_id))
     student_id = result[0]['id'] if result else None
 
     if student_id:
@@ -828,7 +833,15 @@ async def student_profile(request: Request, student_id: int):
 async def student_delete(request: Request, student_id: int):
     """حذف طالب - يمكن حذف أي طالب غير مرتبط بمدرسين (لا يوجد روابط نشطة)"""
     check_permission(request, 'delete_students')
-    
+
+    # استخراج توقيت العميل من بيانات النموذج
+    try:
+        form_data = await request.form()
+        client_ts = form_data.get("client_timestamp") or get_client_timestamp(request)
+        request.state.client_timestamp = client_ts
+    except Exception:
+        request.state.client_timestamp = get_client_timestamp(request)
+
     guard = deletion_guard.can_delete_student(student_id)
     if not guard.allowed:
         return RedirectResponse(
@@ -1323,11 +1336,14 @@ async def teacher_add(
     
     custom_type_json = dump_custom_type_settings(custom_settings)
 
+    client_ts = form_data.get("client_timestamp") or get_client_timestamp(request)
+    request.state.client_timestamp = client_ts  # لاستخدامه في log_action
+
     try:
         existing_subject = db.execute_query("SELECT id FROM subjects WHERE name = %s", (subject,))
         if not existing_subject:
             try:
-                db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date()))
+                db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date(client_ts)))
             except Exception as sub_e:
                 print(f"تحذير: فشل إضافة المادة: {sub_e}")
 
@@ -1341,7 +1357,7 @@ async def teacher_add(
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         '''
 
-        db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(),
+        db.execute_query(insert_query, (name, subject, total_fee, institute_deduction_type, institute_deduction_value, notes, get_current_date(client_ts),
             teaching_types, fee_in_person, fee_electronic, fee_blended,
             institute_pct_in_person, institute_pct_electronic, institute_pct_blended,
             inst_ded_type_in_person, inst_ded_type_electronic, inst_ded_type_blended,
@@ -1477,7 +1493,10 @@ async def teacher_update(
     existing_subject = db.execute_query("SELECT id FROM subjects WHERE name = %s", (subject,))
     if not existing_subject:
         try:
-            db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date()))
+            form_data = await request.form()
+            client_ts_edit = form_data.get("client_timestamp") or get_client_timestamp(request)
+            request.state.client_timestamp = client_ts_edit  # لاستخدامه في log_action
+            db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", (subject, get_current_date(client_ts_edit)))
         except:
             pass
 

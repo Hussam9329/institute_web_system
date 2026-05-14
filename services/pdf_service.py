@@ -116,9 +116,10 @@ def ar_para(text, style):
 
 class PageNumberCanvas:
     """شريط تذييل احترافي مع رقم صفحة واسم النظام"""
-    def __init__(self, canvas, doc):
+    def __init__(self, canvas, doc, client_ts=None):
         self.canvas = canvas
         self.doc = doc
+        self.client_ts = client_ts
 
     def __call__(self, canvas, doc):
         canvas.saveState()
@@ -144,7 +145,7 @@ class PageNumberCanvas:
 
         # التاريخ - يسار
         canvas.setFont('Calibri', 6)
-        canvas.drawString(x_left, y_line - 5 * mm, format_report_date())
+        canvas.drawString(x_left, y_line - 5 * mm, format_report_date(self.client_ts))
 
         # اسم النظام - يمين
         canvas.setFont('Calibri', 6)
@@ -277,7 +278,7 @@ class PDFService:
 
     # ===== مكونات التصميم الهندسي - RTL =====
 
-    def _build_header(self, styles, subtitle_text, report_type_icon=""):
+    def _build_header(self, styles, subtitle_text, report_type_icon="", client_ts=None):
         """رأس احترافي - عرض دقيق = CONTENT_W"""
         elements = []
 
@@ -318,7 +319,7 @@ class PDFService:
         ]))
         elements.append(accent_table)
 
-        now = format_report_datetime()
+        now = format_report_datetime(client_ts)
         elements.append(Spacer(1, SP_SM))
         elements.append(ar_para(f"تاريخ التقرير: {now}", styles['date_style']))
         elements.append(Spacer(1, SP_MD))
@@ -562,7 +563,7 @@ class PDFService:
     # =====================================================
     # تقرير الطالب PDF
     # =====================================================
-    def generate_student_report(self, student_id: int) -> str:
+    def generate_student_report(self, student_id: int, client_ts: str = None) -> str:
         student_result = self.db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))
         if not student_result:
             raise Exception("الطالب غير موجود")
@@ -587,7 +588,7 @@ class PDFService:
         num_teachers = len(teachers_summary)
         payment_pct = int((total_paid_all / total_fee_all) * 100) if total_fee_all > 0 else 0
 
-        elements = self._build_header(styles, "تقرير الطالب المالي الشامل", "")
+        elements = self._build_header(styles, "تقرير الطالب المالي الشامل", "", client_ts)
 
         elements.extend(self._build_kpi_cards([
             ("إجمالي الأجور", format_currency(total_fee_all), C.DARK, C.ACCENT_BG, C.ACCENT),
@@ -698,13 +699,13 @@ class PDFService:
         except Exception:
             pass
 
-        doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
+        doc.build(elements, onFirstPage=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d), onLaterPages=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d))
         return filepath
 
     # =====================================================
     # تقرير المدرس PDF
     # =====================================================
-    def generate_teacher_report(self, teacher_id: int) -> str:
+    def generate_teacher_report(self, teacher_id: int, client_ts: str = None) -> str:
         teacher_result = self.db.execute_query("SELECT * FROM teachers WHERE id = %s", (teacher_id,))
         if not teacher_result:
             raise Exception("المدرس غير موجود")
@@ -725,7 +726,7 @@ class PDFService:
             topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM
         )
 
-        elements = self._build_header(styles, "تقرير المدرس المالي الشامل", "")
+        elements = self._build_header(styles, "تقرير المدرس المالي الشامل", "", client_ts)
 
         remaining = balance_info['remaining_balance']
         elements.extend(self._build_kpi_cards([
@@ -799,12 +800,12 @@ class PDFService:
             elements.append(Spacer(1, SP_MD))
             elements.append(self._status_badge("لا يوجد سجل سحوبات حتى الآن", "info"))
 
-        doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
+        doc.build(elements, onFirstPage=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d), onLaterPages=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d))
         return filepath
     # =====================================================
     # وصل الدفع PDF - RTL
     # =====================================================
-    def generate_receipt(self, installment_id: int) -> str:
+    def generate_receipt(self, installment_id: int, client_ts: str = None) -> str:
         installment_query = '''
             SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
             FROM installments i
@@ -1035,9 +1036,8 @@ class PDFService:
 
         # التذييل
         elements.append(Spacer(1, SP_MD))
-        now = datetime.now()
         footer_s = ParagraphStyle('ft', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.MUTED, leading=10)
-        elements.append(ar_para(f"التاريخ: {format_report_date()} - الوقت: {format_report_time()}", footer_s))
+        elements.append(ar_para(f"التاريخ: {format_report_date(client_ts)} - الوقت: {format_report_time(client_ts)}", footer_s))
         elements.append(Spacer(1, SP_MD))
         elements.append(HRFlowable(width="35%", thickness=0.5, color=C.DARK, spaceBefore=0, spaceAfter=2))
         elements.append(ar_para("توقيع المسؤول", ParagraphStyle('sig', fontName='Calibri', fontSize=7, alignment=CENTER, textColor=C.TEXT_SECONDARY, leading=10)))
@@ -1050,7 +1050,7 @@ class PDFService:
     # =====================================================
     # تقرير المادة PDF - RTL
     # =====================================================
-    def generate_subject_report(self, subject_name: str) -> str:
+    def generate_subject_report(self, subject_name: str, client_ts: str = None) -> str:
         teachers = self.db.execute_query(
             "SELECT * FROM teachers WHERE subject = %s ORDER BY name", (subject_name,)
         )
@@ -1106,13 +1106,13 @@ class PDFService:
         t.setStyle(TableStyle(total_cmds))
         elements.append(t)
 
-        doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
+        doc.build(elements, onFirstPage=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d), onLaterPages=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d))
         return filepath
 
     # =====================================================
     # تقرير شامل لجميع المواد PDF - RTL
     # =====================================================
-    def generate_all_subjects_report(self) -> str:
+    def generate_all_subjects_report(self, client_ts: str = None) -> str:
         subjects = self.db.execute_query("SELECT name FROM subjects ORDER BY name")
         if not subjects:
             raise Exception("لا توجد مواد")
@@ -1196,7 +1196,7 @@ class PDFService:
             if idx < len(subject_details) - 1:
                 elements.append(Spacer(1, SP_MD))
 
-        doc.build(elements, onFirstPage=PageNumberCanvas, onLaterPages=PageNumberCanvas)
+        doc.build(elements, onFirstPage=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d), onLaterPages=lambda c, d: PageNumberCanvas(c, d, client_ts)(c, d))
         return filepath
 
 

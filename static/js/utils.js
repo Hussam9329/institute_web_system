@@ -30,12 +30,31 @@ function formatDate(dateStr) {
 }
 
 /**
- * الحصول على تاريخ اليوم بصيغة YYYY-MM-DD
+ * الحصول على تاريخ اليوم بصيغة YYYY-MM-DD (من توقيت الجهاز المحلي)
  * @returns {string}
  */
 function getTodayDate() {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * الحصول على التاريخ والوقت الحالي بصيغة YYYY-MM-DD HH:MM:SS (من توقيت الجهاز المحلي)
+ * يُستخدم لإرسال التوقيت المحلي للسيرفر بدلاً من توقيت السيرفر
+ * @returns {string}
+ */
+function getClientDateTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 /**
@@ -175,6 +194,7 @@ async function apiRequest(url, options = {}) {
         const response = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
+                'X-Client-Timestamp': getClientDateTime(),
                 ...options.headers
             },
             ...options
@@ -387,6 +407,7 @@ function escapeHtml(str) {
 window.formatCurrency = formatCurrency;
 window.formatDate = formatDate;
 window.getTodayDate = getTodayDate;
+window.getClientDateTime = getClientDateTime;
 window.showAlert = showAlert;
 window.dismissAlert = dismissAlert;
 window.confirmAction = confirmAction;

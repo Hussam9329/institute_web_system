@@ -109,37 +109,89 @@ def format_date(date_string: str) -> str:
         return date_string
 
 # ===== تنسيق تاريخ ووقت التقارير =====
-def format_report_datetime() -> str:
+def format_report_datetime(client_ts: str = None) -> str:
     """
     تنسيق التاريخ والوقت الحالي للتقارير بشكل عربي
     Output: "15/01/2025 - 03:30 م"
     """
-    now = datetime.now()
+    now = _parse_client_ts(client_ts) or datetime.now()
     ampm = "ص" if now.hour < 12 else "م"
     hours = now.hour % 12
     hours = hours if hours else 12
     return now.strftime(f"%d/%m/%Y - {hours}:%M {ampm}")
 
-def format_report_date() -> str:
+def format_report_date(client_ts: str = None) -> str:
     """تنسيق التاريخ فقط للتقارير: DD/MM/YYYY"""
-    return datetime.now().strftime("%d/%m/%Y")
+    now = _parse_client_ts(client_ts) or datetime.now()
+    return now.strftime("%d/%m/%Y")
 
-def format_report_time() -> str:
+def format_report_time(client_ts: str = None) -> str:
     """تنسيق الوقت فقط للتقارير: 12 ساعة مع ص/م"""
-    now = datetime.now()
+    now = _parse_client_ts(client_ts) or datetime.now()
     ampm = "ص" if now.hour < 12 else "م"
     hours = now.hour % 12
     hours = hours if hours else 12
     return f"{hours}:{now.strftime('%M')} {ampm}"
 
+# ===== تحليل توقيت العميل =====
+def _parse_client_ts(client_ts: str = None) -> datetime | None:
+    """
+    تحويل سلسلة توقيت العميل (YYYY-MM-DD HH:MM:SS أو YYYY-MM-DD) إلى كائن datetime.
+    يُرجع None إذا كانت القيمة فارغة أو غير صالحة.
+    """
+    if not client_ts:
+        return None
+    try:
+        client_ts = str(client_ts).strip()
+        if ' ' in client_ts:
+            return datetime.strptime(client_ts, "%Y-%m-%d %H:%M:%S")
+        else:
+            return datetime.strptime(client_ts, "%Y-%m-%d")
+    except (ValueError, TypeError):
+        return None
+
+# ===== استخراج توقيت العميل من الطلب =====
+def get_client_timestamp(request) -> str | None:
+    """
+    استخراج توقيت العميل من طلب HTTP.
+    يبحث في: 1) request.state.client_timestamp (يضعه الـ middleware أو المسار)
+             2) Header X-Client-Timestamp (API requests)
+    يُرجع None إذا لم يوجد.
+    """
+    # 1) من request.state (يضعه auth_middleware أو المسار من form data)
+    try:
+        state_ts = getattr(request.state, 'client_timestamp', None)
+        if state_ts:
+            return state_ts
+    except Exception:
+        pass
+
+    # 2) من HTTP Header (API requests - احتياطي)
+    try:
+        header_ts = request.headers.get('x-client-timestamp', '')
+        if header_ts:
+            return header_ts
+    except Exception:
+        pass
+
+    return None
+
 # ===== الحصول على التاريخ الحالي =====
-def get_current_date() -> str:
-    """إرجاع التاريخ الحالي بصيغة YYYY-MM-DD"""
+def get_current_date(client_ts: str = None) -> str:
+    """إرجاع التاريخ الحالي بصيغة YYYY-MM-DD - يفضل توقيت العميل إن وُجد"""
+    if client_ts:
+        parsed = _parse_client_ts(client_ts)
+        if parsed:
+            return parsed.strftime("%Y-%m-%d")
     return datetime.now().strftime("%Y-%m-%d")
 
 # ===== الحصول على الوقت الحالي =====
-def get_current_datetime() -> str:
-    """إرجاع التاريخ والوقت الحالي"""
+def get_current_datetime(client_ts: str = None) -> str:
+    """إرجاع التاريخ والوقت الحالي - يفضل توقيت العميل إن وُجد"""
+    if client_ts:
+        parsed = _parse_client_ts(client_ts)
+        if parsed:
+            return parsed.strftime("%Y-%m-%d %H:%M:%S")
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # ===== توليد باركود فريد =====
