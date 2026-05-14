@@ -185,6 +185,7 @@ async def students_list(request: Request, search: str = "", msg: str = "", error
             SELECT s.*,
                 (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) as teachers_count,
                 (SELECT COUNT(*) FROM student_teacher st2 WHERE st2.student_id = s.id AND st2.status = 'مستمر') as active_links_count,
+                (SELECT COUNT(*) FROM installments i WHERE i.student_id = s.id) as installments_count,
                 (SELECT CASE WHEN COUNT(*) = 0 THEN 'غير مربوط' WHEN SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) = COUNT(*) THEN 'منسحب' WHEN SUM(CASE WHEN st3.status = 'منسحب' THEN 1 ELSE 0 END) > 0 THEN 'مدمج' ELSE 'مستمر' END FROM student_teacher st3 WHERE st3.student_id = s.id) as status
             FROM students s
             {where_sql}
@@ -854,6 +855,60 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 logging.error(f"خطأ في حساب عدد الطلاب: {e}")
                 for t in teachers:
                     t['students_count'] = 0
+
+            # ===== عدد الأقساط لكل مدرس =====
+            try:
+                installments_count_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    inst_cnt_results = db.execute_query(
+                        f"SELECT teacher_id, COUNT(*) as cnt FROM installments WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if inst_cnt_results:
+                        installments_count_map = {r['teacher_id']: r['cnt'] for r in inst_cnt_results}
+                for t in teachers:
+                    t['installments_count'] = installments_count_map.get(t['id'], 0)
+            except Exception as e:
+                logging.error(f"خطأ في حساب عدد الأقساط: {e}")
+                for t in teachers:
+                    t['installments_count'] = 0
+
+            # ===== عدد السحوبات لكل مدرس =====
+            try:
+                withdrawals_count_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    with_cnt_results = db.execute_query(
+                        f"SELECT teacher_id, COUNT(*) as cnt FROM teacher_withdrawals WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if with_cnt_results:
+                        withdrawals_count_map = {r['teacher_id']: r['cnt'] for r in with_cnt_results}
+                for t in teachers:
+                    t['withdrawals_count'] = withdrawals_count_map.get(t['id'], 0)
+            except Exception as e:
+                logging.error(f"خطأ في حساب عدد السحوبات: {e}")
+                for t in teachers:
+                    t['withdrawals_count'] = 0
+
+            # ===== عدد مواعيد الجدول لكل مدرس =====
+            try:
+                schedule_count_map = {}
+                if teacher_ids:
+                    placeholders = ','.join(['%s'] * len(teacher_ids))
+                    sched_cnt_results = db.execute_query(
+                        f"SELECT teacher_id, COUNT(*) as cnt FROM weekly_schedule WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
+                        tuple(teacher_ids)
+                    )
+                    if sched_cnt_results:
+                        schedule_count_map = {r['teacher_id']: r['cnt'] for r in sched_cnt_results}
+                for t in teachers:
+                    t['schedule_count'] = schedule_count_map.get(t['id'], 0)
+            except Exception as e:
+                logging.error(f"خطأ في حساب عدد المواعيد: {e}")
+                for t in teachers:
+                    t['schedule_count'] = 0
 
             # البيانات المالية - استعلامات مجمعة
             try:

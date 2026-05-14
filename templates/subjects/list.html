@@ -142,8 +142,10 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         {% if subject.teachers_count > 0 %}
-                                        <button type="button" class="action-btn action-btn-danger"
-                                                onclick="showDeleteBlocked('لا يمكن حذف مادة {{ subject.name | e }} لأنها مرتبطة بـ {{ subject.teachers_count }} مدرس. انقل المدرسين إلى مادة أخرى أو احذف ارتباطهم أولاً.')"
+                                        <button type="button" class="action-btn action-btn-danger action-btn-blocked"
+                                                data-blocked="subject"
+                                                data-subject-name="{{ subject.name | e }}"
+                                                data-teachers-count="{{ subject.teachers_count }}"
                                                 title="اضغط لمعرفة سبب منع الحذف">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -202,8 +204,10 @@
                                 <i class="fas fa-print"></i>
                             </a>
                             {% if subject.teachers_count > 0 %}
-                            <button type="button" class="action-btn action-btn-danger"
-                                    onclick="showDeleteBlocked('لا يمكن حذف مادة {{ subject.name | e }} لأنها مرتبطة بـ {{ subject.teachers_count }} مدرس. انقل المدرسين إلى مادة أخرى أو احذف ارتباطهم أولاً.')"
+                            <button type="button" class="action-btn action-btn-danger action-btn-blocked"
+                                    data-blocked="subject"
+                                    data-subject-name="{{ subject.name | e }}"
+                                    data-teachers-count="{{ subject.teachers_count }}"
                                     title="اضغط لمعرفة سبب منع الحذف">
                                 <i class="fas fa-trash"></i>
                             </button>

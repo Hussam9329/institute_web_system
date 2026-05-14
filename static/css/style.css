@@ -563,6 +563,27 @@ thead.table-gradient-orange th,
     transform: translateY(-2px);
 }
 
+/* Danger - Blocked Delete (clickable for reason) */
+.action-btn-blocked.action-btn-danger {
+    color: var(--warning-dark, #b45309);
+    border-color: var(--warning, #f59e0b);
+    background: rgba(245, 158, 11, 0.08);
+    cursor: help;
+    position: relative;
+}
+
+.action-btn-blocked.action-btn-danger:hover {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.25));
+    border-color: var(--warning, #f59e0b);
+    color: var(--warning-dark, #b45309);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    transform: translateY(-2px);
+}
+
+.action-btn-blocked.action-btn-danger i {
+    opacity: 0.7;
+}
+
 /* Info - Print */
 .action-btn-info {
     color: var(--info);

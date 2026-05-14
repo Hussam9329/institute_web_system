@@ -217,9 +217,15 @@
                                         <a href="/reports/teacher/{{ teacher.id }}" class="action-btn action-btn-info" target="_blank" title="طباعة">
                                             <i class="fas fa-print"></i>
                                         </a>
-                                        {% if teacher.students_count and teacher.students_count > 0 %}
-                                        <button type="button" class="action-btn action-btn-danger" disabled
-                                                title="لا يمكن الحذف - يوجد {{ teacher.students_count }} طلاب مسجلين">
+                                        {% if (teacher.students_count or 0) > 0 or (teacher.installments_count or 0) > 0 or (teacher.withdrawals_count or 0) > 0 or (teacher.schedule_count or 0) > 0 %}
+                                        <button type="button" class="action-btn action-btn-danger action-btn-blocked"
+                                                data-blocked="teacher"
+                                                data-teacher-name="{{ teacher.name | e }}"
+                                                data-students-count="{{ teacher.students_count or 0 }}"
+                                                data-installments-count="{{ teacher.installments_count or 0 }}"
+                                                data-withdrawals-count="{{ teacher.withdrawals_count or 0 }}"
+                                                data-schedule-count="{{ teacher.schedule_count or 0 }}"
+                                                title="اضغط لمعرفة سبب منع الحذف">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         {% else %}
@@ -318,9 +324,15 @@
                             <a href="/teachers/{{ teacher.id }}" class="action-btn action-btn-success" title="عرض"><i class="fas fa-eye me-1"></i>عرض</a>
                             <a href="/teachers/{{ teacher.id }}/edit" class="action-btn action-btn-warning" title="تعديل"><i class="fas fa-edit me-1"></i>تعديل</a>
                             <a href="/reports/teacher/{{ teacher.id }}" target="_blank" class="action-btn action-btn-info" title="طباعة"><i class="fas fa-print"></i></a>
-                            {% if teacher.students_count and teacher.students_count > 0 %}
-                            <button type="button" class="action-btn action-btn-danger" disabled
-                                    title="لا يمكن الحذف - يوجد {{ teacher.students_count }} طلاب مسجلين">
+                            {% if (teacher.students_count or 0) > 0 or (teacher.installments_count or 0) > 0 or (teacher.withdrawals_count or 0) > 0 or (teacher.schedule_count or 0) > 0 %}
+                            <button type="button" class="action-btn action-btn-danger action-btn-blocked"
+                                    data-blocked="teacher"
+                                    data-teacher-name="{{ teacher.name | e }}"
+                                    data-students-count="{{ teacher.students_count or 0 }}"
+                                    data-installments-count="{{ teacher.installments_count or 0 }}"
+                                    data-withdrawals-count="{{ teacher.withdrawals_count or 0 }}"
+                                    data-schedule-count="{{ teacher.schedule_count or 0 }}"
+                                    title="اضغط لمعرفة سبب منع الحذف">
                                 <i class="fas fa-trash"></i>
                             </button>
                             {% else %}

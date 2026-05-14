@@ -118,6 +118,53 @@ function showDeleteBlocked(reason) {
 }
 
 /**
+ * معالج النقر على أزرار الحذف المحظورة (data-blocked)
+ * يبني رسالة السبب ديناميكياً بناءً على بيانات الزر
+ */
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-blocked]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const type = btn.dataset.blocked;
+
+    if (type === 'student') {
+        const name = btn.dataset.studentName || '';
+        const activeLinks = parseInt(btn.dataset.activeLinks) || 0;
+        const installments = parseInt(btn.dataset.installments) || 0;
+        const reasons = [];
+        if (activeLinks > 0) reasons.push('مرتبط بـ ' + activeLinks + ' مدرس نشط');
+        if (installments > 0) reasons.push('لديه ' + installments + ' قسط مسجل');
+        const reasonText = reasons.join(' و ');
+        showDeleteBlocked('لا يمكن حذف الطالب "' + name + '" لأنه ' + reasonText + '. احذف الارتباطات والأقساط أولاً.');
+    } else if (type === 'teacher') {
+        const name = btn.dataset.teacherName || '';
+        const students = parseInt(btn.dataset.studentsCount) || 0;
+        const installments = parseInt(btn.dataset.installmentsCount) || 0;
+        const withdrawals = parseInt(btn.dataset.withdrawalsCount) || 0;
+        const schedule = parseInt(btn.dataset.scheduleCount) || 0;
+        const reasons = [];
+        if (students > 0) reasons.push('لديه ' + students + ' طالب مرتبط');
+        if (installments > 0) reasons.push('لديه ' + installments + ' قسط مسجل');
+        if (withdrawals > 0) reasons.push('لديه ' + withdrawals + ' سحب مسجل');
+        if (schedule > 0) reasons.push('لديه ' + schedule + ' موعد في الجدول');
+        const reasonText = reasons.join(' و ');
+        showDeleteBlocked('لا يمكن حذف المدرس "' + name + '" لأنه ' + reasonText + '. احذف جميع الارتباطات أولاً.');
+    } else if (type === 'subject') {
+        const name = btn.dataset.subjectName || '';
+        const teachers = parseInt(btn.dataset.teachersCount) || 0;
+        if (name && teachers > 0) {
+            showDeleteBlocked('لا يمكن حذف مادة "' + name + '" لأنها مرتبطة بـ ' + teachers + ' مدرس. انقل المدرسين إلى مادة أخرى أو احذف ارتباطهم أولاً.');
+        } else {
+            showDeleteBlocked();
+        }
+    } else {
+        showDeleteBlocked();
+    }
+});
+
+/**
  * طلب API عام
  * @param {string} url - عنوان API
  * @param {object} options - خيارات الطلب
