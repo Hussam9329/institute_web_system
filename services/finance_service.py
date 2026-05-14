@@ -460,8 +460,9 @@ class FinanceService:
                 elif has_second or has_splits_second:
                     total_deduction += other_half_ded
             else:
-                # حساب الخصم النسبي من القسط الفعلي (بعد خصم الطالب) وليس من القسط الكلي
-                full_deduction = round((effective_fee * ded_value) / 100)
+                # حساب الخصم النسبي من القسط الأساسي الأصلي (قبل أي خصم أو تعديل للطالب)
+                # المعهد يأخذ حصته دائماً من القسط الأصلي مهما كان خصم الطالب
+                full_deduction = round((fee_for_deduction * ded_value) / 100)
                 half_deduction = full_deduction // 2
                 other_half_deduction = full_deduction - half_deduction
                 
@@ -913,7 +914,7 @@ class FinanceService:
                     # حساب خصم المعهد لهذا الطالب
                     ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
                     
-                    if ded_value > 0 and effective_fee > 0:
+                    if ded_value > 0 and fee > 0:
                         # ===== الطالب المجاني لا يولّد أي خصم معهد نهائياً =====
                         if discount_type == 'free':
                             pass  # لا خصم معهد للطالب المجاني
@@ -921,8 +922,8 @@ class FinanceService:
                             # المبلغ اليدوي هو المبلغ الكامل للقسطين معاً
                             result[tid]['expected_deduction'] += ded_value
                         else:
-                            # نسبة مئوية من القسط الفعلي (بعد خصم الطالب)
-                            result[tid]['expected_deduction'] += round(effective_fee * ded_value / 100)
+                            # نسبة مئوية من القسط الأساسي الأصلي (قبل أي خصم أو تعديل للطالب)
+                            result[tid]['expected_deduction'] += round(fee * ded_value / 100)
                 except Exception as link_err:
                     logger.error(f"خطأ في حساب رابط الطالب {link.get('student_id')} للمدرس {link.get('teacher_id')}: {link_err}")
                     continue
@@ -1003,12 +1004,12 @@ class FinanceService:
             r['total_fees'] += effective_fee
             
             ded_type, ded_value = self._get_deduction_for_study_type(teacher, study_type)
-            if ded_value > 0 and effective_fee > 0:
+            if ded_value > 0 and fee > 0:
                 if ded_type == 'manual':
                     r['expected_deduction'] += ded_value
                 else:
-                    # حساب الخصم النسبي من القسط الفعلي (بعد خصم الطالب)
-                    r['expected_deduction'] += round(effective_fee * ded_value / 100)
+                    # حساب الخصم النسبي من القسط الأساسي الأصلي (قبل أي خصم أو تعديل للطالب)
+                    r['expected_deduction'] += round(fee * ded_value / 100)
         
         r['teacher_due'] = r['total_fees'] - r['expected_deduction']
         return r
