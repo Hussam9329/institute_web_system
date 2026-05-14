@@ -297,7 +297,7 @@
     border: 1px solid #f1f5f9;
     padding: 2px;
     vertical-align: top;
-    height: 48px;
+    height: 34px;
     position: relative;
 }
 .ws-grid td.ws-time-cell {
@@ -1058,30 +1058,11 @@ html[data-theme="dark"] .ws-ctrl-divider {
                     <div class="col-6">
                         <label class="ws-fld-label">من الساعة</label>
                         <input type="time" id="lecStartTime" class="form-control form-control-sm" required
-                            onchange="updateEndTime()">
+                            onchange="setDefaultEndTime(90)">
                     </div>
                     <div class="col-6">
-                        <label class="ws-fld-label">المدة</label>
-                        <select id="lecDuration" class="form-select form-select-sm" onchange="updateEndTime()">
-                            <optgroup label="محاضرة" id="lectureDurations">
-                                <option value="60">1 ساعة</option>
-                                <option value="90" selected>ساعة ونصف</option>
-                                <option value="120">ساعتين</option>
-                            </optgroup>
-                            <optgroup label="امتحان" id="examDurations">
-                                <option value="120">ساعتين</option>
-                                <option value="180">3 ساعات</option>
-                                <option value="240">4 ساعات</option>
-                                <option value="300">5 ساعات</option>
-                                <option value="360">6 ساعات</option>
-                                <option value="420">7 ساعات</option>
-                                <option value="480">8 ساعات</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label class="ws-fld-label">إلى الساعة <small class="text-muted">(تلقائي)</small></label>
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" readonly>
+                        <label class="ws-fld-label">إلى الساعة</label>
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required onchange="checkConflictPreview()">
                     </div>
                     <div class="col-12">
                         <label class="ws-fld-label">ملاحظات</label>
@@ -1162,6 +1143,9 @@ const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخ�
 const TIME_SLOTS = [];
 for (let h = 7; h <= 21; h++) {
     TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
+    if (h < 21) {
+        TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
+    }
 }
 
 const LECTURE_DURATIONS = [
@@ -1202,17 +1186,6 @@ function renderRoomPills() {
 function filterByRoom(roomId) {
     currentRoomFilter = roomId;
     currentRoomPage = 1;
-    currentSortBy = 'time';
-    currentEventTypeFilter = 'all';
-    currentTeacherFilter = 0;
-    currentDayFilter = 'all';
-    currentViewMode = 'grid';
-    // Reset UI state
-    document.getElementById('sortSelect').value = 'time';
-    document.getElementById('teacherFilter').value = '0';
-    document.getElementById('dayFilter').value = 'all';
-    resetTypePills();
-    setViewActive('grid');
     renderRoomPills();
     renderStats();
     renderCurrentView();
@@ -1360,10 +1333,16 @@ function renderCurrentView() {
     }
 }
 
+// ===== HELPER: Normalize time value =====
+function normalizeTimeValue(time) {
+    if (!time) return '';
+    return String(time).slice(0, 5);
+}
+
 // ===== HELPER: Does event overlap with a time slot? =====
 function isTimeOverlappingSlot(ev, time) {
     // Check if event overlaps with the given time slot (not just starts at it)
-    return ev.start_time <= time && ev.end_time > time;
+    return normalizeTimeValue(ev.start_time) <= normalizeTimeValue(time) && normalizeTimeValue(ev.end_time) > normalizeTimeValue(time);
 }
 
 // ===== HELPER: Get slot block info (for cross-type shading) =====
@@ -1398,7 +1377,7 @@ function getSlotBlockInfo(roomId, day, time) {
             cssClass: isExam ? 'ws-blocked-by-exam' : 'ws-blocked-by-lecture',
             labelClass: isExam ? 'exam' : 'lecture',
             labelText: isExam ? 'امتحان محجوز' : 'محاضرة محجوزة',
-            title: otherTypeEvents.map(ev => escapeHtml(ev.subject) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time).join('\n')
+            title: otherTypeEvents.map(ev => escapeHtml(ev.subject) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + normalizeTimeValue(ev.start_time) + '-' + normalizeTimeValue(ev.end_time)).join('\n')
         };
     }
 
@@ -1416,7 +1395,7 @@ function getEventsAtForRoom(roomId, day, time) {
     return allSchedule.filter(ev => {
         const roomMatch = ev.room_id === roomId;
         const dayMatch = ev.day_of_week === day;
-        const isStart = ev.start_time === time;
+        const isStart = normalizeTimeValue(ev.start_time) === normalizeTimeValue(time);
         const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
         const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
         const dayMatchFilter = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
@@ -1429,7 +1408,7 @@ function getEventsAt(day, time) {
     return allSchedule.filter(ev => {
         const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
         const dayMatch = ev.day_of_week === day;
-        const isStart = ev.start_time === time;
+        const isStart = normalizeTimeValue(ev.start_time) === normalizeTimeValue(time);
         const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
         return roomMatch && dayMatch && isStart && typeMatch;
     });
@@ -1473,7 +1452,7 @@ function buildRoomGridTable(room) {
                     const cls = isExam ? 'ws-exm' : 'ws-lec';
                     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
 
-                    html += '<div class="ws-ev ' + cls + '" title="' + escapeHtml(ev.subject) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + ev.start_time + '-' + ev.end_time + '">';
+                    html += '<div class="ws-ev ' + cls + '" title="' + escapeHtml(ev.subject) + ' | ' + escapeHtml(ev.teacher_name) + ' | ' + normalizeTimeValue(ev.start_time) + '-' + normalizeTimeValue(ev.end_time) + '">';
                     html += '<div class="ws-ev-acts">';
                     html += '<button class="act-edit" onclick="editEvent(' + ev.id + ')" title="تعديل"><i class="fas fa-pen"></i></button>';
                     html += '<button class="act-del" onclick="deleteEvent(' + ev.id + ')" title="حذف"><i class="fas fa-trash"></i></button>';
@@ -1705,7 +1684,7 @@ function renderListEventCard(ev) {
     html += '<div class="ws-lv-body">';
     html += '<div class="ws-lv-subj">' + escapeHtml(ev.subject) + '</div>';
     html += '<div class="ws-lv-meta">';
-    html += '<span><i class="fas fa-clock"></i> ' + ev.start_time + ' - ' + ev.end_time + '</span>';
+    html += '<span><i class="fas fa-clock"></i> ' + normalizeTimeValue(ev.start_time) + ' - ' + normalizeTimeValue(ev.end_time) + '</span>';
     html += '<span><i class="fas fa-calendar-day"></i> ' + escapeHtml(ev.day_of_week) + '</span>';
     html += '<span><i class="fas fa-user-tie"></i> ' + escapeHtml(ev.teacher_name) + '</span>';
     html += '<span><i class="fas fa-door-open"></i> ' + roomDisplay + '</span>';
@@ -1837,32 +1816,19 @@ function setEventType(type) {
         btnE.className = 'ws-evtype-btn active-exm';
         btnL.className = 'ws-evtype-btn';
     }
-    updateDurationOptions();
-    updateEndTime();
-}
-
-function updateDurationOptions() {
-    const select = document.getElementById('lecDuration');
-    const isExam = currentEventType === 'امتحان';
-    const durations = isExam ? EXAM_DURATIONS : LECTURE_DURATIONS;
-    select.innerHTML = '';
-    durations.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.value;
-        opt.textContent = d.label;
-        select.appendChild(opt);
-    });
-    select.value = isExam ? '120' : '90';
+    const defaultMinutes = type === 'امتحان' ? 120 : 90;
+    document.getElementById('lecEndTime').value = '';
+    setDefaultEndTime(defaultMinutes);
 }
 
 // ===== TIME CALCULATION =====
-function updateEndTime() {
+function setDefaultEndTime(minutes) {
     const startTime = document.getElementById('lecStartTime').value;
-    const duration = parseInt(document.getElementById('lecDuration').value) || 0;
-    if (startTime && duration) {
-        document.getElementById('lecEndTime').value = incrementTime(startTime, duration);
-        checkConflictPreview();
+    const endEl = document.getElementById('lecEndTime');
+    if (startTime && !endEl.value) {
+        endEl.value = incrementTime(startTime, minutes);
     }
+    checkConflictPreview();
 }
 
 async function checkConflictPreview() {
@@ -1881,13 +1847,13 @@ async function checkConflictPreview() {
     const conflicts = allSchedule.filter(ev => {
         if (editId && ev.id === parseInt(editId)) return false;
         if (ev.room_id !== roomId || ev.day_of_week !== day) return false;
-        return startTime < ev.end_time && ev.start_time < endTime;
+        return startTime < normalizeTimeValue(ev.end_time) && normalizeTimeValue(ev.start_time) < endTime;
     });
 
     if (conflicts.length > 0) {
         const c = conflicts[0];
         const cType = c.event_type === 'امتحان' ? 'امتحان' : 'محاضرة';
-        warningText.textContent = 'تعارض! يوجد ' + cType + ' للمدرس ' + c.teacher_name + ' (' + c.teacher_subject + ') من ' + c.start_time + ' إلى ' + c.end_time;
+        warningText.textContent = 'تعارض! يوجد ' + cType + ' للمدرس ' + c.teacher_name + ' (' + c.teacher_subject + ') من ' + normalizeTimeValue(c.start_time) + ' إلى ' + normalizeTimeValue(c.end_time);
         warningEl.style.display = 'flex';
     } else {
         warningEl.style.display = 'none';
@@ -1895,31 +1861,48 @@ async function checkConflictPreview() {
 }
 
 // ===== EVENT CRUD =====
+let modalSelectsInitialized = false;
+
 function populateModalSelects() {
     const roomSelect = document.getElementById('lecRoom');
-    let rhtml = '<option value="">اختر القاعة</option>';
-    allRooms.forEach(r => { rhtml += '<option value="' + r.id + '">#' + r.id + ' ' + escapeHtml(r.name) + '</option>'; });
-    roomSelect.innerHTML = rhtml;
-
     const teacherSelect = document.getElementById('lecTeacher');
+
+    const currentRoom = roomSelect.value;
+    const currentTeacher = teacherSelect.value;
+
+    let rhtml = '<option value="">اختر القاعة</option>';
+    allRooms.forEach(r => {
+        rhtml += '<option value="' + r.id + '">#' + r.id + ' ' + escapeHtml(r.name) + '</option>';
+    });
+    roomSelect.innerHTML = rhtml;
+    roomSelect.value = currentRoom || '';
+
     let thtml = '<option value="">اختر المدرس</option>';
-    allTeachers.forEach(t => { thtml += '<option value="' + t.id + '" data-subject="' + escapeHtml(t.subject) + '">' + escapeHtml(t.name) + ' (' + escapeHtml(t.subject) + ')</option>'; });
+    allTeachers.forEach(t => {
+        thtml += '<option value="' + t.id + '" data-subject="' + escapeHtml(t.subject) + '">' +
+            escapeHtml(t.name) + ' (' + escapeHtml(t.subject) + ')' +
+        '</option>';
+    });
     teacherSelect.innerHTML = thtml;
+    teacherSelect.value = currentTeacher || '';
 
-    // Auto-fill subject from teacher (read-only field)
-    document.getElementById('lecTeacher').addEventListener('change', function() {
-        const opt = this.options[this.selectedIndex];
-        if (opt && opt.dataset.subject) {
-            document.getElementById('lecSubject').value = opt.dataset.subject;
-        } else {
-            document.getElementById('lecSubject').value = '';
-        }
-    });
+    if (!modalSelectsInitialized) {
+        teacherSelect.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            document.getElementById('lecSubject').value = opt && opt.dataset.subject ? opt.dataset.subject : '';
+            checkConflictPreview();
+        });
 
-    // Conflict check triggers
-    ['lecRoom', 'lecDay', 'lecStartTime'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateEndTime);
-    });
+        ['lecRoom', 'lecDay', 'lecStartTime', 'lecEndTime'].forEach(id => {
+            document.getElementById(id).addEventListener('change', checkConflictPreview);
+        });
+
+        modalSelectsInitialized = true;
+    }
+
+    if (window.initSearchableSelects) {
+        window.initSearchableSelects();
+    }
 }
 
 function openAddEventModal(day, time, roomId) {
@@ -1929,6 +1912,7 @@ function openAddEventModal(day, time, roomId) {
     document.getElementById('lecSubject').value = '';
     document.getElementById('lecDay').value = day || 'الإثنين';
     document.getElementById('lecStartTime').value = time || '08:00';
+    document.getElementById('lecEndTime').value = '';
     document.getElementById('lecNotes').value = '';
     document.getElementById('lecError').style.display = 'none';
     document.getElementById('lecConflictWarning').style.display = 'none';
@@ -1942,7 +1926,8 @@ function openAddEventModal(day, time, roomId) {
     } else {
         document.getElementById('lecRoom').value = '';
     }
-    updateEndTime();
+    document.getElementById('lecEndTime').value = '';
+    setDefaultEndTime(90);
     new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
@@ -1956,7 +1941,8 @@ function editEvent(eventId) {
     document.getElementById('lecTeacher').value = ev.teacher_id;
     document.getElementById('lecSubject').value = ev.subject;
     document.getElementById('lecDay').value = ev.day_of_week;
-    document.getElementById('lecStartTime').value = ev.start_time;
+    document.getElementById('lecStartTime').value = normalizeTimeValue(ev.start_time);
+    document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
     document.getElementById('lecNotes').value = ev.notes || '';
     document.getElementById('lecError').style.display = 'none';
     document.getElementById('lecConflictWarning').style.display = 'none';
@@ -1964,23 +1950,7 @@ function editEvent(eventId) {
     const evType = ev.event_type || 'محاضرة';
     setEventType(evType);
 
-    // Match duration
-    const durationMin = timeToMinutes(ev.end_time) - timeToMinutes(ev.start_time);
-    const durationSelect = document.getElementById('lecDuration');
-    let matched = false;
-    for (let i = 0; i < durationSelect.options.length; i++) {
-        if (parseInt(durationSelect.options[i].value) === durationMin) {
-            durationSelect.selectedIndex = i; matched = true; break;
-        }
-    }
-    if (!matched) {
-        const customOpt = document.createElement('option');
-        customOpt.value = durationMin;
-        customOpt.textContent = formatDuration(durationMin);
-        durationSelect.appendChild(customOpt);
-        durationSelect.value = durationMin;
-    }
-    document.getElementById('lecEndTime').value = ev.end_time;
+    document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
     document.getElementById('eventModalTitle').textContent = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
     new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
@@ -1995,7 +1965,6 @@ async function saveEvent() {
         start_time: document.getElementById('lecStartTime').value,
         end_time: document.getElementById('lecEndTime').value,
         event_type: document.getElementById('lecEventType').value,
-        duration: parseInt(document.getElementById('lecDuration').value) || null,
         notes: document.getElementById('lecNotes').value.trim()
     };
     const errorEl = document.getElementById('lecError');

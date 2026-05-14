@@ -2554,8 +2554,10 @@ textarea:focus-visible {
 /* Card info grid */
 .list-card-info {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: clamp(0.3rem, 0.8vw, 0.5rem);
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: clamp(0.35rem, 0.8vw, 0.6rem);
+    width: 100%;
+    min-width: 0;
 }
 
 .list-card-info .info-item {
@@ -2576,9 +2578,10 @@ textarea:focus-visible {
     font-size: clamp(0.78rem, 1.4vw, 0.92rem);
     font-weight: 700;
     color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.45;
 }
 
 /* Card divider */
@@ -2626,6 +2629,17 @@ textarea:focus-visible {
 .list-card-header .header-text .header-sub {
     font-size: clamp(0.68rem, 1.1vw, 0.8rem);
     color: var(--text-muted);
+}
+
+.list-card,
+.list-card * {
+    min-width: 0;
+}
+
+.list-card-header .header-text h6,
+.list-card-header .header-text .header-sub {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 /* Card badge row */

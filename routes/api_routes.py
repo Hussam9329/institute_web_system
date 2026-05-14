@@ -1979,8 +1979,8 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         notes = data.get('notes', '')
         duration = data.get('duration', None)
         
-        if not all([room_id, teacher_id, day_of_week, start_time]):
-            return {"success": False, "message": "جميع الحقول مطلوبة (القاعة، المدرس، اليوم، وقت البداية)"}
+        if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
+            return {"success": False, "message": "جميع الحقول مطلوبة: القاعة، المدرس، اليوم، وقت البداية، وقت النهاية"}
         
         valid_days = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
         if day_of_week not in valid_days:
@@ -2075,8 +2075,8 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         notes = data.get('notes', '')
         duration = data.get('duration', None)
         
-        if not all([room_id, teacher_id, day_of_week, start_time]):
-            return {"success": False, "message": "جميع الحقول مطلوبة"}
+        if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
+            return {"success": False, "message": "جميع الحقول مطلوبة: القاعة، المدرس، اليوم، وقت البداية، وقت النهاية"}
         
         # حساب وقت النهاية من المدة إذا تم تحديدها
         if duration and not end_time:

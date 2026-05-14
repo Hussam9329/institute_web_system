@@ -271,6 +271,40 @@ class DeletionGuardService:
                 )
 
             inst_data = dict(installment[0])
+
+            # منع حذف القسط إذا كان المدرس قد سحب مستحقاته بعد تسجيله
+            locked_withdrawal = db.execute_query(
+                """
+                SELECT id, amount, withdrawal_date
+                FROM teacher_withdrawals
+                WHERE teacher_id = %s
+                  AND withdrawal_date >= %s
+                ORDER BY withdrawal_date ASC
+                LIMIT 1
+                """,
+                (inst_data["teacher_id"], inst_data["payment_date"])
+            )
+
+            if locked_withdrawal:
+                w = locked_withdrawal[0]
+                return DeletionGuardResult(
+                    allowed=False,
+                    message=(
+                        "لا يمكن حذف هذا القسط لأن المدرس سحب مستحقاته بعد تسجيله. "
+                        f"تاريخ القسط: {inst_data['payment_date']}، "
+                        f"وأول سحب لاحق/مطابق بتاريخ: {w['withdrawal_date']}."
+                    ),
+                    reason_code="installment_locked_by_teacher_withdrawal",
+                    details={
+                        "installment_id": installment_id,
+                        "teacher_id": inst_data["teacher_id"],
+                        "payment_date": str(inst_data["payment_date"]),
+                        "withdrawal_id": w["id"],
+                        "withdrawal_date": str(w["withdrawal_date"]),
+                        "withdrawal_amount": float(w["amount"]) if w.get("amount") is not None else None,
+                    },
+                )
+
             return DeletionGuardResult(
                 allowed=True,
                 message="يمكن حذف القسط",

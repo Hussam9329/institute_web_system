@@ -3214,3 +3214,71 @@ html[data-theme="dark"] .badge.bg-warning-subtle {
     background-color: rgba(251, 191, 36, 0.12) !important;
     color: #fde68a !important;
 }
+
+/* ===== Design Tokens — نظام الألوان الموحّد ===== */
+:root {
+    --brand-primary: #2563eb;
+    --brand-primary-strong: #1d4ed8;
+    --brand-secondary: #7c3aed;
+    --brand-success: #059669;
+    --brand-warning: #d97706;
+    --brand-danger: #dc2626;
+
+    --app-bg: #f8fafc;
+    --app-surface: #ffffff;
+    --app-surface-soft: #f1f5f9;
+    --app-surface-hover: #e2e8f0;
+
+    --app-text: #0f172a;
+    --app-text-secondary: #475569;
+    --app-muted: #64748b;
+
+    --app-border: #e2e8f0;
+    --app-border-soft: #f1f5f9;
+
+    --app-input-bg: #ffffff;
+    --app-input-text: #0f172a;
+    --app-input-border: #cbd5e1;
+    --app-input-focus-border: var(--brand-primary);
+    --app-input-focus-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.16);
+
+    --app-radius-sm: 8px;
+    --app-radius-md: 12px;
+    --app-radius-lg: 16px;
+    --app-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --app-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
+}
+
+html[data-theme="dark"] {
+    --brand-primary: #60a5fa;
+    --brand-primary-strong: #93c5fd;
+    --brand-secondary: #a78bfa;
+    --brand-success: #34d399;
+    --brand-warning: #fbbf24;
+    --brand-danger: #f87171;
+
+    --app-bg: #0b1120;
+    --app-surface: #111827;
+    --app-surface-soft: #1f2937;
+    --app-surface-hover: #273449;
+
+    --app-text: #f8fafc;
+    --app-text-secondary: #cbd5e1;
+    --app-muted: #94a3b8;
+
+    --app-border: #334155;
+    --app-border-soft: #1e293b;
+
+    --app-input-bg: #0f172a;
+    --app-input-text: #f8fafc;
+    --app-input-border: #334155;
+    --app-input-focus-border: var(--brand-primary);
+    --app-input-focus-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.18);
+}
+
+/* UI utility classes using design tokens */
+.ui-badge-primary {
+    background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+    color: var(--brand-primary);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 24%, transparent);
+}

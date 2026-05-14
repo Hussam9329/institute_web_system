@@ -24,6 +24,19 @@
     #cardView { display: block !important; }
     .view-toggle-group { display: none !important; }
 }
+
+#cardView .row {
+    --bs-gutter-x: 0.85rem;
+    --bs-gutter-y: 0.85rem;
+}
+
+#cardView .teacher-card-col {
+    display: flex;
+}
+
+#cardView .list-card {
+    width: 100%;
+}
 </style>
 {% endblock %}
 
@@ -227,7 +240,7 @@
     <div id="cardView" class="d-none">
         <div class="row g-3" id="teacherCards">
             {% for teacher in teachers %}
-            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 teacher-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-students="{{ teacher.students_count or 0 }}">
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 teacher-card teacher-card-col" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-students="{{ teacher.students_count or 0 }}">
                 <div class="list-card list-card-accent accent-emerald h-100">
                     <div class="card-body">
                         <!-- رأس الكارت -->

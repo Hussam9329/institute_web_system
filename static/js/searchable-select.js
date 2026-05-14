@@ -551,10 +551,10 @@
             });
 
             // ─── حقل البحث: كتابة ───
-            this.searchInput.addEventListener('input', () => {
+            this.searchInput.addEventListener('input', debounce(() => {
                 this.searchTerm = this.searchInput.value;
                 this._renderOptions();
-            });
+            }, 80));
 
             // ─── حقل البحث: لوحة المفاتيح ───
             this.searchInput.addEventListener('keydown', (e) => {
