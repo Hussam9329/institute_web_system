@@ -55,6 +55,26 @@ async def student_report(request: Request, student_id: int):
     except Exception:
         installments = []
 
+    # بيانات إضافية للكارتات والتصدير
+    num_installments = len(installments) if installments else 0
+    last_payment_date = ""
+    last_payment_amount = 0
+    if installments and len(installments) > 0:
+        try:
+            last_payment_date = format_date(installments[0].get('payment_date', ''))
+            last_payment_amount = int(installments[0].get('amount', 0) or 0)
+        except (TypeError, ValueError):
+            last_payment_date = ""
+            last_payment_amount = 0
+
+    # حساب المدفوع الزائد (إذا تجاوز المدفوع القسط)
+    overpayment = max(0, total_paid_all - total_fee_all) if total_fee_all > 0 else 0
+
+    # قائمة المدرسين والمواد للفلترة
+    teacher_names = list(dict.fromkeys(ts['teacher_name'] for ts in teachers_summary if ts.get('teacher_name'))) if teachers_summary else []
+    subjects = list(dict.fromkeys(ts.get('subject', '') for ts in teachers_summary if ts.get('subject'))) if teachers_summary else []
+    installment_types = list(dict.fromkeys(inst.get('installment_type', '') for inst in installments if inst.get('installment_type'))) if installments else []
+
     return templates.TemplateResponse("reports/student_report.html", {
         "request": request,
         "student": student,
@@ -71,8 +91,18 @@ async def student_report(request: Request, student_id: int):
         "total_paid_raw": total_paid_all,
         "remaining_raw": remaining_all,
         "payment_pct": payment_pct,
+        "overpayment_raw": overpayment,
+        "overpayment": format_currency(overpayment),
+        "num_installments": num_installments,
+        "last_payment_date": last_payment_date,
+        "last_payment_amount_raw": last_payment_amount,
+        "last_payment_amount": format_currency(last_payment_amount),
+        "teacher_names": teacher_names,
+        "subjects": subjects,
+        "installment_types": installment_types,
         "installments": installments,
         "report_date": format_report_datetime(),
+        "student_id": student_id,
     })
 
 

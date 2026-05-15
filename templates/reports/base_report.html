@@ -746,6 +746,13 @@
             font-weight: 600;
         }
 
+        /* ===== أدوات نصية ===== */
+        .text-danger { color: var(--danger) !important; }
+        .text-success { color: var(--success) !important; }
+        .text-primary { color: var(--primary) !important; }
+        .text-warning { color: var(--warning) !important; }
+        .text-muted { color: var(--muted) !important; }
+
         /* ===== طباعة احترافية A4 ===== */
         @media print {
             *,
@@ -1152,13 +1159,21 @@
             <span>{{ app_title }}</span>
         </div>
         <div class="toolbar-actions">
+            <button class="toolbar-btn btn-excel" onclick="exportExcel('financialTable', 'تقرير_الطالب')" title="تصدير Excel">
+                <i class="fas fa-file-excel"></i>
+                Excel
+            </button>
+            <button class="toolbar-btn btn-pdf" onclick="exportPDF()" title="حفظ PDF">
+                <i class="fas fa-file-pdf"></i>
+                PDF
+            </button>
             <button class="btn-print" onclick="smartPrint()">
                 <i class="fas fa-print"></i>
-                طباعة / حفظ PDF
+                طباعة
             </button>
-            <button class="btn-customize" onclick="toggleCustomizePanel()">
+            <button class="btn-customize" onclick="buildCustomizeControls('customizePanel')">
                 <i class="fas fa-sliders-h"></i>
-                تخصيص التقرير
+                تخصيص
             </button>
             <a href="javascript:history.back()" class="btn-close-report">
                 <i class="fas fa-arrow-right"></i>
@@ -1175,27 +1190,7 @@
         </div>
     </div>
 
-    <!-- شريط البحث والفرز والتصفية -->
-    <div class="report-controls no-print" id="reportControls" style="display:none;">
-        <div class="report-search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="reportSearchInput" placeholder="بحث في صفوف التقرير..." oninput="filterReportRows()">
-        </div>
-        <div class="report-sort-box">
-            <label><i class="fas fa-sort"></i> فرز:</label>
-            <select id="reportSortSelect" onchange="sortReportTable()">
-                <option value="">بدون فرز</option>
-                <!-- يتم ملؤها تلقائياً -->
-            </select>
-        </div>
-        <div class="report-date-filter" id="dateFilterBox" style="display:none;">
-            <label><i class="fas fa-calendar-alt"></i> من:</label>
-            <input type="date" id="dateFrom" onchange="filterReportRows()">
-            <label>إلى:</label>
-            <input type="date" id="dateTo" onchange="filterReportRows()">
-        </div>
-        <div class="report-controls-count" id="reportCount"></div>
-    </div>
+    <!-- شريط البحث والفرز - يتم توفيره من كل تقرير بشكل منفصل -->
 
     <!-- محتوى التقرير -->
     <div class="report-container {% block container_class %}{% endblock %}">
@@ -1204,447 +1199,7 @@
         </div>
     </div>
 
-    <script>
-        // ===== لوحة تخصيص التقرير =====
-        function toggleCustomizePanel() {
-            const panel = document.getElementById('customizePanel');
-            panel.classList.toggle('open');
-            if (panel.classList.contains('open')) {
-                buildCustomizeControls();
-            }
-        }
-
-        function buildCustomizeControls() {
-            const container = document.getElementById('customizeColumns');
-            container.innerHTML = '';
-            const tables = document.querySelectorAll('.report-table');
-
-            tables.forEach((table, tIdx) => {
-                const headers = table.querySelectorAll('thead th');
-                headers.forEach((th, colIdx) => {
-                    const label = th.textContent.trim();
-                    if (!label) return;
-
-                    const toggle = document.createElement('label');
-                    toggle.className = 'col-toggle active';
-                    toggle.innerHTML = `<input type="checkbox" checked data-table="${tIdx}" data-col="${colIdx}" onchange="toggleColumn(this)"> ${label}`;
-                    container.appendChild(toggle);
-                });
-            });
-        }
-
-        // ===== تهيئة colspan الأصلي =====
-        function initColspans() {
-            const tables = document.querySelectorAll('.report-table');
-            tables.forEach(table => {
-                const totalCols = table.querySelectorAll('thead th').length;
-                const rows = table.querySelectorAll('tbody tr, tfoot tr');
-                rows.forEach(row => {
-                    const tds = row.querySelectorAll('td, th');
-                    let colIdx = 0;
-                    tds.forEach(td => {
-                        const cs = parseInt(td.getAttribute('colspan')) || 1;
-                        // حفظ القيمة الأصلية وبداية العمود
-                        td.dataset.origColspan = cs;
-                        td.dataset.colStart = colIdx;
-                        td.dataset.totalCols = totalCols;
-                        colIdx += cs;
-                    });
-                });
-            });
-        }
-
-        // ===== تحديث colspan حسب الأعمدة المخفية =====
-        function updateColspans(table) {
-            const ths = table.querySelectorAll('thead th');
-            const totalCols = ths.length;
-
-            // بناء مصفوفة: هل العمود مخفي؟
-            const hiddenCols = [];
-            ths.forEach((th, i) => {
-                hiddenCols[i] = th.classList.contains('col-hidden');
-            });
-
-            const rows = table.querySelectorAll('tbody tr, tfoot tr');
-            rows.forEach(row => {
-                const tds = row.querySelectorAll('td, th');
-                tds.forEach(td => {
-                    const origCs = parseInt(td.dataset.origColspan) || 1;
-                    if (origCs <= 1) return; // لا colspan - لا حاجة لتعديل
-
-                    const colStart = parseInt(td.dataset.colStart) || 0;
-                    let hiddenCount = 0;
-                    for (let i = colStart; i < colStart + origCs && i < totalCols; i++) {
-                        if (hiddenCols[i]) hiddenCount++;
-                    }
-
-                    const newCs = origCs - hiddenCount;
-                    if (newCs <= 0) {
-                        // كل الأعمدة في النطاق مخفية - نخفي الخلية نفسها
-                        td.style.display = 'none';
-                    } else {
-                        td.style.display = '';
-                        td.setAttribute('colspan', newCs);
-                    }
-                });
-            });
-        }
-
-        function toggleColumn(checkbox) {
-            const tIdx = parseInt(checkbox.dataset.table);
-            const colIdx = parseInt(checkbox.dataset.col);
-            const tables = document.querySelectorAll('.report-table');
-            const table = tables[tIdx];
-            if (!table) return;
-
-            const show = checkbox.checked;
-            const toggle = checkbox.closest('.col-toggle');
-            toggle.classList.toggle('active', show);
-
-            // إخفاء/إظهار th
-            const ths = table.querySelectorAll('thead th');
-            if (ths[colIdx]) {
-                ths[colIdx].classList.toggle('col-hidden', !show);
-            }
-
-            // إخفاء/إظهار td في كل صف
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const tds = row.querySelectorAll('td');
-                if (tds[colIdx]) {
-                    tds[colIdx].classList.toggle('col-hidden', !show);
-                }
-            });
-
-            // إخفاء/إظهار tfoot th
-            const tfootThs = table.querySelectorAll('tfoot th');
-            if (tfootThs[colIdx]) {
-                tfootThs[colIdx].classList.toggle('col-hidden', !show);
-            }
-
-            // تحديث colspan بعد تغيير الأعمدة
-            updateColspans(table);
-        }
-
-        // ===== شريط البحث والفرز والتصفية =====
-        function initReportControls() {
-            const table = document.querySelector('.report-table');
-            if (!table) return;
-
-            const controls = document.getElementById('reportControls');
-            controls.style.display = 'flex';
-
-            // بناء قائمة الفرز
-            const sortSelect = document.getElementById('reportSortSelect');
-            sortSelect.innerHTML = '<option value="">بدون فرز</option>';
-            const headers = table.querySelectorAll('thead th');
-            headers.forEach((th, idx) => {
-                const label = th.textContent.trim();
-                if (!label) return;
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.textContent = label;
-                sortSelect.appendChild(opt);
-            });
-
-            // كشف أعمدة التاريخ
-            detectDateColumns(table);
-
-            // عدد الصفوف
-            updateRowCount(table);
-        }
-
-        function detectDateColumns(table) {
-            const rows = table.querySelectorAll('tbody tr');
-            if (rows.length === 0) return;
-
-            const tds = rows[0].querySelectorAll('td');
-            let hasDate = false;
-
-            tds.forEach((td, idx) => {
-                const text = td.textContent.trim();
-                // كشف تنسيقات التاريخ: YYYY-MM-DD أو DD/MM/YYYY أو نص عربي يحتوي أرقام تاريخ
-                if (/(\d{4}[-\/]\d{2}[-\/]\d{2})|(\d{2}[-\/]\d{2}[-\/]\d{4})/.test(text)) {
-                    hasDate = true;
-                }
-            });
-
-            if (hasDate) {
-                document.getElementById('dateFilterBox').style.display = 'flex';
-            }
-        }
-
-        function filterReportRows() {
-            const table = document.querySelector('.report-table');
-            if (!table) return;
-
-            const searchVal = document.getElementById('reportSearchInput').value.trim().toLowerCase();
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-
-            const rows = table.querySelectorAll('tbody tr');
-            let visibleCount = 0;
-
-            rows.forEach(row => {
-                if (row.classList.contains('total-row')) {
-                    row.classList.remove('row-hidden');
-                    return;
-                }
-
-                let showBySearch = true;
-                let showByDate = true;
-
-                // بحث نصي
-                if (searchVal) {
-                    const rowText = row.textContent.toLowerCase();
-                    showBySearch = rowText.includes(searchVal);
-                }
-
-                // تصفية تاريخ
-                if (dateFrom || dateTo) {
-                    const dateCells = row.querySelectorAll('td');
-                    let rowDateFound = false;
-                    dateCells.forEach(td => {
-                        const text = td.textContent.trim();
-                        // محاولة استخراج التاريخ
-                        const match = text.match(/(\d{4})[-\/](\d{2})[-\/](\d{2})/) ||
-                                      text.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
-                        if (match) {
-                            let dateStr;
-                            if (match[1].length === 4) {
-                                dateStr = `${match[1]}-${match[2]}-${match[3]}`;
-                            } else {
-                                dateStr = `${match[3]}-${match[2]}-${match[1]}`;
-                            }
-                            if (dateFrom && dateStr < dateFrom) showByDate = false;
-                            if (dateTo && dateStr > dateTo) showByDate = false;
-                            rowDateFound = true;
-                        }
-                    });
-                }
-
-                const show = showBySearch && showByDate;
-                row.classList.toggle('row-hidden', !show);
-                if (show) visibleCount++;
-            });
-
-            updateRowCount(table);
-        }
-
-        function sortReportTable() {
-            const table = document.querySelector('.report-table');
-            if (!table) return;
-
-            const colIdx = parseInt(document.getElementById('reportSortSelect').value);
-            if (isNaN(colIdx)) return;
-
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
-            const totalRow = tbody.querySelector('tr.total-row');
-
-            // تحديد اتجاه الفرز
-            const ths = table.querySelectorAll('thead th');
-            const th = ths[colIdx];
-            const isAsc = th.classList.contains('sort-asc');
-
-            // إعادة تعيين
-            ths.forEach(h => { h.classList.remove('sort-asc', 'sort-desc'); });
-
-            // تبديل الاتجاه
-            const newAsc = !isAsc;
-            th.classList.add(newAsc ? 'sort-asc' : 'sort-desc');
-
-            rows.sort((a, b) => {
-                const aText = a.querySelectorAll('td')[colIdx]?.textContent.trim() || '';
-                const bText = b.querySelectorAll('td')[colIdx]?.textContent.trim() || '';
-
-                // محاولة فرز رقمي
-                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
-                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
-
-                if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return newAsc ? aNum - bNum : bNum - aNum;
-                }
-
-                // فرز نصي
-                return newAsc ? aText.localeCompare(bText, 'ar') : bText.localeCompare(aText, 'ar');
-            });
-
-            rows.forEach(row => tbody.appendChild(row));
-            if (totalRow) tbody.appendChild(totalRow);
-        }
-
-        function updateRowCount(table) {
-            const total = table.querySelectorAll('tbody tr:not(.total-row):not(.row-hidden)').length;
-            const allTotal = table.querySelectorAll('tbody tr:not(.total-row)').length;
-            const countEl = document.getElementById('reportCount');
-            if (countEl) {
-                if (total === allTotal) {
-                    countEl.innerHTML = `<strong>${total}</strong> صف`;
-                } else {
-                    countEl.innerHTML = `<strong>${total}</strong> من ${allTotal} صف`;
-                }
-            }
-        }
-
-        // ===== طباعة احترافية - ضبط الجداول الطويلة =====
-        function smartPrint() {
-            // إظهار كل الأعمدة والصفوف مؤقتاً قبل الطباعة
-            document.querySelectorAll('.report-table .col-hidden').forEach(el => {
-                el.setAttribute('data-was-hidden', 'true');
-                el.classList.remove('col-hidden');
-            });
-            document.querySelectorAll('.report-table tbody tr.row-hidden').forEach(el => {
-                el.setAttribute('data-was-hidden', 'true');
-                el.classList.remove('row-hidden');
-            });
-
-            // إعادة colspan لقيمه الأصلية قبل الطباعة
-            document.querySelectorAll('[data-orig-colspan]').forEach(td => {
-                const origCs = parseInt(td.dataset.origColspan) || 1;
-                td.setAttribute('colspan', origCs);
-                td.style.display = '';
-            });
-
-            // كشف الجداول العريضة: إذا أعمدة > 6 نحوّل لـ Landscape
-            const tables = document.querySelectorAll('.report-table');
-            let isWide = false;
-            tables.forEach(table => {
-                const colCount = table.querySelectorAll('thead th').length;
-                if (colCount > 6) {
-                    isWide = true;
-                }
-            });
-
-            if (isWide) {
-                document.body.classList.add('wide-report');
-            }
-
-            // تكرار رأس الجدول في كل صفحة
-            tables.forEach(table => {
-                const thead = table.querySelector('thead');
-                const tfoot = table.querySelector('tfoot');
-                if (thead && !tfoot) {
-                    const newTfoot = document.createElement('tfoot');
-                    newTfoot.innerHTML = thead.innerHTML;
-                    newTfoot.setAttribute('role', 'repeat-header');
-                    table.appendChild(newTfoot);
-                }
-            });
-
-            // طباعة
-            window.print();
-
-            // تنظيف بعد الطباعة
-            setTimeout(() => {
-                document.querySelectorAll('tfoot[role="repeat-header"]').forEach(el => el.remove());
-                document.body.classList.remove('wide-report');
-
-                // إعادة إخفاء ما كان مخفياً
-                document.querySelectorAll('[data-was-hidden="true"]').forEach(el => {
-                    el.removeAttribute('data-was-hidden');
-                    el.classList.add('col-hidden');
-                });
-                document.querySelectorAll('.report-table tbody tr[data-was-hidden="true"]').forEach(el => {
-                    el.removeAttribute('data-was-hidden');
-                    el.classList.add('row-hidden');
-                });
-
-                // إعادة حساب colspan حسب الأعمدة المخفية
-                document.querySelectorAll('.report-table').forEach(table => {
-                    updateColspans(table);
-                });
-            }, 500);
-        }
-
-        // ===== تلميح احترافي للخلايا المقتطعة =====
-        let activeTooltip = null;
-
-        function initCellTooltips() {
-            // إنشاء عنصر التلميح
-            if (!document.getElementById('cellTooltip')) {
-                const tip = document.createElement('div');
-                tip.id = 'cellTooltip';
-                tip.className = 'cell-tooltip';
-                document.body.appendChild(tip);
-            }
-            activeTooltip = document.getElementById('cellTooltip');
-
-            // فحص كل خلايا الجدول
-            const tables = document.querySelectorAll('.report-table');
-            tables.forEach(table => {
-                const tds = table.querySelectorAll('tbody td');
-                tds.forEach(td => {
-                    td.removeEventListener('mouseenter', handleCellHover);
-                    td.removeEventListener('mouseleave', handleCellLeave);
-                    td.addEventListener('mouseenter', handleCellHover);
-                    td.addEventListener('mouseleave', handleCellLeave);
-                });
-            });
-
-            // فحص أولي بعد رسم الجدول
-            requestAnimationFrame(() => detectTruncatedCells());
-        }
-
-        function detectTruncatedCells() {
-            const tables = document.querySelectorAll('.report-table');
-            tables.forEach(table => {
-                const tds = table.querySelectorAll('tbody td');
-                tds.forEach(td => {
-                    const isTruncated = td.scrollWidth > td.clientWidth + 2;
-                    td.classList.toggle('cell-truncated', isTruncated);
-                });
-            });
-        }
-
-        function handleCellHover(e) {
-            const td = e.currentTarget;
-            if (!td.classList.contains('cell-truncated')) return;
-
-            const text = td.textContent.trim();
-            if (!text || !activeTooltip) return;
-
-            activeTooltip.textContent = text;
-
-            // حساب الموقع
-            const rect = td.getBoundingClientRect();
-            let left = rect.left + rect.width / 2 - 50;
-            let top = rect.bottom + 8;
-
-            // حدود الشاشة
-            const tipWidth = Math.min(text.length * 9, 350);
-            if (left + tipWidth > window.innerWidth - 16) {
-                left = window.innerWidth - tipWidth - 16;
-            }
-            if (left < 8) left = 8;
-            if (top + 60 > window.innerHeight) {
-                top = rect.top - 50;
-            }
-
-            activeTooltip.style.left = left + 'px';
-            activeTooltip.style.top = top + 'px';
-            activeTooltip.classList.add('visible');
-        }
-
-        function handleCellLeave() {
-            if (activeTooltip) {
-                activeTooltip.classList.remove('visible');
-            }
-        }
-
-        // إعادة فحص عند تغيير حجم النافذة
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(detectTruncatedCells, 200);
-        });
-
-        // تهيئة أدوات التقرير عند التحميل
-        document.addEventListener('DOMContentLoaded', function() {
-            initReportControls();
-            initCellTooltips();
-            initColspans();
-        });
-    </script>
+    <script src="/static/js/report_tables.js"></script>
+    {% block extra_script %}{% endblock %}
 </body>
 </html>
