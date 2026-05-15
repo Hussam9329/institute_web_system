@@ -504,7 +504,7 @@
         /* ===== الجداول ===== */
         .report-table-wrapper {
             border-radius: 14px;
-            overflow: hidden;
+            overflow-x: auto;
             border: 1px solid var(--border);
         }
 
@@ -556,11 +556,11 @@
             padding: 9px 14px;
             border-bottom: 1px solid var(--light);
             vertical-align: middle;
-            /* التفاف النص داخل الخلايا */
-            overflow-wrap: break-word;
-            word-wrap: break-word;
-            word-break: break-word;
-            hyphens: auto;
+            /* منع التفاف النص - سطر واحد فقط */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
 
         /* إخفاء العمود عند التخصيص */
@@ -874,12 +874,12 @@
                 width: 100% !important;
             }
 
-            /* التفاف النص في الطباعة */
+            /* منع التفاف النص في الطباعة - سطر واحد فقط */
             .report-table thead th,
             .report-table tbody td {
-                overflow-wrap: break-word !important;
-                word-wrap: break-word !important;
-                word-break: break-word !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
             }
 
             .report-table thead {
@@ -902,7 +902,7 @@
             .report-table thead th {
                 padding: 6px 8px !important;
                 font-size: 8pt !important;
-                white-space: normal !important;
+                white-space: nowrap !important;
                 page-break-after: avoid !important;
                 break-after: avoid !important;
                 page-break-inside: avoid !important;
