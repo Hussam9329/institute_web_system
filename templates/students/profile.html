@@ -220,6 +220,12 @@
                                 <small class="text-muted">الباركود</small>
                                 <span class="fw-semibold">{{ student.barcode }}</span>
                             </div>
+                            {% if student.phone %}
+                            <div class="profile-info-item">
+                                <small class="text-muted">رقم الهاتف</small>
+                                <span class="fw-semibold" dir="ltr">{{ student.phone }}</span>
+                            </div>
+                            {% endif %}
                             <div class="profile-info-item">
                                 <small class="text-muted">الحالة</small>
                                 {% if student.status == 'مستمر' or not student.status %}

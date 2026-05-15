@@ -611,6 +611,15 @@ def init_db():
                 except Exception:
                     conn.rollback()
 
+                # ===== إضافة عمود رقم الهاتف لجدول الطلاب =====
+                try:
+                    cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT ''")
+                    # فهرس فريد جزئي: يمنع تكرار الأرقام غير الفارغة فقط
+                    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_students_phone_not_empty ON students (phone) WHERE phone IS NOT NULL AND phone != ''")
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
                 # ===== إضافة أعمدة created_by و updated_by للجداول المهمة (دائماً) =====
                 for table_name in ["students", "teachers", "subjects", "installments", "teacher_withdrawals", "student_teacher"]:
                     try:

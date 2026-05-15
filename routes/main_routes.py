@@ -429,6 +429,26 @@ async def student_add(
 
     form_data = await request.form()
     force_duplicate = form_data.get("force_duplicate") == "1"
+    phone = (form_data.get("phone", "") or "").strip()
+
+    # ===== التحقق من رقم الهاتف =====
+    if phone:
+        # يجب أن يكون 11 رقم ويبدأ بـ 07
+        import re
+        if not re.match(r'^07\d{9}$', phone):
+            return RedirectResponse(
+                url=f"/students/add?error=invalid_phone&detail={quote('رقم الهاتف يجب أن يتكون من 11 رقم ويبدأ بـ 07')}",
+                status_code=303
+            )
+        # فحص تكرار الرقم
+        existing_phone = db.execute_query("SELECT id, name FROM students WHERE phone = %s", (phone,))
+        if existing_phone:
+            dup_name = existing_phone[0]['name']
+            dup_id = existing_phone[0]['id']
+            return RedirectResponse(
+                url=f"/students/add?error=duplicate_phone&detail={quote(f'الرقم مسجل مسبقاً للطالب: {dup_name} (#{dup_id})')}",
+                status_code=303
+            )
 
     # فحص الاسم المشابه
     normalized_name = " ".join(name.strip().split())
@@ -497,13 +517,13 @@ async def student_add(
     request.state.client_timestamp = client_ts  # لاستخدامه في log_action
 
     insert_query = '''
-        INSERT INTO students (name, barcode, notes, created_at, created_by)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO students (name, barcode, phone, notes, created_at, created_by)
+        VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id
     '''
 
     temp_barcode = f"TEMP-{int(time.time()*1000)}-{random.randint(1000,9999)}"
-    result = db.execute_query(insert_query, (name, temp_barcode, notes, get_current_date(client_ts), current_user_id))
+    result = db.execute_query(insert_query, (name, temp_barcode, phone, notes, get_current_date(client_ts), current_user_id))
     student_id = result[0]['id'] if result else None
 
     if student_id:
@@ -646,6 +666,108 @@ async def student_update(
 
     form_data = await request.form()
     teacher_ids = form_data.getlist("teacher_ids")
+    phone = (form_data.get("phone", "") or "").strip()
+
+    # ===== التحقق من رقم الهاتف =====
+    if phone:
+        import re
+        if not re.match(r'^07\d{9}$', phone):
+            # إعادة عرض النموذج مع خطأ
+            student = dict(db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))[0]) if db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,)) else None
+            if not student:
+                return RedirectResponse(url="/students?error=not_found", status_code=303)
+            teachers = db.execute_query("SELECT id, name, subject, teaching_types, custom_type_settings FROM teachers ORDER BY name")
+            linked = db.execute_query(
+                "SELECT teacher_id, study_type, status, discount_type, discount_value, institute_waiver, discount_notes FROM student_teacher WHERE student_id = %s",
+                (student_id,)
+            )
+            linked_ids = [r['teacher_id'] for r in linked] if linked else []
+            linked_data = {r['teacher_id']: dict(r) for r in linked} if linked else {}
+            installment_counts = {}
+            completed_teachers = set()
+            if linked_ids:
+                counts = db.execute_query(
+                    "SELECT teacher_id, COUNT(*) as cnt FROM installments WHERE student_id = %s GROUP BY teacher_id",
+                    (student_id,)
+                )
+                if counts:
+                    for c in counts:
+                        installment_counts[c['teacher_id']] = c['cnt']
+                for tid_check in linked_ids:
+                    balance = finance_service.calculate_student_teacher_balance(student_id, tid_check)
+                    if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
+                        completed_teachers.add(tid_check)
+            subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
+            subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
+            all_subjects = set()
+            if subjects_from_table:
+                all_subjects.update(s['name'] for s in subjects_from_table)
+            if subjects_from_teachers:
+                all_subjects.update(s['name'] for s in subjects_from_teachers)
+            subjects_list = sorted(all_subjects)
+            return templates.TemplateResponse("students/form.html", {
+                "request": request,
+                "student": {**student, 'name': name, 'notes': notes, 'phone': phone},
+                "mode": "edit",
+                "teachers": teachers,
+                "subjects": subjects_list,
+                "linked_teacher_ids": linked_ids,
+                "linked_data": linked_data,
+                "installment_counts": installment_counts,
+                "completed_teachers": completed_teachers,
+                "error": "invalid_phone",
+                "error_detail": "رقم الهاتف يجب أن يتكون من 11 رقم ويبدأ بـ 07",
+            }, status_code=400)
+        # فحص تكرار الرقم (استثناء الطالب الحالي)
+        existing_phone = db.execute_query("SELECT id, name FROM students WHERE phone = %s AND id != %s", (phone, student_id))
+        if existing_phone:
+            dup_name = existing_phone[0]['name']
+            dup_id = existing_phone[0]['id']
+            student = dict(db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))[0]) if db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,)) else None
+            if not student:
+                return RedirectResponse(url="/students?error=not_found", status_code=303)
+            teachers = db.execute_query("SELECT id, name, subject, teaching_types, custom_type_settings FROM teachers ORDER BY name")
+            linked = db.execute_query(
+                "SELECT teacher_id, study_type, status, discount_type, discount_value, institute_waiver, discount_notes FROM student_teacher WHERE student_id = %s",
+                (student_id,)
+            )
+            linked_ids = [r['teacher_id'] for r in linked] if linked else []
+            linked_data = {r['teacher_id']: dict(r) for r in linked} if linked else {}
+            installment_counts = {}
+            completed_teachers = set()
+            if linked_ids:
+                counts = db.execute_query(
+                    "SELECT teacher_id, COUNT(*) as cnt FROM installments WHERE student_id = %s GROUP BY teacher_id",
+                    (student_id,)
+                )
+                if counts:
+                    for c in counts:
+                        installment_counts[c['teacher_id']] = c['cnt']
+                for tid_check in linked_ids:
+                    balance = finance_service.calculate_student_teacher_balance(student_id, tid_check)
+                    if balance['remaining_balance'] <= 0 and balance['paid_total'] > 0:
+                        completed_teachers.add(tid_check)
+            subjects_from_table = db.execute_query("SELECT name FROM subjects ORDER BY name")
+            subjects_from_teachers = db.execute_query("SELECT DISTINCT subject as name FROM teachers ORDER BY subject")
+            all_subjects = set()
+            if subjects_from_table:
+                all_subjects.update(s['name'] for s in subjects_from_table)
+            if subjects_from_teachers:
+                all_subjects.update(s['name'] for s in subjects_from_teachers)
+            subjects_list = sorted(all_subjects)
+            return templates.TemplateResponse("students/form.html", {
+                "request": request,
+                "student": {**student, 'name': name, 'notes': notes, 'phone': phone},
+                "mode": "edit",
+                "teachers": teachers,
+                "subjects": subjects_list,
+                "linked_teacher_ids": linked_ids,
+                "linked_data": linked_data,
+                "installment_counts": installment_counts,
+                "completed_teachers": completed_teachers,
+                "error": "duplicate_phone",
+                "error_detail": f"الرقم مسجل مسبقاً للطالب: {dup_name} (#{dup_id})",
+            }, status_code=400)
 
     # ===== التحقق من الخصوم أولاً - قبل أي كتابة في قاعدة البيانات =====
     teacher_name_map = get_teacher_name_map(db, teacher_ids)
@@ -737,13 +859,13 @@ async def student_update(
 
     update_query = '''
         UPDATE students
-        SET name=%s, notes=%s
+        SET name=%s, phone=%s, notes=%s
         WHERE id = %s
     '''
 
     db.execute_query(update_query, (
         name,
-        notes, student_id
+        phone, notes, student_id
     ))
 
     # تحديث ربط المدرسين مع نوع الدراسة والحالة
