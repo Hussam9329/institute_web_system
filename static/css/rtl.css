@@ -32,7 +32,7 @@ html[dir="rtl"] i.fa-chevron-left::before { content: "\f054"; }
 
 /* الجداول RTL */
 html[dir="rtl"] table { direction: rtl; }
-html[dir="rtl"] thead th { text-align: right; }
+html[dir="rtl"] thead th { text-align: center; }
 html[dir="rtl"] thead th.text-center, html[dir="rtl"] td.text-center { text-align: center !important; }
 html[dir="rtl"] .table-responsive { direction: rtl; }
 html[dir="rtl"] .table-responsive table { direction: rtl; }
