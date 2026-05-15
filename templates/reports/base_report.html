@@ -799,14 +799,19 @@
                 display: none !important;
             }
 
-            /* إظهار كل الصفوف المخفية بالبحث */
-            .report-table tbody tr.row-hidden {
-                display: table-row !important;
+            /* الحقول والكارتات المخفية بالتخصيص تبقى مخفية في الطباعة */
+            .data-field.field-hidden {
+                display: none !important;
+            }
+            .finance-card.card-hidden,
+            .payment-card.card-hidden {
+                display: none !important;
             }
 
-            /* إظهار كل الأعمدة المخفية بالتخصيص */
-            .report-table .col-hidden {
-                display: table-cell !important;
+            /* الكارتات المخفية بالـ pagination تظهر في الطباعة */
+            .finance-card:not(.card-hidden),
+            .payment-card:not(.card-hidden) {
+                display: block !important;
             }
 
             /* الحاوية الرئيسية - ملء الصفحة */
@@ -1173,7 +1178,7 @@
             </button>
             <button class="btn-customize" onclick="buildCustomizeControls('customizePanel')">
                 <i class="fas fa-sliders-h"></i>
-                تخصيص
+                تخصيص الحقول
             </button>
             <a href="javascript:history.back()" class="btn-close-report">
                 <i class="fas fa-arrow-right"></i>
@@ -1184,7 +1189,7 @@
 
     <!-- لوحة تخصيص التقرير -->
     <div class="customize-panel no-print" id="customizePanel">
-        <h6><i class="fas fa-columns"></i> إظهار / إخفاء الأعمدة</h6>
+        <h6><i class="fas fa-sliders-h"></i> إظهار / إخفاء الحقول والأقسام</h6>
         <div class="customize-columns" id="customizeColumns">
             <!-- يتم ملؤها تلقائياً من JavaScript -->
         </div>

@@ -76,11 +76,11 @@
 <!-- تبديل الإجمالي -->
 <div class="summary-toggle no-print">
     <label>
-        <input type="radio" name="summary_mode" value="all" data-table="financialTable" checked onchange="toggleSummaryMode(this)">
+        <input type="radio" name="summary_mode" value="all" data-section="financialSection" checked onchange="toggleSummaryMode(this)">
         <span>إجمالي كل البيانات</span>
     </label>
     <label>
-        <input type="radio" name="summary_mode" value="filtered" data-table="financialTable" onchange="toggleSummaryMode(this)">
+        <input type="radio" name="summary_mode" value="filtered" data-section="financialSection" onchange="toggleSummaryMode(this)">
         <span>إجمالي البيانات المفلترة</span>
     </label>
 </div>
@@ -144,7 +144,7 @@
     </div>
 </div>
 
-<!-- التفاصيل المالية -->
+<!-- التفاصيل المالية - كارتات -->
 {% if teachers_summary %}
 <div class="report-section" id="financialSection">
     <div class="section-title section-collapse-header" onclick="toggleSection(this)">
@@ -157,12 +157,12 @@
     <div class="report-filters no-print">
         <div class="report-search-box">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="بحث في الجدول..." oninput="reportSearch(this, 'financialTable')">
+            <input type="text" placeholder="بحث في الكارتات..." oninput="cardSearch(this, 'financialCards')">
         </div>
         {% if teacher_names|length > 1 %}
         <div class="filter-group">
             <label><i class="fas fa-chalkboard-teacher"></i> المدرس:</label>
-            <select onchange="reportFilter(this, 'financialTable', 'teacher')">
+            <select onchange="cardFilter(this, 'financialCards', 'teacher')">
                 <option value="">الكل</option>
                 {% for tn in teacher_names %}
                 <option value="{{ tn }}">{{ tn }}</option>
@@ -173,7 +173,7 @@
         {% if subjects|length > 1 %}
         <div class="filter-group">
             <label><i class="fas fa-book"></i> المادة:</label>
-            <select onchange="reportFilter(this, 'financialTable', 'subject')">
+            <select onchange="cardFilter(this, 'financialCards', 'subject')">
                 <option value="">الكل</option>
                 {% for s in subjects %}
                 <option value="{{ s }}">{{ s }}</option>
@@ -183,49 +183,47 @@
         {% endif %}
         <div class="filter-group">
             <label><i class="fas fa-toggle-on"></i> الحالة:</label>
-            <select onchange="reportFilter(this, 'financialTable', 'status')">
+            <select onchange="cardFilter(this, 'financialCards', 'status')">
                 <option value="">الكل</option>
                 <option value="مستمر">مستمر</option>
                 <option value="منسحب">منسحب</option>
             </select>
         </div>
-        <button class="btn-reset-filters" onclick="resetFilters('financialTable')">
+        <button class="btn-reset-filters" onclick="resetCardFilters('financialCards')">
             <i class="fas fa-undo"></i> إعادة تعيين
         </button>
-        <span id="financialTable_count" style="font-size:12px;color:var(--muted);margin-right:auto"></span>
+        <span id="financialCards_count" style="font-size:12px;color:var(--muted);margin-right:auto"></span>
     </div>
 
-    <!-- الجدول -->
-    <div class="report-table-wrapper" id="financialTable_wrapper">
-        <table class="report-table" id="financialTable">
-            <thead>
-                <tr>
-                    <th style="width:35px; text-align:center" onclick="reportSort(this, 'financialTable', 0)"># <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th onclick="reportSort(this, 'financialTable', 1)">المدرس <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th onclick="reportSort(this, 'financialTable', 2)">المادة <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 3)">نوع الدراسة <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 4)">الحالة <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 5)">الخصم <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 6)">القسط قبل الخصم <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 7)">القسط بعد الخصم <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 8)">المدفوع <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 9)">المتبقي <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'financialTable', 10)">النسبة <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ts in teachers_summary %}
-                <tr>
-                    <td style="text-align:center; color:var(--muted)" data-value="{{ loop.index }}">{{ loop.index }}</td>
-                    <td style="font-weight:600" data-value="{{ ts.teacher_name }}">{{ ts.teacher_name }}</td>
-                    <td data-value="{{ ts.subject }}"><span class="badge-continue">{{ ts.subject }}</span></td>
-                    <td style="text-align:center" data-value="{{ ts.get('study_type', 'حضوري') }}">
-                        <span class="badge-continue">{{ ts.get('study_type', 'حضوري') }}</span>
-                    </td>
-                    <td style="text-align:center" data-value="{{ ts.get('status', 'مستمر') }}">
-                        <span class="badge-continue">{{ ts.get('status', 'مستمر') }}</span>
-                    </td>
-                    <td style="text-align:center" data-value="{{ ts.discount_info.discount_value if ts.discount_info and ts.discount_info.discount_type in ['percentage','custom'] else ts.discount_info.discount_value if ts.discount_info and ts.discount_info.discount_type == 'fixed' else 0 }}" data-field="discount">
+    <!-- كارتات التفاصيل المالية -->
+    <div class="data-cards-grid" id="financialCards">
+        {% for ts in teachers_summary %}
+        <div class="finance-card"
+             data-index="{{ loop.index }}"
+             data-teacher="{{ ts.teacher_name }}"
+             data-subject="{{ ts.subject }}"
+             data-status="{{ ts.get('status', 'مستمر') }}"
+             data-study-type="{{ ts.get('study_type', 'حضوري') }}">
+
+            <!-- رأس الكارت -->
+            <div class="finance-card-header">
+                <div class="finance-card-teacher">
+                    <i class="fas fa-user-tie"></i>
+                    <span>{{ ts.teacher_name }}</span>
+                </div>
+                <div class="finance-card-badges">
+                    <span class="badge-continue">{{ ts.subject }}</span>
+                    <span class="badge-continue">{{ ts.get('study_type', 'حضوري') }}</span>
+                    <span class="badge-continue">{{ ts.get('status', 'مستمر') }}</span>
+                </div>
+            </div>
+
+            <!-- جسم الكارت -->
+            <div class="finance-card-body">
+                <!-- الخصم -->
+                <div class="data-field" data-field="discount">
+                    <span class="data-field-label"><i class="fas fa-tags"></i> الخصم</span>
+                    <span class="data-field-value" data-value="{{ ts.discount_info.discount_value if ts.discount_info and ts.discount_info.discount_type in ['percentage','custom'] else ts.discount_info.discount_value if ts.discount_info and ts.discount_info.discount_type == 'fixed' else 0 }}">
                         {% if ts.discount_info and ts.discount_info.discount_type == 'percentage' %}
                             <span style="color:#d97706;font-weight:600;">{{ ts.discount_info.discount_value }}%</span>
                         {% elif ts.discount_info and ts.discount_info.discount_type == 'custom' %}
@@ -237,35 +235,91 @@
                         {% else %}
                             <span style="color:var(--muted);">لا يوجد</span>
                         {% endif %}
-                    </td>
-                    <td style="text-align:center{% if ts.discount_info and ts.discount_info.discount_type not in ['none', ''] %}; text-decoration:line-through; color:var(--muted){% endif %}" data-value="{{ ts.original_fee }}" data-field="original_fee">{{ format_currency(ts.original_fee) }}</td>
-                    <td style="text-align:center; font-weight:600" data-value="{{ ts.total_fee }}" data-field="fee_after_discount">
+                    </span>
+                </div>
+
+                <!-- القسط قبل الخصم -->
+                <div class="data-field" data-field="original_fee">
+                    <span class="data-field-label"><i class="fas fa-money-bill-wave"></i> القسط قبل الخصم</span>
+                    <span class="data-field-value{% if ts.discount_info and ts.discount_info.discount_type not in ['none', ''] %} line-through{% endif %}" data-value="{{ ts.original_fee }}" data-field="original_fee">{{ format_currency(ts.original_fee) }}</span>
+                </div>
+
+                <!-- القسط بعد الخصم -->
+                <div class="data-field" data-field="fee_after_discount">
+                    <span class="data-field-label"><i class="fas fa-calculator"></i> القسط بعد الخصم</span>
+                    <span class="data-field-value highlight-primary" data-value="{{ ts.total_fee }}" data-field="fee_after_discount">
                         {% if ts.discount_info and ts.discount_info.discount_type == 'free' %}
                             مجاني
                             {% if ts.discount_info.institute_waiver %}<small style="color:#f0a500"> تنازل المعهد</small>{% endif %}
                         {% else %}
                             {{ format_currency(ts.total_fee) }}
                         {% endif %}
-                    </td>
-                    <td style="text-align:center; font-weight:600; color:var(--success)" data-value="{{ ts.paid_total }}" data-field="paid">{{ format_currency(ts.paid_total) }}</td>
-                    <td style="text-align:center; font-weight:600; color:{% if ts.remaining_balance > 0 %}var(--danger){% else %}var(--success){% endif %}" data-value="{{ ts.remaining_balance }}" data-field="remaining">{{ format_currency(ts.remaining_balance) }}</td>
-                    <td style="text-align:center" data-value="{{ ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0 }}">{{ ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0 }}%</td>
-                </tr>
-                {% endfor %}
-                <tr class="total-row">
-                    <td colspan="6" style="text-align:center">الإجمالي</td>
-                    <td style="text-align:center" data-value="{{ total_original_fee_raw }}" data-field="original_fee">{{ format_currency(total_original_fee_raw) }}</td>
-                    <td style="text-align:center" data-value="{{ total_fee_raw }}" data-field="fee_after_discount">{{ format_currency(total_fee_raw) }}</td>
-                    <td style="text-align:center; color:var(--success)" data-value="{{ total_paid_raw }}" data-field="paid">{{ format_currency(total_paid_raw) }}</td>
-                    <td style="text-align:center; color:{% if remaining_raw > 0 %}var(--danger){% else %}var(--success){% endif %}" data-value="{{ remaining_raw }}" data-field="remaining">{{ format_currency(remaining_raw) }}</td>
-                    <td style="text-align:center" data-value="{{ payment_pct }}">{{ payment_pct }}%</td>
-                </tr>
-            </tbody>
-        </table>
+                    </span>
+                </div>
+
+                <!-- المدفوع -->
+                <div class="data-field" data-field="paid">
+                    <span class="data-field-label"><i class="fas fa-hand-holding-usd"></i> المدفوع</span>
+                    <span class="data-field-value highlight-success" data-value="{{ ts.paid_total }}" data-field="paid">{{ format_currency(ts.paid_total) }}</span>
+                </div>
+
+                <!-- المتبقي -->
+                <div class="data-field" data-field="remaining">
+                    <span class="data-field-label"><i class="fas fa-exclamation-circle"></i> المتبقي</span>
+                    <span class="data-field-value {% if ts.remaining_balance > 0 %}highlight-danger{% else %}highlight-success{% endif %}" data-value="{{ ts.remaining_balance }}" data-field="remaining">{{ format_currency(ts.remaining_balance) }}</span>
+                </div>
+
+                <!-- النسبة -->
+                <div class="data-field" data-field="percentage">
+                    <span class="data-field-label"><i class="fas fa-chart-line"></i> النسبة</span>
+                    <span class="data-field-value" data-value="{{ ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0 }}">
+                        <div class="mini-progress">
+                            <div class="mini-progress-track">
+                                <div class="mini-progress-fill {% if (ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0) >= 100 %}full{% endif %}" style="width: {{ [ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0, 100]|min }}%"></div>
+                            </div>
+                            <span class="mini-progress-text">{{ ts.paid_total * 100 // ts.total_fee if ts.total_fee > 0 else 0 }}%</span>
+                        </div>
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- كارت الإجمالي -->
+        <div class="finance-card total-card">
+            <div class="finance-card-header">
+                <div class="finance-card-teacher">
+                    <i class="fas fa-calculator"></i>
+                    <span>الإجمالي</span>
+                </div>
+            </div>
+            <div class="finance-card-body">
+                <div class="data-field" data-field="original_fee">
+                    <span class="data-field-label">القسط قبل الخصم</span>
+                    <span class="data-field-value" data-value="{{ total_original_fee_raw }}" data-field="original_fee">{{ format_currency(total_original_fee_raw) }}</span>
+                </div>
+                <div class="data-field" data-field="fee_after_discount">
+                    <span class="data-field-label">القسط بعد الخصم</span>
+                    <span class="data-field-value highlight-primary" data-value="{{ total_fee_raw }}" data-field="fee_after_discount">{{ format_currency(total_fee_raw) }}</span>
+                </div>
+                <div class="data-field" data-field="paid">
+                    <span class="data-field-label">المدفوع</span>
+                    <span class="data-field-value highlight-success" data-value="{{ total_paid_raw }}" data-field="paid">{{ format_currency(total_paid_raw) }}</span>
+                </div>
+                <div class="data-field" data-field="remaining">
+                    <span class="data-field-label">المتبقي</span>
+                    <span class="data-field-value {% if remaining_raw > 0 %}highlight-danger{% else %}highlight-success{% endif %}" data-value="{{ remaining_raw }}" data-field="remaining">{{ format_currency(remaining_raw) }}</span>
+                </div>
+                <div class="data-field" data-field="percentage">
+                    <span class="data-field-label">نسبة السداد</span>
+                    <span class="data-field-value" data-value="{{ payment_pct }}">{{ payment_pct }}%</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Pagination -->
-    <div class="report-pagination no-print" id="financialTable_pagination"></div>
+    <div class="report-pagination no-print" id="financialCards_pagination"></div>
 
     </div>
 </div>
@@ -284,7 +338,7 @@
 </div>
 {% endif %}
 
-<!-- سجل المدفوعات -->
+<!-- سجل المدفوعات - كارتات -->
 {% if installments %}
 <div class="report-section" id="paymentsSection" style="padding-bottom:24px;">
     <div class="section-title section-collapse-header" onclick="toggleSection(this)">
@@ -297,12 +351,12 @@
     <div class="report-filters no-print">
         <div class="report-search-box">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="بحث في المدفوعات..." oninput="reportSearch(this, 'paymentsTable')">
+            <input type="text" placeholder="بحث في المدفوعات..." oninput="cardSearch(this, 'paymentsCards')">
         </div>
         {% if teacher_names|length > 1 %}
         <div class="filter-group">
             <label>المدرس:</label>
-            <select onchange="reportFilter(this, 'paymentsTable', 'teacher')">
+            <select onchange="cardFilter(this, 'paymentsCards', 'teacher')">
                 <option value="">الكل</option>
                 {% for tn in teacher_names %}
                 <option value="{{ tn }}">{{ tn }}</option>
@@ -313,7 +367,7 @@
         {% if installment_types|length > 1 %}
         <div class="filter-group">
             <label>النوع:</label>
-            <select onchange="reportFilter(this, 'paymentsTable', 'type')">
+            <select onchange="cardFilter(this, 'paymentsCards', 'type')">
                 <option value="">الكل</option>
                 {% for it in installment_types %}
                 <option value="{{ it }}">{{ it }}</option>
@@ -323,50 +377,59 @@
         {% endif %}
         <div class="filter-group">
             <label><i class="fas fa-calendar-alt"></i> من:</label>
-            <input type="date" onchange="reportFilter(this, 'paymentsTable', 'date_from')">
+            <input type="date" onchange="cardFilter(this, 'paymentsCards', 'date_from')">
         </div>
         <div class="filter-group">
             <label>إلى:</label>
-            <input type="date" onchange="reportFilter(this, 'paymentsTable', 'date_to')">
+            <input type="date" onchange="cardFilter(this, 'paymentsCards', 'date_to')">
         </div>
-        <button class="btn-reset-filters" onclick="resetFilters('paymentsTable')">
+        <button class="btn-reset-filters" onclick="resetCardFilters('paymentsCards')">
             <i class="fas fa-undo"></i> إعادة تعيين
         </button>
-        <span id="paymentsTable_count" style="font-size:12px;color:var(--muted);margin-right:auto"></span>
+        <span id="paymentsCards_count" style="font-size:12px;color:var(--muted);margin-right:auto"></span>
     </div>
 
-    <!-- جدول المدفوعات -->
-    <div class="report-table-wrapper" id="paymentsTable_wrapper">
-        <table class="report-table" id="paymentsTable">
-            <thead>
-                <tr>
-                    <th style="width:35px; text-align:center" onclick="reportSort(this, 'paymentsTable', 0)"># <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th onclick="reportSort(this, 'paymentsTable', 1)">المدرس <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th onclick="reportSort(this, 'paymentsTable', 2)">المادة <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'paymentsTable', 3)">المبلغ <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'paymentsTable', 4)">النوع <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th style="text-align:center" onclick="reportSort(this, 'paymentsTable', 5)">التاريخ <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                    <th onclick="reportSort(this, 'paymentsTable', 6)">ملاحظات <span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for inst in installments %}
-                <tr>
-                    <td style="text-align:center; color:var(--muted)" data-value="{{ loop.index }}">{{ loop.index }}</td>
-                    <td style="font-weight:600" data-value="{{ inst.teacher_name }}">{{ inst.teacher_name }}</td>
-                    <td data-value="{{ inst.subject }}"><span class="badge-continue">{{ inst.subject }}</span></td>
-                    <td style="text-align:center; font-weight:700; color:var(--success)" data-value="{{ inst.amount or 0 }}" data-field="paid">{{ format_currency(inst.amount) }}</td>
-                    <td style="text-align:center" data-value="{{ inst.installment_type or '' }}"><span class="badge-continue">{{ inst.installment_type }}</span></td>
-                    <td style="text-align:center; color:var(--muted)" data-value="{{ inst.payment_date or '' }}">{{ format_date(inst.payment_date) }}</td>
-                    <td style="color:var(--muted); font-size:12px" data-value="{{ inst.notes or '-' }}">{{ inst.notes or '-' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- كارتات المدفوعات -->
+    <div class="data-cards-grid payments-grid" id="paymentsCards">
+        {% for inst in installments %}
+        <div class="payment-card"
+             data-teacher="{{ inst.teacher_name }}"
+             data-type="{{ inst.installment_type or '' }}"
+             data-date="{{ inst.payment_date or '' }}"
+             data-subject="{{ inst.subject }}">
+
+            <!-- رأس كارت الدفع -->
+            <div class="payment-card-header">
+                <div class="payment-card-info">
+                    <span class="payment-card-teacher">{{ inst.teacher_name }}</span>
+                    <span class="badge-continue">{{ inst.subject }}</span>
+                </div>
+                <div class="payment-card-amount">
+                    {{ format_currency(inst.amount) }}
+                </div>
+            </div>
+
+            <!-- جسم كارت الدفع -->
+            <div class="payment-card-body">
+                <div class="data-field" data-field="type">
+                    <span class="data-field-label">النوع</span>
+                    <span class="data-field-value"><span class="badge-continue">{{ inst.installment_type }}</span></span>
+                </div>
+                <div class="data-field" data-field="date">
+                    <span class="data-field-label">التاريخ</span>
+                    <span class="data-field-value" data-value="{{ inst.payment_date or '' }}">{{ format_date(inst.payment_date) }}</span>
+                </div>
+                <div class="data-field" data-field="notes">
+                    <span class="data-field-label">ملاحظات</span>
+                    <span class="data-field-value" style="color:var(--muted);font-size:12px">{{ inst.notes or '-' }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     <!-- Pagination -->
-    <div class="report-pagination no-print" id="paymentsTable_pagination"></div>
+    <div class="report-pagination no-print" id="paymentsCards_pagination"></div>
 
     </div>
 </div>
@@ -393,25 +456,24 @@
 {% endblock %}
 
 {% block extra_script %}
-<script src="/static/js/report_tables.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // تهيئة جدول التفاصيل المالية
+    // تهيئة كارتات التفاصيل المالية
     {% if teachers_summary %}
-    initReportTable('financialTable', {
-        pageSize: 15,
-        totalRowSelector: '.total-row',
-        currencyCols: [6, 7, 8, 9],
-        dateCols: []
+    initCardGrid('financialCards', {
+        pageSize: 12,
+        totalCardSelector: '.total-card',
+        currencyFields: ['original_fee', 'fee_after_discount', 'paid', 'remaining'],
+        searchableFields: ['teacher', 'subject']
     });
     {% endif %}
 
-    // تهيئة جدول المدفوعات
+    // تهيئة كارتات المدفوعات
     {% if installments %}
-    initReportTable('paymentsTable', {
-        pageSize: 15,
-        currencyCols: [3],
-        dateCols: [5]
+    initCardGrid('paymentsCards', {
+        pageSize: 12,
+        currencyFields: [],
+        searchableFields: ['teacher', 'type', 'subject']
     });
     {% endif %}
 

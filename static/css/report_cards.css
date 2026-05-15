@@ -182,7 +182,7 @@
     background: var(--border);
 }
 
-/* ===== تبديل الإجمالي (كل البيانات / المفلترة) ===== */
+/* ===== تبديل الإجمالي ===== */
 .summary-toggle {
     display: flex;
     align-items: center;
@@ -452,6 +452,301 @@
     opacity: 0;
 }
 
+/* ======================================================
+   كارتات البيانات المالية (finance-card)
+   ====================================================== */
+.data-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+    padding: 0 24px;
+}
+
+.data-cards-grid.payments-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* === كارت مالي === */
+.finance-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.finance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.finance-card:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12);
+    transform: translateY(-2px);
+}
+
+.finance-card.card-hidden {
+    display: none !important;
+}
+
+/* رأس كارت مالي */
+.finance-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--light);
+    flex-wrap: wrap;
+}
+
+.finance-card-teacher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--dark);
+}
+
+.finance-card-teacher i {
+    color: var(--primary);
+    font-size: 14px;
+}
+
+.finance-card-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.finance-card-badges .badge-continue,
+.finance-card-badges .badge-withdrawn {
+    font-size: 10px;
+    padding: 2px 8px;
+}
+
+/* جسم كارت مالي */
+.finance-card-body {
+    padding: 12px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* === حقل بيانات === */
+.data-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #f1f5f9;
+    gap: 10px;
+}
+
+.data-field:last-child {
+    border-bottom: none;
+}
+
+.data-field.field-hidden {
+    display: none !important;
+}
+
+.data-field-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.data-field-label i {
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+.data-field-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    text-align: left;
+    direction: ltr;
+}
+
+.data-field-value.line-through {
+    text-decoration: line-through;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.data-field-value.highlight-primary {
+    color: var(--primary-dark);
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.data-field-value.highlight-success {
+    color: #059669;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.data-field-value.highlight-danger {
+    color: #dc2626;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+/* === شريط تقدم مصغر === */
+.mini-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mini-progress-track {
+    flex: 1;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    min-width: 60px;
+}
+
+.mini-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.5s ease;
+}
+
+.mini-progress-fill.full {
+    background: linear-gradient(90deg, var(--success), #34d399);
+}
+
+.mini-progress-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--dark);
+    white-space: nowrap;
+    min-width: 36px;
+    text-align: left;
+    direction: ltr;
+}
+
+/* === كارت الإجمالي === */
+.finance-card.total-card {
+    border: 2px solid var(--primary-light);
+    background: linear-gradient(135deg, #f5f3ff 0%, #eff6ff 100%);
+}
+
+.finance-card.total-card::before {
+    background: linear-gradient(90deg, var(--primary-dark), var(--secondary-dark));
+    height: 5px;
+}
+
+.finance-card.total-card:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.2);
+}
+
+.finance-card.total-card .finance-card-header {
+    border-bottom-color: rgba(99, 102, 241, 0.15);
+}
+
+.finance-card.total-card .finance-card-teacher {
+    color: var(--primary-dark);
+}
+
+/* === كارت دفع === */
+.payment-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.payment-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--success), #34d399);
+}
+
+.payment-card:hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.1);
+    transform: translateY(-1px);
+}
+
+.payment-card.card-hidden {
+    display: none !important;
+}
+
+.payment-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid var(--light);
+    gap: 10px;
+}
+
+.payment-card-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.payment-card-teacher {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--dark);
+}
+
+.payment-card-amount {
+    font-weight: 900;
+    font-size: 16px;
+    color: #059669;
+    direction: ltr;
+}
+
+.payment-card-body {
+    padding: 10px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ===== تخصيص الكارتات ===== */
+.customize-sections {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.customize-sections h6 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .summary-cards {
@@ -472,6 +767,16 @@
         width: 30px;
         height: 30px;
         font-size: 14px;
+    }
+
+    .data-cards-grid {
+        grid-template-columns: 1fr;
+        padding: 0 16px;
+        gap: 10px;
+    }
+
+    .data-cards-grid.payments-grid {
+        grid-template-columns: 1fr;
     }
 
     .report-filters {
@@ -503,6 +808,11 @@
 
     .summary-card .card-value {
         font-size: 14px;
+    }
+
+    .finance-card-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
@@ -553,5 +863,104 @@
     .section-collapse-body {
         max-height: none !important;
         opacity: 1 !important;
+    }
+
+    /* كارتات البيانات - طباعة */
+    .data-cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        padding: 0 !important;
+    }
+
+    .data-cards-grid.payments-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .finance-card,
+    .payment-card {
+        border-radius: 8px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    .finance-card::before,
+    .payment-card::before {
+        height: 2px !important;
+    }
+
+    .finance-card:hover,
+    .payment-card:hover {
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    .finance-card-header {
+        padding: 8px 10px 6px !important;
+    }
+
+    .finance-card-teacher {
+        font-size: 11pt !important;
+    }
+
+    .finance-card-body {
+        padding: 6px 10px 8px !important;
+        gap: 4px !important;
+    }
+
+    .data-field {
+        padding: 3px 0 !important;
+    }
+
+    .data-field-label {
+        font-size: 8pt !important;
+    }
+
+    .data-field-value {
+        font-size: 9pt !important;
+    }
+
+    .data-field-value.highlight-primary,
+    .data-field-value.highlight-success,
+    .data-field-value.highlight-danger {
+        font-size: 10pt !important;
+    }
+
+    .finance-card.total-card {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .payment-card-header {
+        padding: 6px 10px !important;
+    }
+
+    .payment-card-amount {
+        font-size: 12pt !important;
+    }
+
+    .payment-card-body {
+        padding: 6px 10px 8px !important;
+        gap: 4px !important;
+    }
+
+    /* الحقول المخفية بالتخصيص تبقى مخفية في الطباعة */
+    .data-field.field-hidden {
+        display: none !important;
+    }
+
+    .finance-card.card-hidden,
+    .payment-card.card-hidden {
+        display: none !important;
+    }
+
+    /* mini progress في الطباعة */
+    .mini-progress-track {
+        height: 4px !important;
+    }
+
+    .mini-progress-text {
+        font-size: 8pt !important;
     }
 }
