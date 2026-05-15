@@ -620,6 +620,15 @@ def init_db():
                 except Exception:
                     conn.rollback()
 
+                # ===== إضافة عمود رقم ولي أمر الطالب لجدول الطلاب =====
+                try:
+                    cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_phone TEXT DEFAULT ''")
+                    # فهرس فريد جزئي: يمنع تكرار الأرقام غير الفارغة فقط
+                    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_students_parent_phone_not_empty ON students (parent_phone) WHERE parent_phone IS NOT NULL AND parent_phone != ''")
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
                 # ===== إضافة أعمدة created_by و updated_by للجداول المهمة (دائماً) =====
                 for table_name in ["students", "teachers", "subjects", "installments", "teacher_withdrawals", "student_teacher"]:
                     try:
