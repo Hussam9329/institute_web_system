@@ -1140,11 +1140,18 @@ let currentRoomPage = 1;
 const ROOMS_PER_PAGE = 4;
 
 const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
-const TIME_SLOTS = [];
+// ===== TIME SLOTS =====
+// الساعات الأساسية تظهر دائماً، أما أنصاف الساعات مثل 07:30 فلا تظهر إلا إذا كانت مستخدمة فعلياً
+const BASE_TIME_SLOTS = [];
 for (let h = 7; h <= 21; h++) {
-    TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
+    BASE_TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
+}
+
+const ALL_TIME_SLOTS = [];
+for (let h = 7; h <= 21; h++) {
+    ALL_TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
     if (h < 21) {
-        TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
+        ALL_TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
     }
 }
 
@@ -1339,6 +1346,65 @@ function normalizeTimeValue(time) {
     return String(time).slice(0, 5);
 }
 
+function isHalfHourSlot(time) {
+    return normalizeTimeValue(time).endsWith(':30');
+}
+
+function timeToMinutes(time) {
+    const normalized = normalizeTimeValue(time);
+    if (!normalized || !normalized.includes(':')) return 0;
+
+    const parts = normalized.split(':');
+    return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+}
+
+function isTimeUsedByEvent(ev, time) {
+    const slot = normalizeTimeValue(time);
+    const start = normalizeTimeValue(ev.start_time);
+    const end = normalizeTimeValue(ev.end_time);
+
+    // يظهر صف النصف إذا كان بداية أو نهاية الحدث، أو داخل مدة الحدث
+    // مثال: من 12:00 إلى 14:30 يظهر 14:30 لأن النهاية نصف ساعة
+    return (
+        start === slot ||
+        end === slot ||
+        (timeToMinutes(start) < timeToMinutes(slot) && timeToMinutes(slot) < timeToMinutes(end))
+    );
+}
+
+function getVisibleTimeSlotsForRoom(roomId) {
+    const usedHalfSlots = new Set();
+
+    allSchedule.forEach(ev => {
+        if (ev.room_id !== roomId) return;
+
+        if (currentDayFilter !== 'all' && ev.day_of_week !== currentDayFilter) return;
+
+        // إذا المستخدم فلتر حسب النوع، نبقي اعتبار النوع الآخر حتى تبقى الخانات المحجوزة واضحة
+        const start = timeToMinutes(ev.start_time);
+        const end = timeToMinutes(ev.end_time);
+
+        ALL_TIME_SLOTS.forEach(slot => {
+            if (!isHalfHourSlot(slot)) return;
+
+            const slotMinutes = timeToMinutes(slot);
+
+            if (
+                normalizeTimeValue(ev.start_time) === slot ||
+                normalizeTimeValue(ev.end_time) === slot ||
+                (start < slotMinutes && slotMinutes < end)
+            ) {
+                usedHalfSlots.add(slot);
+            }
+        });
+    });
+
+    return ALL_TIME_SLOTS.filter(slot => {
+        if (!isHalfHourSlot(slot)) return true;
+        return usedHalfSlots.has(slot);
+    });
+}
+
 // ===== HELPER: Does event overlap with a time slot? =====
 function isTimeOverlappingSlot(ev, time) {
     // Check if event overlaps with the given time slot (not just starts at it)
@@ -1439,7 +1505,7 @@ function buildRoomGridTable(room) {
     DAYS.forEach(day => { html += '<th>' + day + '</th>'; });
     html += '</tr></thead><tbody>';
 
-    TIME_SLOTS.forEach(time => {
+    getVisibleTimeSlotsForRoom(room.id).forEach(time => {
         html += '<tr>';
         html += '<td class="ws-time-cell">' + time + '</td>';
 
