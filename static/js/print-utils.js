@@ -762,7 +762,7 @@ const PrintUtils = {
     printAccounting() {
         const visibleCards = [];
         const allCards = document.querySelectorAll('.accounting-card');
-        let totalReceived = 0, totalDeduction = 0, totalTeacherDue = 0, totalWithdrawn = 0, totalRemaining = 0, totalStudents = 0, count = 0;
+        let totalReceived = 0, totalDeduction = 0, totalTeacherDue = 0, totalShareFull = 0, totalWithdrawn = 0, totalRemaining = 0, totalStudents = 0, count = 0;
 
         allCards.forEach(card => {
             if (card.style.display === 'none') return;
@@ -770,12 +770,14 @@ const PrintUtils = {
             const received = parseInt(card.dataset.received) || 0;
             const deduction = parseInt(card.dataset.deduction) || 0;
             const teacherDue = parseInt(card.dataset.teacherDue) || 0;
+            const shareFull = parseInt(card.dataset.teacherShareFull) || 0;
             const withdrawn = parseInt(card.dataset.withdrawn) || 0;
             const remaining = parseInt(card.dataset.remaining) || 0;
             const students = parseInt(card.dataset.students) || 0;
             totalReceived += received;
             totalDeduction += deduction;
             totalTeacherDue += teacherDue;
+            totalShareFull += shareFull;
             totalWithdrawn += withdrawn;
             totalRemaining += remaining;
             totalStudents += students;
@@ -786,6 +788,7 @@ const PrintUtils = {
                 received: received,
                 deduction: deduction,
                 teacherDue: teacherDue,
+                shareFull: shareFull,
                 withdrawn: withdrawn,
                 remaining: remaining,
                 students: students
@@ -805,6 +808,7 @@ const PrintUtils = {
             formatCurrency(c.received),
             `<span style="color:var(--danger);font-weight:600">${formatCurrency(c.deduction)}</span>`,
             `<span style="color:var(--info);font-weight:600">${formatCurrency(c.teacherDue)}</span>`,
+            `<span style="color:#6366f1;font-weight:600">${formatCurrency(c.shareFull)}</span>`,
             `<span style="color:var(--warning);font-weight:600">${formatCurrency(c.withdrawn)}</span>`,
             c.remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(c.remaining)}</span>` : '<span style="color:var(--muted)">0</span>'
         ]);
@@ -813,6 +817,7 @@ const PrintUtils = {
             '', 'الإجمالي', '', totalStudents, formatCurrency(totalReceived),
             `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
             `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
+            `<span style="color:#6366f1;font-weight:700">${formatCurrency(totalShareFull)}</span>`,
             `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
             totalRemaining > 0 ? formatCurrency(totalRemaining) : '0'
         ]);
@@ -836,6 +841,7 @@ const PrintUtils = {
                 { value: formatCurrency(totalReceived), label: 'إجمالي المدفوع', cls: 'kpi-accent' },
                 { value: formatCurrency(totalDeduction), label: 'إجمالي خصم المعهد', cls: 'kpi-danger' },
                 { value: formatCurrency(totalTeacherDue), label: 'إجمالي مستحق المدرسين', cls: 'kpi-info' },
+                { value: formatCurrency(totalShareFull), label: 'إجمالي حصة المدرسين بعد الدفع الكامل', cls: 'kpi-purple' },
                 { value: formatCurrency(totalWithdrawn), label: 'إجمالي المسحوب', cls: 'kpi-warning' },
                 { value: formatCurrency(totalRemaining), label: 'إجمالي المتبقي', cls: 'kpi-purple' }
             ],
@@ -844,9 +850,9 @@ const PrintUtils = {
                 title: 'ملخص محاسبة المدرسين - التفاصيل الشاملة',
                 icon: 'calculator',
                 content: this.buildTableHTML(
-                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي'],
+                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'خصم المعهد', 'مستحق المدرس', 'حصة بعد الدفع الكامل', 'المسحوب', 'المتبقي'],
                     rows,
-                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
+                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
                 )
             }]
         });

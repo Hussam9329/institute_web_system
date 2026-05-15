@@ -224,6 +224,8 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
             'has_over_withdrawal': False,
             'over_withdrawal_amount': 0,
             'can_withdraw': False,
+            'teacher_share_after_full_payment': 0,
+            'total_expected_fees': 0,
         }
 
     # حساب نسبة المعهد للعرض في التقرير

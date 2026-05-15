@@ -2040,7 +2040,9 @@ async def accounting_page(request: Request, search: str = "", date_from: str = "
                     'teacher_due': 0,
                     'withdrawn_total': 0,
                     'remaining_balance': 0,
-                    'can_withdraw': False
+                    'can_withdraw': False,
+                    'teacher_share_after_full_payment': 0,
+                    'total_expected_fees': 0
                 }
             teachers_with_finance.append(teacher_dict)
     except Exception as e:
