@@ -906,7 +906,6 @@ const PrintUtils = {
         const printCheckboxes = document.querySelectorAll('.print-select-cb');
         let selectedData = allData;
         let selectedFinRows = finRows;
-        let includeNet = true;
         let includeKPIs = true;
         let includeDetail = true;
         let includeFinancial = true;
@@ -917,7 +916,6 @@ const PrintUtils = {
             includeKPIs = document.getElementById('print_cb_kpis')?.checked !== false;
             includeDetail = document.getElementById('print_cb_detail')?.checked !== false;
             includeFinancial = document.getElementById('print_cb_financial')?.checked !== false;
-            includeNet = document.getElementById('print_cb_net')?.checked !== false;
             includeDeductions = document.getElementById('print_cb_deductions')?.checked !== false;
             includeTeacherDue = document.getElementById('print_cb_teacher_due')?.checked !== false;
 
@@ -962,18 +960,18 @@ const PrintUtils = {
             });
         }
 
-        // خصم المعهد والاستقطاعات
+        // خصم المعهد (إيرادات المعهد)
         if (includeDeductions) {
             // استخراج بيانات الخصم من جدول التفاصيل أو من البطاقات المالية
             const deductionData = allData.find(d => d.label.includes('خصم المعهد') || d.label.includes('استقطاع'));
             const totalDeduction = deductionData ? deductionData.value : '';
             if (totalDeduction) {
                 sections.push({
-                    title: 'خصم المعهد (الاستقطاعات)',
+                    title: 'إيرادات المعهد (الاستقطاعات)',
                     icon: 'building',
-                    content: `<div style="text-align:center;padding:20px;background:#fef2f2;border-radius:14px;border:2px solid rgba(239,68,68,0.25);">
-                        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي خصم المعهد (الاستقطاعات)</div>
-                        <div style="font-size:28px;font-weight:900;color:var(--danger);">${totalDeduction}</div>
+                    content: `<div style="text-align:center;padding:20px;background:#ecfdf5;border-radius:14px;border:2px solid rgba(16,185,129,0.25);">
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي إيرادات المعهد (الاستقطاعات)</div>
+                        <div style="font-size:28px;font-weight:900;color:var(--success);">${totalDeduction}</div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">نسبة المعهد المستقطعة من المدفوعات</div>
                     </div>`
                 });
@@ -995,17 +993,6 @@ const PrintUtils = {
                     </div>`
                 });
             }
-        }
-
-        if (includeNet && netValue) {
-            sections.push({
-                title: netLabel || 'صافي الإيرادات',
-                icon: 'chart-line',
-                content: `<div style="text-align:center;padding:20px;background:${netValue.includes('-') ? '#fef2f2' : '#ecfdf5'};border-radius:14px;border:2px solid ${netValue.includes('-') ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'};">
-                    <div style="font-size:28px;font-weight:900;color:${netValue.includes('-') ? 'var(--danger)' : 'var(--success)'};">${netValue}</div>
-                    <div style="font-size:13px;color:var(--muted);margin-top:4px;">${netSub}</div>
-                </div>`
-            });
         }
 
         // Add comprehensive financial summary KPIs if deductions are included
