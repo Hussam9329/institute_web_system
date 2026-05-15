@@ -770,25 +770,6 @@ html[data-theme="dark"] .ws-add-exam {
 .ws-fld-label {
     font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 3px;
 }
-/* Event type toggle in modal */
-.ws-evtype-toggle {
-    display: flex; gap: 6px;
-}
-.ws-evtype-btn {
-    flex: 1; padding: 8px; border-radius: 8px; border: 2px solid #e5e7eb;
-    background: white; cursor: pointer; font-size: 13px; font-weight: 700;
-    text-align: center; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.ws-evtype-btn.active-lec {
-    background: #3b82f6; color: white; border-color: #3b82f6;
-}
-.ws-evtype-btn.active-exm {
-    background: #f97316; color: white; border-color: #f97316;
-}
-.ws-evtype-btn:hover:not(.active-lec):not(.active-exm) {
-    border-color: #a5b4fc;
-}
 /* Readonly inputs in modal */
 .ws-modal input[readonly] {
     background-color: #f8fafc;
@@ -1080,18 +1061,18 @@ html[data-theme="dark"] .ws-ctrl-divider {
     </div>
 
     <!-- Sort & Filters -->
-    <select class="ws-filter-select" id="sortSelect" onchange="setSortBy(this.value)" title="ترتيب حسب">
+    <select class="ws-filter-select" id="sortSelect" name="sortSelect" onchange="setSortBy(this.value)" title="ترتيب حسب">
         <option value="time">حسب الوقت</option>
         <option value="teacher">حسب الاستاد</option>
         <option value="day">حسب اليوم</option>
         <option value="room">حسب القاعة</option>
     </select>
 
-    <select class="ws-filter-select" id="teacherFilter" onchange="setTeacherFilter(parseInt(this.value))" title="المدرس" data-searchable="true" data-search-placeholder="ابحث عن مدرس...">
+    <select class="ws-filter-select" id="teacherFilter" name="teacherFilter" onchange="setTeacherFilter(parseInt(this.value))" title="المدرس" data-searchable="true" data-search-placeholder="ابحث عن مدرس...">
         <option value="0">كل المدرسين</option>
     </select>
 
-    <select class="ws-filter-select" id="dayFilter" onchange="setDayFilter(this.value)" title="اليوم">
+    <select class="ws-filter-select" id="dayFilter" name="dayFilter" onchange="setDayFilter(this.value)" title="اليوم">
         <option value="all">كل الأيام</option>
     </select>
 </div>
@@ -1122,10 +1103,10 @@ html[data-theme="dark"] .ws-ctrl-divider {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editEventId" value="">
+                <input type="hidden" id="editEventId" name="editEventId" value="">
                 <div class="row g-3">
                     <!-- Event Type (hidden - determined by button used) -->
-                    <input type="hidden" id="lecEventType" value="محاضرة">
+                    <input type="hidden" id="lecEventType" name="lecEventType" value="محاضرة">
                     <div class="col-12 col-md-6">
                         <label class="ws-fld-label" for="lecRoom">القاعة</label>
                         <select id="lecRoom" name="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
@@ -1213,7 +1194,7 @@ html[data-theme="dark"] .ws-ctrl-divider {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editRoomId" value="">
+                <input type="hidden" id="editRoomId" name="editRoomId" value="">
                 <div class="mb-3">
                     <label class="ws-fld-label" for="editRoomName">اسم القاعة</label>
                     <input type="text" id="editRoomName" name="editRoomName" class="form-control form-control-sm">
