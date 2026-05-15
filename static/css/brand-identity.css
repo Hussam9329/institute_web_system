@@ -972,3 +972,177 @@ footer.main-footer {
 .sidebar .sidebar-search-results .search-result-label * {
     color: var(--sidebar-result-label-text) !important;
 }
+
+/* =====================================================================
+   FINAL FIX 2026-05-15: withdrawals page table must obey theme tokens.
+   السبب: جدول /withdrawals يستخدم Bootstrap .table variables + page CSS loaded
+   after the old brand file. هذه القواعد لا تعتمد على اللون الافتراضي نهائياً.
+===================================================================== */
+#tableView,
+#tableView .withdraw-card,
+#tableView .withdraw-card .card-body,
+#tableView .table-responsive {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+#tableView .withdraw-card {
+    border: 1px solid var(--app-border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    overflow: hidden !important;
+}
+
+#tableView .withdraw-card > .card-header.bg-gradient-emerald,
+#tableView .withdraw-card > .card-header.bg-gradient-emerald *,
+#addWithdrawalModal .modal-header.bg-gradient-emerald,
+#addWithdrawalModal .modal-header.bg-gradient-emerald *,
+#editWithdrawalModal .modal-header.bg-gradient-emerald,
+#editWithdrawalModal .modal-header.bg-gradient-emerald * {
+    color: #ffffff !important;
+}
+
+#withdrawalsTable {
+    --bs-table-bg: var(--app-table-row-bg) !important;
+    --bs-table-color: var(--app-text) !important;
+    --bs-table-border-color: var(--app-table-border) !important;
+    --bs-table-striped-bg: var(--app-table-row-alt) !important;
+    --bs-table-striped-color: var(--app-text) !important;
+    --bs-table-hover-bg: var(--app-table-row-hover) !important;
+    --bs-table-hover-color: var(--app-text) !important;
+    --bs-table-active-bg: var(--app-surface-2) !important;
+    --bs-table-active-color: var(--app-text) !important;
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+#withdrawalsTable > :not(caption) > * > * {
+    background-color: var(--bs-table-bg) !important;
+    color: var(--bs-table-color) !important;
+    border-color: var(--app-table-border) !important;
+    box-shadow: none !important;
+}
+
+#withdrawalsTable thead,
+#withdrawalsTable thead.table-gradient-emerald,
+#withdrawalsTable thead.table-gradient-emerald tr,
+#withdrawalsTable thead.table-gradient-emerald th,
+#withdrawalsTable thead th {
+    --bs-table-bg: transparent !important;
+    background: linear-gradient(135deg, #047857 0%, #0f766e 100%) !important;
+    background-color: #047857 !important;
+    color: #ffffff !important;
+    border-color: rgba(255,255,255,0.24) !important;
+}
+
+#withdrawalsTable thead *,
+#withdrawalsTable .table-gradient-emerald * {
+    color: #ffffff !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row {
+    --bs-table-bg: var(--app-table-row-bg) !important;
+    background: var(--app-table-row-bg) !important;
+    color: var(--app-text) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row:nth-child(even) {
+    --bs-table-bg: var(--app-table-row-alt) !important;
+    background: var(--app-table-row-alt) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row:hover {
+    --bs-table-bg: var(--app-table-row-hover) !important;
+    background: var(--app-table-row-hover) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row > td,
+#withdrawalsTable tbody tr.withdrawal-row > th {
+    background-color: var(--bs-table-bg) !important;
+    color: var(--app-text) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row a:not(.action-btn):not(.btn) {
+    color: var(--brand-primary) !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable tbody tr.withdrawal-row a:not(.action-btn):not(.btn) {
+    color: #93c5fd !important;
+}
+
+#withdrawalsTable .text-muted,
+#withdrawalsTable td.text-muted,
+#withdrawalsTable .small.text-muted {
+    color: var(--app-muted) !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable .text-muted,
+html[data-theme="dark"] #withdrawalsTable td.text-muted,
+html[data-theme="dark"] #withdrawalsTable .small.text-muted {
+    color: #cbd5e1 !important;
+}
+
+#withdrawalsTable .badge.bg-light,
+#withdrawalsTable .badge.text-dark {
+    background: var(--brand-accent-soft) !important;
+    color: var(--brand-accent-hover) !important;
+    border: 1px solid rgba(15,118,110,0.24) !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable .badge.bg-light,
+html[data-theme="dark"] #withdrawalsTable .badge.text-dark {
+    background: rgba(45,212,191,0.16) !important;
+    color: #99f6e4 !important;
+    border-color: rgba(45,212,191,0.34) !important;
+}
+
+#withdrawalsTable tfoot,
+#withdrawalsTable tfoot.table-active,
+#withdrawalsTable tfoot.table-active tr,
+#withdrawalsTable tfoot.table-active td {
+    --bs-table-bg: var(--app-surface-2) !important;
+    --bs-table-color: var(--app-text) !important;
+    background: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable tfoot,
+html[data-theme="dark"] #withdrawalsTable tfoot.table-active,
+html[data-theme="dark"] #withdrawalsTable tfoot.table-active tr,
+html[data-theme="dark"] #withdrawalsTable tfoot.table-active td {
+    background: #18304a !important;
+    color: #f8fafc !important;
+}
+
+#withdrawalsTable .action-btn,
+#withdrawalCards .action-btn {
+    color: #ffffff !important;
+}
+
+#withdrawalCards .list-card,
+#withdrawalCards .card-body,
+#withdrawalCards .info-item {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+#withdrawalCards .list-card .text-dark,
+#withdrawalCards .list-card h6,
+#withdrawalCards .list-card h6 a,
+#withdrawalCards .list-card .info-value {
+    color: var(--app-text) !important;
+}
+
+#withdrawalCards .list-card .header-sub,
+#withdrawalCards .list-card .info-label {
+    color: var(--app-muted) !important;
+}
+
+#withdrawalCards .list-card .info-value.text-warning,
+#withdrawalsTable .text-warning {
+    color: var(--brand-warning) !important;
+}

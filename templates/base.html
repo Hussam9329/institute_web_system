@@ -144,7 +144,7 @@
     <!-- Theme CSS -->
     <link rel="stylesheet" href="/static/css/theme.css?v=20260514-crossblock">
     <link rel="stylesheet" href="/static/css/dark-fix.css?v=20260514-crossblock">
-    <link rel="stylesheet" href="/static/css/brand-identity.css?v=20260515-hardfix">
+    <!-- brand-identity is intentionally reloaded after page-specific CSS below. -->
 
     <!-- Preload critical JS -->
     <link rel="preload" href="/static/js/utils.js" as="script">
@@ -626,6 +626,9 @@
     </style>
     
     {% block extra_css %}{% endblock %}
+
+    <!-- Final color authority: must be after Bootstrap, base inline styles, and page CSS. -->
+    <link rel="stylesheet" href="/static/css/brand-identity.css?v=20260515-withdrawals-final">
 </head>
 <body>
 
@@ -1028,7 +1031,7 @@
     </script>
 
 
-    <script src="/static/js/theme-guard.js?v=20260515-hardfix" defer></script>
+    <script src="/static/js/theme-guard.js?v=20260515-withdrawals-final" defer></script>
 
     {% block extra_js %}{% endblock %}
 
