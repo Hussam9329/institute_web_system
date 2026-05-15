@@ -978,8 +978,8 @@ html[data-theme="dark"] .ws-ctrl-divider {
         </button>
     </div>
     <div class="ws-rooms-add">
-        <input type="text" id="newRoomName" placeholder="اسم القاعة">
-        <input type="number" id="newRoomCapacity" placeholder="السعة" min="0" style="max-width:100px;">
+        <input type="text" id="newRoomName" name="newRoomName" placeholder="اسم القاعة">
+        <input type="number" id="newRoomCapacity" name="newRoomCapacity" placeholder="السعة" min="0" style="max-width:100px;">
         <button class="ws-btn ws-btn-primary" onclick="addRoom()" style="padding:7px 14px;">
             <i class="fas fa-plus"></i> إضافة
         </button>
@@ -1064,7 +1064,7 @@ html[data-theme="dark"] .ws-ctrl-divider {
                 <div class="row g-3">
                     <!-- Event Type -->
                     <div class="col-12">
-                        <label class="ws-fld-label">نوع الحدث</label>
+                        <label class="ws-fld-label" for="lecEventType">نوع الحدث</label>
                         <div class="ws-evtype-toggle">
                             <button type="button" class="ws-evtype-btn active-lec" id="btnTypeLecture"
                                 onclick="setEventType('محاضرة')">
@@ -1078,22 +1078,22 @@ html[data-theme="dark"] .ws-ctrl-divider {
                         <input type="hidden" id="lecEventType" value="محاضرة">
                     </div>
                     <div class="col-12 col-md-6">
-                        <label class="ws-fld-label">القاعة</label>
-                        <select id="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
+                        <label class="ws-fld-label" for="lecRoom">القاعة</label>
+                        <select id="lecRoom" name="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
                     </div>
                     <div class="col-12 col-md-6">
-                        <label class="ws-fld-label">المدرس</label>
-                        <select id="lecTeacher" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن مدرس..."></select>
+                        <label class="ws-fld-label" for="lecTeacher">المدرس</label>
+                        <select id="lecTeacher" name="lecTeacher" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن مدرس..."></select>
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">المادة <small class="text-muted">(تلقائي من الاستاد)</small></label>
-                        <input type="text" id="lecSubject" class="form-control form-control-sm" readonly
+                        <label class="ws-fld-label" for="lecSubject">المادة <small class="text-muted">(تلقائي من الاستاد)</small></label>
+                        <input type="text" id="lecSubject" name="lecSubject" class="form-control form-control-sm" readonly
                             style="cursor:not-allowed;"
                             placeholder="اختر الاستاد أولاً">
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">اليوم</label>
-                        <select id="lecDay" class="form-select form-select-sm">
+                        <label class="ws-fld-label" for="lecDay">اليوم</label>
+                        <select id="lecDay" name="lecDay" class="form-select form-select-sm">
                             <option value="الإثنين">الإثنين</option>
                             <option value="الثلاثاء">الثلاثاء</option>
                             <option value="الأربعاء">الأربعاء</option>
@@ -1104,15 +1104,15 @@ html[data-theme="dark"] .ws-ctrl-divider {
                         </select>
                     </div>
                     <div class="col-12 col-md-6">
-                        <label class="ws-fld-label">من الساعة</label>
-                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required
+                        <label class="ws-fld-label" for="lecStartTime">من الساعة</label>
+                        <input type="time" id="lecStartTime" name="lecStartTime" class="form-control form-control-sm" required
                             min="07:00" max="21:00" step="1800"
                             onchange="onStartTimeChange()">
                     </div>
                     <div class="col-12 col-md-6">
                         <!-- وضع تحديد الوقت: يدوي أو اختيار المدة -->
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="ws-fld-label mb-0">إلى الساعة</label>
+                            <label class="ws-fld-label mb-0" for="lecDuration">إلى الساعة</label>
                             <div class="ws-time-mode-toggle">
                                 <button type="button" class="ws-time-mode-btn active" id="btnModeSelect" onclick="setTimeMode('select')" title="اختيار المدة">
                                     <i class="fas fa-list"></i>
@@ -1123,16 +1123,16 @@ html[data-theme="dark"] .ws-ctrl-divider {
                             </div>
                         </div>
                         <!-- اختيار المدة -->
-                        <select id="lecDuration" class="form-select form-select-sm" data-searchable="false" onchange="onDurationChange()">
+                        <select id="lecDuration" name="lecDuration" class="form-select form-select-sm" data-searchable="false" onchange="onDurationChange()">
                         </select>
                         <!-- تحديد يدوي -->
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required
+                        <input type="time" id="lecEndTime" name="lecEndTime" class="form-control form-control-sm" required
                             min="07:00" max="21:30" step="1800"
                             onchange="checkConflictPreview()" style="display:none;">
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">ملاحظات</label>
-                        <input type="text" id="lecNotes" class="form-control form-control-sm"
+                        <label class="ws-fld-label" for="lecNotes">ملاحظات</label>
+                        <input type="text" id="lecNotes" name="lecNotes" class="form-control form-control-sm"
                             placeholder="ملاحظات اختيارية">
                     </div>
                 </div>
@@ -1166,12 +1166,12 @@ html[data-theme="dark"] .ws-ctrl-divider {
             <div class="modal-body">
                 <input type="hidden" id="editRoomId" value="">
                 <div class="mb-3">
-                    <label class="ws-fld-label">اسم القاعة</label>
-                    <input type="text" id="editRoomName" class="form-control form-control-sm">
+                    <label class="ws-fld-label" for="editRoomName">اسم القاعة</label>
+                    <input type="text" id="editRoomName" name="editRoomName" class="form-control form-control-sm">
                 </div>
                 <div class="mb-2">
-                    <label class="ws-fld-label">السعة</label>
-                    <input type="number" id="editRoomCapacity" class="form-control form-control-sm" min="0">
+                    <label class="ws-fld-label" for="editRoomCapacity">السعة</label>
+                    <input type="number" id="editRoomCapacity" name="editRoomCapacity" class="form-control form-control-sm" min="0">
                 </div>
             </div>
             <div class="modal-footer">
