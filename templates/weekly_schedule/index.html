@@ -1965,7 +1965,7 @@ function openEditRoomModal(roomId) {
     document.getElementById('editRoomId').value = room.id;
     document.getElementById('editRoomName').value = room.name;
     document.getElementById('editRoomCapacity').value = room.capacity || 0;
-    new bootstrap.Modal(document.getElementById('roomEditModal')).show();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('roomEditModal')).show();
 }
 
 async function updateRoom() {
@@ -1980,7 +1980,7 @@ async function updateRoom() {
             body: JSON.stringify({name, capacity, notes: ''})
         });
         if (res.success) {
-            bootstrap.Modal.getInstance(document.getElementById('roomEditModal')).hide();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('roomEditModal')).hide();
             await refreshData();
             showAlert('تم تحديث القاعة بنجاح', 'success');
         } else { showAlert(res.message || 'خطأ في التحديث'); }
@@ -2008,6 +2008,8 @@ function setTimeMode(mode) {
     const btnManual = document.getElementById('btnModeManual');
     const durationEl = document.getElementById('lecDuration');
     const endEl = document.getElementById('lecEndTime');
+    if (!durationEl || !endEl) return;
+
     // إذا كان العنصر ملففاً بـ SearchableSelect، نتحكم بالحاوي
     const durationWrap = durationEl.closest('.searchable-select') || durationEl;
 
@@ -2030,12 +2032,13 @@ function setTimeMode(mode) {
 
 function populateDurationSelect() {
     const selectEl = document.getElementById('lecDuration');
+    if (!selectEl) return;
     const durations = currentEventType === 'امتحان' ? EXAM_DURATIONS : LECTURE_DURATIONS;
     let html = '';
     durations.forEach(d => {
         html += '<option value="' + d.value + '">' + d.label + '</option>';
     });
-    html += '<option value="manual">✏️ يدوي...</option>';
+    html += '<option value="manual">يدوي...</option>';
     selectEl.innerHTML = html;
     // تحديث واجهة SearchableSelect إذا كانت مفعّلة
     refreshSearchableSelect('lecDuration');
@@ -2232,68 +2235,100 @@ function openAddEventModal(day, time, roomId) {
         return;
     }
 
-    document.getElementById('editEventId').value = '';
-    document.getElementById('eventModalTitle').textContent = 'إضافة حدث جديد';
-    document.getElementById('lecTeacher').value = '';
-    document.getElementById('lecSubject').value = '';
-    document.getElementById('lecDay').value = day || 'الإثنين';
-    document.getElementById('lecStartTime').value = time || '08:00';
-    document.getElementById('lecEndTime').value = '';
-    document.getElementById('lecNotes').value = '';
-    document.getElementById('lecError').style.display = 'none';
-    document.getElementById('lecConflictWarning').style.display = 'none';
-    // وضع اختيار المدة افتراضياً
-    setTimeMode('select');
-    setEventType('محاضرة');
-    populateModalSelects();
-    // Set room - either passed explicitly, or from filter, or empty
-    if (roomId) {
-        document.getElementById('lecRoom').value = roomId;
-    } else if (currentRoomFilter !== 'all') {
-        document.getElementById('lecRoom').value = currentRoomFilter;
-    } else {
-        document.getElementById('lecRoom').value = '';
+    try {
+        document.getElementById('editEventId').value = '';
+        document.getElementById('eventModalTitle').innerHTML = '<i class="fas fa-calendar-plus me-2"></i>إضافة حدث جديد';
+        document.getElementById('lecTeacher').value = '';
+        document.getElementById('lecSubject').value = '';
+        document.getElementById('lecDay').value = day || 'الإثنين';
+        document.getElementById('lecStartTime').value = time || '08:00';
+        document.getElementById('lecEndTime').value = '';
+        document.getElementById('lecNotes').value = '';
+        document.getElementById('lecError').style.display = 'none';
+        document.getElementById('lecConflictWarning').style.display = 'none';
+
+        // وضع اختيار المدة افتراضياً
+        setTimeMode('select');
+        setEventType('محاضرة');
+        populateModalSelects();
+
+        // تعيين القاعة
+        if (roomId) {
+            document.getElementById('lecRoom').value = roomId;
+        } else if (currentRoomFilter !== 'all') {
+            document.getElementById('lecRoom').value = currentRoomFilter;
+        } else {
+            document.getElementById('lecRoom').value = '';
+        }
+
+        // مزامنة واجهات SearchableSelect بعد تعيين القيم
+        refreshSearchableSelect('lecRoom');
+        refreshSearchableSelect('lecTeacher');
+
+        // استخدام getOrCreateInstance لتجنب تكرار إنشاء نسخ المودال
+        const modalEl = document.getElementById('eventModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    } catch(e) {
+        console.error('خطأ في فتح نافذة إضافة حدث:', e);
+        showAlert('حدث خطأ أثناء فتح النافذة: ' + e.message, 'danger');
     }
-    new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
 function editEvent(eventId) {
     const ev = allSchedule.find(e => e.id === eventId);
     if (!ev) return;
-    populateModalSelects();
 
-    document.getElementById('editEventId').value = ev.id;
-    document.getElementById('lecRoom').value = ev.room_id;
-    document.getElementById('lecTeacher').value = ev.teacher_id;
-    document.getElementById('lecSubject').value = ev.subject;
-    document.getElementById('lecDay').value = ev.day_of_week;
-    document.getElementById('lecStartTime').value = normalizeTimeValue(ev.start_time);
-    document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
-    document.getElementById('lecNotes').value = ev.notes || '';
-    document.getElementById('lecError').style.display = 'none';
-    document.getElementById('lecConflictWarning').style.display = 'none';
+    try {
+        populateModalSelects();
 
-    const evType = ev.event_type || 'محاضرة';
-    setEventType(evType);
+        document.getElementById('editEventId').value = ev.id;
+        document.getElementById('lecRoom').value = ev.room_id;
+        document.getElementById('lecTeacher').value = ev.teacher_id;
+        document.getElementById('lecSubject').value = ev.subject;
+        document.getElementById('lecDay').value = ev.day_of_week;
+        document.getElementById('lecStartTime').value = normalizeTimeValue(ev.start_time);
+        document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
+        document.getElementById('lecNotes').value = ev.notes || '';
+        document.getElementById('lecError').style.display = 'none';
+        document.getElementById('lecConflictWarning').style.display = 'none';
 
-    document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
+        const evType = ev.event_type || 'محاضرة';
+        setEventType(evType);
 
-    // عند التعديل: نحاول مطابقة المدة مع القائمة، أو ننتقل للوضع اليدوي
-    const startMin = timeToMinutes(ev.start_time);
-    const endMin = timeToMinutes(ev.end_time);
-    const durationMin = endMin - startMin;
-    const durations = evType === 'امتحان' ? EXAM_DURATIONS : LECTURE_DURATIONS;
-    const matchedDuration = durations.find(d => d.value === durationMin);
+        document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
 
-    if (matchedDuration) {
-        setTimeMode('select');
-        document.getElementById('lecDuration').value = matchedDuration.value;
-    } else {
-        setTimeMode('manual');
+        // عند التعديل: نحاول مطابقة المدة مع القائمة، أو ننتقل للوضع اليدوي
+        const startMin = timeToMinutes(ev.start_time);
+        const endMin = timeToMinutes(ev.end_time);
+        const durationMin = endMin - startMin;
+        const durations = evType === 'امتحان' ? EXAM_DURATIONS : LECTURE_DURATIONS;
+        const matchedDuration = durations.find(d => d.value === durationMin);
+
+        if (matchedDuration) {
+            setTimeMode('select');
+            document.getElementById('lecDuration').value = matchedDuration.value;
+        } else {
+            setTimeMode('manual');
+        }
+
+        // تحديث عنوان المودال مع الأيقونة
+        const titleIcon = evType === 'امتحان' ? 'fa-file-alt' : 'fa-chalkboard-teacher';
+        const titleText = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
+        document.getElementById('eventModalTitle').innerHTML = '<i class="fas ' + titleIcon + ' me-2"></i>' + titleText;
+
+        // مزامنة واجهات SearchableSelect بعد تعيين القيم
+        refreshSearchableSelect('lecRoom');
+        refreshSearchableSelect('lecTeacher');
+
+        // استخدام getOrCreateInstance لتجنب تكرار إنشاء نسخ المودال
+        const modalEl = document.getElementById('eventModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    } catch(e) {
+        console.error('خطأ في فتح نافذة تعديل حدث:', e);
+        showAlert('حدث خطأ أثناء فتح النافذة: ' + e.message, 'danger');
     }
-
-    document.getElementById('eventModalTitle').textContent = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
-    new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
 async function saveEvent() {
@@ -2314,6 +2349,15 @@ async function saveEvent() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>جاري الحفظ...';
     if (!data.room_id || !data.teacher_id || !data.subject || !data.day_of_week || !data.start_time || !data.end_time) {
         errorEl.textContent = 'يرجى اختيار القاعة والاستاد (المادة تُملأ تلقائياً) واليوم والوقت';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
+    }
+
+    // التحقق من صحة الأرقام
+    if (isNaN(data.room_id) || isNaN(data.teacher_id)) {
+        errorEl.textContent = 'يرجى اختيار قاعة ومدرس صحيحين';
         errorEl.style.display = 'block';
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
@@ -2352,7 +2396,9 @@ async function saveEvent() {
             });
         }
         if (res.success) {
-            bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+            const modalEl = document.getElementById('eventModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.hide();
             await refreshData();
             showAlert(res.message || 'تم الحفظ بنجاح', 'success');
         } else {
