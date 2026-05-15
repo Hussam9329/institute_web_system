@@ -1,0 +1,475 @@
+/* ================================================================
+   brand-identity.css
+   إعادة بناء الهوية اللونية للنظام - ملف حاكم يوضع آخر ملف CSS
+   الهدف:
+   1) نهاري واضح بدون ألوان متقاربة
+   2) ليلي داكن بدون خلفيات بيضاء نهائياً
+   3) النصوص فقط تستعمل اللون الفاتح جداً عند الحاجة
+   4) تقليل النشاز عبر Design Tokens مو ألوان عشوائية
+================================================================ */
+
+/* =========================
+   الهوية الأساسية - Light
+========================= */
+:root {
+    color-scheme: light;
+
+    /* Brand */
+    --brand-primary: #1d4ed8;       /* أزرق رسمي */
+    --brand-primary-hover: #1e40af;
+    --brand-primary-soft: #dbeafe;
+
+    --brand-accent: #0f766e;        /* أخضر مزرق للتمييز */
+    --brand-accent-hover: #115e59;
+    --brand-accent-soft: #ccfbf1;
+
+    /* Semantic */
+    --brand-success: #15803d;
+    --brand-success-soft: #dcfce7;
+    --brand-warning: #b45309;
+    --brand-warning-soft: #fef3c7;
+    --brand-danger: #b91c1c;
+    --brand-danger-soft: #fee2e2;
+    --brand-info: #0369a1;
+    --brand-info-soft: #e0f2fe;
+
+    /* Neutral scale - متباعدة بوضوح */
+    --app-bg: #eef3f8;
+    --app-surface: #ffffff;
+    --app-surface-2: #f8fafc;
+    --app-surface-3: #e2e8f0;
+    --app-surface-hover: #dbeafe;
+
+    --app-text: #0f172a;
+    --app-text-secondary: #334155;
+    --app-muted: #64748b;
+
+    --app-border: #cbd5e1;
+    --app-border-strong: #94a3b8;
+    --app-focus: rgba(29, 78, 216, 0.22);
+
+    /* Tables */
+    --app-table-head-bg: #dbeafe;
+    --app-table-head-text: #0f172a;
+    --app-table-row-bg: #ffffff;
+    --app-table-row-alt: #f1f5f9;
+    --app-table-row-hover: #e0f2fe;
+    --app-table-border: #cbd5e1;
+
+    /* Bootstrap / legacy aliases */
+    --primary: var(--brand-primary);
+    --primary-light: #3b82f6;
+    --primary-dark: var(--brand-primary-hover);
+    --primary-darker: #172554;
+    --secondary: var(--brand-accent);
+    --secondary-light: #14b8a6;
+    --secondary-dark: var(--brand-accent-hover);
+    --success: var(--brand-success);
+    --success-light: #22c55e;
+    --success-dark: #166534;
+    --warning: var(--brand-warning);
+    --warning-light: #f59e0b;
+    --warning-dark: #92400e;
+    --danger: var(--brand-danger);
+    --danger-light: #ef4444;
+    --danger-dark: #991b1b;
+    --info: var(--brand-info);
+    --info-light: #38bdf8;
+    --info-dark: #075985;
+
+    --white: var(--app-surface);
+    --light: var(--app-surface-2);
+    --light-bg: var(--app-bg);
+    --dark: #0f172a;
+    --dark-light: #1e293b;
+    --muted: var(--app-muted);
+    --muted-light: #94a3b8;
+    --border: var(--app-border);
+    --border-light: #e2e8f0;
+    --text-primary: var(--app-text);
+    --text-secondary: var(--app-text-secondary);
+    --text-muted: var(--app-muted);
+
+    --surface-section: var(--app-surface);
+    --surface-body: var(--app-bg);
+    --surface-footer: var(--app-surface-2);
+    --surface-input: #ffffff;
+    --border-section: var(--app-border);
+    --border-input: var(--app-border);
+    --text-label: var(--app-text-secondary);
+    --text-section-title: var(--app-text);
+
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.10);
+    --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.14);
+}
+
+/* =========================
+   الهوية الأساسية - Dark
+   لا توجد خلفيات بيضاء هنا
+========================= */
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --brand-primary: #60a5fa;
+    --brand-primary-hover: #93c5fd;
+    --brand-primary-soft: rgba(96, 165, 250, 0.16);
+
+    --brand-accent: #2dd4bf;
+    --brand-accent-hover: #5eead4;
+    --brand-accent-soft: rgba(45, 212, 191, 0.14);
+
+    --brand-success: #4ade80;
+    --brand-success-soft: rgba(74, 222, 128, 0.14);
+    --brand-warning: #fbbf24;
+    --brand-warning-soft: rgba(251, 191, 36, 0.16);
+    --brand-danger: #f87171;
+    --brand-danger-soft: rgba(248, 113, 113, 0.15);
+    --brand-info: #38bdf8;
+    --brand-info-soft: rgba(56, 189, 248, 0.14);
+
+    /* ثلاث درجات سطح متباعدة: ممنوع التقارب */
+    --app-bg: #07111d;
+    --app-surface: #102033;
+    --app-surface-2: #18304a;
+    --app-surface-3: #234666;
+    --app-surface-hover: #264f73;
+
+    /* النص فقط فاتح */
+    --app-text: #f8fafc;
+    --app-text-secondary: #cbd5e1;
+    --app-muted: #94a3b8;
+
+    --app-border: #31506f;
+    --app-border-strong: #4b6f92;
+    --app-focus: rgba(96, 165, 250, 0.28);
+
+    /* Tables - بدون أبيض */
+    --app-table-head-bg: #1d3b5a;
+    --app-table-head-text: #f8fafc;
+    --app-table-row-bg: #102033;
+    --app-table-row-alt: #162b43;
+    --app-table-row-hover: #234666;
+    --app-table-border: #31506f;
+
+    --primary: var(--brand-primary);
+    --primary-light: var(--brand-primary-hover);
+    --primary-dark: #3b82f6;
+    --primary-darker: #2563eb;
+    --secondary: var(--brand-accent);
+    --secondary-light: var(--brand-accent-hover);
+    --secondary-dark: #14b8a6;
+    --success: var(--brand-success);
+    --success-light: #86efac;
+    --success-dark: #22c55e;
+    --warning: var(--brand-warning);
+    --warning-light: #fde68a;
+    --warning-dark: #f59e0b;
+    --danger: var(--brand-danger);
+    --danger-light: #fca5a5;
+    --danger-dark: #ef4444;
+    --info: var(--brand-info);
+    --info-light: #7dd3fc;
+    --info-dark: #0ea5e9;
+
+    --white: var(--app-surface);      /* مهم: ليس أبيض في الدارك */
+    --light: var(--app-surface-2);
+    --light-bg: var(--app-bg);
+    --dark: var(--app-bg);
+    --dark-light: var(--app-surface);
+    --muted: var(--app-muted);
+    --muted-light: var(--app-muted);
+    --border: var(--app-border);
+    --border-light: var(--app-border);
+    --text-primary: var(--app-text);
+    --text-secondary: var(--app-text-secondary);
+    --text-muted: var(--app-muted);
+
+    --surface-section: var(--app-surface);
+    --surface-body: var(--app-bg);
+    --surface-footer: #0b1a2a;
+    --surface-input: #0b1a2a;
+    --border-section: var(--app-border);
+    --border-input: var(--app-border-strong);
+    --text-label: var(--app-text-secondary);
+    --text-section-title: var(--app-text);
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.22);
+    --shadow-sm: 0 3px 8px rgba(0, 0, 0, 0.28);
+    --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.36);
+    --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.48);
+}
+
+/* =========================
+   قاعدة عامة للواجهة
+========================= */
+body {
+    background: var(--app-bg) !important;
+    color: var(--app-text) !important;
+}
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item,
+.offcanvas,
+.toast,
+.main-content,
+.content-card,
+.summary-card,
+.stat-card,
+.report-card,
+.form-section,
+.search-box,
+.filter-section,
+.sidebar,
+.navbar,
+.table-container {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header,
+.modal-header,
+.modal-footer,
+.dropdown-header,
+.table thead th,
+.table-header,
+.section-header {
+    background-color: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* =========================
+   النصوص والروابط
+========================= */
+h1, h2, h3, h4, h5, h6,
+.card-title,
+.page-title,
+.section-title,
+.form-label,
+label,
+strong {
+    color: var(--app-text) !important;
+}
+
+.text-muted,
+small,
+.help-text,
+.form-text,
+.card-subtitle,
+.page-subtitle {
+    color: var(--app-muted) !important;
+}
+
+a,
+.nav-link,
+.breadcrumb-item a {
+    color: var(--brand-primary) !important;
+}
+
+a:hover,
+.nav-link:hover {
+    color: var(--brand-primary-hover) !important;
+}
+
+/* =========================
+   الجداول - وضوح كامل
+========================= */
+.table,
+table {
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+.table thead,
+table thead,
+.table thead th,
+table thead th {
+    background-color: var(--app-table-head-bg) !important;
+    color: var(--app-table-head-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+.table tbody tr,
+table tbody tr {
+    background-color: var(--app-table-row-bg) !important;
+    color: var(--app-text) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > *,
+.table tbody tr:nth-child(even),
+table tbody tr:nth-child(even) {
+    background-color: var(--app-table-row-alt) !important;
+    color: var(--app-text) !important;
+}
+
+.table-hover tbody tr:hover,
+table tbody tr:hover {
+    background-color: var(--app-table-row-hover) !important;
+    color: var(--app-text) !important;
+}
+
+.table td,
+.table th,
+table td,
+table th {
+    border-color: var(--app-table-border) !important;
+}
+
+/* =========================
+   الحقول والفلاتر
+========================= */
+.form-control,
+.form-select,
+.form-check-input,
+.input-group-text,
+select,
+input,
+textarea,
+.filter-input,
+.search-input {
+    background-color: var(--surface-input) !important;
+    color: var(--app-text) !important;
+    border-color: var(--border-input) !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 0.22rem var(--app-focus) !important;
+    outline: 0;
+}
+
+/* =========================
+   الأزرار والشارات
+========================= */
+.btn-primary,
+.bg-primary,
+.badge.bg-primary {
+    background-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: #f8fafc !important;
+}
+.btn-primary:hover { background-color: var(--brand-primary-hover) !important; }
+
+.btn-secondary,
+.bg-secondary,
+.badge.bg-secondary {
+    background-color: var(--brand-accent) !important;
+    border-color: var(--brand-accent) !important;
+    color: #f8fafc !important;
+}
+
+.btn-success,
+.bg-success,
+.badge.bg-success { background-color: var(--brand-success) !important; border-color: var(--brand-success) !important; color: #f8fafc !important; }
+.btn-warning,
+.bg-warning,
+.badge.bg-warning { background-color: var(--brand-warning) !important; border-color: var(--brand-warning) !important; color: #0f172a !important; }
+.btn-danger,
+.bg-danger,
+.badge.bg-danger { background-color: var(--brand-danger) !important; border-color: var(--brand-danger) !important; color: #f8fafc !important; }
+.btn-info,
+.bg-info,
+.badge.bg-info { background-color: var(--brand-info) !important; border-color: var(--brand-info) !important; color: #f8fafc !important; }
+
+.btn-outline-primary { color: var(--brand-primary) !important; border-color: var(--brand-primary) !important; }
+.btn-outline-primary:hover { background-color: var(--brand-primary) !important; color: #f8fafc !important; }
+
+.badge,
+.status-badge,
+.label-badge {
+    border: 1px solid var(--app-border) !important;
+}
+
+/* =========================
+   حالات ناعمة بدون نشاز
+========================= */
+.alert-success,
+.bg-success-subtle { background-color: var(--brand-success-soft) !important; color: var(--brand-success) !important; border-color: var(--brand-success) !important; }
+.alert-warning,
+.bg-warning-subtle { background-color: var(--brand-warning-soft) !important; color: var(--brand-warning) !important; border-color: var(--brand-warning) !important; }
+.alert-danger,
+.bg-danger-subtle { background-color: var(--brand-danger-soft) !important; color: var(--brand-danger) !important; border-color: var(--brand-danger) !important; }
+.alert-info,
+.bg-info-subtle { background-color: var(--brand-info-soft) !important; color: var(--brand-info) !important; border-color: var(--brand-info) !important; }
+
+/* =========================
+   منع الأبيض في الوضع الليلي
+   يسمح فقط بالنص الفاتح
+========================= */
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] [style*="background: white"],
+html[data-theme="dark"] [style*="background:white"],
+html[data-theme="dark"] [style*="background-color: white"],
+html[data-theme="dark"] [style*="background-color:white"],
+html[data-theme="dark"] [style*="background: #fff"],
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background-color: #fff"],
+html[data-theme="dark"] [style*="background-color:#fff"],
+html[data-theme="dark"] [style*="background: #ffffff"],
+html[data-theme="dark"] [style*="background:#ffffff"],
+html[data-theme="dark"] [style*="background-color: #ffffff"],
+html[data-theme="dark"] [style*="background-color:#ffffff"] {
+    background: var(--app-surface) !important;
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .table .bg-white,
+html[data-theme="dark"] table .bg-white,
+html[data-theme="dark"] .table [style*="background"],
+html[data-theme="dark"] table [style*="background"] {
+    background-color: var(--app-table-row-bg) !important;
+    color: var(--app-text) !important;
+}
+
+/* النصوص البيضاء داخل الدارك مسموحة، لكن لا تتحول إلى خلفية */
+html[data-theme="dark"] .text-white,
+html[data-theme="dark"] [style*="color: white"],
+html[data-theme="dark"] [style*="color:white"],
+html[data-theme="dark"] [style*="color: #fff"],
+html[data-theme="dark"] [style*="color:#fff"],
+html[data-theme="dark"] [style*="color: #ffffff"],
+html[data-theme="dark"] [style*="color:#ffffff"] {
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   خلفيات gradients قديمة: نوحدها
+========================= */
+.bg-gradient-primary,
+.primary-gradient,
+.hero-section,
+.stats-header {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent)) !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .bg-gradient-primary,
+html[data-theme="dark"] .primary-gradient,
+html[data-theme="dark"] .hero-section,
+html[data-theme="dark"] .stats-header {
+    background: linear-gradient(135deg, #12345a, #0f4f55) !important;
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   PDF/Print لا يتأثر، لأنه له ملف print مستقل
+========================= */
