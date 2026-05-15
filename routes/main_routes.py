@@ -406,12 +406,20 @@ async def student_form(request: Request, error: str = "", detail: str = ""):
     if subjects_from_teachers:
         all_subjects.update(s['name'] for s in subjects_from_teachers)
     subjects_list = sorted(all_subjects)
+    # بناء بيانات الأنواع المخصصة لكل مدرس
+    teacher_custom_type_settings = {}
+    if teachers:
+        for t in teachers:
+            parsed = parse_custom_type_settings(t.get('custom_type_settings'))
+            if parsed:
+                teacher_custom_type_settings[t['id']] = parsed
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": None,
         "mode": "add",
         "teachers": teachers,
         "subjects": subjects_list,
+        "teacher_custom_type_settings": teacher_custom_type_settings,
         "error": error,
         "error_detail": detail
     })
@@ -657,12 +665,20 @@ async def student_edit_form(request: Request, student_id: int, error: str = "", 
         all_subjects.update(s['name'] for s in subjects_from_teachers)
     subjects_list = sorted(all_subjects)
 
+    # بناء بيانات الأنواع المخصصة لكل مدرس
+    teacher_custom_type_settings = {}
+    if teachers:
+        for t in teachers:
+            parsed = parse_custom_type_settings(t.get('custom_type_settings'))
+            if parsed:
+                teacher_custom_type_settings[t['id']] = parsed
     return templates.TemplateResponse("students/form.html", {
         "request": request,
         "student": student,
         "mode": "edit",
         "teachers": teachers,
         "subjects": subjects_list,
+        "teacher_custom_type_settings": teacher_custom_type_settings,
         "linked_teacher_ids": linked_ids,
         "linked_data": linked_data,
         "installment_counts": installment_counts,
@@ -723,12 +739,20 @@ async def student_update(
         if subjects_from_teachers:
             all_subjects.update(s['name'] for s in subjects_from_teachers)
         subjects_list = sorted(all_subjects)
+        # بناء بيانات الأنواع المخصصة لكل مدرس
+        _teacher_custom_type_settings = {}
+        if teachers:
+            for t in teachers:
+                parsed = parse_custom_type_settings(t.get('custom_type_settings'))
+                if parsed:
+                    _teacher_custom_type_settings[t['id']] = parsed
         return templates.TemplateResponse("students/form.html", {
             "request": request,
             "student": {**student, 'name': name, 'notes': notes, 'phone': phone, 'parent_phone': parent_phone},
             "mode": "edit",
             "teachers": teachers,
             "subjects": subjects_list,
+            "teacher_custom_type_settings": _teacher_custom_type_settings,
             "linked_teacher_ids": linked_ids,
             "linked_data": linked_data,
             "installment_counts": installment_counts,
@@ -833,12 +857,21 @@ async def student_update(
             all_subjects.update(s['name'] for s in subjects_from_teachers)
         subjects_list = sorted(all_subjects)
 
+        # بناء بيانات الأنواع المخصصة لكل مدرس
+        _disc_teacher_custom_type_settings = {}
+        if teachers:
+            for t in teachers:
+                parsed = parse_custom_type_settings(t.get('custom_type_settings'))
+                if parsed:
+                    _disc_teacher_custom_type_settings[t['id']] = parsed
+
         return templates.TemplateResponse("students/form.html", {
             "request": request,
             "student": {**student, 'name': name, 'notes': notes},
             "mode": "edit",
             "teachers": teachers,
             "subjects": subjects_list,
+            "teacher_custom_type_settings": _disc_teacher_custom_type_settings,
             "linked_teacher_ids": linked_ids,
             "linked_data": linked_data,
             "installment_counts": installment_counts,

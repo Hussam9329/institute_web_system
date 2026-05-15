@@ -112,11 +112,13 @@ def dump_custom_type_settings(settings: Dict[str, Dict]) -> str:
         if type_name.strip() in BASE_TEACHING_TYPES:
             continue
         
+        ded_type = type_data.get('deduction_type', 'percentage') or 'percentage'
+        
         cleaned[type_name.strip()] = {
             'fee': int(type_data.get('fee', 0) or 0),
-            'deduction_type': type_data.get('deduction_type', 'percentage') or 'percentage',
-            'deduction_pct': int(type_data.get('deduction_pct', 0) or 0),
-            'deduction_manual': int(type_data.get('deduction_manual', 0) or 0),
+            'deduction_type': ded_type,
+            'deduction_pct': int(type_data.get('deduction_pct', 0) or 0) if ded_type == 'percentage' else 0,
+            'deduction_manual': int(type_data.get('deduction_manual', 0) or 0) if ded_type == 'manual' else 0,
         }
     
     return json.dumps(cleaned, ensure_ascii=False)
@@ -331,8 +333,8 @@ def build_custom_type_settings_from_form(form_data: Dict) -> Tuple[Dict[str, Dic
         type_data = {
             'fee': fee_val,
             'deduction_type': ded_type,
-            'deduction_pct': ded_pct,
-            'deduction_manual': ded_manual,
+            'deduction_pct': ded_pct if ded_type == 'percentage' else 0,
+            'deduction_manual': ded_manual if ded_type == 'manual' else 0,
         }
         
         # التحقق

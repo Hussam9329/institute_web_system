@@ -629,6 +629,56 @@ def init_db():
                 except Exception:
                     conn.rollback()
 
+                # ===== إضافة 5 دورات صيفية افتراضية للمدرس حسن فلاح =====
+                try:
+                    import json as _json
+                    # البحث عن المدرس حسن فلاح
+                    falah_result = cursor.execute("SELECT id, custom_type_settings, teaching_types FROM teachers WHERE name LIKE '%حسن فلاح%' LIMIT 1")
+                    falah_rows = cursor.fetchall() if falah_result else []
+                    if falah_rows:
+                        falah = falah_rows[0]
+                        falah_id = falah[0]
+                        existing_settings_raw = falah[1] or '{}'
+                        existing_types_raw = falah[2] or 'حضوري'
+                        
+                        # تحليل الإعدادات الحالية
+                        try:
+                            existing_settings = _json.loads(existing_settings_raw) if isinstance(existing_settings_raw, str) else (existing_settings_raw or {})
+                        except:
+                            existing_settings = {}
+                        
+                        # إضافة الدورات الصيفية الخمس إذا لم تكن موجودة مسبقاً
+                        summer_courses = {
+                            "صيفية أولى": {"fee": 400000, "deduction_type": "percentage", "deduction_pct": 10, "deduction_manual": 0},
+                            "صيفية ثانية": {"fee": 400000, "deduction_type": "percentage", "deduction_pct": 10, "deduction_manual": 0},
+                            "صيفية ثالثة": {"fee": 400000, "deduction_type": "percentage", "deduction_pct": 10, "deduction_manual": 0},
+                            "صيفية رابعة": {"fee": 400000, "deduction_type": "percentage", "deduction_pct": 10, "deduction_manual": 0},
+                            "صيفية خامسة": {"fee": 400000, "deduction_type": "percentage", "deduction_pct": 10, "deduction_manual": 0},
+                        }
+                        
+                        added = False
+                        for course_name, course_data in summer_courses.items():
+                            if course_name not in existing_settings:
+                                existing_settings[course_name] = course_data
+                                added = True
+                        
+                        if added:
+                            # تحديث custom_type_settings
+                            new_settings_json = _json.dumps(existing_settings, ensure_ascii=False)
+                            cursor.execute("UPDATE teachers SET custom_type_settings = %s WHERE id = %s", (new_settings_json, falah_id))
+                            
+                            # تحديث teaching_types لإضافة أسماء الدورات
+                            existing_types = [t.strip() for t in existing_types_raw.split(',') if t.strip()]
+                            for course_name in summer_courses:
+                                if course_name not in existing_types:
+                                    existing_types.append(course_name)
+                            new_types = ','.join(existing_types)
+                            cursor.execute("UPDATE teachers SET teaching_types = %s WHERE id = %s", (new_types, falah_id))
+                            
+                            conn.commit()
+                except Exception:
+                    conn.rollback()
+
                 # ===== إضافة أعمدة created_by و updated_by للجداول المهمة (دائماً) =====
                 for table_name in ["students", "teachers", "subjects", "installments", "teacher_withdrawals", "student_teacher"]:
                     try:

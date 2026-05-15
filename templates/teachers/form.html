@@ -449,12 +449,18 @@ function toggleCustomDedField(selectEl) {
     if (!row) return;
     const pctField = row.querySelector('.custom-ded-pct-field');
     const manualField = row.querySelector('.custom-ded-manual-field');
+    const pctInput = row.querySelector('.custom-type-pct');
+    const manualInput = row.querySelector('.custom-type-manual');
     if (selectEl.value === 'manual') {
         if (pctField) pctField.classList.add('d-none');
         if (manualField) manualField.classList.remove('d-none');
+        // تصفير حقل النسبة عند التبديل للمبلغ
+        if (pctInput) pctInput.value = '';
     } else {
         if (pctField) pctField.classList.remove('d-none');
         if (manualField) manualField.classList.add('d-none');
+        // تصفير حقل المبلغ عند التبديل للنسبة
+        if (manualInput) manualInput.value = '';
     }
 }
 
