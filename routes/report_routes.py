@@ -188,6 +188,48 @@ async def receipt_report(request: Request, installment_id: int):
     })
 
 
+@router.get("/withdrawal/{withdrawal_id}")
+async def withdrawal_report(request: Request, withdrawal_id: int):
+    """تقرير سحب فردي - HTML مع زر طباعة وتوقيعات"""
+    check_permission(request, 'view_withdrawals_list')
+    db = Database()
+
+    withdrawal_query = '''
+        SELECT w.*, t.name as teacher_name, t.subject, t.total_fee as teacher_fee
+        FROM teacher_withdrawals w
+        JOIN teachers t ON w.teacher_id = t.id
+        WHERE w.id = %s
+    '''
+    withdrawal_result = db.execute_query(withdrawal_query, (withdrawal_id,))
+    if not withdrawal_result:
+        raise HTTPException(status_code=404, detail="السحب غير موجود")
+    withdrawal = dict(withdrawal_result[0])
+
+    # حساب رصيد المدرس الكامل
+    balance_info = finance_service.calculate_teacher_balance(withdrawal['teacher_id'])
+
+    # إجمالي المسحوبات قبل هذا السحب (لعرض الرصيد وقت السحب)
+    total_withdrawn_before = finance_service.get_teacher_withdrawn_total_until(
+        withdrawal['teacher_id'],
+        withdrawal['withdrawal_date'],
+        exclude_id=withdrawal_id
+    )
+
+    # عدد سحوبات المدرس
+    all_teacher_withdrawals = finance_service.get_teacher_recent_withdrawals(withdrawal['teacher_id'], limit=100)
+
+    return templates.TemplateResponse("reports/withdrawal_report.html", {
+        "request": request,
+        "withdrawal": withdrawal,
+        "balance_info": balance_info,
+        "total_withdrawn_before": total_withdrawn_before,
+        "num_withdrawals": len(all_teacher_withdrawals) if all_teacher_withdrawals else 0,
+        "report_date": format_report_datetime(),
+        "report_date_only": format_report_date(),
+        "report_time": format_report_time(),
+    })
+
+
 @router.get("/subject/{subject_name}")
 async def subject_report(request: Request, subject_name: str):
     """تقرير مادة - HTML مع زر طباعة"""

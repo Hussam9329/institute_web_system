@@ -1,0 +1,403 @@
+{% extends "reports/base_report.html" %}
+
+{% block title %}إيصال سحب - {{ withdrawal.teacher_name }}{% endblock %}
+
+{% block extra_style %}
+<style>
+    /* إيصال سحب */
+    .withdrawal-badge {
+        background: linear-gradient(135deg, var(--warning), #d97706);
+        color: white;
+        text-align: center;
+        padding: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+    }
+
+    .withdrawal-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 0 24px;
+        margin-top: 16px;
+    }
+
+    /* كارت المبلغ */
+    .withdrawal-amount-card {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: var(--white);
+        text-align: center;
+        padding: 20px;
+        border-radius: 14px;
+        margin: 16px 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .withdrawal-amount-card::before {
+        content: '';
+        position: absolute;
+        top: -30%;
+        left: -10%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%);
+        border-radius: 50%;
+    }
+
+    .withdrawal-amount-card .amount-label {
+        font-size: 12px;
+        opacity: 0.85;
+        margin-bottom: 4px;
+        position: relative;
+    }
+
+    .withdrawal-amount-card .amount-value {
+        font-size: 32px;
+        font-weight: 900;
+        position: relative;
+    }
+
+    .withdrawal-amount-card .amount-currency {
+        font-size: 14px;
+        opacity: 0.75;
+        margin-top: 2px;
+        position: relative;
+    }
+
+    /* ملخص مالي */
+    .financial-summary {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 0 24px;
+        margin-top: 12px;
+    }
+
+    .financial-item {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .financial-item .fi-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted);
+    }
+
+    .financial-item .fi-value {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .fi-value.positive { color: var(--success); }
+    .fi-value.negative { color: var(--danger); }
+    .fi-value.warning { color: var(--warning); }
+    .fi-value.primary { color: var(--primary); }
+
+    /* ملاحظات */
+    .withdrawal-notes {
+        background: var(--light);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px 14px;
+        margin: 12px 24px;
+    }
+
+    .withdrawal-notes .notes-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
+    .withdrawal-notes .notes-value {
+        font-size: 13px;
+        margin-top: 2px;
+    }
+
+    /* ===== منطقة التوقيعات ===== */
+    .signatures-area {
+        margin: 30px 24px 10px;
+        padding-top: 20px;
+        border-top: 2px dashed var(--border);
+    }
+
+    .signatures-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+    }
+
+    .signature-block {
+        text-align: center;
+        padding: 16px 0;
+    }
+
+    .signature-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .signature-title i {
+        font-size: 12px;
+        color: var(--primary);
+    }
+
+    .signature-line-bottom {
+        width: 70%;
+        margin: 0 auto;
+        border: none;
+        border-top: 1.5px solid var(--muted-light);
+    }
+
+    .signature-label-below {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+    }
+
+    /* خط فاصل بين التوقيعات في الطباعة */
+    .signatures-divider {
+        width: 1px;
+        background: var(--border);
+        align-self: stretch;
+    }
+
+    /* ===== طباعة ===== */
+    @media print {
+        .withdrawal-badge {
+            border-radius: 0 !important;
+            padding: 6px !important;
+            font-size: 11pt !important;
+        }
+
+        .withdrawal-info-grid {
+            margin-top: 10px !important;
+            gap: 6px !important;
+            padding: 0 16px !important;
+        }
+
+        .withdrawal-amount-card {
+            margin: 10px 16px !important;
+            padding: 14px !important;
+            border-radius: 8px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .withdrawal-amount-card .amount-value {
+            font-size: 24pt !important;
+        }
+
+        .financial-summary {
+            margin-top: 8px !important;
+            gap: 6px !important;
+            padding: 0 16px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .financial-item {
+            border-radius: 6px !important;
+            padding: 8px 10px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .financial-item .fi-label {
+            font-size: 8pt !important;
+        }
+
+        .financial-item .fi-value {
+            font-size: 10pt !important;
+        }
+
+        .withdrawal-notes {
+            margin: 8px 16px !important;
+            border-radius: 6px !important;
+            padding: 8px 10px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .signatures-area {
+            margin: 20px 16px 6px !important;
+            padding-top: 14px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .signatures-grid {
+            gap: 30px !important;
+        }
+
+        .signature-title {
+            font-size: 10pt !important;
+            margin-bottom: 60px !important;
+        }
+
+        .signature-line-bottom {
+            width: 60% !important;
+        }
+
+        .signature-label-below {
+            font-size: 8pt !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .withdrawal-info-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .financial-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .signatures-grid {
+            gap: 20px;
+        }
+
+        .signature-title {
+            margin-bottom: 40px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block container_class %}receipt-container{% endblock %}
+
+{% block content %}
+
+<!-- رأس الإيصال -->
+<div class="report-header" style="padding:20px 24px;">
+    <div class="report-title" style="font-size:18px;">{{ app_title }}</div>
+    <div class="report-subtitle" style="font-size:11px;">إيصال سحب رسمي</div>
+</div>
+
+<!-- شارة إيصال سحب -->
+<div class="withdrawal-badge">
+    <i class="fas fa-hand-holding-usd me-2"></i>إيصال سحب
+</div>
+
+<!-- معلومات السحب -->
+<div class="withdrawal-info-grid">
+    <div class="info-card">
+        <div class="info-label">اسم المدرس</div>
+        <div class="info-value">{{ withdrawal.teacher_name }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">المادة</div>
+        <div class="info-value">{{ withdrawal.subject }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">تاريخ السحب</div>
+        <div class="info-value">{{ format_date(withdrawal.withdrawal_date) }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">رقم الإيصال</div>
+        <div class="info-value" style="direction:ltr; text-align:center;">#{{ withdrawal.id }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">عدد سحوبات المدرس</div>
+        <div class="info-value">{{ num_withdrawals }}</div>
+    </div>
+    <div class="info-card">
+        <div class="info-label">إجمالي المسحوب سابقاً</div>
+        <div class="info-value warning">{{ format_currency(total_withdrawn_before) }}</div>
+    </div>
+</div>
+
+<!-- المبلغ المسحوب -->
+<div class="withdrawal-amount-card">
+    <div class="amount-label"><i class="fas fa-hand-holding-usd me-1"></i>المبلغ المسحوب</div>
+    <div class="amount-value">{{ format_currency(withdrawal.amount) }}</div>
+    <div class="amount-currency">دينار عراقي</div>
+</div>
+
+<!-- الملخص المالي للمدرس -->
+<div class="report-section" style="padding:0 24px; margin-top:16px;">
+    <div class="section-title">
+        <i class="fas fa-calculator"></i>
+        الملخص المالي للمدرس
+    </div>
+</div>
+<div class="financial-summary">
+    <div class="financial-item">
+        <span class="fi-label"><i class="fas fa-coins me-1"></i>إجمالي المدفوعات المستلمة</span>
+        <span class="fi-value primary">{{ format_currency(balance_info.total_received) }}</span>
+    </div>
+    <div class="financial-item">
+        <span class="fi-label"><i class="fas fa-percentage me-1"></i>نسبة المعهد</span>
+        <span class="fi-value">{{ balance_info.institute_rate }}%</span>
+    </div>
+    <div class="financial-item">
+        <span class="fi-label"><i class="fas fa-building me-1"></i>خصم المعهد</span>
+        <span class="fi-value negative">{{ format_currency(balance_info.institute_deduction) }}</span>
+    </div>
+    <div class="financial-item">
+        <span class="fi-label"><i class="fas fa-user-tie me-1"></i>مستحق المدرس</span>
+        <span class="fi-value primary">{{ format_currency(balance_info.teacher_due) }}</span>
+    </div>
+    <div class="financial-item">
+        <span class="fi-label"><i class="fas fa-hand-holding-usd me-1"></i>إجمالي المسحوب</span>
+        <span class="fi-value warning">{{ format_currency(balance_info.withdrawn_total) }}</span>
+    </div>
+    <div class="financial-item" style="border-color: {% if balance_info.remaining_balance > 0 %}var(--success){% else %}var(--border){% endif %};">
+        <span class="fi-label"><i class="fas fa-wallet me-1"></i>الرصيد المتبقي</span>
+        <span class="fi-value {% if balance_info.remaining_balance > 0 %}positive{% else %}negative{% endif %}">{{ format_currency(balance_info.remaining_balance) }}</span>
+    </div>
+</div>
+
+<!-- ملاحظات -->
+{% if withdrawal.notes and withdrawal.notes.strip() %}
+<div class="withdrawal-notes">
+    <div class="notes-label"><i class="fas fa-sticky-note me-1"></i>ملاحظات</div>
+    <div class="notes-value">{{ withdrawal.notes }}</div>
+</div>
+{% endif %}
+
+<!-- ===== منطقة التوقيعات ===== -->
+<div class="signatures-area">
+    <div class="signatures-grid">
+        <!-- توقيع المحاسب -->
+        <div class="signature-block">
+            <div class="signature-title">
+                <i class="fas fa-user-shield"></i>
+                توقيع المحاسب
+            </div>
+            <hr class="signature-line-bottom">
+            <div class="signature-label-below">الاسم والتوقيع</div>
+        </div>
+
+        <!-- توقيع المستلم -->
+        <div class="signature-block">
+            <div class="signature-title">
+                <i class="fas fa-user-check"></i>
+                توقيع المستلم
+            </div>
+            <hr class="signature-line-bottom">
+            <div class="signature-label-below">{{ withdrawal.teacher_name }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- تذييل -->
+<div class="footer-text" style="margin-top:20px;">
+    <div style="font-size:11px; color:var(--muted);">التاريخ: {{ report_date_only }} - الوقت: {{ report_time }}</div>
+    <div style="margin-top:4px;">نظام إدارة المعهد || Visions</div>
+</div>
+
+{% endblock %}

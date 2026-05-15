@@ -140,6 +140,9 @@
                             <td class="text-muted small d-none d-md-table-cell">{{ w.notes[:30] if w.notes else '-' }}</td>
                             <td class="text-center">
                                 <div class="action-btn-group justify-content-center">
+                                    <a href="/reports/withdrawal/{{ w.id }}" class="action-btn action-btn-info" title="طباعة إيصال" target="_blank">
+                                        <i class="fas fa-print"></i>
+                                    </a>
                                     <button class="action-btn action-btn-warning" data-action="edit-withdrawal" data-id="{{ w.id }}" data-amount="{{ w.amount }}" data-date="{{ w.withdrawal_date }}" data-notes="{{ (w.notes or '') | e }}" title="تعديل">
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -203,6 +206,7 @@
                         {% endif %}
                         <div class="list-card-divider"></div>
                         <div class="list-card-actions">
+                            <a href="/reports/withdrawal/{{ w.id }}" class="action-btn action-btn-info" title="طباعة إيصال" target="_blank"><i class="fas fa-print me-1"></i>إيصال</a>
                             <button class="action-btn action-btn-warning" data-action="edit-withdrawal" data-id="{{ w.id }}" data-amount="{{ w.amount }}" data-date="{{ w.withdrawal_date }}" data-notes="{{ (w.notes or '') | e }}" title="تعديل"><i class="fas fa-edit me-1"></i>تعديل</button>
                             <button class="action-btn action-btn-danger" onclick="deleteWithdrawal({{ w.id }})" title="حذف"><i class="fas fa-trash me-1"></i>حذف</button>
                         </div>
