@@ -990,6 +990,7 @@
     //  تصدير الواجهة العامة
     // ==========================================================
     window.SearchableSelect = SearchableSelect;
+    window.SearchableSelect.instances = instances;
     window.initSearchableSelects = initAll;
 
     /**

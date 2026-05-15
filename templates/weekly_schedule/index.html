@@ -1123,7 +1123,7 @@ html[data-theme="dark"] .ws-ctrl-divider {
                             </div>
                         </div>
                         <!-- اختيار المدة -->
-                        <select id="lecDuration" class="form-select form-select-sm" onchange="onDurationChange()">
+                        <select id="lecDuration" class="form-select form-select-sm" data-searchable="false" onchange="onDurationChange()">
                         </select>
                         <!-- تحديد يدوي -->
                         <input type="time" id="lecEndTime" class="form-control form-control-sm" required
@@ -2008,18 +2008,20 @@ function setTimeMode(mode) {
     const btnManual = document.getElementById('btnModeManual');
     const durationEl = document.getElementById('lecDuration');
     const endEl = document.getElementById('lecEndTime');
+    // إذا كان العنصر ملففاً بـ SearchableSelect، نتحكم بالحاوي
+    const durationWrap = durationEl.closest('.searchable-select') || durationEl;
 
     if (mode === 'select') {
         btnSelect.className = 'ws-time-mode-btn active';
         btnManual.className = 'ws-time-mode-btn';
-        durationEl.style.display = '';
+        durationWrap.style.display = '';
         endEl.style.display = 'none';
         endEl.removeAttribute('required');
         onDurationChange();
     } else {
         btnManual.className = 'ws-time-mode-btn active';
         btnSelect.className = 'ws-time-mode-btn';
-        durationEl.style.display = 'none';
+        durationWrap.style.display = 'none';
         endEl.style.display = '';
         endEl.setAttribute('required', 'required');
         checkConflictPreview();
@@ -2035,6 +2037,8 @@ function populateDurationSelect() {
     });
     html += '<option value="manual">✏️ يدوي...</option>';
     selectEl.innerHTML = html;
+    // تحديث واجهة SearchableSelect إذا كانت مفعّلة
+    refreshSearchableSelect('lecDuration');
 }
 
 function onDurationChange() {
@@ -2150,6 +2154,26 @@ async function checkConflictPreview() {
 // ===== EVENT CRUD =====
 let modalSelectsInitialized = false;
 
+/**
+ * تحديث واجهة SearchableSelect بعد تغيير خيارات الـ select الأصلي
+ * @param {string} selectId - معرف عنصر الـ select
+ */
+function refreshSearchableSelect(selectId) {
+    const selectEl = document.getElementById(selectId);
+    if (!selectEl) return;
+    // إذا كان العنصر ملففاً بـ SearchableSelect
+    const container = selectEl.closest('.searchable-select');
+    if (!container) return;
+    // البحث عن النسخة المسجّلة
+    if (window.SearchableSelect) {
+        const instances = window.SearchableSelect.instances || [];
+        const instance = instances.find(inst => inst.selectEl === selectEl);
+        if (instance && typeof instance._syncFromSelect === 'function') {
+            instance._syncFromSelect();
+        }
+    }
+}
+
 function populateModalSelects() {
     const roomSelect = document.getElementById('lecRoom');
     const teacherSelect = document.getElementById('lecTeacher');
@@ -2186,6 +2210,10 @@ function populateModalSelects() {
 
         modalSelectsInitialized = true;
     }
+
+    // تحديث واجهات SearchableSelect بعد تحديث الخيارات
+    refreshSearchableSelect('lecRoom');
+    refreshSearchableSelect('lecTeacher');
 
     if (window.initSearchableSelects) {
         window.initSearchableSelects();
