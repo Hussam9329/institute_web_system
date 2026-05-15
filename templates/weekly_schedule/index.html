@@ -707,6 +707,30 @@
 .ws-modal input[readonly] {
     background-color: #f8fafc;
 }
+/* Time mode toggle (select/manual) */
+.ws-time-mode-toggle {
+    display: flex;
+    gap: 2px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 2px;
+}
+.ws-time-mode-btn {
+    width: 26px; height: 26px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 11px;
+    color: #94a3b8;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+}
+.ws-time-mode-btn:hover { color: #475569; }
+.ws-time-mode-btn.active {
+    background: #4f46e5; color: white;
+    box-shadow: 0 1px 3px rgba(79,70,229,0.3);
+}
 /* Conflict warning */
 .ws-conflict {
     background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
@@ -1058,11 +1082,26 @@ html[data-theme="dark"] .ws-ctrl-divider {
                     <div class="col-6">
                         <label class="ws-fld-label">من الساعة</label>
                         <input type="time" id="lecStartTime" class="form-control form-control-sm" required
-                            onchange="setDefaultEndTime(90)">
+                            onchange="onStartTimeChange()">
                     </div>
                     <div class="col-6">
-                        <label class="ws-fld-label">إلى الساعة</label>
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required onchange="checkConflictPreview()">
+                        <!-- وضع تحديد الوقت: يدوي أو اختيار المدة -->
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="ws-fld-label mb-0">إلى الساعة</label>
+                            <div class="ws-time-mode-toggle">
+                                <button type="button" class="ws-time-mode-btn active" id="btnModeSelect" onclick="setTimeMode('select')" title="اختيار المدة">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button type="button" class="ws-time-mode-btn" id="btnModeManual" onclick="setTimeMode('manual')" title="تحديد يدوي">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- اختيار المدة -->
+                        <select id="lecDuration" class="form-select form-select-sm" onchange="onDurationChange()">
+                        </select>
+                        <!-- تحديد يدوي -->
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required onchange="checkConflictPreview()" style="display:none;">
                     </div>
                     <div class="col-12">
                         <label class="ws-fld-label">ملاحظات</label>
@@ -1158,16 +1197,25 @@ for (let h = 5; h <= 21; h++) {
 const LECTURE_DURATIONS = [
     { value: 60, label: '1 ساعة' },
     { value: 90, label: 'ساعة ونصف' },
-    { value: 120, label: 'ساعتين' }
+    { value: 120, label: 'ساعتين' },
+    { value: 150, label: 'ساعتين ونصف' },
+    { value: 180, label: '3 ساعات' },
+    { value: 210, label: '3 ساعات ونصف' },
+    { value: 240, label: '4 ساعات' }
 ];
 const EXAM_DURATIONS = [
+    { value: 60, label: '1 ساعة' },
     { value: 120, label: 'ساعتين' },
     { value: 180, label: '3 ساعات' },
     { value: 240, label: '4 ساعات' },
     { value: 300, label: '5 ساعات' },
     { value: 360, label: '6 ساعات' },
     { value: 420, label: '7 ساعات' },
-    { value: 480, label: '8 ساعات' }
+    { value: 480, label: '8 ساعات' },
+    { value: 540, label: '9 ساعات' },
+    { value: 600, label: '10 ساعات' },
+    { value: 660, label: '11 ساعة' },
+    { value: 720, label: '12 ساعة' }
 ];
 
 // ===== INIT =====
@@ -1873,6 +1921,69 @@ async function deleteRoom(roomId) {
 }
 
 // ===== EVENT TYPE SWITCHING =====
+// ===== TIME MODE (select/manual) =====
+let currentTimeMode = 'select'; // 'select' or 'manual'
+
+function setTimeMode(mode) {
+    currentTimeMode = mode;
+    const btnSelect = document.getElementById('btnModeSelect');
+    const btnManual = document.getElementById('btnModeManual');
+    const durationEl = document.getElementById('lecDuration');
+    const endEl = document.getElementById('lecEndTime');
+
+    if (mode === 'select') {
+        btnSelect.className = 'ws-time-mode-btn active';
+        btnManual.className = 'ws-time-mode-btn';
+        durationEl.style.display = '';
+        endEl.style.display = 'none';
+        endEl.removeAttribute('required');
+        onDurationChange();
+    } else {
+        btnManual.className = 'ws-time-mode-btn active';
+        btnSelect.className = 'ws-time-mode-btn';
+        durationEl.style.display = 'none';
+        endEl.style.display = '';
+        endEl.setAttribute('required', 'required');
+        checkConflictPreview();
+    }
+}
+
+function populateDurationSelect() {
+    const selectEl = document.getElementById('lecDuration');
+    const durations = currentEventType === 'امتحان' ? EXAM_DURATIONS : LECTURE_DURATIONS;
+    let html = '';
+    durations.forEach(d => {
+        html += '<option value="' + d.value + '">' + d.label + '</option>';
+    });
+    html += '<option value="manual">✏️ يدوي...</option>';
+    selectEl.innerHTML = html;
+}
+
+function onDurationChange() {
+    const selectEl = document.getElementById('lecDuration');
+    const val = selectEl.value;
+
+    if (val === 'manual') {
+        setTimeMode('manual');
+        return;
+    }
+
+    const startTime = document.getElementById('lecStartTime').value;
+    const endEl = document.getElementById('lecEndTime');
+    if (startTime && val) {
+        endEl.value = incrementTime(startTime, parseInt(val));
+    }
+    checkConflictPreview();
+}
+
+function onStartTimeChange() {
+    if (currentTimeMode === 'select') {
+        onDurationChange();
+    } else {
+        checkConflictPreview();
+    }
+}
+
 function setEventType(type) {
     currentEventType = type;
     document.getElementById('lecEventType').value = type;
@@ -1885,13 +1996,24 @@ function setEventType(type) {
         btnE.className = 'ws-evtype-btn active-exm';
         btnL.className = 'ws-evtype-btn';
     }
-    const defaultMinutes = type === 'امتحان' ? 120 : 90;
-    document.getElementById('lecEndTime').value = '';
-    setDefaultEndTime(defaultMinutes);
+    populateDurationSelect();
+    // تحديث وقت الانتهاء حسب المدة المختارة
+    if (currentTimeMode === 'select') {
+        onDurationChange();
+    } else {
+        const defaultMinutes = type === 'امتحان' ? 120 : 90;
+        const startTime = document.getElementById('lecStartTime').value;
+        const endEl = document.getElementById('lecEndTime');
+        if (startTime && !endEl.value) {
+            endEl.value = incrementTime(startTime, defaultMinutes);
+        }
+        checkConflictPreview();
+    }
 }
 
 // ===== TIME CALCULATION =====
 function setDefaultEndTime(minutes) {
+    // هذه الدالة تبقى للتوافق
     const startTime = document.getElementById('lecStartTime').value;
     const endEl = document.getElementById('lecEndTime');
     if (startTime && !endEl.value) {
@@ -1985,6 +2107,8 @@ function openAddEventModal(day, time, roomId) {
     document.getElementById('lecNotes').value = '';
     document.getElementById('lecError').style.display = 'none';
     document.getElementById('lecConflictWarning').style.display = 'none';
+    // وضع اختيار المدة افتراضياً
+    setTimeMode('select');
     setEventType('محاضرة');
     populateModalSelects();
     // Set room - either passed explicitly, or from filter, or empty
@@ -1995,8 +2119,6 @@ function openAddEventModal(day, time, roomId) {
     } else {
         document.getElementById('lecRoom').value = '';
     }
-    document.getElementById('lecEndTime').value = '';
-    setDefaultEndTime(90);
     new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
 
@@ -2020,6 +2142,21 @@ function editEvent(eventId) {
     setEventType(evType);
 
     document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
+
+    // عند التعديل: نحاول مطابقة المدة مع القائمة، أو ننتقل للوضع اليدوي
+    const startMin = timeToMinutes(ev.start_time);
+    const endMin = timeToMinutes(ev.end_time);
+    const durationMin = endMin - startMin;
+    const durations = evType === 'امتحان' ? EXAM_DURATIONS : LECTURE_DURATIONS;
+    const matchedDuration = durations.find(d => d.value === durationMin);
+
+    if (matchedDuration) {
+        setTimeMode('select');
+        document.getElementById('lecDuration').value = matchedDuration.value;
+    } else {
+        setTimeMode('manual');
+    }
+
     document.getElementById('eventModalTitle').textContent = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
     new bootstrap.Modal(document.getElementById('eventModal')).show();
 }
