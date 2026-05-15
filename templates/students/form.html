@@ -163,7 +163,7 @@
                                     <i class="fas fa-phone me-1 text-primary"></i>رقم الهاتف <span class="text-muted fw-normal small">(اختياري)</span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-color:#3b82f6;"><i class="fas fa-phone"></i></span>
+                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-primary-hover));color:#fff;border-color:var(--brand-primary);"><i class="fas fa-phone"></i></span>
                                     <input type="tel" class="form-control" id="phone" name="phone"
                                            value="{{ student.phone if student and student.phone else '' }}"
                                            placeholder="07XXXXXXXXX"
@@ -186,7 +186,7 @@
                                     <i class="fas fa-user-friends me-1 text-primary"></i>رقم ولي الأمر <span class="text-muted fw-normal small">(اختياري)</span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-color:#10b981;"><i class="fas fa-user-friends"></i></span>
+                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,var(--brand-accent),var(--brand-success));color:#fff;border-color:var(--brand-accent);"><i class="fas fa-user-friends"></i></span>
                                     <input type="tel" class="form-control" id="parent_phone" name="parent_phone"
                                            value="{{ student.parent_phone if student and student.parent_phone else '' }}"
                                            placeholder="07XXXXXXXXX"
@@ -286,7 +286,7 @@
                                                 <div class="teacher-field me-2" style="width:7.5rem;flex-shrink:0">
                                                     {% if single_type or has_payments %}
                                                     <input type="hidden" name="study_type_{{ teacher.id }}" value="{% if ld %}{{ ld.get('study_type', tt_list[0]) }}{% else %}{{ tt_list[0] }}{% endif %}">
-                                                    <div class="form-select form-select-sm teacher-opt {% if has_payments %}border-warning{% endif %}" style="background:{% if has_payments %}#fffbeb{% else %}#f8fafc{% endif %};cursor:default;opacity:1">
+                                                    <div class="form-select form-select-sm teacher-opt {% if has_payments %}border-warning{% endif %}" style="background:{% if has_payments %}var(--brand-warning-soft){% else %}var(--app-surface-2){% endif %};cursor:default;opacity:1">
                                                         {% if ld %}{{ ld.get('study_type', tt_list[0]) }}{% else %}{{ tt_list[0] }}{% endif %}
                                                         {% if has_payments %} <i class="fas fa-lock text-warning" style="font-size:0.65rem"></i>{% endif %}
                                                     </div>
@@ -363,7 +363,7 @@
                                             {% if not is_completed %}
                                             <div class="discount-panel d-none" id="discount_panel_{{ teacher.id }}">
                                                 <div class="px-3 pb-3 pt-1">
-                                                    <div class="card border-0 shadow-sm" style="background:linear-gradient(135deg,#fffbeb,#fff8ed);border:1px solid #fbbf24 !important;border-radius:10px;">
+                                                    <div class="card border-0 shadow-sm" style="background:var(--brand-warning-soft);border:1px solid var(--brand-warning) !important;border-radius:10px;">
                                                         <div class="card-body py-2 px-3">
                                                             <div class="d-flex align-items-center gap-2 mb-2">
                                                                 <i class="fas fa-percent text-warning" style="font-size:0.75rem;"></i>
@@ -410,7 +410,7 @@
                                                                            placeholder="نسبة الخصم (1% - 99%)"
                                                                            value="{{ current_discount_value if current_discount_type == 'percentage' else '' }}"
                                                                            oninput="onDiscountValueChange({{ teacher.id }})">
-                                                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f0a500,#e6960a);color:#fff;border-color:#f0a500;">%</span>
+                                                                    <span class="input-group-text fw-bold" style="background:var(--brand-warning);color:#fff;border-color:var(--brand-warning);">%</span>
                                                                 </div>
                                                                 <div class="invalid-feedback" id="disc_pct_error_{{ teacher.id }}">
                                                                     نسبة الخصم يجب أن تكون بين 1% و 99%.
@@ -425,7 +425,7 @@
                                                                            min="1" inputmode="numeric" placeholder="مبلغ الخصم (بالألف د.ع)"
                                                                            value="{{ (current_discount_value // 1000) if current_discount_type == 'fixed' and current_discount_value else '' }}"
                                                                            oninput="onDiscountFixedChange({{ teacher.id }})">
-                                                                    <span class="input-group-text fw-bold" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border-color:#f97316;">ألف د.ع</span>
+                                                                    <span class="input-group-text fw-bold" style="background:var(--brand-warning);color:#fff;border-color:var(--brand-warning);">ألف د.ع</span>
                                                                 </div>
                                                                 <div class="invalid-feedback" id="disc_fixed_error_{{ teacher.id }}">
                                                                     مبلغ الخصم الثابت يجب أن يكون أكبر من صفر.
@@ -519,37 +519,37 @@
     padding: 4px 14px;
     font-size: 0.82rem;
     font-weight: 500;
-    border: 1.5px solid #dee2e6;
-    background: var(--white, #fff);
-    color: #495057;
+    border: 1.5px solid var(--app-border);
+    background: var(--app-surface);
+    color: var(--app-text-secondary);
     transition: all 0.2s ease;
     cursor: pointer;
     white-space: nowrap;
 }
 .subject-chip:hover {
-    border-color: #3b82f6;
-    color: #3b82f6;
-    background: #eff6ff;
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: var(--brand-primary-soft);
 }
 .subject-chip.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
     color: #fff;
-    border-color: #2563eb;
-    box-shadow: 0 2px 6px rgba(59,130,246,0.3);
+    border-color: var(--brand-primary-hover);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 .teacher-row {
     transition: background-color 0.2s ease, border-color 0.2s ease;
     border-right: 3px solid transparent;
 }
 .teacher-row:hover {
-    background-color: rgba(16, 185, 129, 0.04);
+    background-color: color-mix(in srgb, var(--brand-success) 4%, transparent);
 }
 .teacher-row.active {
-    background-color: rgba(16, 185, 129, 0.06);
-    border-right-color: var(--success, #10b981);
+    background-color: color-mix(in srgb, var(--brand-success) 6%, transparent);
+    border-right-color: var(--brand-success);
 }
 .teacher-row.active .teacher-opt {
-    border-color: rgba(16, 185, 129, 0.4);
+    border-color: color-mix(in srgb, var(--brand-success) 40%, transparent);
 }
 .teacher-row:not(.active) .teacher-opt {
     opacity: 0.5;
@@ -576,10 +576,10 @@
     to { opacity: 1; max-height: 300px; }
 }
 .discount-toggle-btn.btn-warning {
-    background: linear-gradient(135deg, #f0a500, #e6960a) !important;
-    border-color: #f0a500 !important;
+    background: var(--brand-warning) !important;
+    border-color: var(--brand-warning) !important;
     color: #fff !important;
-    box-shadow: 0 1px 4px rgba(240,165,0,0.3);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--brand-warning) 30%, transparent);
 }
 .discount-toggle-btn.btn-outline-secondary {
     font-size: 0.78rem;
@@ -587,8 +587,8 @@
 }
 /* أنماط الخصم */
 .discount-panel .form-check-input:checked {
-    background-color: #f0a500;
-    border-color: #f0a500;
+    background-color: var(--brand-warning);
+    border-color: var(--brand-warning);
 }
 .discount-panel .alert {
     border-radius: 6px;

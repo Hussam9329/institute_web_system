@@ -3218,15 +3218,22 @@ html[data-theme="dark"] .badge.bg-warning-subtle {
 /* ===== Design Tokens — نظام الألوان الموحّد ===== */
 :root {
     --brand-primary: #2563eb;
+    --brand-primary-hover: #1d4ed8;
     --brand-primary-strong: #1d4ed8;
     --brand-secondary: #7c3aed;
+    --brand-accent: #0f766e;
     --brand-success: #059669;
     --brand-warning: #d97706;
     --brand-danger: #dc2626;
+    --brand-info: #0369a1;
+    --brand-primary-soft: #dbeafe;
+    --brand-success-soft: #dcfce7;
+    --brand-warning-soft: #fef3c7;
 
     --app-bg: #f8fafc;
     --app-surface: #ffffff;
     --app-surface-soft: #f1f5f9;
+    --app-surface-2: #f8fafc;
     --app-surface-hover: #e2e8f0;
 
     --app-text: #0f172a;
@@ -3251,15 +3258,22 @@ html[data-theme="dark"] .badge.bg-warning-subtle {
 
 html[data-theme="dark"] {
     --brand-primary: #60a5fa;
+    --brand-primary-hover: #93c5fd;
     --brand-primary-strong: #93c5fd;
     --brand-secondary: #a78bfa;
+    --brand-accent: #2dd4bf;
     --brand-success: #34d399;
     --brand-warning: #fbbf24;
     --brand-danger: #f87171;
+    --brand-info: #38bdf8;
+    --brand-primary-soft: rgba(96, 165, 250, 0.16);
+    --brand-success-soft: rgba(74, 222, 128, 0.14);
+    --brand-warning-soft: rgba(251, 191, 36, 0.16);
 
     --app-bg: #0b1120;
     --app-surface: #111827;
     --app-surface-soft: #1f2937;
+    --app-surface-2: #18304a;
     --app-surface-hover: #273449;
 
     --app-text: #f8fafc;

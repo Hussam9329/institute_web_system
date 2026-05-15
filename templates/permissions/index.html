@@ -5,33 +5,33 @@
 {% block content %}
 <style>
 .permissions-page {
-    --perm-primary: #6366f1;
-    --perm-success: #10b981;
-    --perm-warning: #f59e0b;
-    --perm-danger: #ef4444;
-    --perm-muted: #64748b;
-    --perm-border: #e5e7eb;
-    --perm-bg: #f8fafc;
+    --perm-primary: var(--brand-primary);
+    --perm-success: var(--brand-success);
+    --perm-warning: var(--brand-warning);
+    --perm-danger: var(--brand-danger);
+    --perm-muted: var(--app-muted);
+    --perm-border: var(--app-border);
+    --perm-bg: var(--app-surface-2);
 }
 
 .permissions-page .page-title {
-    color: var(--perm-primary);
+    color: var(--brand-primary);
     font-weight: 800;
 }
 
 .permissions-page .permission-help-box {
-    border: 1px solid var(--perm-border);
-    background: #ffffff;
+    border: 1px solid var(--app-border);
+    background: var(--app-surface);
     border-radius: 14px;
     padding: 14px 16px;
     font-size: 0.85rem;
-    color: #475569;
+    color: var(--app-muted);
 }
 
 .permissions-page .permission-warning-box {
-    border: 1px solid #fde68a;
-    background: #fffbeb;
-    color: #92400e;
+    border: 1px solid var(--brand-warning-soft);
+    background: var(--brand-warning-soft);
+    color: var(--brand-warning);
     border-radius: 14px;
     padding: 14px 16px;
     font-size: 0.85rem;
@@ -53,8 +53,8 @@
 }
 
 .permissions-page .role-card {
-    background: #fff;
-    border: 1px solid var(--perm-border);
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
     border-radius: 18px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
     overflow: hidden;
@@ -68,8 +68,8 @@
 
 .permissions-page .role-card-header {
     padding: 16px;
-    border-bottom: 1px solid var(--perm-border);
-    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    border-bottom: 1px solid var(--app-border);
+    background: linear-gradient(135deg, var(--app-surface-2), var(--brand-primary-soft));
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -77,7 +77,7 @@
 }
 
 .permissions-page .role-card-header.is-default {
-    background: linear-gradient(135deg, #fff7ed, #fffbeb);
+    background: linear-gradient(135deg, var(--brand-warning-soft), var(--brand-warning-soft));
 }
 
 .permissions-page .role-title-group {
@@ -91,7 +91,7 @@
     width: 42px;
     height: 42px;
     border-radius: 14px;
-    background: var(--perm-primary);
+    background: var(--brand-primary);
     color: #fff;
     display: flex;
     align-items: center;
@@ -100,17 +100,17 @@
 }
 
 .permissions-page .role-icon.is-default {
-    background: var(--perm-warning);
+    background: var(--brand-warning);
 }
 
 .permissions-page .role-name {
     font-weight: 800;
     margin: 0;
-    color: #0f172a;
+    color: var(--app-text);
 }
 
 .permissions-page .role-description {
-    color: var(--perm-muted);
+    color: var(--app-muted);
     font-size: 0.82rem;
     line-height: 1.7;
     min-height: 38px;
@@ -136,8 +136,8 @@
     padding: 6px 10px;
     font-size: 0.75rem;
     font-weight: 700;
-    background: #f1f5f9;
-    color: #334155;
+    background: var(--app-surface-2);
+    color: var(--app-text);
 }
 
 .permissions-page .role-progress-label {
@@ -145,13 +145,13 @@
     align-items: center;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: var(--perm-muted);
+    color: var(--app-muted);
     margin-bottom: 6px;
 }
 
 .permissions-page .role-progress {
     height: 8px;
-    background: #eef2ff;
+    background: var(--brand-primary-soft);
     border-radius: 999px;
     overflow: hidden;
 }
@@ -159,14 +159,14 @@
 .permissions-page .role-progress-bar {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-info));
 }
 
 .permissions-page .role-admin-note {
     margin-top: 12px;
     border-radius: 12px;
-    background: #fef2f2;
-    color: #991b1b;
+    background: var(--brand-danger-soft);
+    color: var(--brand-danger);
     padding: 10px 12px;
     font-size: 0.78rem;
     line-height: 1.7;
@@ -181,29 +181,29 @@
 }
 
 .permissions-page .level-view {
-    background: #eff6ff;
-    color: #1e40af;
+    background: var(--brand-primary-soft);
+    color: var(--brand-primary);
 }
 
 .permissions-page .level-preview {
-    background: #f0fdf4;
-    color: #166534;
+    background: var(--brand-success-soft);
+    color: var(--brand-success);
 }
 
 .permissions-page .level-edit {
-    background: #fffbeb;
-    color: #92400e;
+    background: var(--brand-warning-soft);
+    color: var(--brand-warning);
 }
 
 .permissions-page .level-admin {
-    background: #fef2f2;
-    color: #991b1b;
+    background: var(--brand-danger-soft);
+    color: var(--brand-danger);
 }
 
 .permissions-page .permissions-modal-warning {
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #991b1b;
+    border: 1px solid var(--brand-danger-soft);
+    background: var(--brand-danger-soft);
+    color: var(--brand-danger);
     border-radius: 14px;
     padding: 12px 14px;
     font-size: 0.84rem;
@@ -211,17 +211,17 @@
 }
 
 .permissions-page .permissions-category-card {
-    border: 1px solid var(--perm-border);
+    border: 1px solid var(--app-border);
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 12px;
-    background: #fff;
+    background: var(--app-surface);
 }
 
 .permissions-page .permissions-category-header {
-    background: #f8fafc;
+    background: var(--app-surface-2);
     padding: 12px 14px;
-    border-bottom: 1px solid var(--perm-border);
+    border-bottom: 1px solid var(--app-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -229,7 +229,7 @@
 
 .permissions-page .permission-item {
     padding: 12px 14px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--app-surface-2);
 }
 
 .permissions-page .permission-item:last-child {
@@ -237,7 +237,7 @@
 }
 
 .permissions-page .permission-item:hover {
-    background: #f8fafc;
+    background: var(--app-surface-2);
 }
 
 .user-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
@@ -285,10 +285,10 @@
     <!-- ===== بطاقات ملخص سريع ===== -->
     <div class="row g-2 mb-3">
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #6366f1 !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-primary) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-primary),var(--brand-info));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-users text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -300,10 +300,10 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #10b981 !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-success) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-success),var(--brand-success));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-user-tag text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -315,10 +315,10 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #f59e0b !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-warning) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-warning),var(--brand-warning));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-key text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -330,10 +330,10 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #ef4444 !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-danger) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-danger),var(--brand-danger));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-shield-alt text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -392,7 +392,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle">
-                            <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                            <thead style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); color: white;">
                                 <tr>
                                     <th class="text-center" style="width:50px">#</th>
                                     <th>المستخدم</th>
@@ -410,7 +410,7 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             {% set initials = user.full_name[:1] %}
-                                            <div class="user-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                            <div class="user-avatar" style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-info));">
                                                 {{ initials }}
                                             </div>
                                             <div>
@@ -423,7 +423,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-size:0.75rem;">
+                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-info));color:white;font-size:0.75rem;">
                                             {{ user.role_name }}
                                         </span>
                                     </td>
@@ -613,7 +613,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0 align-middle" style="font-size:0.78rem;">
-                            <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                            <thead style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); color: white;">
                                 <tr>
                                     <th style="min-width:180px;">الصلاحية</th>
                                     {% for role in roles %}
@@ -623,8 +623,8 @@
                             </thead>
                             <tbody>
                                 {% for category, perms in permissions_by_category.items() %}
-                                <tr style="background:#f8fafc;">
-                                    <td colspan="{{ roles|length + 1 }}" class="fw-bold py-2 px-3" style="font-size:0.82rem;color:#6366f1;">
+                                <tr style="background:var(--app-surface-2);">
+                                    <td colspan="{{ roles|length + 1 }}" class="fw-bold py-2 px-3" style="font-size:0.82rem;color:var(--brand-primary);">
                                         {% if category == 'لوحة التحكم' %}<i class="fas fa-home me-1"></i>
                                         {% elif category == 'الطلاب' %}<i class="fas fa-user-graduate me-1"></i>
                                         {% elif category == 'المدرسين' %}<i class="fas fa-chalkboard-teacher me-1"></i>
@@ -686,7 +686,7 @@
 <div class="modal fade" id="addUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); overflow:hidden;">
                 <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>إضافة مستخدم جديد</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -727,7 +727,7 @@
 <div class="modal fade" id="editUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #f59e0b, #d97706); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-warning), var(--brand-warning)); overflow:hidden;">
                 <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>تعديل المستخدم</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -764,7 +764,7 @@
 <div class="modal fade" id="addRoleModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #10b981, #059669); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-success), var(--brand-success)); overflow:hidden;">
                 <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>إضافة دور جديد</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -796,7 +796,7 @@
 <div class="modal fade" id="permissionsModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); overflow:hidden;">
                 <h5 class="modal-title">
                     <i class="fas fa-key me-2"></i>
                     إدارة صلاحيات الدور:

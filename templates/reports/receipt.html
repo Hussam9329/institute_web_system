@@ -80,46 +80,46 @@
 </div>
 
 <!-- معلومات الخصم - تظهر دائماً -->
-<div style="margin:8px 24px;padding:10px 14px;border-radius:10px;{% if discount_type == 'percentage' or discount_type == 'custom' %}background:#fffbeb;border:1px solid #fbbf24;{% elif discount_type == 'free' %}background:#f0fdf4;border:1px solid #86efac;{% elif discount_type == 'fixed' %}background:#eff6ff;border:1px solid #93c5fd;{% else %}background:#f9fafb;border:1px solid #e5e7eb;{% endif %}">
+<div style="margin:8px 24px;padding:10px 14px;border-radius:10px;{% if discount_type == 'percentage' or discount_type == 'custom' %}background:var(--brand-warning-soft);border:1px solid var(--brand-warning);{% elif discount_type == 'free' %}background:var(--brand-success-soft);border:1px solid var(--brand-success);{% elif discount_type == 'fixed' %}background:var(--brand-primary-soft);border:1px solid var(--brand-primary);{% else %}background:var(--app-surface-2);border:1px solid var(--app-border);{% endif %}">
     {% if discount_type == 'percentage' %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <i class="fas fa-percent" style="color:#d97706;font-size:12px;"></i>
-        <span style="font-size:12px;font-weight:600;color:#92400e;">خصم {{ discount_value }}%</span>
+        <i class="fas fa-percent" style="color:var(--brand-warning);font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:var(--brand-warning);">خصم {{ discount_value }}%</span>
     </div>
-    <div style="font-size:11px;color:#78350f;">
+    <div style="font-size:11px;color:var(--brand-warning);">
         القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
     </div>
     {% elif discount_type == 'custom' %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <i class="fas fa-percent" style="color:#d97706;font-size:12px;"></i>
-        <span style="font-size:12px;font-weight:600;color:#92400e;">خصم {{ discount_value }}%</span>
+        <i class="fas fa-percent" style="color:var(--brand-warning);font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:var(--brand-warning);">خصم {{ discount_value }}%</span>
     </div>
-    <div style="font-size:11px;color:#78350f;">
+    <div style="font-size:11px;color:var(--brand-warning);">
         القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
     </div>
     {% elif discount_type == 'fixed' %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <i class="fas fa-money-bill-wave" style="color:#2563eb;font-size:12px;"></i>
-        <span style="font-size:12px;font-weight:600;color:#1e40af;">خصم مبلغ ثابت {{ format_currency(discount_value) }}</span>
+        <i class="fas fa-money-bill-wave" style="color:var(--brand-primary);font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:var(--brand-primary);">خصم مبلغ ثابت {{ format_currency(discount_value) }}</span>
     </div>
-    <div style="font-size:11px;color:#1e40af;">
+    <div style="font-size:11px;color:var(--brand-primary);">
         القسط الأصلي: {{ format_currency(original_fee) }} ← بعد الخصم: {{ format_currency(total_fee) }} (توفير {{ format_currency(discount_amount) }})
     </div>
     {% elif discount_type == 'free' %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <i class="fas fa-gift" style="color:#16a34a;font-size:12px;"></i>
-        <span style="font-size:12px;font-weight:600;color:#166534;">طالب مجاني</span>
+        <i class="fas fa-gift" style="color:var(--brand-success);font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:600;color:var(--brand-success);">طالب مجاني</span>
         {% if discount_info.institute_waiver == 1 %}
-        <span style="font-size:10px;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px;">تنازل المعهد — لا يُحسب شيء</span>
+        <span style="font-size:10px;background:var(--brand-success-soft);color:var(--brand-success);padding:1px 6px;border-radius:4px;">تنازل المعهد — لا يُحسب شيء</span>
         {% endif %}
     </div>
-    <div style="font-size:11px;color:#166534;">
+    <div style="font-size:11px;color:var(--brand-success);">
         الطالب معفي من الدفع بالكامل
     </div>
     {% else %}
     <div style="display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-ban" style="color:#9ca3af;font-size:12px;"></i>
-        <span style="font-size:12px;font-weight:500;color:#6b7280;">لا يوجد خصم</span>
+        <i class="fas fa-ban" style="color:var(--app-muted);font-size:12px;"></i>
+        <span style="font-size:12px;font-weight:500;color:var(--app-muted);">لا يوجد خصم</span>
     </div>
     {% endif %}
 </div>
