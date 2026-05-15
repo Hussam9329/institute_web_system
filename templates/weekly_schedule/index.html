@@ -2420,6 +2420,8 @@ async function saveEvent() {
         if (res.success) {
             const modalEl = document.getElementById('eventModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            // إزالة التركيز قبل إغلاق المودال لمنع تحذير aria-hidden
+            document.activeElement.blur();
             modal.hide();
             await refreshData();
             showAlert(res.message || 'تم الحفظ بنجاح', 'success');
