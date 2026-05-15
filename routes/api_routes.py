@@ -2627,3 +2627,88 @@ async def api_inspect_and_clean_db(request: Request):
         "issues_found": issues,
         "cleaning_done": cleaned
     }
+
+
+# ===== تنظيف شامل لقاعدة البيانات =====
+
+@router.post("/reset-database")
+async def api_reset_database(request: Request, data: dict):
+    """تنظيف شامل لقاعدة البيانات - حذف جميع البيانات التشغيلية مع الحفاظ على إعدادات النظام"""
+    check_permission(request, 'system_settings')
+    
+    # التحقق من كلمة المرور التأكيدية
+    confirm = data.get('confirm', '')
+    if confirm != 'RESET_ALL_DATA':
+        return {"success": False, "message": "يتطلب تأكيد بكلمة مرور: RESET_ALL_DATA"}
+    
+    db = Database()
+    results = {}
+    
+    # ترتيب الحذف يحترم القيود الأجنبية
+    tables_to_clean = [
+        ("student_teacher", "الارتباطات"),
+        ("installments", "الأقساط"),
+        ("teacher_withdrawals", "السحوبات"),
+        ("weekly_schedule", "الجدول الأسبوعي"),
+        ("operation_logs", "سجل العمليات"),
+        ("students", "الطلاب"),
+        ("teachers", "المدرسين"),
+        ("subjects", "المواد الدراسية"),
+        ("rooms", "القاعات"),
+    ]
+    
+    sequences_to_reset = [
+        "students_id_seq",
+        "teachers_id_seq",
+        "subjects_id_seq",
+        "installments_id_seq",
+        "teacher_withdrawals_id_seq",
+        "rooms_id_seq",
+        "weekly_schedule_id_seq",
+        "operation_logs_id_seq",
+    ]
+    
+    try:
+        # ===== حذف البيانات =====
+        for table_name, arabic_name in tables_to_clean:
+            try:
+                count_result = db.execute_query(f"SELECT COUNT(*) as cnt FROM {table_name}")
+                count = count_result[0]['cnt'] if count_result else 0
+                if count > 0:
+                    db.execute_query(f"DELETE FROM {table_name}")
+                    results[table_name] = f"تم حذف {count} سجل"
+                else:
+                    results[table_name] = "فارغ بالفعل"
+            except Exception as e:
+                results[table_name] = f"خطأ: {str(e)}"
+        
+        # ===== إعادة تعيين العدادات =====
+        for seq_name in sequences_to_reset:
+            try:
+                db.execute_query(f"ALTER SEQUENCE {seq_name} RESTART WITH 1")
+                results[f"seq_{seq_name}"] = "تم إعادة التعيين"
+            except Exception as e:
+                results[f"seq_{seq_name}"] = f"تخطي: {str(e)}"
+        
+        # إلغاء التخزين المؤقت
+        try:
+            cache_service.invalidate_pattern('dashboard_')
+            cache_service.invalidate_pattern('finance_')
+        except Exception:
+            pass
+        
+        log_action(
+            request,
+            action="reset_database",
+            entity="system",
+            entity_id="all",
+            description="تنظيف شامل لقاعدة البيانات - حذف جميع البيانات التشغيلية"
+        )
+        
+        return {
+            "success": True,
+            "message": "تم تنظيف قاعدة البيانات بنجاح - جميع البيانات التشغيلية محذوفة",
+            "details": results
+        }
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في التنظيف: {str(e)}"}
