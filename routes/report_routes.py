@@ -195,7 +195,12 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
     db = Database()
 
     withdrawal_query = '''
-        SELECT w.*, t.name as teacher_name, t.subject, t.total_fee as teacher_fee
+        SELECT w.*, t.name as teacher_name, t.subject, t.total_fee as teacher_fee,
+               t.institute_deduction_type, t.institute_deduction_value,
+               t.teaching_types,
+               t.institute_pct_in_person, t.institute_pct_electronic, t.institute_pct_blended,
+               t.inst_ded_type_in_person, t.inst_ded_type_electronic, t.inst_ded_type_blended,
+               t.inst_ded_manual_in_person, t.inst_ded_manual_electronic, t.inst_ded_manual_blended
         FROM teacher_withdrawals w
         JOIN teachers t ON w.teacher_id = t.id
         WHERE w.id = %s
@@ -205,23 +210,83 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
         raise HTTPException(status_code=404, detail="السحب غير موجود")
     withdrawal = dict(withdrawal_result[0])
 
-    # حساب رصيد المدرس الكامل
-    balance_info = finance_service.calculate_teacher_balance(withdrawal['teacher_id'])
+    # حساب رصيد المدرس الكامل - مع معالجة الأخطاء
+    try:
+        balance_info = finance_service.calculate_teacher_balance(withdrawal['teacher_id'])
+    except Exception:
+        balance_info = {
+            'total_received': 0,
+            'institute_deduction': 0,
+            'paying_students_count': 0,
+            'teacher_due': 0,
+            'withdrawn_total': 0,
+            'remaining_balance': 0,
+            'has_over_withdrawal': False,
+            'over_withdrawal_amount': 0,
+            'can_withdraw': False,
+        }
+
+    # حساب نسبة المعهد للعرض في التقرير
+    # نحدد النسبة حسب نوع التدريس الأول للمدرس
+    institute_rate_display = ''
+    try:
+        teaching_types = withdrawal.get('teaching_types', '') or ''
+        tt_list = [t.strip() for t in teaching_types.split(',') if t.strip()] if teaching_types else []
+        if tt_list:
+            first_type = tt_list[0]
+            if first_type == 'حضوري':
+                ded_type = withdrawal.get('inst_ded_type_in_person', 'percentage') or 'percentage'
+                if ded_type == 'manual':
+                    manual_val = withdrawal.get('inst_ded_manual_in_person', 0) or 0
+                    institute_rate_display = f'{format_currency(manual_val)} (مبلغ ثابت)'
+                else:
+                    institute_rate_display = f'{withdrawal.get("institute_pct_in_person", 0) or 0}%'
+            elif first_type == 'الكتروني':
+                ded_type = withdrawal.get('inst_ded_type_electronic', 'percentage') or 'percentage'
+                if ded_type == 'manual':
+                    manual_val = withdrawal.get('inst_ded_manual_electronic', 0) or 0
+                    institute_rate_display = f'{format_currency(manual_val)} (مبلغ ثابت)'
+                else:
+                    institute_rate_display = f'{withdrawal.get("institute_pct_electronic", 0) or 0}%'
+            elif first_type == 'مدمج':
+                ded_type = withdrawal.get('inst_ded_type_blended', 'percentage') or 'percentage'
+                if ded_type == 'manual':
+                    manual_val = withdrawal.get('inst_ded_manual_blended', 0) or 0
+                    institute_rate_display = f'{format_currency(manual_val)} (مبلغ ثابت)'
+                else:
+                    institute_rate_display = f'{withdrawal.get("institute_pct_blended", 0) or 0}%'
+        else:
+            # احتياطي: استخدام الحقل العام
+            ded_type = withdrawal.get('institute_deduction_type', 'percentage') or 'percentage'
+            ded_val = withdrawal.get('institute_deduction_value', 0) or 0
+            if ded_type == 'manual':
+                institute_rate_display = f'{format_currency(ded_val)} (مبلغ ثابت)'
+            else:
+                institute_rate_display = f'{ded_val}%'
+    except Exception:
+        institute_rate_display = '-'
 
     # إجمالي المسحوبات قبل هذا السحب (لعرض الرصيد وقت السحب)
-    total_withdrawn_before = finance_service.get_teacher_withdrawn_total_until(
-        withdrawal['teacher_id'],
-        withdrawal['withdrawal_date'],
-        exclude_id=withdrawal_id
-    )
+    try:
+        total_withdrawn_before = finance_service.get_teacher_withdrawn_total_until(
+            withdrawal['teacher_id'],
+            withdrawal['withdrawal_date'],
+            exclude_id=withdrawal_id
+        )
+    except Exception:
+        total_withdrawn_before = 0
 
     # عدد سحوبات المدرس
-    all_teacher_withdrawals = finance_service.get_teacher_recent_withdrawals(withdrawal['teacher_id'], limit=100)
+    try:
+        all_teacher_withdrawals = finance_service.get_teacher_recent_withdrawals(withdrawal['teacher_id'], limit=100)
+    except Exception:
+        all_teacher_withdrawals = []
 
     return templates.TemplateResponse("reports/withdrawal_report.html", {
         "request": request,
         "withdrawal": withdrawal,
         "balance_info": balance_info,
+        "institute_rate_display": institute_rate_display,
         "total_withdrawn_before": total_withdrawn_before,
         "num_withdrawals": len(all_teacher_withdrawals) if all_teacher_withdrawals else 0,
         "report_date": format_report_datetime(),

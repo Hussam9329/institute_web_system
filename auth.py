@@ -175,6 +175,7 @@ PUBLIC_PATHS = [
     "/login",
     "/api/login",
     "/static",
+    "/favicon.ico",
     "/health"
 ]
 

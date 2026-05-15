@@ -163,6 +163,12 @@ async def logout():
 
 
 # ===== الصفحة الرئيسية للـ API =====
+@app.get("/favicon.ico")
+async def favicon():
+    """إعادة توجيه الأيقونة المفضلة"""
+    return RedirectResponse(url="/static/images/favicon.ico")
+
+
 @app.get("/health")
 async def health_check():
     """فحص صحة التطبيق"""
