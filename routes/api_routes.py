@@ -18,6 +18,11 @@ from services.deletion_guard_service import _deletion_guard_service as deletion_
 router = APIRouter(prefix="/api")
 
 
+def time_to_minutes(value: str) -> int:
+    h, m = value[:5].split(":")
+    return int(h) * 60 + int(m)
+
+
 def _invalidate_dashboard_cache():
     """إلغاء التخزين المؤقت للوحة التحكم عند تغيير البيانات"""
     cache_service.invalidate_pattern('dashboard_')
@@ -1962,7 +1967,18 @@ async def api_get_weekly_schedule(room_id: int = None):
                 JOIN rooms r ON ws.room_id = r.id
                 JOIN teachers t ON ws.teacher_id = t.id
                 WHERE ws.room_id = %s
-                ORDER BY ws.day_of_week, ws.start_time
+                ORDER BY
+                CASE ws.day_of_week
+                    WHEN 'الإثنين' THEN 1
+                    WHEN 'الثلاثاء' THEN 2
+                    WHEN 'الأربعاء' THEN 3
+                    WHEN 'الخميس' THEN 4
+                    WHEN 'الجمعة' THEN 5
+                    WHEN 'السبت' THEN 6
+                    WHEN 'الأحد' THEN 7
+                    ELSE 99
+                END,
+                ws.start_time
             '''
             results = db.execute_query(query, (room_id,))
         else:
@@ -1971,7 +1987,19 @@ async def api_get_weekly_schedule(room_id: int = None):
                 FROM weekly_schedule ws
                 JOIN rooms r ON ws.room_id = r.id
                 JOIN teachers t ON ws.teacher_id = t.id
-                ORDER BY r.name, ws.day_of_week, ws.start_time
+                ORDER BY
+                r.name,
+                CASE ws.day_of_week
+                    WHEN 'الإثنين' THEN 1
+                    WHEN 'الثلاثاء' THEN 2
+                    WHEN 'الأربعاء' THEN 3
+                    WHEN 'الخميس' THEN 4
+                    WHEN 'الجمعة' THEN 5
+                    WHEN 'السبت' THEN 6
+                    WHEN 'الأحد' THEN 7
+                    ELSE 99
+                END,
+                ws.start_time
             '''
             results = db.execute_query(query)
         
@@ -2017,10 +2045,19 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         
         if not end_time:
             return {"success": False, "message": "يرجى تحديد المدة أو وقت النهاية"}
-        
-        if start_time >= end_time:
+
+        try:
+            start_minutes = time_to_minutes(start_time)
+            end_minutes = time_to_minutes(end_time)
+        except Exception:
+            return {"success": False, "message": "صيغة الوقت غير صحيحة"}
+
+        if start_minutes >= end_minutes:
             return {"success": False, "message": "وقت البداية يجب أن يكون قبل وقت النهاية"}
-        
+
+        if start_minutes < 7 * 60 or end_minutes > 21 * 60 + 30:
+            return {"success": False, "message": "الوقت يجب أن يكون ضمن الدوام من 07:00 إلى 21:30"}
+
         # التحقق من نوع الحدث
         if event_type not in ('محاضرة', 'امتحان'):
             event_type = 'محاضرة'
@@ -2109,10 +2146,19 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         
         if not end_time:
             return {"success": False, "message": "يرجى تحديد المدة أو وقت النهاية"}
-        
-        if start_time >= end_time:
+
+        try:
+            start_minutes = time_to_minutes(start_time)
+            end_minutes = time_to_minutes(end_time)
+        except Exception:
+            return {"success": False, "message": "صيغة الوقت غير صحيحة"}
+
+        if start_minutes >= end_minutes:
             return {"success": False, "message": "وقت البداية يجب أن يكون قبل وقت النهاية"}
-        
+
+        if start_minutes < 7 * 60 or end_minutes > 21 * 60 + 30:
+            return {"success": False, "message": "الوقت يجب أن يكون ضمن الدوام من 07:00 إلى 21:30"}
+
         # التحقق من نوع الحدث
         if event_type not in ('محاضرة', 'امتحان'):
             event_type = 'محاضرة'

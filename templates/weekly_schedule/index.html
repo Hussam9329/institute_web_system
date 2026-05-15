@@ -292,6 +292,9 @@
 .ws-grid th.ws-time-col {
     width: 70px; min-width: 70px;
     background: #f1f5f9;
+    position: sticky;
+    right: 0;
+    z-index: 3;
 }
 .ws-grid td {
     border: 1px solid #f1f5f9;
@@ -308,6 +311,9 @@
     text-align: center;
     vertical-align: middle;
     border-right: 2px solid #e2e8f0;
+    position: sticky;
+    right: 0;
+    z-index: 2;
 }
 .ws-grid td.ws-blocked {
     background: repeating-linear-gradient(45deg, #fef2f2, #fef2f2 4px, #fee2e2 4px, #fee2e2 8px);
@@ -385,6 +391,16 @@
     gap: 2px;
 }
 .ws-ev:hover .ws-ev-acts { display: flex; }
+
+@media (hover: none) {
+    .ws-ev .ws-ev-acts {
+        display: flex;
+    }
+
+    .ws-lv .ws-lv-acts {
+        opacity: 1;
+    }
+}
 .ws-ev-acts button {
     width: 18px; height: 18px;
     border-radius: 4px;
@@ -408,9 +424,20 @@
     color: #94a3b8;
     font-size: 14px;
     transition: all 0.2s;
+    opacity: 0;
 }
 .ws-add-btn:hover {
     border-color: #6366f1; color: #6366f1; background: #f5f3ff;
+}
+.ws-grid td:hover .ws-add-btn,
+.ws-add-btn:focus {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .ws-add-btn {
+        opacity: 1;
+    }
 }
 
 /* ===== PAGINATION ===== */
@@ -936,9 +963,6 @@ html[data-theme="dark"] .ws-ctrl-divider {
         <button class="ws-btn ws-btn-outline" onclick="toggleRoomsPanel()" title="إدارة القاعات">
             <i class="fas fa-door-open"></i> القاعات
         </button>
-        <button class="ws-btn ws-btn-success" onclick="autoSortSchedule()" title="ترتيب تلقائي">
-            <i class="fas fa-magic"></i> ترتيب
-        </button>
         <button class="ws-btn ws-btn-primary" onclick="openAddEventModal()" title="إضافة حدث">
             <i class="fas fa-plus"></i> حدث جديد
         </button>
@@ -1053,11 +1077,11 @@ html[data-theme="dark"] .ws-ctrl-divider {
                         </div>
                         <input type="hidden" id="lecEventType" value="محاضرة">
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <label class="ws-fld-label">القاعة</label>
                         <select id="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <label class="ws-fld-label">المدرس</label>
                         <select id="lecTeacher" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن مدرس..."></select>
                     </div>
@@ -1079,12 +1103,13 @@ html[data-theme="dark"] .ws-ctrl-divider {
                             <option value="الأحد">الأحد</option>
                         </select>
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <label class="ws-fld-label">من الساعة</label>
                         <input type="time" id="lecStartTime" class="form-control form-control-sm" required
+                            min="07:00" max="21:00" step="1800"
                             onchange="onStartTimeChange()">
                     </div>
-                    <div class="col-6">
+                    <div class="col-12 col-md-6">
                         <!-- وضع تحديد الوقت: يدوي أو اختيار المدة -->
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <label class="ws-fld-label mb-0">إلى الساعة</label>
@@ -1101,7 +1126,9 @@ html[data-theme="dark"] .ws-ctrl-divider {
                         <select id="lecDuration" class="form-select form-select-sm" onchange="onDurationChange()">
                         </select>
                         <!-- تحديد يدوي -->
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required onchange="checkConflictPreview()" style="display:none;">
+                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required
+                            min="07:00" max="21:30" step="1800"
+                            onchange="checkConflictPreview()" style="display:none;">
                     </div>
                     <div class="col-12">
                         <label class="ws-fld-label">ملاحظات</label>
@@ -1118,7 +1145,7 @@ html[data-theme="dark"] .ws-ctrl-divider {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                <button type="button" class="btn btn-primary" onclick="saveEvent()">
+                <button type="button" class="btn btn-primary" id="saveEventBtn" onclick="saveEvent()">
                     <i class="fas fa-save me-1"></i>حفظ
                 </button>
             </div>
@@ -1181,18 +1208,21 @@ const ROOMS_PER_PAGE = 4;
 const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
 // ===== TIME SLOTS =====
 // الساعات الأساسية تظهر دائماً، أما أنصاف الساعات مثل 07:30 فلا تظهر إلا إذا كانت مستخدمة فعلياً
-const BASE_TIME_SLOTS = [];
-for (let h = 5; h <= 21; h++) {
-    BASE_TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
+const WORK_START_HOUR = 7;
+const WORK_END_HOUR = 21;
+
+function buildTimeSlots(startHour = WORK_START_HOUR, endHour = WORK_END_HOUR) {
+    const slots = [];
+    for (let h = startHour; h <= endHour; h++) {
+        slots.push(String(h).padStart(2, '0') + ':00');
+        if (h < endHour) {
+            slots.push(String(h).padStart(2, '0') + ':30');
+        }
+    }
+    return slots;
 }
 
-const ALL_TIME_SLOTS = [];
-for (let h = 5; h <= 21; h++) {
-    ALL_TIME_SLOTS.push(String(h).padStart(2, '0') + ':00');
-    if (h < 21) {
-        ALL_TIME_SLOTS.push(String(h).padStart(2, '0') + ':30');
-    }
-}
+const ALL_TIME_SLOTS = buildTimeSlots();
 
 const LECTURE_DURATIONS = [
     { value: 60, label: '1 ساعة' },
@@ -1422,34 +1452,38 @@ function isTimeUsedByEvent(ev, time) {
 
 function getVisibleTimeSlotsForRoom(roomId) {
     const usedHalfSlots = new Set();
+    const visibleHourSlots = new Set();
 
-    allSchedule.forEach(ev => {
-        if (ev.room_id !== roomId) return;
+    const roomEvents = allSchedule.filter(ev => {
+        if (ev.room_id !== roomId) return false;
+        if (currentDayFilter !== 'all' && ev.day_of_week !== currentDayFilter) return false;
+        return true;
+    });
 
-        if (currentDayFilter !== 'all' && ev.day_of_week !== currentDayFilter) return;
-
-        // إذا المستخدم فلتر حسب النوع، نبقي اعتبار النوع الآخر حتى تبقى الخانات المحجوزة واضحة
+    roomEvents.forEach(ev => {
         const start = timeToMinutes(ev.start_time);
         const end = timeToMinutes(ev.end_time);
 
         ALL_TIME_SLOTS.forEach(slot => {
-            if (!isHalfHourSlot(slot)) return;
-
             const slotMinutes = timeToMinutes(slot);
 
-            if (
-                normalizeTimeValue(ev.start_time) === slot ||
-                normalizeTimeValue(ev.end_time) === slot ||
-                (start < slotMinutes && slotMinutes < end)
-            ) {
-                usedHalfSlots.add(slot);
+            if (slotMinutes >= start && slotMinutes <= end) {
+                if (isHalfHourSlot(slot)) {
+                    usedHalfSlots.add(slot);
+                } else {
+                    visibleHourSlots.add(slot);
+                }
             }
         });
     });
 
     return ALL_TIME_SLOTS.filter(slot => {
-        if (!isHalfHourSlot(slot)) return true;
-        return usedHalfSlots.has(slot);
+        if (isHalfHourSlot(slot)) {
+            return usedHalfSlots.has(slot);
+        }
+
+        // Full hour slots always visible within work hours
+        return true;
     });
 }
 
@@ -1577,6 +1611,7 @@ function buildRoomGridTable(room) {
                     html += '<div class="ws-ev-type">' + typeLabel + '</div>';
                     html += '<div class="ws-ev-subj">' + escapeHtml(ev.subject) + '</div>';
                     html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + '</div>';
+                    html += '<div class="ws-ev-info"><i class="fas fa-clock"></i> ' + normalizeTimeValue(ev.start_time) + ' - ' + normalizeTimeValue(ev.end_time) + '</div>';
                     html += '</div>';
                 });
                 html += '</td>';
@@ -1604,6 +1639,20 @@ function buildRoomGridTable(room) {
     return html;
 }
 
+function clearScheduleFilters() {
+    currentEventTypeFilter = 'all';
+    currentTeacherFilter = 0;
+    currentDayFilter = 'all';
+    currentRoomPage = 1;
+
+    document.getElementById('teacherFilter').value = '0';
+    document.getElementById('dayFilter').value = 'all';
+    resetTypePills();
+
+    renderStats();
+    renderCurrentView();
+}
+
 // ===== SCHEDULE GRID (main render) =====
 function renderScheduleGrid() {
     const container = document.getElementById('gridContent');
@@ -1626,13 +1675,40 @@ function renderScheduleGrid() {
             return;
         }
 
-        const totalPages = Math.ceil(allRooms.length / ROOMS_PER_PAGE);
-        if (currentRoomPage > totalPages) currentRoomPage = totalPages;
-        if (currentRoomPage < 1) currentRoomPage = 1;
+        let roomsToRender = [...allRooms];
+
+        const hasActiveDataFilter =
+            currentEventTypeFilter !== 'all' ||
+            currentTeacherFilter !== 0 ||
+            currentDayFilter !== 'all';
+
+        if (hasActiveDataFilter) {
+            const filteredEvents = getFilteredEvents();
+            const roomIdsWithEvents = new Set(filteredEvents.map(ev => ev.room_id));
+            roomsToRender = allRooms.filter(room => roomIdsWithEvents.has(room.id));
+        }
+
+        if (roomsToRender.length === 0) {
+            container.innerHTML = `
+                <div class="ws-empty">
+                    <i class="fas fa-search"></i>
+                    <p>لا توجد نتائج حسب الفلاتر الحالية</p>
+                    <button class="ws-btn ws-btn-outline mt-2" onclick="clearScheduleFilters()">
+                        مسح الفلاتر
+                    </button>
+                </div>
+            `;
+            paginationEl.innerHTML = '';
+            return;
+        }
+
+        const totalPages = Math.ceil(roomsToRender.length / ROOMS_PER_PAGE);
+
+        if (currentRoomPage > totalPages) currentRoomPage = 1;
 
         const startIdx = (currentRoomPage - 1) * ROOMS_PER_PAGE;
-        const endIdx = Math.min(startIdx + ROOMS_PER_PAGE, allRooms.length);
-        const pageRooms = allRooms.slice(startIdx, endIdx);
+        const endIdx = Math.min(startIdx + ROOMS_PER_PAGE, roomsToRender.length);
+        const pageRooms = roomsToRender.slice(startIdx, endIdx);
 
         let html = '';
         pageRooms.forEach(room => {
@@ -1641,17 +1717,19 @@ function renderScheduleGrid() {
         container.innerHTML = html;
 
         // Build pagination
-        renderPagination(totalPages);
+        renderPagination(totalPages, roomsToRender.length);
     }
 }
 
 // ===== PAGINATION =====
-function renderPagination(totalPages) {
+function renderPagination(totalPages, totalRooms) {
     const paginationEl = document.getElementById('gridPagination');
     if (totalPages <= 1) {
         paginationEl.innerHTML = '';
         return;
     }
+
+    const roomCount = totalRooms || allRooms.length;
 
     let html = '';
 
@@ -1672,8 +1750,8 @@ function renderPagination(totalPages) {
 
     // Page info
     const startRoom = (currentRoomPage - 1) * ROOMS_PER_PAGE + 1;
-    const endRoom = Math.min(currentRoomPage * ROOMS_PER_PAGE, allRooms.length);
-    html += '<span class="ws-page-info">القاعات ' + startRoom + '-' + endRoom + ' من ' + allRooms.length + '</span>';
+    const endRoom = Math.min(currentRoomPage * ROOMS_PER_PAGE, roomCount);
+    html += '<span class="ws-page-info">القاعات ' + startRoom + '-' + endRoom + ' من ' + roomCount + '</span>';
 
     paginationEl.innerHTML = html;
 }
@@ -2037,14 +2115,32 @@ async function checkConflictPreview() {
 
     const conflicts = allSchedule.filter(ev => {
         if (editId && ev.id === parseInt(editId)) return false;
-        if (ev.room_id !== roomId || ev.day_of_week !== day) return false;
-        return timeToMinutes(startTime) < timeToMinutes(ev.end_time) && timeToMinutes(ev.start_time) < timeToMinutes(endTime);
+        if (ev.day_of_week !== day) return false;
+
+        const overlaps =
+            timeToMinutes(startTime) < timeToMinutes(ev.end_time) &&
+            timeToMinutes(ev.start_time) < timeToMinutes(endTime);
+
+        const sameRoom = ev.room_id === roomId;
+        const sameTeacher = ev.teacher_id === parseInt(document.getElementById('lecTeacher').value);
+
+        return overlaps && (sameRoom || sameTeacher);
     });
 
     if (conflicts.length > 0) {
         const c = conflicts[0];
         const cType = c.event_type === 'امتحان' ? 'امتحان' : 'محاضرة';
-        warningText.textContent = 'تعارض! يوجد ' + cType + ' للمدرس ' + c.teacher_name + ' (' + c.teacher_subject + ') من ' + normalizeTimeValue(c.start_time) + ' إلى ' + normalizeTimeValue(c.end_time);
+        const selectedTeacherId = parseInt(document.getElementById('lecTeacher').value);
+        const conflictReason = c.room_id === roomId
+            ? 'تعارض في القاعة'
+            : 'تعارض في جدول المدرس';
+
+        warningText.textContent =
+            conflictReason + '! يوجد ' + cType +
+            ' للمدرس ' + c.teacher_name +
+            ' في قاعة ' + (c.room_name || '') +
+            ' من ' + normalizeTimeValue(c.start_time) +
+            ' إلى ' + normalizeTimeValue(c.end_time);
         warningEl.style.display = 'flex';
     } else {
         warningEl.style.display = 'none';
@@ -2097,6 +2193,17 @@ function populateModalSelects() {
 }
 
 function openAddEventModal(day, time, roomId) {
+    if (allRooms.length === 0) {
+        showAlert('أضف قاعة أولاً قبل إنشاء الجدول', 'warning');
+        toggleRoomsPanel();
+        return;
+    }
+
+    if (allTeachers.length === 0) {
+        showAlert('لا يوجد مدرسون. أضف مدرساً أولاً من صفحة المدرسين', 'warning');
+        return;
+    }
+
     document.getElementById('editEventId').value = '';
     document.getElementById('eventModalTitle').textContent = 'إضافة حدث جديد';
     document.getElementById('lecTeacher').value = '';
@@ -2174,10 +2281,33 @@ async function saveEvent() {
         notes: document.getElementById('lecNotes').value.trim()
     };
     const errorEl = document.getElementById('lecError');
+    const saveBtn = document.getElementById('saveEventBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>جاري الحفظ...';
     if (!data.room_id || !data.teacher_id || !data.subject || !data.day_of_week || !data.start_time || !data.end_time) {
         errorEl.textContent = 'يرجى اختيار القاعة والاستاد (المادة تُملأ تلقائياً) واليوم والوقت';
-        errorEl.style.display = 'block'; return;
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
     }
+
+    if (timeToMinutes(data.start_time) < timeToMinutes('07:00') || timeToMinutes(data.end_time) > timeToMinutes('21:30')) {
+        errorEl.textContent = 'الوقت يجب أن يكون ضمن الدوام من 07:00 إلى 21:30';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
+    }
+
+    if (timeToMinutes(data.start_time) >= timeToMinutes(data.end_time)) {
+        errorEl.textContent = 'وقت البداية يجب أن يكون قبل وقت النهاية';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
+    }
+
     try {
         let res;
         if (editId) {
@@ -2204,13 +2334,20 @@ async function saveEvent() {
     } catch(e) {
         errorEl.textContent = 'خطأ في الاتصال';
         errorEl.style.display = 'block';
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
     }
 }
 
 async function deleteEvent(eventId) {
     const ev = allSchedule.find(e => e.id === eventId);
     const evLabel = ev && ev.event_type === 'امتحان' ? 'الامتحان' : 'المحاضرة';
-    if (!confirm('هل أنت متأكد من حذف ' + evLabel + '؟')) return;
+    const details = ev
+        ? '\n\n' + ev.subject + '\n' + ev.teacher_name + '\n' + ev.day_of_week + ' من ' + normalizeTimeValue(ev.start_time) + ' إلى ' + normalizeTimeValue(ev.end_time)
+        : '';
+
+    if (!confirm('هل أنت متأكد من حذف ' + evLabel + '؟' + details)) return;
     try {
         const res = await apiRequest('/api/weekly-schedule/' + eventId, {method: 'DELETE'});
         if (res.success) {
@@ -2218,25 +2355,6 @@ async function deleteEvent(eventId) {
             showAlert('تم حذف ' + evLabel, 'success');
         } else { showAlert(res.message || 'خطأ في الحذف'); }
     } catch(e) { showAlert('خطأ في الاتصال'); }
-}
-
-// ===== AUTO SORT =====
-async function autoSortSchedule() {
-    if (allRooms.length === 0) { showAlert('لا توجد قاعات بعد', 'warning'); return; }
-    const dayOrder = {'الإثنين':1,'الثلاثاء':2,'الأربعاء':3,'الخميس':4,'الجمعة':5,'السبت':6,'الأحد':7};
-    allSchedule = [...allSchedule].sort((a,b) => {
-        if (a.room_id !== b.room_id) return a.room_id - b.room_id;
-        const dayA = dayOrder[a.day_of_week] || 99;
-        const dayB = dayOrder[b.day_of_week] || 99;
-        if (dayA !== dayB) return dayA - dayB;
-        return a.start_time.localeCompare(b.start_time);
-    });
-    currentSortBy = 'time';
-    currentViewMode = 'grid';
-    document.getElementById('sortSelect').value = 'time';
-    setViewActive('grid');
-    renderCurrentView();
-    showAlert('تم ترتيب الجدول بنجاح', 'success');
 }
 
 // ===== UTILITIES =====
