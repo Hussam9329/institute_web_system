@@ -440,6 +440,65 @@
     }
 }
 
+/* Add actions: two separate lecture/exam buttons */
+.ws-add-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    min-height: 42px;
+}
+
+.ws-add-actions .ws-add-btn {
+    position: static;
+    opacity: 1;
+    width: 28px;
+    height: 28px;
+    min-height: unset;
+    border-style: solid;
+    border-width: 1px;
+    transform: none;
+    font-size: 11px;
+}
+
+.ws-add-lecture {
+    background: #eef2ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+}
+
+.ws-add-lecture:hover {
+    background: #4f46e5;
+    color: #ffffff;
+    border-color: #4f46e5;
+}
+
+.ws-add-exam {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
+.ws-add-exam:hover {
+    background: #ea580c;
+    color: #ffffff;
+    border-color: #ea580c;
+}
+
+html[data-theme="dark"] .ws-add-lecture {
+    background: rgba(79, 70, 229, 0.18);
+    color: #c7d2fe;
+    border-color: rgba(199, 210, 254, 0.25);
+}
+
+html[data-theme="dark"] .ws-add-exam {
+    background: rgba(234, 88, 12, 0.18);
+    color: #fed7aa;
+    border-color: rgba(254, 215, 170, 0.25);
+}
+
 /* ===== PAGINATION ===== */
 .ws-pagination {
     display: flex;
@@ -963,8 +1022,11 @@ html[data-theme="dark"] .ws-ctrl-divider {
         <button class="ws-btn ws-btn-outline" onclick="toggleRoomsPanel()" title="إدارة القاعات">
             <i class="fas fa-door-open"></i> القاعات
         </button>
-        <button class="ws-btn ws-btn-primary" onclick="openAddEventModal()" title="إضافة حدث">
-            <i class="fas fa-plus"></i> حدث جديد
+        <button class="ws-btn ws-btn-primary" onclick="openAddLectureModal()" title="إضافة محاضرة">
+            <i class="fas fa-chalkboard-teacher"></i> إضافة محاضرة
+        </button>
+        <button class="ws-btn ws-btn-primary" style="background:linear-gradient(135deg,#ea580c,#f97316);" onclick="openAddExamModal()" title="إضافة امتحان">
+            <i class="fas fa-file-alt"></i> إضافة امتحان
         </button>
     </div>
 </div>
@@ -1055,28 +1117,15 @@ html[data-theme="dark"] .ws-ctrl-divider {
         <div class="modal-content border-0">
             <div class="modal-header">
                 <h5 class="modal-title" id="eventModalTitle">
-                    <i class="fas fa-calendar-plus me-2"></i>إضافة حدث
+                    <i class="fas fa-chalkboard-teacher me-2"></i>إضافة محاضرة
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editEventId" value="">
                 <div class="row g-3">
-                    <!-- Event Type -->
-                    <div class="col-12">
-                        <label class="ws-fld-label" for="lecEventType">نوع الحدث</label>
-                        <div class="ws-evtype-toggle">
-                            <button type="button" class="ws-evtype-btn active-lec" id="btnTypeLecture"
-                                onclick="setEventType('محاضرة')">
-                                <i class="fas fa-chalkboard-teacher"></i> محاضرة
-                            </button>
-                            <button type="button" class="ws-evtype-btn" id="btnTypeExam"
-                                onclick="setEventType('امتحان')">
-                                <i class="fas fa-file-alt"></i> امتحان
-                            </button>
-                        </div>
-                        <input type="hidden" id="lecEventType" value="محاضرة">
-                    </div>
+                    <!-- Event Type (hidden - determined by button used) -->
+                    <input type="hidden" id="lecEventType" value="محاضرة">
                     <div class="col-12 col-md-6">
                         <label class="ws-fld-label" for="lecRoom">القاعة</label>
                         <select id="lecRoom" name="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
@@ -1634,7 +1683,16 @@ function buildRoomGridTable(room) {
                         html += '<td class="ws-blocked"></td>';
                     }
                 } else {
-                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\', ' + room.id + ', \'' + (currentEventTypeFilter !== 'all' ? currentEventTypeFilter : currentEventType) + '\')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
+                    html += '<td>';
+                    html += '<div class="ws-add-actions">';
+                    html += '<button class="ws-add-btn ws-add-lecture" onclick="openAddLectureModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة محاضرة">';
+                    html += '<i class="fas fa-chalkboard-teacher"></i>';
+                    html += '</button>';
+                    html += '<button class="ws-add-btn ws-add-exam" onclick="openAddExamModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة امتحان">';
+                    html += '<i class="fas fa-file-alt"></i>';
+                    html += '</button>';
+                    html += '</div>';
+                    html += '</td>';
                 }
             }
         });
@@ -2078,16 +2136,24 @@ function onStartTimeChange() {
 function setEventType(type) {
     type = normalizeEventType(type);
     currentEventType = type;
-    document.getElementById('lecEventType').value = type;
+
+    const eventTypeInput = document.getElementById('lecEventType');
+    if (eventTypeInput) {
+        eventTypeInput.value = type;
+    }
+
     const btnL = document.getElementById('btnTypeLecture');
     const btnE = document.getElementById('btnTypeExam');
-    if (type === 'محاضرة') {
-        btnL.className = 'ws-evtype-btn active-lec';
-        btnE.className = 'ws-evtype-btn';
-    } else {
-        btnE.className = 'ws-evtype-btn active-exm';
-        btnL.className = 'ws-evtype-btn';
+    if (btnL && btnE) {
+        if (type === 'محاضرة') {
+            btnL.className = 'ws-evtype-btn active-lec';
+            btnE.className = 'ws-evtype-btn';
+        } else {
+            btnE.className = 'ws-evtype-btn active-exm';
+            btnL.className = 'ws-evtype-btn';
+        }
     }
+
     populateDurationSelect();
     // تحديث وقت الانتهاء حسب المدة المختارة
     if (currentTimeMode === 'select') {
@@ -2244,7 +2310,11 @@ function openAddEventModal(day, time, roomId, eventType) {
 
     try {
         document.getElementById('editEventId').value = '';
-        document.getElementById('eventModalTitle').innerHTML = '<i class="fas fa-calendar-plus me-2"></i>إضافة حدث جديد';
+        const modalType = normalizeEventType(eventType || currentEventType);
+        document.getElementById('eventModalTitle').innerHTML =
+            modalType === 'امتحان'
+                ? '<i class="fas fa-file-alt me-2"></i>إضافة امتحان'
+                : '<i class="fas fa-chalkboard-teacher me-2"></i>إضافة محاضرة';
         document.getElementById('lecTeacher').value = '';
         document.getElementById('lecSubject').value = '';
         document.getElementById('lecDay').value = day || 'الإثنين';
@@ -2256,12 +2326,8 @@ function openAddEventModal(day, time, roomId, eventType) {
 
         // وضع اختيار المدة افتراضياً
         setTimeMode('select');
-        // تحديد نوع الحدث بناءً على المعامل أو الفلتر الحالي
-        const defaultEventType = normalizeEventType(
-            eventType ||
-            (currentEventTypeFilter !== 'all' ? currentEventTypeFilter : currentEventType)
-        );
-
+        // تحديد نوع الحدث من الزر فقط (لا يعتمد على الفلتر)
+        const defaultEventType = normalizeEventType(eventType || currentEventType);
         setEventType(defaultEventType);
         populateModalSelects();
 
@@ -2286,6 +2352,14 @@ function openAddEventModal(day, time, roomId, eventType) {
         console.error('خطأ في فتح نافذة إضافة حدث:', e);
         showAlert('حدث خطأ أثناء فتح النافذة: ' + e.message, 'danger');
     }
+}
+
+function openAddLectureModal(day, time, roomId) {
+    openAddEventModal(day, time, roomId, 'محاضرة');
+}
+
+function openAddExamModal(day, time, roomId) {
+    openAddEventModal(day, time, roomId, 'امتحان');
 }
 
 function editEvent(eventId) {
@@ -2326,9 +2400,10 @@ function editEvent(eventId) {
         }
 
         // تحديث عنوان المودال مع الأيقونة
-        const titleIcon = evType === 'امتحان' ? 'fa-file-alt' : 'fa-chalkboard-teacher';
-        const titleText = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
-        document.getElementById('eventModalTitle').innerHTML = '<i class="fas ' + titleIcon + ' me-2"></i>' + titleText;
+        document.getElementById('eventModalTitle').innerHTML =
+            evType === 'امتحان'
+                ? '<i class="fas fa-file-alt me-2"></i>تعديل امتحان'
+                : '<i class="fas fa-chalkboard-teacher me-2"></i>تعديل محاضرة';
 
         // مزامنة واجهات SearchableSelect بعد تعيين القيم
         refreshSearchableSelect('lecRoom');
