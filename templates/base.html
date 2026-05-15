@@ -640,11 +640,11 @@
     <!-- معلومات المستخدم -->
     <div class="sidebar-user-info">
         <div class="sidebar-user-card">
-            <div class="sidebar-user-avatar" id="sidebarUserAvatar">م</div>
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar">{{ (request.state.user.get('full_name', '') or request.state.user.get('username', 'م'))[0] if request.state.user else 'م' }}</div>
             <div class="sidebar-user-details">
-                <div class="sidebar-user-name" id="sidebarUserName">موظف</div>
-                <div class="sidebar-user-username" id="sidebarUserUsername">admin</div>
-                <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;"></div>
+                <div class="sidebar-user-name" id="sidebarUserName">{{ request.state.user.get('full_name', '') or request.state.user.get('username', 'موظف') if request.state.user else 'موظف' }}</div>
+                <div class="sidebar-user-username" id="sidebarUserUsername">@{{ request.state.user.get('username', '') if request.state.user else '' }}</div>
+                <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;">{{ request.state.user.get('role_name', '') if request.state.user else '' }}</div>
             </div>
         </div>
         <a href="/logout" class="sidebar-logout-btn">
@@ -999,40 +999,12 @@
     }
     </script>
     
-    <!-- تحميل بيانات المستخدم الحالي في الشريط الجانبي -->
+    <!-- إظهار دور المستخدم إذا تم تعيينه من الخادم -->
     <script>
-    (async function() {
-        try {
-            const result = await apiRequest('/api/current-user');
-            if (result && result.success && result.data) {
-                const user = result.data;
-                const nameEl = document.getElementById('sidebarUserName');
-                const usernameEl = document.getElementById('sidebarUserUsername');
-                const avatarEl = document.getElementById('sidebarUserAvatar');
-                const roleEl = document.getElementById('sidebarUserRole');
-
-                if (nameEl && user.full_name) {
-                    nameEl.textContent = user.full_name;
-                } else if (nameEl && user.username) {
-                    nameEl.textContent = user.username;
-                }
-
-                if (usernameEl && user.username) {
-                    usernameEl.textContent = '@' + user.username;
-                }
-
-                if (avatarEl) {
-                    const displayName = user.full_name || user.username || 'م';
-                    avatarEl.textContent = displayName.charAt(0);
-                }
-
-                if (roleEl && user.role_name) {
-                    roleEl.textContent = user.role_name;
-                    roleEl.style.display = 'block';
-                }
-            }
-        } catch (e) {
-            // المستخدم غير مسجل الدخول أو خطأ في الشبكة
+    (function() {
+        const roleEl = document.getElementById('sidebarUserRole');
+        if (roleEl && roleEl.textContent.trim()) {
+            roleEl.style.display = 'block';
         }
     })();
     </script>
