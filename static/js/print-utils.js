@@ -867,7 +867,13 @@ const PrintUtils = {
         const allData = [];
         statsRows.forEach(row => {
             const cells = row.querySelectorAll('td');
-            if (cells.length >= 2) {
+            // Table now has 3 cols: sd-icon-cell, sd-label-cell, sd-value-cell
+            if (cells.length >= 3) {
+                allData.push({
+                    label: cells[1].textContent.trim(),
+                    value: cells[2].textContent.trim()
+                });
+            } else if (cells.length >= 2) {
                 allData.push({
                     label: cells[0].textContent.trim(),
                     value: cells[1].textContent.trim()

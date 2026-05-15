@@ -199,12 +199,48 @@
 }
 
 /* Detail table responsive */
-.stats-detail-table td:first-child {
+.stats-detail-table .sd-icon-cell {
+    width: 48px;
+    min-width: 48px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.75rem 0.5rem !important;
+}
+
+.stats-detail-table .sd-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+}
+
+.stats-detail-table .sd-label-cell {
     white-space: normal;
     word-break: break-word;
     -webkit-hyphens: auto;
     hyphens: auto;
+    vertical-align: middle;
+    font-weight: 600;
 }
+
+.stats-detail-table .sd-value-cell {
+    vertical-align: middle;
+    text-align: center;
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+/* Icon color variants for detail table */
+.sd-icon-wrap.si-primary { background: var(--primary-glow); color: var(--primary); }
+.sd-icon-wrap.si-success { background: var(--success-glow); color: var(--success-dark); }
+.sd-icon-wrap.si-warning { background: var(--warning-glow); color: var(--warning-dark); }
+.sd-icon-wrap.si-danger  { background: var(--danger-glow);  color: var(--danger); }
+.sd-icon-wrap.si-info    { background: var(--info-glow);    color: var(--info); }
+.sd-icon-wrap.si-purple  { background: var(--secondary-glow); color: var(--secondary); }
 
 /* ===== Tablet (768px - 991px) ===== */
 @media (max-width: 991px) {
@@ -213,8 +249,10 @@
     .ms-value { font-size: 1.3rem; }
     .ms-badge { font-size: 0.62rem; padding: 0.18rem 0.5rem; }
 
-    .stats-detail-table td:first-child { font-size: 0.88rem; }
-    .stats-detail-table td:last-child { font-size: 1rem; }
+    .stats-detail-table .sd-icon-cell { width: 44px; min-width: 44px; padding: 0.6rem 0.4rem !important; }
+    .stats-detail-table .sd-icon-wrap { width: 32px; height: 32px; font-size: 0.85rem; }
+    .stats-detail-table .sd-label-cell { font-size: 0.88rem; }
+    .stats-detail-table .sd-value-cell { font-size: 1rem; }
 
     .fin-card .card-body { padding: 1rem !important; }
     .fin-stat-item { padding: 0.75rem 0.85rem; gap: 0.75rem; }
@@ -234,8 +272,10 @@
     .ms-badge { font-size: 0.6rem; padding: 0.15rem 0.45rem; }
     .ms-badges { gap: 0.25rem; }
 
-    .stats-detail-table td:first-child { font-size: 0.82rem; padding: 0.6rem 0.75rem; }
-    .stats-detail-table td:last-child { font-size: 0.95rem; }
+    .stats-detail-table .sd-icon-cell { width: 40px; min-width: 40px; padding: 0.5rem 0.3rem !important; }
+    .stats-detail-table .sd-icon-wrap { width: 30px; height: 30px; font-size: 0.8rem; }
+    .stats-detail-table .sd-label-cell { font-size: 0.82rem; padding: 0.5rem 0.5rem !important; }
+    .stats-detail-table .sd-value-cell { font-size: 0.95rem; }
 
     .fin-card .card-body { padding: 0.85rem !important; }
     .fin-stat-item { padding: 0.65rem 0.7rem; gap: 0.6rem; }
@@ -256,8 +296,10 @@
     .ms-value { font-size: 1.05rem; }
     .ms-badge { font-size: 0.58rem; padding: 0.12rem 0.4rem; }
 
-    .stats-detail-table td:first-child { font-size: 0.78rem; padding: 0.5rem 0.6rem; }
-    .stats-detail-table td:last-child { font-size: 0.88rem; padding: 0.5rem 0.6rem; }
+    .stats-detail-table .sd-icon-cell { width: 36px; min-width: 36px; padding: 0.4rem 0.25rem !important; }
+    .stats-detail-table .sd-icon-wrap { width: 28px; height: 28px; font-size: 0.75rem; border-radius: var(--radius-sm); }
+    .stats-detail-table .sd-label-cell { font-size: 0.78rem; padding: 0.4rem 0.4rem !important; }
+    .stats-detail-table .sd-value-cell { font-size: 0.88rem; padding: 0.4rem 0.4rem !important; }
 
     .fin-card .card-body { padding: 0.75rem !important; }
     .fin-stat-item { padding: 0.55rem 0.6rem; gap: 0.5rem; border-radius: var(--radius-md); }
@@ -278,8 +320,10 @@
     .ms-value { font-size: 0.95rem; }
     .ms-badge { font-size: 0.55rem; padding: 0.1rem 0.35rem; }
 
-    .stats-detail-table td:first-child { font-size: 0.75rem; padding: 0.4rem 0.5rem; }
-    .stats-detail-table td:last-child { font-size: 0.82rem; }
+    .stats-detail-table .sd-icon-cell { width: 32px; min-width: 32px; padding: 0.35rem 0.2rem !important; }
+    .stats-detail-table .sd-icon-wrap { width: 26px; height: 26px; font-size: 0.7rem; }
+    .stats-detail-table .sd-label-cell { font-size: 0.75rem; padding: 0.35rem 0.35rem !important; }
+    .stats-detail-table .sd-value-cell { font-size: 0.82rem; }
 
     .fin-card .card-body { padding: 0.65rem !important; }
     .fin-stat-item { padding: 0.45rem 0.5rem; gap: 0.4rem; }
@@ -585,50 +629,59 @@
                 <table class="table table-hover mb-0 align-middle stats-detail-table">
                     <tbody>
                         <tr>
-                            <td class="fw-bold px-3" style="width: 55%"><i class="fas fa-user-graduate me-2 text-primary"></i>إجمالي الطلاب المسجلين</td>
-                            <td class="text-center fw-bold">{{ stats.total_students }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-primary"><i class="fas fa-user-graduate"></i></div></td>
+                            <td class="sd-label-cell px-2">إجمالي الطلاب المسجلين</td>
+                            <td class="sd-value-cell">{{ stats.total_students }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-check-circle me-2 text-success"></i>الطلاب المستمرون</td>
-                            <td class="text-center text-success fw-bold">{{ stats.active_students }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-success"><i class="fas fa-check-circle"></i></div></td>
+                            <td class="sd-label-cell px-2">الطلاب المستمرون</td>
+                            <td class="sd-value-cell text-success">{{ stats.active_students }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-unlink me-2 text-warning"></i>طلاب غير مربوطين</td>
-                            <td class="text-center text-warning fw-bold">{{ stats.unlinked_students or 0 }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-warning"><i class="fas fa-unlink"></i></div></td>
+                            <td class="sd-label-cell px-2">طلاب غير مربوطين</td>
+                            <td class="sd-value-cell text-warning">{{ stats.unlinked_students or 0 }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-chalkboard-teacher me-2 text-success"></i>إجمالي المدرسين</td>
-                            <td class="text-center fw-bold">{{ stats.total_teachers }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-success"><i class="fas fa-chalkboard-teacher"></i></div></td>
+                            <td class="sd-label-cell px-2">إجمالي المدرسين</td>
+                            <td class="sd-value-cell">{{ stats.total_teachers }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-book-open me-2 text-info"></i>عدد المواد الدراسية</td>
-                            <td class="text-center fw-bold">{{ stats.total_subjects }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-info"><i class="fas fa-book-open"></i></div></td>
+                            <td class="sd-label-cell px-2">عدد المواد الدراسية</td>
+                            <td class="sd-value-cell">{{ stats.total_subjects }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-money-check-alt me-2 text-primary"></i>عدد عمليات الدفع</td>
-                            <td class="text-center fw-bold">{{ stats.total_installments }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-primary"><i class="fas fa-money-check-alt"></i></div></td>
+                            <td class="sd-label-cell px-2">عدد عمليات الدفع</td>
+                            <td class="sd-value-cell">{{ stats.total_installments }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-coins me-2 text-warning"></i>إجمالي المبالغ المدفوعة</td>
-                            <td class="text-center text-primary fw-bold">{{ format_currency(stats.total_amount_paid) }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-warning"><i class="fas fa-coins"></i></div></td>
+                            <td class="sd-label-cell px-2">إجمالي المبالغ المدفوعة</td>
+                            <td class="sd-value-cell text-primary">{{ format_currency(stats.total_amount_paid) }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-hand-holding-usd me-2 text-warning"></i>إجمالي السحوبات</td>
-                            <td class="text-center text-warning fw-bold">{{ format_currency(stats.total_withdrawals) }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-warning"><i class="fas fa-hand-holding-usd"></i></div></td>
+                            <td class="sd-label-cell px-2">إجمالي السحوبات</td>
+                            <td class="sd-value-cell text-warning">{{ format_currency(stats.total_withdrawals) }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-building me-2 text-danger"></i>إجمالي خصم المعهد (الاستقطاعات)</td>
-                            <td class="text-center text-danger fw-bold">{{ format_currency(stats.total_institute_deduction) }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-danger"><i class="fas fa-building"></i></div></td>
+                            <td class="sd-label-cell px-2">إجمالي خصم المعهد (الاستقطاعات)</td>
+                            <td class="sd-value-cell text-danger">{{ format_currency(stats.total_institute_deduction) }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-bold px-3"><i class="fas fa-user-tie me-2 text-info"></i>إجمالي مستحق المدرسين</td>
-                            <td class="text-center text-info fw-bold">{{ format_currency((stats.total_amount_paid or 0) - (stats.total_institute_deduction or 0)) }}</td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-info"><i class="fas fa-user-tie"></i></div></td>
+                            <td class="sd-label-cell px-2">إجمالي مستحق المدرسين</td>
+                            <td class="sd-value-cell text-info">{{ format_currency((stats.total_amount_paid or 0) - (stats.total_institute_deduction or 0)) }}</td>
                         </tr>
                         <tr class="table-primary">
-                            <td class="fw-bold px-3"><i class="fas fa-wallet me-2 text-primary"></i>المستلم الكلي (المدفوع - المسحوب)</td>
-                            <td class="text-center text-primary fw-bold">
-                                {{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}
-                            </td>
+                            <td class="sd-icon-cell"><div class="sd-icon-wrap si-primary"><i class="fas fa-wallet"></i></div></td>
+                            <td class="sd-label-cell px-2">المستلم الكلي (المدفوع - المسحوب)</td>
+                            <td class="sd-value-cell text-primary">{{ format_currency(stats.total_amount_paid - stats.total_withdrawals) }}</td>
                         </tr>
 
                     </tbody>
@@ -713,7 +766,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailContainer = document.getElementById('detailCheckboxes');
     if (detailContainer && detailRows.length > 0) {
         detailRows.forEach((row, i) => {
-            const label = row.querySelector('td:first-child')?.textContent?.trim() || '';
+            // Table now has 3 cols: sd-icon-cell, sd-label-cell, sd-value-cell
+            const labelCell = row.querySelector('.sd-label-cell') || row.querySelector('td:nth-child(2)') || row.querySelector('td:first-child');
+            const label = labelCell?.textContent?.trim() || '';
             const cb = document.createElement('div');
             cb.className = 'form-check';
             cb.innerHTML = `<input class="form-check-input print-select-cb" type="checkbox" id="print_cb_detail_${i}" checked>
