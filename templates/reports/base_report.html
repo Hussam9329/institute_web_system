@@ -556,11 +556,69 @@
             padding: 9px 14px;
             border-bottom: 1px solid var(--light);
             vertical-align: middle;
-            /* منع التفاف النص - سطر واحد فقط */
+            /* سطر واحد فقط - بدون التفاف */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
+            position: relative;
+        }
+
+        /* مؤشر بصري خفيف للخلايا المقتطعة */
+        .report-table tbody td.cell-truncated {
+            cursor: help;
+        }
+
+        .report-table tbody td.cell-truncated::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 8px;
+            right: 8px;
+            border-bottom: 1.5px dotted var(--muted-light);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .report-table tbody td.cell-truncated:hover::after {
+            opacity: 1;
+        }
+
+        /* تلميح احترافي مخصص */
+        .cell-tooltip {
+            position: fixed;
+            z-index: 9999;
+            background: var(--sidebar-dark);
+            color: var(--white);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.6;
+            max-width: 350px;
+            white-space: normal;
+            word-wrap: break-word;
+            box-shadow: 0 8px 30px rgba(30, 27, 75, 0.35);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .cell-tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .cell-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            right: 16px;
+            width: 10px;
+            height: 10px;
+            background: var(--sidebar-dark);
+            transform: rotate(45deg);
+            border-radius: 2px;
         }
 
         /* إخفاء العمود عند التخصيص */
@@ -874,12 +932,18 @@
                 width: 100% !important;
             }
 
-            /* منع التفاف النص في الطباعة - سطر واحد فقط */
+            /* سطر واحد فقط في الطباعة */
             .report-table thead th,
             .report-table tbody td {
                 white-space: nowrap !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
+            }
+
+            /* إخفاء التلميح والمؤشرات في الطباعة */
+            .cell-tooltip,
+            .report-table tbody td.cell-truncated::after {
+                display: none !important;
             }
 
             .report-table thead {
@@ -1421,9 +1485,92 @@
             }, 500);
         }
 
+        // ===== تلميح احترافي للخلايا المقتطعة =====
+        let activeTooltip = null;
+
+        function initCellTooltips() {
+            // إنشاء عنصر التلميح
+            if (!document.getElementById('cellTooltip')) {
+                const tip = document.createElement('div');
+                tip.id = 'cellTooltip';
+                tip.className = 'cell-tooltip';
+                document.body.appendChild(tip);
+            }
+            activeTooltip = document.getElementById('cellTooltip');
+
+            // فحص كل خلايا الجدول
+            const tables = document.querySelectorAll('.report-table');
+            tables.forEach(table => {
+                const tds = table.querySelectorAll('tbody td');
+                tds.forEach(td => {
+                    td.removeEventListener('mouseenter', handleCellHover);
+                    td.removeEventListener('mouseleave', handleCellLeave);
+                    td.addEventListener('mouseenter', handleCellHover);
+                    td.addEventListener('mouseleave', handleCellLeave);
+                });
+            });
+
+            // فحص أولي بعد رسم الجدول
+            requestAnimationFrame(() => detectTruncatedCells());
+        }
+
+        function detectTruncatedCells() {
+            const tables = document.querySelectorAll('.report-table');
+            tables.forEach(table => {
+                const tds = table.querySelectorAll('tbody td');
+                tds.forEach(td => {
+                    const isTruncated = td.scrollWidth > td.clientWidth + 2;
+                    td.classList.toggle('cell-truncated', isTruncated);
+                });
+            });
+        }
+
+        function handleCellHover(e) {
+            const td = e.currentTarget;
+            if (!td.classList.contains('cell-truncated')) return;
+
+            const text = td.textContent.trim();
+            if (!text || !activeTooltip) return;
+
+            activeTooltip.textContent = text;
+
+            // حساب الموقع
+            const rect = td.getBoundingClientRect();
+            let left = rect.left + rect.width / 2 - 50;
+            let top = rect.bottom + 8;
+
+            // حدود الشاشة
+            const tipWidth = Math.min(text.length * 9, 350);
+            if (left + tipWidth > window.innerWidth - 16) {
+                left = window.innerWidth - tipWidth - 16;
+            }
+            if (left < 8) left = 8;
+            if (top + 60 > window.innerHeight) {
+                top = rect.top - 50;
+            }
+
+            activeTooltip.style.left = left + 'px';
+            activeTooltip.style.top = top + 'px';
+            activeTooltip.classList.add('visible');
+        }
+
+        function handleCellLeave() {
+            if (activeTooltip) {
+                activeTooltip.classList.remove('visible');
+            }
+        }
+
+        // إعادة فحص عند تغيير حجم النافذة
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(detectTruncatedCells, 200);
+        });
+
         // تهيئة أدوات التقرير عند التحميل
         document.addEventListener('DOMContentLoaded', function() {
             initReportControls();
+            initCellTooltips();
         });
     </script>
 </body>
