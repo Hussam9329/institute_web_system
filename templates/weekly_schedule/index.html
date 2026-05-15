@@ -1408,7 +1408,10 @@ function getVisibleTimeSlotsForRoom(roomId) {
 // ===== HELPER: Does event overlap with a time slot? =====
 function isTimeOverlappingSlot(ev, time) {
     // Check if event overlaps with the given time slot (not just starts at it)
-    return normalizeTimeValue(ev.start_time) <= normalizeTimeValue(time) && normalizeTimeValue(ev.end_time) > normalizeTimeValue(time);
+    const startMin = timeToMinutes(ev.start_time);
+    const timeMin = timeToMinutes(time);
+    const endMin = timeToMinutes(ev.end_time);
+    return startMin <= timeMin && endMin > timeMin;
 }
 
 // ===== HELPER: Get slot block info (for cross-type shading) =====
@@ -1913,7 +1916,7 @@ async function checkConflictPreview() {
     const conflicts = allSchedule.filter(ev => {
         if (editId && ev.id === parseInt(editId)) return false;
         if (ev.room_id !== roomId || ev.day_of_week !== day) return false;
-        return startTime < normalizeTimeValue(ev.end_time) && normalizeTimeValue(ev.start_time) < endTime;
+        return timeToMinutes(startTime) < timeToMinutes(ev.end_time) && timeToMinutes(ev.start_time) < timeToMinutes(endTime);
     });
 
     if (conflicts.length > 0) {
@@ -2100,10 +2103,6 @@ async function autoSortSchedule() {
 }
 
 // ===== UTILITIES =====
-function timeToMinutes(time) {
-    const [h, m] = time.split(':').map(Number);
-    return h * 60 + m;
-}
 
 function incrementTime(time, minutes) {
     const totalMin = timeToMinutes(time) + minutes;
