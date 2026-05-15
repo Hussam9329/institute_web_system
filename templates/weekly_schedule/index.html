@@ -2249,7 +2249,12 @@ function openAddEventModal(day, time, roomId) {
 
         // وضع اختيار المدة افتراضياً
         setTimeMode('select');
-        setEventType('محاضرة');
+        // تحديد نوع الحدث بناءً على الفلتر الحالي
+        const defaultEventType =
+            currentEventTypeFilter === 'امتحان'
+                ? 'امتحان'
+                : 'محاضرة';
+        setEventType(defaultEventType);
         populateModalSelects();
 
         // تعيين القاعة
@@ -2380,6 +2385,15 @@ async function saveEvent() {
         return;
     }
 
+    // التحقق من صحة نوع الحدث
+    if (!['محاضرة', 'امتحان'].includes(data.event_type)) {
+        errorEl.textContent = 'يرجى تحديد نوع الحدث بشكل صحيح: محاضرة أو امتحان';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
+    }
+
     try {
         let res;
         if (editId) {
@@ -2426,7 +2440,7 @@ async function deleteEvent(eventId) {
         const res = await apiRequest('/api/weekly-schedule/' + eventId, {method: 'DELETE'});
         if (res.success) {
             await refreshData();
-            showAlert('تم حذف ' + evLabel, 'success');
+            showAlert(res.message || ('تم حذف ' + evLabel), 'success');
         } else { showAlert(res.message || 'خطأ في الحذف'); }
     } catch(e) { showAlert('خطأ في الاتصال'); }
 }

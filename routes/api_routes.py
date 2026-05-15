@@ -2060,7 +2060,10 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
 
         # التحقق من نوع الحدث
         if event_type not in ('محاضرة', 'امتحان'):
-            event_type = 'محاضرة'
+            return {
+                "success": False,
+                "message": "نوع الحدث غير صالح. يجب أن يكون محاضرة أو امتحان"
+            }
         
         # فحص تعارض القاعة: لا يمكن إضافة حدثين في نفس القاعة بنفس اليوم والوقت المتداخل
         room_conflict = db.execute_query('''
@@ -2161,7 +2164,10 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
 
         # التحقق من نوع الحدث
         if event_type not in ('محاضرة', 'امتحان'):
-            event_type = 'محاضرة'
+            return {
+                "success": False,
+                "message": "نوع الحدث غير صالح. يجب أن يكون محاضرة أو امتحان"
+            }
         
         # فحص تعارض القاعة (باستثناء المحاضرة الحالية)
         room_conflict = db.execute_query('''
@@ -2215,7 +2221,7 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
 
 @router.delete("/weekly-schedule/{lecture_id}")
 async def api_delete_weekly_lecture(request: Request, lecture_id: int):
-    """حذف محاضرة من الجدول الأسبوعي"""
+    """حذف حدث من الجدول الأسبوعي (محاضرة أو امتحان)"""
     check_permission(request, 'delete_subjects')
     try:
         guard = deletion_guard.can_delete_weekly_schedule(lecture_id)
@@ -2223,8 +2229,23 @@ async def api_delete_weekly_lecture(request: Request, lecture_id: int):
             return guard.to_dict()
         
         db = Database()
+        # جلب بيانات الحدث قبل الحذف لمعرفة نوعه
+        event_row = db.execute_query(
+            "SELECT event_type FROM weekly_schedule WHERE id = %s",
+            (lecture_id,)
+        )
+        
+        if not event_row:
+            return {"success": False, "message": "الحدث غير موجود"}
+        
+        event_type = event_row[0].get('event_type', 'محاضرة')
+        event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
+        
         db.execute_query("DELETE FROM weekly_schedule WHERE id = %s", (lecture_id,))
-        return {"success": True, "message": "تم حذف المحاضرة"}
+        return {
+            "success": True,
+            "message": f"تم حذف {event_label} بنجاح"
+        }
     except Exception as e:
         return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
