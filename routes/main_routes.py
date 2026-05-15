@@ -2269,19 +2269,88 @@ async def weekly_schedule_page(request: Request):
 
 
 @router.get("/logs", response_class=HTMLResponse)
-async def operation_logs_page(request: Request):
-    """صفحة سجل العمليات"""
+async def operation_logs_page(
+    request: Request,
+    username: str = "",
+    action: str = "",
+    entity: str = "",
+    date_from: str = "",
+    date_to: str = "",
+    sort: str = "newest"
+):
+    """صفحة سجل العمليات مع فلاتر وفرز"""
     check_permission(request, 'view_logs')
     db = Database()
 
-    logs = db.execute_query("""
+    # بناء الاستعلام مع الفلاتر
+    where_clauses = []
+    params = []
+
+    if username:
+        where_clauses.append("username LIKE %s")
+        params.append(f'%{username}%')
+
+    if action:
+        where_clauses.append("action = %s")
+        params.append(action)
+
+    if entity:
+        where_clauses.append("entity = %s")
+        params.append(entity)
+
+    if date_from:
+        where_clauses.append("created_at >= %s")
+        params.append(date_from + ' 00:00:00')
+
+    if date_to:
+        where_clauses.append("created_at <= %s")
+        params.append(date_to + ' 23:59:59')
+
+    where_sql = ""
+    if where_clauses:
+        where_sql = "WHERE " + " AND ".join(where_clauses)
+
+    # الفرز
+    order_sql = "ORDER BY id DESC"
+    if sort == 'date_asc':
+        order_sql = "ORDER BY created_at ASC"
+    elif sort == 'date_desc' or sort == 'newest':
+        order_sql = "ORDER BY id DESC"
+    elif sort == 'username':
+        order_sql = "ORDER BY username ASC"
+    elif sort == 'action':
+        order_sql = "ORDER BY action ASC"
+
+    query = f"""
         SELECT *
         FROM operation_logs
-        ORDER BY id DESC
-        LIMIT 300
-    """)
+        {where_sql}
+        {order_sql}
+        LIMIT 500
+    """
+
+    logs = db.execute_query(query, tuple(params) if params else None)
+
+    # جلب القيم المميزة للفلاتر
+    try:
+        usernames = db.execute_query("SELECT DISTINCT username FROM operation_logs WHERE username IS NOT NULL ORDER BY username")
+        actions = db.execute_query("SELECT DISTINCT action FROM operation_logs ORDER BY action")
+        entities = db.execute_query("SELECT DISTINCT entity FROM operation_logs ORDER BY entity")
+    except Exception:
+        usernames = []
+        actions = []
+        entities = []
 
     return templates.TemplateResponse("logs/index.html", {
         "request": request,
-        "logs": logs or []
+        "logs": logs or [],
+        "username": username,
+        "action": action,
+        "entity": entity,
+        "date_from": date_from,
+        "date_to": date_to,
+        "sort": sort,
+        "usernames": [u['username'] for u in usernames] if usernames else [],
+        "actions": [a['action'] for a in actions] if actions else [],
+        "entities": [e['entity'] for e in entities] if entities else [],
     })

@@ -13,8 +13,116 @@
             </h4>
             <p class="text-muted mb-0 small">عرض جميع العمليات المسجلة في النظام مع تفاصيل المستخدم والتاريخ</p>
         </div>
+        <div>
+            <span class="badge bg-primary fs-6">
+                <i class="fas fa-list me-1"></i>
+                {{ logs|length }} عملية
+            </span>
+        </div>
     </div>
 
+    <!-- ===== فلاتر سجل العمليات ===== -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-3">
+            <form method="get" action="/logs" id="logsFilterForm">
+                <div class="row g-2 align-items-end">
+                    <!-- المستخدم -->
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fas fa-user me-1"></i>المستخدم
+                        </label>
+                        <select name="username" class="form-select form-select-sm">
+                            <option value="">الكل</option>
+                            {% for u in usernames %}
+                            <option value="{{ u }}" {% if username == u %}selected{% endif %}>{{ u }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- نوع العملية -->
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fas fa-cog me-1"></i>نوع العملية
+                        </label>
+                        <select name="action" class="form-select form-select-sm">
+                            <option value="">الكل</option>
+                            {% for a in actions %}
+                            <option value="{{ a }}" {% if action == a %}selected{% endif %}>
+                                {% if a == 'create' %}إضافة
+                                {% elif a == 'update' %}تعديل
+                                {% elif a == 'delete' %}حذف
+                                {% elif a == 'link' %}ربط
+                                {% elif a == 'unlink' %}إلغاء ربط
+                                {% elif a == 'withdrawal' %}سحب
+                                {% else %}{{ a }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- نوع العنصر -->
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fas fa-folder me-1"></i>نوع العنصر
+                        </label>
+                        <select name="entity" class="form-select form-select-sm">
+                            <option value="">الكل</option>
+                            {% for e in entities %}
+                            <option value="{{ e }}" {% if entity == e %}selected{% endif %}>
+                                {% if e == 'student' %}طالب
+                                {% elif e == 'teacher' %}مدرس
+                                {% elif e == 'subject' %}مادة
+                                {% elif e == 'installment' %}قسط
+                                {% elif e == 'teacher_withdrawal' %}سحب
+                                {% elif e == 'student_teacher' %}ربط
+                                {% else %}{{ e }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- من تاريخ -->
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fas fa-calendar me-1"></i>من تاريخ
+                        </label>
+                        <input type="date" name="date_from" class="form-control form-control-sm"
+                               value="{{ date_from }}">
+                    </div>
+                    <!-- إلى تاريخ -->
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fas fa-calendar-check me-1"></i>إلى تاريخ
+                        </label>
+                        <input type="date" name="date_to" class="form-control form-control-sm"
+                               value="{{ date_to }}">
+                    </div>
+                    <!-- الفرز -->
+                    <div class="col-6 col-md-3 col-lg-1">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="fas fa-sort me-1"></i>فرز
+                        </label>
+                        <select name="sort" class="form-select form-select-sm">
+                            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>الأحدث</option>
+                            <option value="date_asc" {% if sort == 'date_asc' %}selected{% endif %}>الأقدم</option>
+                            <option value="username" {% if sort == 'username' %}selected{% endif %}>المستخدم</option>
+                            <option value="action" {% if sort == 'action' %}selected{% endif %}>العملية</option>
+                        </select>
+                    </div>
+                    <!-- أزرار -->
+                    <div class="col-6 col-md-3 col-lg-1">
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                                <i class="fas fa-filter me-1"></i>تصفية
+                            </button>
+                            <a href="/logs" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
+                                <i class="fas fa-redo"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== جدول العمليات ===== -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -89,6 +197,14 @@
                 </table>
             </div>
         </div>
+        {% if logs|length >= 500 %}
+        <div class="card-footer bg-light text-center">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                تم عرض أول 500 نتيجة. استخدم الفلاتر لتضييق نطاق البحث.
+            </small>
+        </div>
+        {% endif %}
     </div>
 </div>
 </div>

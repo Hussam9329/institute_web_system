@@ -109,6 +109,7 @@
         .toolbar-actions {
             display: flex;
             gap: 8px;
+            align-items: center;
         }
 
         .btn-print {
@@ -132,6 +133,28 @@
             box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         }
 
+        /* زر تخصيص التقرير */
+        .btn-customize {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-family: 'NotoArabic', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-customize:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-1px);
+        }
+
         .btn-close-report {
             background: rgba(255, 255, 255, 0.1);
             color: var(--white);
@@ -152,6 +175,159 @@
         .btn-close-report:hover {
             background: rgba(255, 255, 255, 0.2);
             color: var(--white);
+        }
+
+        /* ===== لوحة تخصيص التقرير ===== */
+        .customize-panel {
+            background: var(--white);
+            border-bottom: 2px solid var(--primary-light);
+            padding: 16px 24px;
+            display: none;
+            animation: slideDown 0.25s ease;
+        }
+
+        .customize-panel.open {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .customize-panel h6 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .customize-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .col-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .col-toggle:hover {
+            border-color: var(--primary-light);
+            background: #eff6ff;
+        }
+
+        .col-toggle input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .col-toggle.active {
+            background: #eff6ff;
+            border-color: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        /* ===== شريط البحث والفرز ===== */
+        .report-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 14px 24px;
+            background: #fafbfc;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .report-search-box {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+            max-width: 350px;
+        }
+
+        .report-search-box input {
+            width: 100%;
+            padding: 7px 12px 7px 34px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'NotoArabic', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+            direction: rtl;
+        }
+
+        .report-search-box input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .report-search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted-light);
+            font-size: 13px;
+        }
+
+        .report-sort-box,
+        .report-date-filter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .report-sort-box label,
+        .report-date-filter label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .report-sort-box select,
+        .report-date-filter input {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'NotoArabic', sans-serif;
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
+            background: var(--white);
+        }
+
+        .report-sort-box select:focus,
+        .report-date-filter input:focus {
+            border-color: var(--primary-light);
+        }
+
+        .report-controls-count {
+            font-size: 12px;
+            color: var(--muted);
+            margin-right: auto;
+        }
+
+        .report-controls-count strong {
+            color: var(--primary);
         }
 
         /* ===== محتوى التقرير ===== */
@@ -336,6 +512,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            table-layout: auto;
         }
 
         .report-table thead th {
@@ -346,6 +523,28 @@
             font-size: 12px;
             text-align: right;
             white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .report-table thead th:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-darker));
+        }
+
+        .report-table thead th .sort-icon {
+            display: inline-block;
+            margin-right: 4px;
+            font-size: 10px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .report-table thead th.sort-asc .sort-icon,
+        .report-table thead th.sort-desc .sort-icon {
+            opacity: 1;
+            color: #fbbf24;
         }
 
         .report-table thead th.text-center,
@@ -357,6 +556,20 @@
             padding: 9px 14px;
             border-bottom: 1px solid var(--light);
             vertical-align: middle;
+            /* التفاف النص داخل الخلايا */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+        }
+
+        /* إخفاء العمود عند التخصيص */
+        .report-table .col-hidden {
+            display: none;
+        }
+
+        .report-table tbody tr.row-hidden {
+            display: none;
         }
 
         .report-table tbody tr:nth-child(even) {
@@ -491,17 +704,44 @@
                 line-height: 1.5;
             }
 
-            /* إعدادات الصفحة */
+            /* إعدادات الصفحة - A4 Portrait (الديفولت) */
             @page {
                 size: A4 portrait;
                 margin: 8mm 10mm 12mm 10mm;
             }
 
+            /* A4 Landscape للجداول العريضة */
+            @page landscape {
+                size: A4 landscape;
+                margin: 8mm 10mm 12mm 10mm;
+            }
+
+            /* عند وجود أعمدة كثيرة نحوّل تلقائياً إلى Landscape */
+            body.wide-report {
+                /* يتم التحكم بها عبر JavaScript */
+            }
+
+            body.wide-report .report-table-wrapper {
+                page: landscape;
+            }
+
             /* إخفاء العناصر غير المطلوبة */
             .report-toolbar,
             .no-print,
-            .btn-close-report {
+            .btn-close-report,
+            .customize-panel,
+            .report-controls {
                 display: none !important;
+            }
+
+            /* إظهار كل الصفوف المخفية بالبحث */
+            .report-table tbody tr.row-hidden {
+                display: table-row !important;
+            }
+
+            /* إظهار كل الأعمدة المخفية بالتخصيص */
+            .report-table .col-hidden {
+                display: table-cell !important;
             }
 
             /* الحاوية الرئيسية - ملء الصفحة */
@@ -634,6 +874,14 @@
                 width: 100% !important;
             }
 
+            /* التفاف النص في الطباعة */
+            .report-table thead th,
+            .report-table tbody td {
+                overflow-wrap: break-word !important;
+                word-wrap: break-word !important;
+                word-break: break-word !important;
+            }
+
             .report-table thead {
                 display: table-header-group !important;
             }
@@ -654,7 +902,7 @@
             .report-table thead th {
                 padding: 6px 8px !important;
                 font-size: 8pt !important;
-                white-space: nowrap !important;
+                white-space: normal !important;
                 page-break-after: avoid !important;
                 break-after: avoid !important;
                 page-break-inside: avoid !important;
@@ -757,10 +1005,32 @@
         @media (max-width: 768px) {
             .report-toolbar {
                 padding: 10px 16px;
+                flex-wrap: wrap;
+                gap: 8px;
             }
 
             .toolbar-brand span {
                 font-size: 14px;
+            }
+
+            .toolbar-actions {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .btn-customize {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .report-controls {
+                padding: 10px 16px;
+                gap: 8px;
+            }
+
+            .report-search-box {
+                max-width: 100%;
+                min-width: 100%;
             }
 
             .report-container {
@@ -822,11 +1092,45 @@
                 <i class="fas fa-print"></i>
                 طباعة / حفظ PDF
             </button>
+            <button class="btn-customize" onclick="toggleCustomizePanel()">
+                <i class="fas fa-sliders-h"></i>
+                تخصيص التقرير
+            </button>
             <a href="javascript:history.back()" class="btn-close-report">
                 <i class="fas fa-arrow-right"></i>
                 رجوع
             </a>
         </div>
+    </div>
+
+    <!-- لوحة تخصيص التقرير -->
+    <div class="customize-panel no-print" id="customizePanel">
+        <h6><i class="fas fa-columns"></i> إظهار / إخفاء الأعمدة</h6>
+        <div class="customize-columns" id="customizeColumns">
+            <!-- يتم ملؤها تلقائياً من JavaScript -->
+        </div>
+    </div>
+
+    <!-- شريط البحث والفرز والتصفية -->
+    <div class="report-controls no-print" id="reportControls" style="display:none;">
+        <div class="report-search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="reportSearchInput" placeholder="بحث في صفوف التقرير..." oninput="filterReportRows()">
+        </div>
+        <div class="report-sort-box">
+            <label><i class="fas fa-sort"></i> فرز:</label>
+            <select id="reportSortSelect" onchange="sortReportTable()">
+                <option value="">بدون فرز</option>
+                <!-- يتم ملؤها تلقائياً -->
+            </select>
+        </div>
+        <div class="report-date-filter" id="dateFilterBox" style="display:none;">
+            <label><i class="fas fa-calendar-alt"></i> من:</label>
+            <input type="date" id="dateFrom" onchange="filterReportRows()">
+            <label>إلى:</label>
+            <input type="date" id="dateTo" onchange="filterReportRows()">
+        </div>
+        <div class="report-controls-count" id="reportCount"></div>
     </div>
 
     <!-- محتوى التقرير -->
@@ -837,15 +1141,259 @@
     </div>
 
     <script>
-        // طباعة احترافية - ضبط الجداول الطويلة قبل الطباعة
-        function smartPrint() {
-            // تكرار رأس الجدول في كل صفحة (tfoot يظهر في الأسفل كرأس للصفحة التالية)
+        // ===== لوحة تخصيص التقرير =====
+        function toggleCustomizePanel() {
+            const panel = document.getElementById('customizePanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                buildCustomizeControls();
+            }
+        }
+
+        function buildCustomizeControls() {
+            const container = document.getElementById('customizeColumns');
+            container.innerHTML = '';
             const tables = document.querySelectorAll('.report-table');
+
+            tables.forEach((table, tIdx) => {
+                const headers = table.querySelectorAll('thead th');
+                headers.forEach((th, colIdx) => {
+                    const label = th.textContent.trim();
+                    if (!label) return;
+
+                    const toggle = document.createElement('label');
+                    toggle.className = 'col-toggle active';
+                    toggle.innerHTML = `<input type="checkbox" checked data-table="${tIdx}" data-col="${colIdx}" onchange="toggleColumn(this)"> ${label}`;
+                    container.appendChild(toggle);
+                });
+            });
+        }
+
+        function toggleColumn(checkbox) {
+            const tIdx = parseInt(checkbox.dataset.table);
+            const colIdx = parseInt(checkbox.dataset.col);
+            const tables = document.querySelectorAll('.report-table');
+            const table = tables[tIdx];
+            if (!table) return;
+
+            const show = checkbox.checked;
+            const toggle = checkbox.closest('.col-toggle');
+            toggle.classList.toggle('active', show);
+
+            // إخفاء/إظهار th
+            const ths = table.querySelectorAll('thead th');
+            if (ths[colIdx]) {
+                ths[colIdx].classList.toggle('col-hidden', !show);
+            }
+
+            // إخفاء/إظهار td في كل صف
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const tds = row.querySelectorAll('td');
+                if (tds[colIdx]) {
+                    tds[colIdx].classList.toggle('col-hidden', !show);
+                }
+            });
+
+            // إخفاء/إظهار tfoot th
+            const tfootThs = table.querySelectorAll('tfoot th');
+            if (tfootThs[colIdx]) {
+                tfootThs[colIdx].classList.toggle('col-hidden', !show);
+            }
+        }
+
+        // ===== شريط البحث والفرز والتصفية =====
+        function initReportControls() {
+            const table = document.querySelector('.report-table');
+            if (!table) return;
+
+            const controls = document.getElementById('reportControls');
+            controls.style.display = 'flex';
+
+            // بناء قائمة الفرز
+            const sortSelect = document.getElementById('reportSortSelect');
+            sortSelect.innerHTML = '<option value="">بدون فرز</option>';
+            const headers = table.querySelectorAll('thead th');
+            headers.forEach((th, idx) => {
+                const label = th.textContent.trim();
+                if (!label) return;
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = label;
+                sortSelect.appendChild(opt);
+            });
+
+            // كشف أعمدة التاريخ
+            detectDateColumns(table);
+
+            // عدد الصفوف
+            updateRowCount(table);
+        }
+
+        function detectDateColumns(table) {
+            const rows = table.querySelectorAll('tbody tr');
+            if (rows.length === 0) return;
+
+            const tds = rows[0].querySelectorAll('td');
+            let hasDate = false;
+
+            tds.forEach((td, idx) => {
+                const text = td.textContent.trim();
+                // كشف تنسيقات التاريخ: YYYY-MM-DD أو DD/MM/YYYY أو نص عربي يحتوي أرقام تاريخ
+                if (/(\d{4}[-\/]\d{2}[-\/]\d{2})|(\d{2}[-\/]\d{2}[-\/]\d{4})/.test(text)) {
+                    hasDate = true;
+                }
+            });
+
+            if (hasDate) {
+                document.getElementById('dateFilterBox').style.display = 'flex';
+            }
+        }
+
+        function filterReportRows() {
+            const table = document.querySelector('.report-table');
+            if (!table) return;
+
+            const searchVal = document.getElementById('reportSearchInput').value.trim().toLowerCase();
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            const rows = table.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                if (row.classList.contains('total-row')) {
+                    row.classList.remove('row-hidden');
+                    return;
+                }
+
+                let showBySearch = true;
+                let showByDate = true;
+
+                // بحث نصي
+                if (searchVal) {
+                    const rowText = row.textContent.toLowerCase();
+                    showBySearch = rowText.includes(searchVal);
+                }
+
+                // تصفية تاريخ
+                if (dateFrom || dateTo) {
+                    const dateCells = row.querySelectorAll('td');
+                    let rowDateFound = false;
+                    dateCells.forEach(td => {
+                        const text = td.textContent.trim();
+                        // محاولة استخراج التاريخ
+                        const match = text.match(/(\d{4})[-\/](\d{2})[-\/](\d{2})/) ||
+                                      text.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
+                        if (match) {
+                            let dateStr;
+                            if (match[1].length === 4) {
+                                dateStr = `${match[1]}-${match[2]}-${match[3]}`;
+                            } else {
+                                dateStr = `${match[3]}-${match[2]}-${match[1]}`;
+                            }
+                            if (dateFrom && dateStr < dateFrom) showByDate = false;
+                            if (dateTo && dateStr > dateTo) showByDate = false;
+                            rowDateFound = true;
+                        }
+                    });
+                }
+
+                const show = showBySearch && showByDate;
+                row.classList.toggle('row-hidden', !show);
+                if (show) visibleCount++;
+            });
+
+            updateRowCount(table);
+        }
+
+        function sortReportTable() {
+            const table = document.querySelector('.report-table');
+            if (!table) return;
+
+            const colIdx = parseInt(document.getElementById('reportSortSelect').value);
+            if (isNaN(colIdx)) return;
+
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr:not(.total-row)'));
+            const totalRow = tbody.querySelector('tr.total-row');
+
+            // تحديد اتجاه الفرز
+            const ths = table.querySelectorAll('thead th');
+            const th = ths[colIdx];
+            const isAsc = th.classList.contains('sort-asc');
+
+            // إعادة تعيين
+            ths.forEach(h => { h.classList.remove('sort-asc', 'sort-desc'); });
+
+            // تبديل الاتجاه
+            const newAsc = !isAsc;
+            th.classList.add(newAsc ? 'sort-asc' : 'sort-desc');
+
+            rows.sort((a, b) => {
+                const aText = a.querySelectorAll('td')[colIdx]?.textContent.trim() || '';
+                const bText = b.querySelectorAll('td')[colIdx]?.textContent.trim() || '';
+
+                // محاولة فرز رقمي
+                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
+
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return newAsc ? aNum - bNum : bNum - aNum;
+                }
+
+                // فرز نصي
+                return newAsc ? aText.localeCompare(bText, 'ar') : bText.localeCompare(aText, 'ar');
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+            if (totalRow) tbody.appendChild(totalRow);
+        }
+
+        function updateRowCount(table) {
+            const total = table.querySelectorAll('tbody tr:not(.total-row):not(.row-hidden)').length;
+            const allTotal = table.querySelectorAll('tbody tr:not(.total-row)').length;
+            const countEl = document.getElementById('reportCount');
+            if (countEl) {
+                if (total === allTotal) {
+                    countEl.innerHTML = `<strong>${total}</strong> صف`;
+                } else {
+                    countEl.innerHTML = `<strong>${total}</strong> من ${allTotal} صف`;
+                }
+            }
+        }
+
+        // ===== طباعة احترافية - ضبط الجداول الطويلة =====
+        function smartPrint() {
+            // إظهار كل الأعمدة والصفوف مؤقتاً قبل الطباعة
+            document.querySelectorAll('.report-table .col-hidden').forEach(el => {
+                el.setAttribute('data-was-hidden', 'true');
+                el.classList.remove('col-hidden');
+            });
+            document.querySelectorAll('.report-table tbody tr.row-hidden').forEach(el => {
+                el.setAttribute('data-was-hidden', 'true');
+                el.classList.remove('row-hidden');
+            });
+
+            // كشف الجداول العريضة: إذا أعمدة > 6 نحوّل لـ Landscape
+            const tables = document.querySelectorAll('.report-table');
+            let isWide = false;
+            tables.forEach(table => {
+                const colCount = table.querySelectorAll('thead th').length;
+                if (colCount > 6) {
+                    isWide = true;
+                }
+            });
+
+            if (isWide) {
+                document.body.classList.add('wide-report');
+            }
+
+            // تكرار رأس الجدول في كل صفحة
             tables.forEach(table => {
                 const thead = table.querySelector('thead');
                 const tfoot = table.querySelector('tfoot');
                 if (thead && !tfoot) {
-                    // إنشاء tfoot بنفس محتوى thead
                     const newTfoot = document.createElement('tfoot');
                     newTfoot.innerHTML = thead.innerHTML;
                     newTfoot.setAttribute('role', 'repeat-header');
@@ -856,11 +1404,27 @@
             // طباعة
             window.print();
 
-            // تنظيف tfoot المُنشأة بعد الطباعة
+            // تنظيف بعد الطباعة
             setTimeout(() => {
                 document.querySelectorAll('tfoot[role="repeat-header"]').forEach(el => el.remove());
+                document.body.classList.remove('wide-report');
+
+                // إعادة إخفاء ما كان مخفياً
+                document.querySelectorAll('[data-was-hidden="true"]').forEach(el => {
+                    el.removeAttribute('data-was-hidden');
+                    el.classList.add('col-hidden');
+                });
+                document.querySelectorAll('.report-table tbody tr[data-was-hidden="true"]').forEach(el => {
+                    el.removeAttribute('data-was-hidden');
+                    el.classList.add('row-hidden');
+                });
             }, 500);
         }
+
+        // تهيئة أدوات التقرير عند التحميل
+        document.addEventListener('DOMContentLoaded', function() {
+            initReportControls();
+        });
     </script>
 </body>
 </html>

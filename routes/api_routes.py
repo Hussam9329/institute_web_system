@@ -2758,3 +2758,26 @@ async def api_reset_database(request: Request, data: dict):
         }
     except Exception as e:
         return {"success": False, "message": f"خطأ في التنظيف: {str(e)}"}
+
+
+# ===== بيانات المستخدم الحالي =====
+
+@router.get("/current-user")
+async def api_get_current_user(request: Request):
+    """الحصول على بيانات المستخدم الحالي للشريط الجانبي"""
+    try:
+        from auth import get_current_user
+        user = get_current_user(request)
+        if user:
+            return {
+                "success": True,
+                "data": {
+                    "id": user.get("id"),
+                    "username": user.get("username", ""),
+                    "full_name": user.get("full_name", ""),
+                    "role_name": user.get("role_name", ""),
+                }
+            }
+        return {"success": False, "data": None}
+    except Exception:
+        return {"success": False, "data": None}

@@ -204,9 +204,88 @@
         }
     }
 
+    /* Sidebar User Info */
+    .sidebar-user-info {
+        padding: 12px 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        flex-shrink: 0;
+    }
+    .sidebar-user-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .sidebar-user-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--secondary-light), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 800;
+        color: white;
+        flex-shrink: 0;
+    }
+    .sidebar-user-details {
+        flex: 1;
+        min-width: 0;
+    }
+    .sidebar-user-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: white;
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sidebar-user-username {
+        font-size: 10px;
+        color: rgba(255,255,255,0.6);
+        direction: ltr;
+        text-align: right;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sidebar-user-role {
+        font-size: 9px;
+        color: #fbbf24;
+        font-weight: 600;
+        margin-top: 1px;
+    }
+    .sidebar-logout-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        margin-top: 8px;
+        padding: 7px 12px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        border-radius: 8px;
+        color: #fca5a5;
+        font-family: 'Cairo', 'Tajawal', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .sidebar-logout-btn:hover {
+        background: rgba(239, 68, 68, 0.3);
+        color: #fee2e2;
+    }
+
     /* Sidebar Header / Logo */
     .sidebar-header {
-        padding: 20px 18px 15px;
+        padding: 14px 18px 12px;
         text-align: center;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         flex-shrink: 0;
@@ -558,6 +637,22 @@
         <i class="fas fa-times"></i>
     </button>
 
+    <!-- معلومات المستخدم -->
+    <div class="sidebar-user-info">
+        <div class="sidebar-user-card">
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar">م</div>
+            <div class="sidebar-user-details">
+                <div class="sidebar-user-name" id="sidebarUserName">موظف</div>
+                <div class="sidebar-user-username" id="sidebarUserUsername">admin</div>
+                <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;"></div>
+            </div>
+        </div>
+        <a href="/logout" class="sidebar-logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            تسجيل الخروج
+        </a>
+    </div>
+
     <!-- Logo -->
     <div class="sidebar-header">
         <div class="logo-icon">
@@ -904,6 +999,44 @@
     }
     </script>
     
+    <!-- تحميل بيانات المستخدم الحالي في الشريط الجانبي -->
+    <script>
+    (async function() {
+        try {
+            const result = await apiRequest('/api/current-user');
+            if (result && result.success && result.data) {
+                const user = result.data;
+                const nameEl = document.getElementById('sidebarUserName');
+                const usernameEl = document.getElementById('sidebarUserUsername');
+                const avatarEl = document.getElementById('sidebarUserAvatar');
+                const roleEl = document.getElementById('sidebarUserRole');
+
+                if (nameEl && user.full_name) {
+                    nameEl.textContent = user.full_name;
+                } else if (nameEl && user.username) {
+                    nameEl.textContent = user.username;
+                }
+
+                if (usernameEl && user.username) {
+                    usernameEl.textContent = '@' + user.username;
+                }
+
+                if (avatarEl) {
+                    const displayName = user.full_name || user.username || 'م';
+                    avatarEl.textContent = displayName.charAt(0);
+                }
+
+                if (roleEl && user.role_name) {
+                    roleEl.textContent = user.role_name;
+                    roleEl.style.display = 'block';
+                }
+            }
+        } catch (e) {
+            // المستخدم غير مسجل الدخول أو خطأ في الشبكة
+        }
+    })();
+    </script>
+
     <!-- حقن توقيت الجهاز المحلي في جميع النماذج تلقائياً -->
     <script>
     document.addEventListener('submit', function(e) {
