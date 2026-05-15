@@ -1235,7 +1235,7 @@ let currentSortBy = 'time';
 let currentEventTypeFilter = 'all';
 let currentTeacherFilter = 0;
 let currentDayFilter = 'all';
-let currentViewMode = 'grid';
+let currentViewMode = (window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches) ? 'list' : 'grid';
 
 // ===== PAGINATION STATE =====
 let currentRoomPage = 1;
@@ -1288,6 +1288,7 @@ const EXAM_DURATIONS = [
 document.addEventListener('DOMContentLoaded', function() {
     renderRoomPills();
     renderFilterDropdowns();
+    setViewActive(currentViewMode);
     renderStats();
     renderCurrentView();
     renderRoomsList();
@@ -1334,7 +1335,8 @@ function resetTypePills() {
 }
 
 // ===== VIEW TOGGLE =====
-function setView(mode) {
+function setView(mode, automatic) {
+    if (!automatic) window.__weeklyManualViewChoice = true;
     currentViewMode = mode;
     setViewActive(mode);
     if (mode === 'grid') {
