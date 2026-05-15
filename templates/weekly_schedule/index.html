@@ -1194,6 +1194,12 @@ let allSchedule = {{ schedule | tojson }};
 let currentRoomFilter = 'all';
 let currentEventType = 'محاضرة';
 
+// ===== NORMALIZE EVENT TYPE =====
+function normalizeEventType(type) {
+    type = String(type || '').trim();
+    return type === 'امتحان' ? 'امتحان' : 'محاضرة';
+}
+
 // ===== FILTER STATE =====
 let currentSortBy = 'time';
 let currentEventTypeFilter = 'all';
@@ -1359,8 +1365,8 @@ function setDayFilter(day) {
 // ===== STATS BAR =====
 function renderStats() {
     const events = getFilteredEvents();
-    const lecCount = events.filter(e => e.event_type === 'محاضرة').length;
-    const exmCount = events.filter(e => e.event_type === 'امتحان').length;
+    const lecCount = events.filter(e => normalizeEventType(e.event_type) === 'محاضرة').length;
+    const exmCount = events.filter(e => normalizeEventType(e.event_type) === 'امتحان').length;
     const roomCount = currentRoomFilter === 'all' ? allRooms.length : 1;
     const teacherIds = new Set(events.map(e => e.teacher_id));
     const teacherCount = teacherIds.size;
@@ -1392,7 +1398,7 @@ function getFilteredEvents() {
         events = events.filter(ev => ev.room_id === currentRoomFilter);
     }
     if (currentEventTypeFilter !== 'all') {
-        events = events.filter(ev => ev.event_type === currentEventTypeFilter);
+        events = events.filter(ev => normalizeEventType(ev.event_type) === currentEventTypeFilter);
     }
     if (currentTeacherFilter > 0) {
         events = events.filter(ev => ev.teacher_id === currentTeacherFilter);
@@ -1505,8 +1511,8 @@ function getSlotBlockInfo(roomId, day, time) {
     if (blockingEvents.length === 0) return null;
 
     // Check if there's an event of the same type as the current filter
-    const sameTypeEvents = blockingEvents.filter(ev => ev.event_type === currentEventTypeFilter);
-    const otherTypeEvents = blockingEvents.filter(ev => ev.event_type !== currentEventTypeFilter);
+    const sameTypeEvents = blockingEvents.filter(ev => normalizeEventType(ev.event_type) === currentEventTypeFilter);
+    const otherTypeEvents = blockingEvents.filter(ev => normalizeEventType(ev.event_type) !== currentEventTypeFilter);
 
     if (currentEventTypeFilter === 'all') {
         // All types visible — just show as occupied
@@ -1520,7 +1526,7 @@ function getSlotBlockInfo(roomId, day, time) {
 
     if (otherTypeEvents.length > 0) {
         // Only other-type events block this slot
-        const otherType = otherTypeEvents[0].event_type;
+        const otherType = normalizeEventType(otherTypeEvents[0].event_type);
         const isExam = otherType === 'امتحان';
         return {
             blocked: true,
@@ -1547,7 +1553,7 @@ function getEventsAtForRoom(roomId, day, time) {
         const roomMatch = ev.room_id === roomId;
         const dayMatch = ev.day_of_week === day;
         const isStart = normalizeTimeValue(ev.start_time) === normalizeTimeValue(time);
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const typeMatch = currentEventTypeFilter === 'all' || normalizeEventType(ev.event_type) === currentEventTypeFilter;
         const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
         const dayMatchFilter = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
         return roomMatch && dayMatch && isStart && typeMatch && teacherMatch && dayMatchFilter;
@@ -1560,7 +1566,7 @@ function getEventsAt(day, time) {
         const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
         const dayMatch = ev.day_of_week === day;
         const isStart = normalizeTimeValue(ev.start_time) === normalizeTimeValue(time);
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const typeMatch = currentEventTypeFilter === 'all' || normalizeEventType(ev.event_type) === currentEventTypeFilter;
         return roomMatch && dayMatch && isStart && typeMatch;
     });
 }
@@ -1576,7 +1582,7 @@ function buildRoomGridTable(room) {
     html += '<div class="room-meta">';
     html += '<span><i class="fas fa-users"></i> السعة: ' + (room.capacity || '-') + '</span>';
     const roomEvents = allSchedule.filter(ev => {
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const typeMatch = currentEventTypeFilter === 'all' || normalizeEventType(ev.event_type) === currentEventTypeFilter;
         const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
         const dayMatch = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
         return ev.room_id === room.id && typeMatch && teacherMatch && dayMatch;
@@ -1599,7 +1605,7 @@ function buildRoomGridTable(room) {
             if (events.length > 0) {
                 html += '<td>';
                 events.forEach(ev => {
-                    const isExam = (ev.event_type === 'امتحان');
+                    const isExam = (normalizeEventType(ev.event_type) === 'امتحان');
                     const cls = isExam ? 'ws-exm' : 'ws-lec';
                     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
 
@@ -1628,7 +1634,7 @@ function buildRoomGridTable(room) {
                         html += '<td class="ws-blocked"></td>';
                     }
                 } else {
-                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
+                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\', ' + room.id + ', \'' + (currentEventTypeFilter !== 'all' ? currentEventTypeFilter : currentEventType) + '\')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
                 }
             }
         });
@@ -1868,7 +1874,7 @@ function toggleListGroup(header) {
 }
 
 function renderListEventCard(ev) {
-    const isExam = (ev.event_type === 'امتحان');
+    const isExam = (normalizeEventType(ev.event_type) === 'امتحان');
     const cls = isExam ? 'ws-lv-exm' : 'ws-lv-lec';
     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
     const room = allRooms.find(r => r.id === ev.room_id);
@@ -2070,6 +2076,7 @@ function onStartTimeChange() {
 }
 
 function setEventType(type) {
+    type = normalizeEventType(type);
     currentEventType = type;
     document.getElementById('lecEventType').value = type;
     const btnL = document.getElementById('btnTypeLecture');
@@ -2136,7 +2143,7 @@ async function checkConflictPreview() {
 
     if (conflicts.length > 0) {
         const c = conflicts[0];
-        const cType = c.event_type === 'امتحان' ? 'امتحان' : 'محاضرة';
+        const cType = normalizeEventType(c.event_type) === 'امتحان' ? 'امتحان' : 'محاضرة';
         const selectedTeacherId = parseInt(document.getElementById('lecTeacher').value);
         const conflictReason = c.room_id === roomId
             ? 'تعارض في القاعة'
@@ -2223,7 +2230,7 @@ function populateModalSelects() {
     }
 }
 
-function openAddEventModal(day, time, roomId) {
+function openAddEventModal(day, time, roomId, eventType) {
     if (allRooms.length === 0) {
         showAlert('أضف قاعة أولاً قبل إنشاء الجدول', 'warning');
         toggleRoomsPanel();
@@ -2249,11 +2256,12 @@ function openAddEventModal(day, time, roomId) {
 
         // وضع اختيار المدة افتراضياً
         setTimeMode('select');
-        // تحديد نوع الحدث بناءً على الفلتر الحالي
-        const defaultEventType =
-            currentEventTypeFilter === 'امتحان'
-                ? 'امتحان'
-                : 'محاضرة';
+        // تحديد نوع الحدث بناءً على المعامل أو الفلتر الحالي
+        const defaultEventType = normalizeEventType(
+            eventType ||
+            (currentEventTypeFilter !== 'all' ? currentEventTypeFilter : currentEventType)
+        );
+
         setEventType(defaultEventType);
         populateModalSelects();
 
@@ -2298,7 +2306,7 @@ function editEvent(eventId) {
         document.getElementById('lecError').style.display = 'none';
         document.getElementById('lecConflictWarning').style.display = 'none';
 
-        const evType = ev.event_type || 'محاضرة';
+        const evType = normalizeEventType(ev.event_type);
         setEventType(evType);
 
         document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
@@ -2345,7 +2353,7 @@ async function saveEvent() {
         day_of_week: document.getElementById('lecDay').value,
         start_time: document.getElementById('lecStartTime').value,
         end_time: document.getElementById('lecEndTime').value,
-        event_type: document.getElementById('lecEventType').value,
+        event_type: normalizeEventType(document.getElementById('lecEventType').value),
         notes: document.getElementById('lecNotes').value.trim()
     };
     const errorEl = document.getElementById('lecError');
@@ -2429,8 +2437,8 @@ async function saveEvent() {
 }
 
 async function deleteEvent(eventId) {
-    const ev = allSchedule.find(e => e.id === eventId);
-    const evLabel = ev && ev.event_type === 'امتحان' ? 'الامتحان' : 'المحاضرة';
+    const ev = allSchedule.find(e => Number(e.id) === Number(eventId));
+    const evLabel = ev && normalizeEventType(ev.event_type) === 'امتحان' ? 'الامتحان' : 'المحاضرة';
     const details = ev
         ? '\n\n' + ev.subject + '\n' + ev.teacher_name + '\n' + ev.day_of_week + ' من ' + normalizeTimeValue(ev.start_time) + ' إلى ' + normalizeTimeValue(ev.end_time)
         : '';

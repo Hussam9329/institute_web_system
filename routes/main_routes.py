@@ -2266,7 +2266,13 @@ async def weekly_schedule_page(request: Request):
         "request": request,
         "rooms": [dict(r) for r in rooms] if rooms else [],
         "teachers": [dict(t) for t in teachers] if teachers else [],
-        "schedule": [dict(s) for s in schedule] if schedule else []
+        "schedule": [
+            {
+                **dict(s),
+                "event_type": "امتحان" if str(dict(s).get("event_type") or "").strip() == "امتحان" else "محاضرة"
+            }
+            for s in schedule
+        ] if schedule else []
     })
 
 

@@ -1955,6 +1955,12 @@ async def api_delete_room(request: Request, room_id: int):
 
 # ===== عمليات الجدول الأسبوعي =====
 
+def normalize_event_type(event_type):
+    """توحيد نوع الحدث: إزالة المسافات والقيم الفارغة"""
+    event_type = str(event_type or '').strip()
+    return 'امتحان' if event_type == 'امتحان' else 'محاضرة'
+
+
 @router.get("/weekly-schedule")
 async def api_get_weekly_schedule(room_id: int = None):
     """الحصول على الجدول الأسبوعي كاملاً أو لقاعة محددة"""
@@ -2003,7 +2009,30 @@ async def api_get_weekly_schedule(room_id: int = None):
             '''
             results = db.execute_query(query)
         
-        return {"success": True, "data": [dict(r) for r in results] if results else []}
+        data = []
+        for r in results or []:
+            row = dict(r)
+            row['event_type'] = normalize_event_type(row.get('event_type'))
+            data.append(row)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+
+
+@router.post("/weekly-schedule/normalize-db")
+async def api_normalize_weekly_schedule_db(request: Request):
+    """تنظيف بيانات event_type في قاعدة البيانات - يُستدعى مرة واحدة"""
+    check_permission(request, 'edit_subjects')
+    db = Database()
+    try:
+        db.execute_query('''
+            UPDATE weekly_schedule
+            SET event_type = CASE
+                WHEN TRIM(COALESCE(event_type, '')) = 'امتحان' THEN 'امتحان'
+                ELSE 'محاضرة'
+            END
+        ''')
+        return {"success": True, "message": "تم تنظيف بيانات نوع الحدث في قاعدة البيانات"}
     except Exception as e:
         return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
@@ -2020,7 +2049,8 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         day_of_week = data.get('day_of_week', '').strip()
         start_time = data.get('start_time', '').strip()
         end_time = data.get('end_time', '').strip()
-        event_type = data.get('event_type', 'محاضرة').strip()
+        raw_event_type = data.get('event_type', 'محاضرة')
+        event_type = str(raw_event_type or '').strip()
         notes = data.get('notes', '')
         duration = data.get('duration', None)
         
@@ -2128,7 +2158,8 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         day_of_week = data.get('day_of_week', '').strip()
         start_time = data.get('start_time', '').strip()
         end_time = data.get('end_time', '').strip()
-        event_type = data.get('event_type', 'محاضرة').strip()
+        raw_event_type = data.get('event_type', 'محاضرة')
+        event_type = str(raw_event_type or '').strip()
         notes = data.get('notes', '')
         duration = data.get('duration', None)
         
@@ -2238,7 +2269,7 @@ async def api_delete_weekly_lecture(request: Request, lecture_id: int):
         if not event_row:
             return {"success": False, "message": "الحدث غير موجود"}
         
-        event_type = event_row[0].get('event_type', 'محاضرة')
+        event_type = normalize_event_type(event_row[0].get('event_type'))
         event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
         
         db.execute_query("DELETE FROM weekly_schedule WHERE id = %s", (lecture_id,))
