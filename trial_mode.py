@@ -18,7 +18,7 @@ TRIAL_DAYS = 5
 
 # حدود النسخة التجريبية
 TRIAL_LIMITS = {
-    "trial_students": (10, "طلاب"),
+    "trial_students": (20, "طلاب"),
     "trial_teachers": (7, "مدرسين"),
     "trial_subjects": (4, "مواد دراسية"),
     "trial_installments": (10, "أقساط"),

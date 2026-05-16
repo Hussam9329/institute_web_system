@@ -260,6 +260,72 @@
         font-weight: 600;
         margin-top: 1px;
     }
+    /* ===== عداد النسخة التجريبية ===== */
+    .trial-countdown-badge {
+        margin-top: 6px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        font-size: 10.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        direction: rtl;
+        animation: trialPulse 3s ease-in-out infinite;
+    }
+    .trial-countdown-badge i {
+        font-size: 10px;
+        animation: trialHourglass 3s ease-in-out infinite;
+    }
+    .trial-countdown-badge .trial-digit {
+        display: inline-block;
+        min-width: 16px;
+        text-align: center;
+        background: rgba(245, 158, 11, 0.18);
+        border-radius: 3px;
+        padding: 1px 3px;
+        font-variant-numeric: tabular-nums;
+    }
+    .trial-countdown-badge .trial-label {
+        font-weight: 400;
+        opacity: 0.8;
+        font-size: 9.5px;
+    }
+    .trial-countdown-badge.trial-urgent {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        animation: trialUrgentPulse 1.5s ease-in-out infinite;
+    }
+    .trial-countdown-badge.trial-urgent .trial-digit {
+        background: rgba(239, 68, 68, 0.18);
+    }
+    @keyframes trialPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.85; }
+    }
+    @keyframes trialUrgentPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.9; transform: scale(1.02); }
+    }
+    @keyframes trialHourglass {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(15deg); }
+        75% { transform: rotate(-15deg); }
+    }
+    html[data-theme="dark"] .trial-countdown-badge {
+        background: rgba(251, 191, 36, 0.12);
+    }
+    html[data-theme="dark"] .trial-countdown-badge .trial-digit {
+        background: rgba(251, 191, 36, 0.15);
+    }
+    html[data-theme="dark"] .trial-countdown-badge.trial-urgent {
+        background: rgba(248, 113, 113, 0.12);
+    }
+    html[data-theme="dark"] .trial-countdown-badge.trial-urgent .trial-digit {
+        background: rgba(248, 113, 113, 0.15);
+    }
     .sidebar-logout-btn {
         display: flex;
         align-items: center;
@@ -651,8 +717,9 @@
                 <div class="sidebar-user-username" id="sidebarUserUsername">@{{ request.state.user.get('username', '') if request.state.user else '' }}</div>
                 <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;">{{ request.state.user.get('role_name', '') if request.state.user else '' }}</div>
                 {% if request.state.trial_account %}
-                <div class="sidebar-user-username" style="margin-top:6px;color:#f59e0b;font-weight:700;">
-                    نسخة تجريبية • تنتهي خلال {{ ((request.state.trial_account.get('seconds_remaining', 0) or 0) // 86400) }} يوم
+                <div id="trialCountdown" class="trial-countdown-badge" data-seconds="{{ request.state.trial_account.get('seconds_remaining', 0) or 0 }}">
+                    <i class="fas fa-hourglass-half me-1"></i>
+                    <span id="trialCountdownText">جاري الحساب...</span>
                 </div>
                 {% endif %}
             </div>
@@ -1039,6 +1106,53 @@
 
     <script src="/static/js/theme-guard.js?v=20260515-responsive-final" defer></script>
     <script src="/static/js/responsive-guard.js?v=20260515-responsive-final" defer></script>
+
+    <!-- عداد النسخة التجريبية -->
+    <script>
+    (function() {
+        const el = document.getElementById('trialCountdown');
+        if (!el) return;
+        const textEl = document.getElementById('trialCountdownText');
+        let remaining = parseInt(el.dataset.seconds) || 0;
+
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+        function updateCountdown() {
+            if (remaining <= 0) {
+                textEl.innerHTML = 'انتهت المدة التجريبية';
+                el.classList.add('trial-urgent');
+                return;
+            }
+            const d = Math.floor(remaining / 86400);
+            const h = Math.floor((remaining % 86400) / 3600);
+            const m = Math.floor((remaining % 3600) / 60);
+            const s = remaining % 60;
+
+            let html = '';
+            if (d > 0) {
+                html += '<span class="trial-digit">' + d + '</span><span class="trial-label">يوم</span> ';
+            }
+            html += '<span class="trial-digit">' + pad(h) + '</span><span class="trial-label">س</span>';
+            html += '<span class="trial-digit">' + pad(m) + '</span><span class="trial-label">د</span>';
+            if (d === 0) {
+                html += '<span class="trial-digit">' + pad(s) + '</span><span class="trial-label">ث</span>';
+            }
+
+            textEl.innerHTML = html;
+
+            // تبديل إلى وضع الطوارئ عند أقل من 24 ساعة
+            if (remaining < 86400) {
+                el.classList.add('trial-urgent');
+            }
+        }
+
+        updateCountdown();
+        setInterval(function() {
+            remaining = Math.max(0, remaining - 1);
+            updateCountdown();
+        }, 1000);
+    })();
+    </script>
 
     {% block extra_js %}{% endblock %}
 
