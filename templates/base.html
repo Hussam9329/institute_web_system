@@ -650,6 +650,11 @@
                 <div class="sidebar-user-name" id="sidebarUserName">{{ request.state.user.get('full_name', '') or request.state.user.get('username', 'موظف') if request.state.user else 'موظف' }}</div>
                 <div class="sidebar-user-username" id="sidebarUserUsername">@{{ request.state.user.get('username', '') if request.state.user else '' }}</div>
                 <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;">{{ request.state.user.get('role_name', '') if request.state.user else '' }}</div>
+                {% if request.state.trial_account %}
+                <div class="sidebar-user-username" style="margin-top:6px;color:#f59e0b;font-weight:700;">
+                    نسخة تجريبية • تنتهي خلال {{ ((request.state.trial_account.get('seconds_remaining', 0) or 0) // 86400) }} يوم
+                </div>
+                {% endif %}
             </div>
         </div>
         <a href="/logout" class="sidebar-logout-btn">

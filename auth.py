@@ -12,6 +12,9 @@ from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from database import Database
 from config import SECRET_KEY
+from trial_mode import (
+    TRIAL_USERNAME, drop_trial_tables, set_current_user_context, reset_current_user_context
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +92,71 @@ def get_session_user_id(token: str) -> int | None:
         return None
 
 
+# ===== فحص انتهاء الحساب التجريبي =====
+
+def _expire_trial_account_now(db: Database):
+    """حذف بيانات النسخة التجريبية وتعطيل حساب raihany عند انتهاء مدته."""
+    conn = None
+    cursor = None
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        drop_trial_tables(cursor)
+        cursor.execute('''
+            UPDATE trial_accounts
+            SET is_expired = 1,
+                expired_at = COALESCE(expired_at, NOW())
+            WHERE username = %s
+        ''', (TRIAL_USERNAME,))
+        cursor.execute("UPDATE users SET is_active = 0 WHERE username = %s", (TRIAL_USERNAME,))
+        conn.commit()
+    except Exception:
+        try:
+            if conn:
+                conn.rollback()
+        except Exception:
+            pass
+    finally:
+        try:
+            if cursor:
+                cursor.close()
+        except Exception:
+            pass
+        if conn:
+            db.return_connection(conn)
+
+
+def _is_trial_account_expired(db: Database) -> bool:
+    """يرجع True إذا انتهت مدة 5 أيام لحساب raihany."""
+    try:
+        row = db.execute_query('''
+            SELECT (expires_at <= NOW() OR is_expired = 1) AS expired
+            FROM trial_accounts
+            WHERE username = %s
+        ''', (TRIAL_USERNAME,))
+        if not row:
+            return False
+        return bool(row[0].get('expired'))
+    except Exception:
+        return False
+
+
+def get_trial_account_info() -> dict | None:
+    """معلومات مختصرة عن الحساب التجريبي لعرضها في الواجهة عند الحاجة."""
+    try:
+        db = Database()
+        row = db.execute_query('''
+            SELECT username, started_at, expires_at,
+                   GREATEST(0, EXTRACT(EPOCH FROM (expires_at - NOW())))::INTEGER AS seconds_remaining,
+                   (expires_at <= NOW() OR is_expired = 1) AS expired
+            FROM trial_accounts
+            WHERE username = %s
+        ''', (TRIAL_USERNAME,))
+        return dict(row[0]) if row else None
+    except Exception:
+        return None
+
+
 # ===== الحصول على المستخدم الحالي =====
 
 def get_current_user(request: Request) -> dict | None:
@@ -110,7 +178,13 @@ def get_current_user(request: Request) -> dict | None:
         ''', (user_id,))
         if not user or user[0]['is_active'] != 1:
             return None
-        return dict(user[0])
+
+        user_data = dict(user[0])
+        if user_data.get('username') == TRIAL_USERNAME and _is_trial_account_expired(db):
+            _expire_trial_account_now(db)
+            return None
+
+        return user_data
     except Exception:
         return None
 
@@ -197,26 +271,36 @@ async def auth_middleware(request: Request, call_next):
             )
         return RedirectResponse(url="/login", status_code=303)
 
-    request.state.user = user
-    request.state.user_permissions = get_user_permissions(user["id"])
-
-    # مدير العام يملك كل الصلاحيات
-    if user.get('role_name') == 'مدير عام':
-        request.state.user_permissions = ['all']
-
-    # ===== استخراج توقيت العميل من HTTP Header =====
-    # يُستخدم في سجل العمليات (logs) بدلاً من توقيت السيرفر
+    trial_context_token = set_current_user_context(user)
     try:
-        header_ts = request.headers.get('x-client-timestamp', '')
-        if header_ts:
-            request.state.client_timestamp = header_ts
-        else:
-            request.state.client_timestamp = None
-    except Exception:
-        request.state.client_timestamp = None
+        request.state.user = user
+        request.state.user_permissions = get_user_permissions(user["id"])
 
-    response = await call_next(request)
-    return response
+        # مدير العام يملك كل الصلاحيات
+        if user.get('role_name') == 'مدير عام':
+            request.state.user_permissions = ['all']
+
+        # معلومات اختيارية لواجهة الحساب التجريبي
+        if user.get('username') == TRIAL_USERNAME:
+            request.state.trial_account = get_trial_account_info()
+        else:
+            request.state.trial_account = None
+
+        # ===== استخراج توقيت العميل من HTTP Header =====
+        # يُستخدم في سجل العمليات (logs) بدلاً من توقيت السيرفر
+        try:
+            header_ts = request.headers.get('x-client-timestamp', '')
+            if header_ts:
+                request.state.client_timestamp = header_ts
+            else:
+                request.state.client_timestamp = None
+        except Exception:
+            request.state.client_timestamp = None
+
+        response = await call_next(request)
+        return response
+    finally:
+        reset_current_user_context(trial_context_token)
 
 
 # ===== تسجيل الدخول =====

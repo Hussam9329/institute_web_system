@@ -9,6 +9,12 @@ import threading
 import logging
 from typing import Any, Optional
 
+try:
+    from trial_mode import is_trial_request
+except Exception:
+    def is_trial_request() -> bool:
+        return False
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,6 +32,13 @@ class CacheService:
         self._lock = threading.Lock()
         self.default_ttl = default_ttl
     
+    def _scope_key(self, key: str) -> str:
+        """عزل كاش الحساب التجريبي حتى لا تظهر له بيانات المستخدمين الأصليين."""
+        return f"trial:{key}" if is_trial_request() else key
+
+    def _scope_pattern(self, pattern: str) -> str:
+        return f"trial:{pattern}" if is_trial_request() else pattern
+    
     def get(self, key: str) -> Optional[Any]:
         """
         الحصول على قيمة من التخزين المؤقت
@@ -36,6 +49,7 @@ class CacheService:
         Returns:
             القيمة المخزنة أو None إذا انتهت الصلاحية أو لم تكن موجودة
         """
+        key = self._scope_key(key)
         with self._lock:
             if key in self._cache:
                 entry = self._cache[key]
@@ -58,6 +72,7 @@ class CacheService:
         if ttl is None:
             ttl = self.default_ttl
         
+        key = self._scope_key(key)
         with self._lock:
             self._cache[key] = {
                 'value': value,
@@ -66,6 +81,7 @@ class CacheService:
     
     def delete(self, key: str):
         """حذف قيمة من التخزين المؤقت"""
+        key = self._scope_key(key)
         with self._lock:
             self._cache.pop(key, None)
     
@@ -117,6 +133,7 @@ class CacheService:
         Args:
             pattern: بداية المفتاح المراد حذفه (مثل 'stats' لحذف 'stats:*')
         """
+        pattern = self._scope_pattern(pattern)
         with self._lock:
             keys_to_delete = [
                 key for key in self._cache.keys() 

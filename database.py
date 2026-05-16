@@ -8,6 +8,7 @@ import os
 import time
 import logging
 import threading
+from trial_mode import rewrite_query_for_trial, enforce_trial_constraints, ensure_trial_environment
 import psycopg2
 import psycopg2.extras
 from psycopg2.pool import ThreadedConnectionPool
@@ -199,6 +200,11 @@ class Database:
                 
                 # تعيين مهلة الاستعلام
                 cursor.execute(f"SET statement_timeout = {STATEMENT_TIMEOUT}")
+                
+                # حساب raihany التجريبي يعمل على جداول مؤقتة داخل نفس قاعدة البيانات.
+                # الاستعلامات الخاصة به وحده تُحوَّل تلقائياً من الجداول الأصلية إلى trial_*.
+                query = rewrite_query_for_trial(query)
+                enforce_trial_constraints(cursor, query, params)
                 
                 cursor.execute(query, params)
                 
@@ -777,6 +783,14 @@ def init_db():
                     conn.commit()
                 except Exception:
                     conn.rollback()
+
+                # ===== حساب raihany التجريبي المعزول لمدة 5 أيام =====
+                try:
+                    ensure_trial_environment(cursor)
+                    conn.commit()
+                except Exception as trial_error:
+                    conn.rollback()
+                    logger.warning(f"تعذر تهيئة الحساب التجريبي raihany: {trial_error}")
 
                 _db_initialized = True
                 logger.info("تم تهيئة قاعدة البيانات بنجاح")
