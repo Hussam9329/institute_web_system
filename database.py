@@ -784,13 +784,13 @@ def init_db():
                 except Exception:
                     conn.rollback()
 
-                # ===== حساب raihany التجريبي المعزول لمدة 5 أيام =====
+                # ===== الحسابات التجريبية المعزولة =====
                 try:
-                    ensure_trial_environment(cursor)
+                    ensure_trial_environment(cursor)  # يهيئ جميع الحسابات تلقائياً
                     conn.commit()
                 except Exception as trial_error:
                     conn.rollback()
-                    logger.warning(f"تعذر تهيئة الحساب التجريبي raihany: {trial_error}")
+                    logger.warning(f"تعذر تهيئة الحسابات التجريبية: {trial_error}")
 
                 _db_initialized = True
                 logger.info("تم تهيئة قاعدة البيانات بنجاح")

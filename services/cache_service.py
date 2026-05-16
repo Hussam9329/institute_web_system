@@ -10,10 +10,12 @@ import logging
 from typing import Any, Optional
 
 try:
-    from trial_mode import is_trial_request
+    from trial_mode import is_trial_request, get_current_trial_username
 except Exception:
     def is_trial_request() -> bool:
         return False
+    def get_current_trial_username() -> str | None:
+        return None
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +35,17 @@ class CacheService:
         self.default_ttl = default_ttl
     
     def _scope_key(self, key: str) -> str:
-        """عزل كاش الحساب التجريبي حتى لا تظهر له بيانات المستخدمين الأصليين."""
-        return f"trial:{key}" if is_trial_request() else key
+        """عزل كاش كل حساب تجريبي حتى لا تظهر له بيانات المستخدمين الآخرين."""
+        if is_trial_request():
+            username = get_current_trial_username() or "trial"
+            return f"trial:{username}:{key}"
+        return key
 
     def _scope_pattern(self, pattern: str) -> str:
-        return f"trial:{pattern}" if is_trial_request() else pattern
+        if is_trial_request():
+            username = get_current_trial_username() or "trial"
+            return f"trial:{username}:{pattern}"
+        return pattern
     
     def get(self, key: str) -> Optional[Any]:
         """

@@ -13,7 +13,9 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from database import Database
 from config import SECRET_KEY
 from trial_mode import (
-    TRIAL_USERNAME, drop_trial_tables, set_current_user_context, reset_current_user_context
+    is_trial_username, drop_trial_tables, set_current_user_context,
+    reset_current_user_context, get_current_trial_username,
+    get_trial_table_map,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,21 +96,21 @@ def get_session_user_id(token: str) -> int | None:
 
 # ===== فحص انتهاء الحساب التجريبي =====
 
-def _expire_trial_account_now(db: Database):
-    """حذف بيانات النسخة التجريبية وتعطيل حساب raihany عند انتهاء مدته."""
+def _expire_trial_account_now(db: Database, username: str):
+    """حذف بيانات النسخة التجريبية وتعطيل الحساب عند انتهاء مدته."""
     conn = None
     cursor = None
     try:
         conn = db.get_connection()
         cursor = conn.cursor()
-        drop_trial_tables(cursor)
+        drop_trial_tables(cursor, username)
         cursor.execute('''
             UPDATE trial_accounts
             SET is_expired = 1,
                 expired_at = COALESCE(expired_at, NOW())
             WHERE username = %s
-        ''', (TRIAL_USERNAME,))
-        cursor.execute("UPDATE users SET is_active = 0 WHERE username = %s", (TRIAL_USERNAME,))
+        ''', (username,))
+        cursor.execute("UPDATE users SET is_active = 0 WHERE username = %s", (username,))
         conn.commit()
     except Exception:
         try:
@@ -126,14 +128,14 @@ def _expire_trial_account_now(db: Database):
             db.return_connection(conn)
 
 
-def _is_trial_account_expired(db: Database) -> bool:
-    """يرجع True إذا انتهت مدة 5 أيام لحساب raihany."""
+def _is_trial_account_expired(db: Database, username: str) -> bool:
+    """يرجع True إذا انتهت مدة الحساب التجريبي."""
     try:
         row = db.execute_query('''
             SELECT (expires_at <= NOW() OR is_expired = 1) AS expired
             FROM trial_accounts
             WHERE username = %s
-        ''', (TRIAL_USERNAME,))
+        ''', (username,))
         if not row:
             return False
         return bool(row[0].get('expired'))
@@ -141,8 +143,8 @@ def _is_trial_account_expired(db: Database) -> bool:
         return False
 
 
-def get_trial_account_info() -> dict | None:
-    """معلومات مختصرة عن الحساب التجريبي لعرضها في الواجهة عند الحاجة."""
+def get_trial_account_info(username: str) -> dict | None:
+    """معلومات مختصرة عن الحساب التجريبي لعرضها في الواجهة."""
     try:
         db = Database()
         row = db.execute_query('''
@@ -151,7 +153,7 @@ def get_trial_account_info() -> dict | None:
                    (expires_at <= NOW() OR is_expired = 1) AS expired
             FROM trial_accounts
             WHERE username = %s
-        ''', (TRIAL_USERNAME,))
+        ''', (username,))
         return dict(row[0]) if row else None
     except Exception:
         return None
@@ -180,8 +182,9 @@ def get_current_user(request: Request) -> dict | None:
             return None
 
         user_data = dict(user[0])
-        if user_data.get('username') == TRIAL_USERNAME and _is_trial_account_expired(db):
-            _expire_trial_account_now(db)
+        # فحص انتهاء الحساب التجريبي لأي مستخدم تجريبي
+        if is_trial_username(user_data.get('username', '')) and _is_trial_account_expired(db, user_data['username']):
+            _expire_trial_account_now(db, user_data['username'])
             return None
 
         return user_data
@@ -280,9 +283,10 @@ async def auth_middleware(request: Request, call_next):
         if user.get('role_name') == 'مدير عام':
             request.state.user_permissions = ['all']
 
-        # معلومات اختيارية لواجهة الحساب التجريبي
-        if user.get('username') == TRIAL_USERNAME:
-            request.state.trial_account = get_trial_account_info()
+        # معلومات الحساب التجريبي (لأي مستخدم تجريبي)
+        username = user.get('username', '')
+        if is_trial_username(username):
+            request.state.trial_account = get_trial_account_info(username)
         else:
             request.state.trial_account = None
 
