@@ -399,7 +399,7 @@ def create_trial_tables(cursor, username: str):
             inst_ded_manual_in_person INTEGER DEFAULT 0,
             inst_ded_manual_electronic INTEGER DEFAULT 0,
             inst_ded_manual_blended INTEGER DEFAULT 0,
-            custom_type_settings TEXT DEFAULT '{}',
+            custom_type_settings TEXT DEFAULT '{{}}',
             created_by INTEGER,
             updated_by INTEGER
         )
