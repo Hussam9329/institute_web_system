@@ -717,9 +717,9 @@
                 <div class="sidebar-user-username" id="sidebarUserUsername">@{{ request.state.user.get('username', '') if request.state.user else '' }}</div>
                 <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;">{{ request.state.user.get('role_name', '') if request.state.user else '' }}</div>
                 {% if request.state.trial_account %}
-                <div id="trialCountdown" class="trial-countdown-badge" data-seconds="{{ request.state.trial_account.get('seconds_remaining', 0) or 0 }}">
-                    <i class="fas fa-hourglass-half me-1"></i>
-                    <span id="trialCountdownText">جاري الحساب...</span>
+                <div id="trialCountdown" class="trial-countdown-badge" data-seconds="{{ request.state.trial_account.get('seconds_remaining', 0) or 0 }}" style="display:none;">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span id="trialCountdownText"></span>
                 </div>
                 {% endif %}
             </div>
@@ -761,6 +761,35 @@
                 <span class="countdown-separator">:</span>
                 <div class="countdown-unit">
                     <div class="cd-value" id="cd-seconds">--</div>
+                    <div class="cd-label">ثانية</div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- عد تنازلي للنسخة التجريبية -->
+        <div class="sidebar-countdown" id="trialCountdownBox" data-seconds="{{ request.state.trial_account.get('seconds_remaining', 0) or 0 }}" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+            <div class="countdown-label" style="color: #f59e0b;">
+                <i class="fas fa-hourglass-half"></i>
+                المدة المتبقية من التجربة
+            </div>
+            <div class="countdown-boxes" id="trialCountdownBoxes">
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-days" style="color: #f59e0b;">---</div>
+                    <div class="cd-label">يوم</div>
+                </div>
+                <span class="countdown-separator" style="color: rgba(245, 158, 11, 0.5);">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-hours" style="color: #f59e0b;">--</div>
+                    <div class="cd-label">ساعة</div>
+                </div>
+                <span class="countdown-separator" style="color: rgba(245, 158, 11, 0.5);">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-minutes" style="color: #f59e0b;">--</div>
+                    <div class="cd-label">دقيقة</div>
+                </div>
+                <span class="countdown-separator" style="color: rgba(245, 158, 11, 0.5);">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-seconds" style="color: #f59e0b;">--</div>
                     <div class="cd-label">ثانية</div>
                 </div>
             </div>
@@ -1113,49 +1142,61 @@
     <script src="/static/js/theme-guard.js?v=20260515-responsive-final" defer></script>
     <script src="/static/js/responsive-guard.js?v=20260515-responsive-final" defer></script>
 
-    <!-- عداد النسخة التجريبية -->
+    <!-- عد تنازلي للنسخة التجريبية -->
     <script>
     (function() {
-        const el = document.getElementById('trialCountdown');
-        if (!el) return;
-        const textEl = document.getElementById('trialCountdownText');
-        let remaining = parseInt(el.dataset.seconds) || 0;
+        const box = document.getElementById('trialCountdownBox');
+        if (!box) return;
+        let remaining = parseInt(box.dataset.seconds) || 0;
 
         function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
-        function updateCountdown() {
+        function updateTrialCountdown() {
+            const daysEl = document.getElementById('tcd-days');
+            const hoursEl = document.getElementById('tcd-hours');
+            const minutesEl = document.getElementById('tcd-minutes');
+            const secondsEl = document.getElementById('tcd-seconds');
+            const labelEl = box.querySelector('.countdown-label');
+
             if (remaining <= 0) {
-                textEl.innerHTML = 'انتهت المدة التجريبية';
-                el.classList.add('trial-urgent');
+                if (daysEl) daysEl.textContent = '0';
+                if (hoursEl) hoursEl.textContent = '0';
+                if (minutesEl) minutesEl.textContent = '0';
+                if (secondsEl) secondsEl.textContent = '0';
+                if (labelEl) {
+                    labelEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> انتهت مدة التجربة';
+                    labelEl.style.color = '#ef4444';
+                }
+                box.style.background = 'rgba(239, 68, 68, 0.1)';
+                box.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                document.querySelectorAll('#trialCountdownBoxes .cd-value').forEach(function(v){ v.style.color = '#ef4444'; });
+                document.querySelectorAll('#trialCountdownBoxes .countdown-separator').forEach(function(v){ v.style.color = 'rgba(239, 68, 68, 0.5)'; });
                 return;
             }
+
             const d = Math.floor(remaining / 86400);
             const h = Math.floor((remaining % 86400) / 3600);
             const m = Math.floor((remaining % 3600) / 60);
             const s = remaining % 60;
 
-            let html = '';
-            if (d > 0) {
-                html += '<span class="trial-digit">' + d + '</span><span class="trial-label">يوم</span> ';
-            }
-            html += '<span class="trial-digit">' + pad(h) + '</span><span class="trial-label">س</span>';
-            html += '<span class="trial-digit">' + pad(m) + '</span><span class="trial-label">د</span>';
-            if (d === 0) {
-                html += '<span class="trial-digit">' + pad(s) + '</span><span class="trial-label">ث</span>';
-            }
+            if (daysEl) daysEl.textContent = d;
+            if (hoursEl) hoursEl.textContent = pad(h);
+            if (minutesEl) minutesEl.textContent = pad(m);
+            if (secondsEl) secondsEl.textContent = pad(s);
 
-            textEl.innerHTML = html;
-
-            // تبديل إلى وضع الطوارئ عند أقل من 24 ساعة
             if (remaining < 86400) {
-                el.classList.add('trial-urgent');
+                box.style.background = 'rgba(239, 68, 68, 0.1)';
+                box.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                if (labelEl) labelEl.style.color = '#ef4444';
+                document.querySelectorAll('#trialCountdownBoxes .cd-value').forEach(function(v){ v.style.color = '#ef4444'; });
+                document.querySelectorAll('#trialCountdownBoxes .countdown-separator').forEach(function(v){ v.style.color = 'rgba(239, 68, 68, 0.5)'; });
             }
         }
 
-        updateCountdown();
+        updateTrialCountdown();
         setInterval(function() {
             remaining = Math.max(0, remaining - 1);
-            updateCountdown();
+            updateTrialCountdown();
         }, 1000);
     })();
     </script>
