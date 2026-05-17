@@ -58,10 +58,13 @@ BASE_DROP_ORDER = [
     "subjects",
 ]
 
-# صلاحيات الحساب التجريبي: كل ما يحتاجه للتجربة، بدون إدارة مستخدمين/أدوار/إعدادات النظام.
+# صلاحيات الحساب التجريبي: صلاحيات كاملة داخل بيئة التجربة.
 TRIAL_PERMISSION_CODES = [
+    # لوحة التحكم
     "view_dashboard",
     "view_quick_stats",
+    "export_backup",
+    # الطلاب
     "view_students_list",
     "preview_students",
     "add_students",
@@ -69,32 +72,46 @@ TRIAL_PERMISSION_CODES = [
     "delete_students",
     "link_students",
     "edit_student_status",
+    # المدرسين
     "view_teachers_list",
     "preview_teachers",
     "add_teachers",
     "edit_teachers",
     "delete_teachers",
     "view_teacher_balance",
+    # المواد
     "view_subjects",
     "add_subjects",
     "edit_subjects",
     "delete_subjects",
+    # الأقساط
     "view_payments_list",
     "add_payments",
     "delete_payments",
     "pay_installment",
     "print_receipt",
+    # المحاسبة
     "view_accounting",
     "preview_accounting_details",
     "manage_commission",
+    # السحوبات
     "view_withdrawals_list",
     "add_withdrawals",
     "delete_withdrawals",
+    # التقارير
     "view_reports",
     "print_reports",
     "view_student_reports",
     "view_teacher_reports",
+    # الإحصائيات
     "view_stats",
+    # الصلاحيات والإدارة
+    "view_permissions",
+    "manage_users",
+    "manage_roles",
+    "system_settings",
+    # سجل العمليات
+    "view_logs",
 ]
 
 # ===== خريطة جداول raihany القديمة (للتوافق مع البيانات الموجودة) =====
@@ -525,7 +542,7 @@ def ensure_trial_environment(cursor, username: str = None):
         INSERT INTO roles (name, description, is_default, created_at)
         VALUES (%s, %s, 0, TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI'))
         ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description
-    ''', (TRIAL_ROLE_NAME, "حساب تجريبي محدود ومعزول لمدة 5 أيام"))
+    ''', (TRIAL_ROLE_NAME, "حساب تجريبي بصلاحيات كاملة ومعزول لمدة 5 أيام"))
 
     if TRIAL_PERMISSION_CODES:
         placeholders = ",".join(["%s"] * len(TRIAL_PERMISSION_CODES))
