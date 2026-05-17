@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 from datetime import datetime
 import os
 
-from config import APP_TITLE, BASE_DIR, format_currency, format_date, format_report_datetime, format_report_date, format_report_time
+from config import APP_TITLE, BASE_DIR, format_currency, format_date, format_report_datetime, format_report_date, format_report_time, get_client_timestamp
 from services.finance_service import finance_service
 from database import Database
 from auth import check_permission
@@ -101,7 +101,7 @@ async def student_report(request: Request, student_id: int):
         "subjects": subjects,
         "installment_types": installment_types,
         "installments": installments,
-        "report_date": format_report_datetime(),
+        "report_date": format_report_datetime(get_client_timestamp(request)),
         "student_id": student_id,
     })
 
@@ -134,7 +134,7 @@ async def teacher_report(request: Request, teacher_id: int):
         "expected_total": expected_total,
         "paid_total": paid_total,
         "remaining_total": remaining_total,
-        "report_date": format_report_datetime(),
+        "report_date": format_report_datetime(get_client_timestamp(request)),
     })
 
 
@@ -182,9 +182,9 @@ async def receipt_report(request: Request, installment_id: int):
         "discount_value": discount_value,
         "discount_amount": discount_amount,
         "discount_info": discount_info,
-        "report_date": format_report_datetime(),
-        "report_date_only": format_report_date(),
-        "report_time": format_report_time(),
+        "report_date": format_report_datetime(get_client_timestamp(request)),
+        "report_date_only": format_report_date(get_client_timestamp(request)),
+        "report_time": format_report_time(get_client_timestamp(request)),
     })
 
 
@@ -291,9 +291,9 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
         "institute_rate_display": institute_rate_display,
         "total_withdrawn_before": total_withdrawn_before,
         "num_withdrawals": len(all_teacher_withdrawals) if all_teacher_withdrawals else 0,
-        "report_date": format_report_datetime(),
-        "report_date_only": format_report_date(),
-        "report_time": format_report_time(),
+        "report_date": format_report_datetime(get_client_timestamp(request)),
+        "report_date_only": format_report_date(get_client_timestamp(request)),
+        "report_time": format_report_time(get_client_timestamp(request)),
     })
 
 
@@ -332,7 +332,7 @@ async def subject_report(request: Request, subject_name: str):
         "teacher_data": teacher_data,
         "total_students": total_students,
         "total_fees": total_fees,
-        "report_date": format_report_datetime(),
+        "report_date": format_report_datetime(get_client_timestamp(request)),
     })
 
 
@@ -391,5 +391,5 @@ async def all_subjects_report(request: Request):
         "total_students": total_students,
         "total_fees": total_fees,
         "subject_details": subject_details,
-        "report_date": format_report_datetime(),
+        "report_date": format_report_datetime(get_client_timestamp(request)),
     })
