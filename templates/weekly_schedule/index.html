@@ -1235,7 +1235,22 @@ let currentSortBy = 'time';
 let currentEventTypeFilter = 'all';
 let currentTeacherFilter = 0;
 let currentDayFilter = 'all';
-let currentViewMode = (window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches) ? 'list' : 'grid';
+const WEEKLY_MOBILE_QUERY = '(max-width: 767.98px)';
+let currentViewMode = (window.matchMedia && window.matchMedia(WEEKLY_MOBILE_QUERY).matches) ? 'list' : 'grid';
+
+function isWeeklyMobileViewport() {
+    return !!(window.matchMedia && window.matchMedia(WEEKLY_MOBILE_QUERY).matches);
+}
+
+function isRenderedView(mode) {
+    const gridWrap = document.getElementById('gridWrap');
+    const listWrap = document.getElementById('listWrap');
+    if (!gridWrap || !listWrap) return false;
+    if (mode === 'list') {
+        return listWrap.classList.contains('active') && gridWrap.style.display === 'none';
+    }
+    return gridWrap.style.display !== 'none' && !listWrap.classList.contains('active');
+}
 
 // ===== PAGINATION STATE =====
 let currentRoomPage = 1;
@@ -1337,6 +1352,20 @@ function resetTypePills() {
 // ===== VIEW TOGGLE =====
 function setView(mode, automatic) {
     if (!automatic) window.__weeklyManualViewChoice = true;
+
+    // على الهاتف يبقى عرض القائمة هو العرض الآمن؛ الجدول الشبكي كبير ويستهلك ذاكرة/رسم كثير.
+    if (isWeeklyMobileViewport() && mode === 'grid') {
+        currentViewMode = 'list';
+        setViewActive('list');
+        if (!automatic && typeof showAlert === 'function') {
+            showAlert('تم إبقاء عرض القائمة على الهاتف لمنع بطء الشاشة. استخدم عرض الجدول من شاشة أكبر.', 'info');
+        }
+        if (!isRenderedView('list')) renderCurrentView();
+        return;
+    }
+
+    if (mode === currentViewMode && isRenderedView(mode)) return;
+
     currentViewMode = mode;
     setViewActive(mode);
     if (mode === 'grid') {
@@ -1372,7 +1401,7 @@ function renderFilterDropdowns() {
 
 function setSortBy(sortType) {
     currentSortBy = sortType;
-    if (sortType === 'time') {
+    if (sortType === 'time' && !isWeeklyMobileViewport()) {
         currentViewMode = 'grid';
         setViewActive('grid');
     } else {
@@ -1445,13 +1474,25 @@ function getFilteredEvents() {
 function renderCurrentView() {
     const gridWrap = document.getElementById('gridWrap');
     const listWrap = document.getElementById('listWrap');
+    const gridContent = document.getElementById('gridContent');
+    const gridPagination = document.getElementById('gridPagination');
+    const listContent = document.getElementById('listContent');
+
+    if (isWeeklyMobileViewport() && currentViewMode === 'grid') {
+        currentViewMode = 'list';
+        setViewActive('list');
+    }
+
     if (currentViewMode === 'grid') {
         gridWrap.style.display = '';
         listWrap.classList.remove('active');
+        if (listContent) listContent.innerHTML = '';
         renderScheduleGrid();
     } else {
         gridWrap.style.display = 'none';
         listWrap.classList.add('active');
+        if (gridContent) gridContent.innerHTML = '';
+        if (gridPagination) gridPagination.innerHTML = '';
         renderScheduleList();
     }
 }
@@ -1702,6 +1743,13 @@ function clearScheduleFilters() {
 
 // ===== SCHEDULE GRID (main render) =====
 function renderScheduleGrid() {
+    if (isWeeklyMobileViewport()) {
+        currentViewMode = 'list';
+        setViewActive('list');
+        renderCurrentView();
+        return;
+    }
+
     const container = document.getElementById('gridContent');
     const paginationEl = document.getElementById('gridPagination');
 

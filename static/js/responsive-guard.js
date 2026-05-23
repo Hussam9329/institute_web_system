@@ -33,10 +33,25 @@
 
     function preferWeeklyListOnMobile() {
         if (!media || !media.matches) return;
-        if (!document.body || !document.getElementById('gridWrap') || !document.getElementById('listWrap')) return;
+
+        const gridWrap = document.getElementById('gridWrap');
+        const listWrap = document.getElementById('listWrap');
+        if (!document.body || !gridWrap || !listWrap) return;
+
+        // لا تستدعِ setView عند كل Mutation إذا كان عرض القائمة مفعلاً بالفعل.
+        // الاستدعاء المتكرر كان يعيد رسم قائمة الجدول على الموبايل باستمرار ويتسبب بتعليق الشاشة.
+        const alreadyInListView = listWrap.classList.contains('active') && gridWrap.style.display === 'none';
+        if (alreadyInListView) return;
+
         if (window.__weeklyManualViewChoice) return;
+        if (window.__weeklyAutoViewApplying) return;
+
         if (typeof window.setView === 'function') {
+            window.__weeklyAutoViewApplying = true;
             window.setView('list', true);
+            window.requestAnimationFrame(() => {
+                window.__weeklyAutoViewApplying = false;
+            });
         }
     }
 
