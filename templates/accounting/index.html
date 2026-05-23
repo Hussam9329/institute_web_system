@@ -83,52 +83,58 @@
     </div>
     {% endif %}
 
-    <!-- ===== بحث ===== -->
-    <div class="mb-3">
-        <div class="search-bar-container">
-            <div class="search-bar-inner">
-                <i class="fas fa-search search-bar-icon"></i>
-                <input type="text" class="search-bar-input" 
-                       placeholder="بحث مباشر بالاسم أو المادة..." id="accountingLiveSearch"
-                       value="{{ search }}">
+    <!-- ===== بحث وتصفية المحاسبة ===== -->
+    <div class="filter-frame-panel accent-blue accounting-filter-panel mb-3">
+        <div class="filter-frame-head">
+            <div class="filter-frame-title">
+                <span class="filter-frame-icon"><i class="fas fa-filter"></i></span>
+                <span>بحث وتصفية المحاسبة</span>
+                {% if search or date_from or date_to %}
+                <span class="badge filter-frame-badge">فعّال</span>
+                {% endif %}
             </div>
         </div>
-    </div>
-
-    <!-- ===== فلتر التاريخ ===== -->
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body py-2">
-            <form method="GET" action="/accounting" class="row g-2 align-items-end">
-                {% if search %}
-                <input type="hidden" name="search" value="{{ search }}">
-                {% endif %}
-                <div class="col-12 col-sm-4 col-md-3">
-                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
-                    <input type="date" class="form-control form-control-sm" name="date_from" id="acc_filter_date_from" value="{{ date_from }}">
-                </div>
-                <div class="col-12 col-sm-4 col-md-3">
-                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
-                    <input type="date" class="form-control form-control-sm" name="date_to" id="acc_filter_date_to" value="{{ date_to }}">
-                </div>
-                <div class="col-12 col-sm-4 col-md-3">
-                    <div class="d-flex gap-1">
-                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                            <i class="fas fa-filter me-1"></i>تصفية
-                        </button>
-                        <a href="/accounting{% if search %}?search={{ search }}{% endif %}" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
-                            <i class="fas fa-times"></i>
-                        </a>
+        <form method="GET" action="/accounting" class="filter-frame-body">
+            <div class="filter-grid accounting-filter-grid">
+                <div class="filter-control filter-search-control">
+                    <label class="filter-label" for="accountingLiveSearch"><i class="fas fa-search me-1"></i>البحث</label>
+                    <div class="search-bar-container">
+                        <div class="search-bar-inner">
+                            <i class="fas fa-search search-bar-icon"></i>
+                            <input type="text" class="search-bar-input" name="search"
+                                   placeholder="بحث مباشر بالاسم أو المادة..." id="accountingLiveSearch"
+                                   value="{{ search }}">
+                            <button type="submit" class="search-bar-btn-search" title="بحث">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </form>
-        </div>
+                <div class="filter-control">
+                    <label class="filter-label" for="acc_filter_date_from"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" id="acc_filter_date_from" value="{{ date_from }}">
+                </div>
+                <div class="filter-control">
+                    <label class="filter-label" for="acc_filter_date_to"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" id="acc_filter_date_to" value="{{ date_to }}">
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-filter me-1"></i>تصفية
+                    </button>
+                    <a href="/accounting" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
+                        <i class="fas fa-times me-1"></i>مسح
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
 
     {% if teachers %}
     <!-- ===== بطاقات المدرسين المالية ===== -->
     <div class="row g-3" id="accountingCards">
         {% for teacher in teachers %}
-        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.financial.total_received or 0 }}" data-deduction="{{ teacher.financial.institute_deduction or 0 }}" data-teacher-due="{{ teacher.financial.teacher_due or 0 }}" data-withdrawn="{{ teacher.financial.withdrawn_total or 0 }}" data-remaining="{{ teacher.financial.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
+        <div class="col-12 col-lg-6 col-xl-4 accounting-card" data-name="{{ teacher.name|lower }}" data-subject="{{ teacher.subject|lower }}" data-received="{{ teacher.financial.total_received or 0 }}" data-deduction="{{ teacher.financial.institute_deduction or 0 }}" data-teacher-due="{{ teacher.financial.teacher_due or 0 }}" data-teacher-share-full="{{ teacher.financial.teacher_share_after_full_payment or 0 }}" data-withdrawn="{{ teacher.financial.withdrawn_total or 0 }}" data-remaining="{{ teacher.financial.remaining_balance or 0 }}" data-students="{{ teacher.students_count or 0 }}">
             <div class="list-card h-100">
                 <!-- رأس الكارت بتدرج -->
                 <div class="card-header bg-gradient-blue text-white border-0">
@@ -183,6 +189,10 @@
                         <div class="fin-item">
                             <div class="fin-label">مستحق المدرس</div>
                             <div class="fin-value text-success">{{ format_currency(teacher.financial.teacher_due) }}</div>
+                        </div>
+                        <div class="fin-item">
+                            <div class="fin-label">حصة المدرس بعد الدفع الكامل</div>
+                            <div class="fin-value" style="color: #6366f1;">{{ format_currency(teacher.financial.teacher_share_after_full_payment) }}</div>
                         </div>
                         <div class="fin-item">
                             <div class="fin-label">المسحوب</div>

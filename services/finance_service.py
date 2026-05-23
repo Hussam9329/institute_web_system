@@ -654,6 +654,15 @@ class FinanceService:
         has_over_withdrawal = remaining_balance < 0
         display_remaining = max(0, remaining_balance)
         
+        # حصة المدرس بعد الدفع الكامل - إذا دفع جميع الطلاب كامل أقساطهم
+        try:
+            expected_info = self.calculate_expected_teacher_due_batch([teacher_id])
+            teacher_share_full = expected_info.get(teacher_id, {}).get('teacher_due', 0)
+            total_expected_fees = expected_info.get(teacher_id, {}).get('total_fees', 0)
+        except Exception:
+            teacher_share_full = 0
+            total_expected_fees = 0
+        
         return {
             'teacher_due': due_info['teacher_due'],
             'withdrawn_total': withdrawn_total,
@@ -661,6 +670,8 @@ class FinanceService:
             'has_over_withdrawal': has_over_withdrawal,
             'over_withdrawal_amount': abs(remaining_balance) if has_over_withdrawal else 0,
             'can_withdraw': remaining_balance > 0,
+            'teacher_share_after_full_payment': teacher_share_full,
+            'total_expected_fees': total_expected_fees,
             **due_info
         }
     

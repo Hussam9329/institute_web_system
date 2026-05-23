@@ -235,8 +235,8 @@ async def subject_add(request: Request, name: str = Form(...)):
             entity_id=subject_id,
             description=f"إضافة مادة: {name}"
         )
-    except:
-        pass
+    except Exception as e:
+        return RedirectResponse(url=f"/subjects?error=db_error&detail={quote(str(e))}", status_code=303)
     return RedirectResponse(url="/subjects?msg=added", status_code=303)
 
 
@@ -550,7 +550,10 @@ async def student_add(
     '''
 
     temp_barcode = f"TEMP-{int(time.time()*1000)}-{random.randint(1000,9999)}"
-    result = db.execute_query(insert_query, (name, temp_barcode, phone, parent_phone, notes, get_current_date(client_ts), current_user_id))
+    try:
+        result = db.execute_query(insert_query, (name, temp_barcode, phone, parent_phone, notes, get_current_date(client_ts), current_user_id))
+    except Exception as e:
+        return RedirectResponse(url=f"/students/add?error=db_error&detail={quote(str(e))}", status_code=303)
     student_id = result[0]['id'] if result else None
 
     if student_id:
@@ -2040,7 +2043,9 @@ async def accounting_page(request: Request, search: str = "", date_from: str = "
                     'teacher_due': 0,
                     'withdrawn_total': 0,
                     'remaining_balance': 0,
-                    'can_withdraw': False
+                    'can_withdraw': False,
+                    'teacher_share_after_full_payment': 0,
+                    'total_expected_fees': 0
                 }
             teachers_with_finance.append(teacher_dict)
     except Exception as e:
@@ -2264,7 +2269,13 @@ async def weekly_schedule_page(request: Request):
         "request": request,
         "rooms": [dict(r) for r in rooms] if rooms else [],
         "teachers": [dict(t) for t in teachers] if teachers else [],
-        "schedule": [dict(s) for s in schedule] if schedule else []
+        "schedule": [
+            {
+                **dict(s),
+                "event_type": "امتحان" if str(dict(s).get("event_type") or "").strip() == "امتحان" else "محاضرة"
+            }
+            for s in schedule
+        ] if schedule else []
     })
 
 

@@ -1,0 +1,1200 @@
+/* ================================================================
+   brand-identity.css
+   إعادة بناء الهوية اللونية للنظام - ملف حاكم يوضع آخر ملف CSS
+   الهدف:
+   1) نهاري واضح بدون ألوان متقاربة
+   2) ليلي داكن بدون خلفيات بيضاء نهائياً
+   3) النصوص فقط تستعمل اللون الفاتح جداً عند الحاجة
+   4) تقليل النشاز عبر Design Tokens مو ألوان عشوائية
+================================================================ */
+
+/* =========================
+   الهوية الأساسية - Light
+========================= */
+:root {
+    color-scheme: light;
+
+    /* Brand */
+    --brand-primary: #1d4ed8;       /* أزرق رسمي */
+    --brand-primary-hover: #1e40af;
+    --brand-primary-soft: #dbeafe;
+
+    --brand-accent: #0f766e;        /* أخضر مزرق للتمييز */
+    --brand-accent-hover: #115e59;
+    --brand-accent-soft: #ccfbf1;
+
+    /* Semantic */
+    --brand-success: #15803d;
+    --brand-success-soft: #dcfce7;
+    --brand-warning: #b45309;
+    --brand-warning-soft: #fef3c7;
+    --brand-danger: #b91c1c;
+    --brand-danger-soft: #fee2e2;
+    --brand-info: #0369a1;
+    --brand-info-soft: #e0f2fe;
+
+    /* Neutral scale - متباعدة بوضوح */
+    --app-bg: #eef3f8;
+    --app-surface: #ffffff;
+    --app-surface-2: #f8fafc;
+    --app-surface-3: #e2e8f0;
+    --app-surface-hover: #dbeafe;
+
+    --app-text: #0f172a;
+    --app-text-secondary: #334155;
+    --app-muted: #64748b;
+
+    --app-border: #cbd5e1;
+    --app-border-strong: #94a3b8;
+    --app-focus: rgba(29, 78, 216, 0.22);
+
+    /* Tables */
+    --app-table-head-bg: #dbeafe;
+    --app-table-head-text: #0f172a;
+    --app-table-row-bg: #ffffff;
+    --app-table-row-alt: #f1f5f9;
+    --app-table-row-hover: #e0f2fe;
+    --app-table-border: #cbd5e1;
+
+    /* Bootstrap / legacy aliases */
+    --primary: var(--brand-primary);
+    --primary-light: #3b82f6;
+    --primary-dark: var(--brand-primary-hover);
+    --primary-darker: #172554;
+    --secondary: var(--brand-accent);
+    --secondary-light: #14b8a6;
+    --secondary-dark: var(--brand-accent-hover);
+    --success: var(--brand-success);
+    --success-light: #22c55e;
+    --success-dark: #166534;
+    --warning: var(--brand-warning);
+    --warning-light: #f59e0b;
+    --warning-dark: #92400e;
+    --danger: var(--brand-danger);
+    --danger-light: #ef4444;
+    --danger-dark: #991b1b;
+    --info: var(--brand-info);
+    --info-light: #38bdf8;
+    --info-dark: #075985;
+
+    --white: var(--app-surface);
+    --light: var(--app-surface-2);
+    --light-bg: var(--app-bg);
+    --dark: #0f172a;
+    --dark-light: #1e293b;
+    --muted: var(--app-muted);
+    --muted-light: #94a3b8;
+    --border: var(--app-border);
+    --border-light: #e2e8f0;
+    --text-primary: var(--app-text);
+    --text-secondary: var(--app-text-secondary);
+    --text-muted: var(--app-muted);
+
+    --surface-section: var(--app-surface);
+    --surface-body: var(--app-bg);
+    --surface-footer: var(--app-surface-2);
+    --surface-input: #ffffff;
+    --border-section: var(--app-border);
+    --border-input: var(--app-border);
+    --text-label: var(--app-text-secondary);
+    --text-section-title: var(--app-text);
+
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 8px 20px rgba(15, 23, 42, 0.10);
+    --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.14);
+}
+
+/* =========================
+   الهوية الأساسية - Dark
+   لا توجد خلفيات بيضاء هنا
+========================= */
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --brand-primary: #60a5fa;
+    --brand-primary-hover: #93c5fd;
+    --brand-primary-soft: rgba(96, 165, 250, 0.16);
+
+    --brand-accent: #2dd4bf;
+    --brand-accent-hover: #5eead4;
+    --brand-accent-soft: rgba(45, 212, 191, 0.14);
+
+    --brand-success: #4ade80;
+    --brand-success-soft: rgba(74, 222, 128, 0.14);
+    --brand-warning: #fbbf24;
+    --brand-warning-soft: rgba(251, 191, 36, 0.16);
+    --brand-danger: #f87171;
+    --brand-danger-soft: rgba(248, 113, 113, 0.15);
+    --brand-info: #38bdf8;
+    --brand-info-soft: rgba(56, 189, 248, 0.14);
+
+    /* ثلاث درجات سطح متباعدة: ممنوع التقارب */
+    --app-bg: #07111d;
+    --app-surface: #102033;
+    --app-surface-2: #18304a;
+    --app-surface-3: #234666;
+    --app-surface-hover: #264f73;
+
+    /* النص فقط فاتح */
+    --app-text: #f8fafc;
+    --app-text-secondary: #cbd5e1;
+    --app-muted: #94a3b8;
+
+    --app-border: #31506f;
+    --app-border-strong: #4b6f92;
+    --app-focus: rgba(96, 165, 250, 0.28);
+
+    /* Tables - بدون أبيض */
+    --app-table-head-bg: #1d3b5a;
+    --app-table-head-text: #f8fafc;
+    --app-table-row-bg: #102033;
+    --app-table-row-alt: #162b43;
+    --app-table-row-hover: #234666;
+    --app-table-border: #31506f;
+
+    --primary: var(--brand-primary);
+    --primary-light: var(--brand-primary-hover);
+    --primary-dark: #3b82f6;
+    --primary-darker: #2563eb;
+    --secondary: var(--brand-accent);
+    --secondary-light: var(--brand-accent-hover);
+    --secondary-dark: #14b8a6;
+    --success: var(--brand-success);
+    --success-light: #86efac;
+    --success-dark: #22c55e;
+    --warning: var(--brand-warning);
+    --warning-light: #fde68a;
+    --warning-dark: #f59e0b;
+    --danger: var(--brand-danger);
+    --danger-light: #fca5a5;
+    --danger-dark: #ef4444;
+    --info: var(--brand-info);
+    --info-light: #7dd3fc;
+    --info-dark: #0ea5e9;
+
+    --white: var(--app-surface);      /* مهم: ليس أبيض في الدارك */
+    --light: var(--app-surface-2);
+    --light-bg: var(--app-bg);
+    --dark: var(--app-bg);
+    --dark-light: var(--app-surface);
+    --muted: var(--app-muted);
+    --muted-light: var(--app-muted);
+    --border: var(--app-border);
+    --border-light: var(--app-border);
+    --text-primary: var(--app-text);
+    --text-secondary: var(--app-text-secondary);
+    --text-muted: var(--app-muted);
+
+    --surface-section: var(--app-surface);
+    --surface-body: var(--app-bg);
+    --surface-footer: #0b1a2a;
+    --surface-input: #0b1a2a;
+    --border-section: var(--app-border);
+    --border-input: var(--app-border-strong);
+    --text-label: var(--app-text-secondary);
+    --text-section-title: var(--app-text);
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.22);
+    --shadow-sm: 0 3px 8px rgba(0, 0, 0, 0.28);
+    --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.36);
+    --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.48);
+}
+
+/* =========================
+   قاعدة عامة للواجهة
+========================= */
+body {
+    background: var(--app-bg) !important;
+    color: var(--app-text) !important;
+}
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group-item,
+.offcanvas,
+.toast,
+.main-content,
+.content-card,
+.summary-card,
+.stat-card,
+.report-card,
+.form-section,
+.search-box,
+.filter-section,
+.sidebar,
+.navbar,
+.table-container {
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header,
+.modal-header,
+.modal-footer,
+.dropdown-header,
+.table thead th,
+.table-header,
+.section-header {
+    background-color: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+/* =========================
+   النصوص والروابط
+========================= */
+h1, h2, h3, h4, h5, h6,
+.card-title,
+.page-title,
+.section-title,
+.form-label,
+label,
+strong {
+    color: var(--app-text) !important;
+}
+
+.text-muted,
+small,
+.help-text,
+.form-text,
+.card-subtitle,
+.page-subtitle {
+    color: var(--app-muted) !important;
+}
+
+a,
+.nav-link,
+.breadcrumb-item a {
+    color: var(--brand-primary) !important;
+}
+
+a:hover,
+.nav-link:hover {
+    color: var(--brand-primary-hover) !important;
+}
+
+/* =========================
+   الجداول - وضوح كامل
+========================= */
+.table,
+table {
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+.table thead,
+table thead,
+.table thead th,
+table thead th {
+    background-color: var(--app-table-head-bg) !important;
+    color: var(--app-table-head-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+.table tbody tr,
+table tbody tr {
+    background-color: var(--app-table-row-bg) !important;
+    color: var(--app-text) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > *,
+.table tbody tr:nth-child(even),
+table tbody tr:nth-child(even) {
+    background-color: var(--app-table-row-alt) !important;
+    color: var(--app-text) !important;
+}
+
+.table-hover tbody tr:hover,
+table tbody tr:hover {
+    background-color: var(--app-table-row-hover) !important;
+    color: var(--app-text) !important;
+}
+
+.table td,
+.table th,
+table td,
+table th {
+    border-color: var(--app-table-border) !important;
+}
+
+/* =========================
+   الحقول والفلاتر
+========================= */
+.form-control,
+.form-select,
+.form-check-input,
+.input-group-text,
+select,
+input,
+textarea,
+.filter-input,
+.search-input {
+    background-color: var(--surface-input) !important;
+    color: var(--app-text) !important;
+    border-color: var(--border-input) !important;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 0.22rem var(--app-focus) !important;
+    outline: 0;
+}
+
+/* =========================
+   الأزرار والشارات
+========================= */
+.btn-primary,
+.bg-primary,
+.badge.bg-primary {
+    background-color: var(--brand-primary) !important;
+    border-color: var(--brand-primary) !important;
+    color: #f8fafc !important;
+}
+.btn-primary:hover { background-color: var(--brand-primary-hover) !important; }
+
+.btn-secondary,
+.bg-secondary,
+.badge.bg-secondary {
+    background-color: var(--brand-accent) !important;
+    border-color: var(--brand-accent) !important;
+    color: #f8fafc !important;
+}
+
+.btn-success,
+.bg-success,
+.badge.bg-success { background-color: var(--brand-success) !important; border-color: var(--brand-success) !important; color: #f8fafc !important; }
+.btn-warning,
+.bg-warning,
+.badge.bg-warning { background-color: var(--brand-warning) !important; border-color: var(--brand-warning) !important; color: #0f172a !important; }
+.btn-danger,
+.bg-danger,
+.badge.bg-danger { background-color: var(--brand-danger) !important; border-color: var(--brand-danger) !important; color: #f8fafc !important; }
+.btn-info,
+.bg-info,
+.badge.bg-info { background-color: var(--brand-info) !important; border-color: var(--brand-info) !important; color: #f8fafc !important; }
+
+.btn-outline-primary { color: var(--brand-primary) !important; border-color: var(--brand-primary) !important; }
+.btn-outline-primary:hover { background-color: var(--brand-primary) !important; color: #f8fafc !important; }
+
+.badge,
+.status-badge,
+.label-badge {
+    border: 1px solid var(--app-border) !important;
+}
+
+/* =========================
+   حالات ناعمة بدون نشاز
+========================= */
+.alert-success,
+.bg-success-subtle { background-color: var(--brand-success-soft) !important; color: var(--brand-success) !important; border-color: var(--brand-success) !important; }
+.alert-warning,
+.bg-warning-subtle { background-color: var(--brand-warning-soft) !important; color: var(--brand-warning) !important; border-color: var(--brand-warning) !important; }
+.alert-danger,
+.bg-danger-subtle { background-color: var(--brand-danger-soft) !important; color: var(--brand-danger) !important; border-color: var(--brand-danger) !important; }
+.alert-info,
+.bg-info-subtle { background-color: var(--brand-info-soft) !important; color: var(--brand-info) !important; border-color: var(--brand-info) !important; }
+
+/* =========================
+   منع الأبيض في الوضع الليلي
+   يسمح فقط بالنص الفاتح
+========================= */
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] [style*="background: white"],
+html[data-theme="dark"] [style*="background:white"],
+html[data-theme="dark"] [style*="background-color: white"],
+html[data-theme="dark"] [style*="background-color:white"],
+html[data-theme="dark"] [style*="background: #fff"],
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background-color: #fff"],
+html[data-theme="dark"] [style*="background-color:#fff"],
+html[data-theme="dark"] [style*="background: #ffffff"],
+html[data-theme="dark"] [style*="background:#ffffff"],
+html[data-theme="dark"] [style*="background-color: #ffffff"],
+html[data-theme="dark"] [style*="background-color:#ffffff"] {
+    background: var(--app-surface) !important;
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .table .bg-white,
+html[data-theme="dark"] table .bg-white,
+html[data-theme="dark"] .table [style*="background"],
+html[data-theme="dark"] table [style*="background"] {
+    background-color: var(--app-table-row-bg) !important;
+    color: var(--app-text) !important;
+}
+
+/* النصوص البيضاء داخل الدارك مسموحة، لكن لا تتحول إلى خلفية */
+html[data-theme="dark"] .text-white,
+html[data-theme="dark"] [style*="color: white"],
+html[data-theme="dark"] [style*="color:white"],
+html[data-theme="dark"] [style*="color: #fff"],
+html[data-theme="dark"] [style*="color:#fff"],
+html[data-theme="dark"] [style*="color: #ffffff"],
+html[data-theme="dark"] [style*="color:#ffffff"] {
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   خلفيات gradients قديمة: نوحدها
+========================= */
+.bg-gradient-primary,
+.primary-gradient,
+.hero-section,
+.stats-header {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent)) !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .bg-gradient-primary,
+html[data-theme="dark"] .primary-gradient,
+html[data-theme="dark"] .hero-section,
+html[data-theme="dark"] .stats-header {
+    background: linear-gradient(135deg, #12345a, #0f4f55) !important;
+    color: var(--app-text) !important;
+}
+
+/* =========================
+   PDF/Print لا يتأثر، لأنه له ملف print مستقل
+========================= */
+
+
+/* =====================================================================
+   2026-05-15 HARD FIX: component-safe visual rebuild
+   هذا الجزء يتعمد أن يكون في آخر الملف حتى يلغي القواعد العامة التي كانت
+   تكسر البانر والسايدبار والبحث السريع والبطاقات المتدرجة.
+===================================================================== */
+:root {
+    --app-primary: var(--brand-primary);
+    --app-primary-hover: var(--brand-primary-hover);
+    --app-primary-soft: var(--brand-primary-soft);
+    --app-surface-soft: var(--app-surface-2);
+    --app-border-light: #e2e8f0;
+    --app-input-bg: #ffffff;
+    --app-input-text: #0f172a;
+    --app-input-border: #94a3b8;
+    --app-input-focus-border: var(--brand-primary);
+    --app-input-focus-shadow: var(--app-focus);
+    --app-navbar-bg: #ffffff;
+    --app-badge-soft-bg: #dbeafe;
+    --app-badge-soft-text: #1e40af;
+    --app-card-shadow: var(--shadow-sm);
+
+    --primary-glow: rgba(29, 78, 216, 0.14);
+    --success-glow: rgba(21, 128, 61, 0.14);
+    --warning-glow: rgba(180, 83, 9, 0.16);
+    --danger-glow: rgba(185, 28, 28, 0.14);
+    --info-glow: rgba(3, 105, 161, 0.14);
+    --secondary-glow: rgba(139, 92, 246, 0.14);
+
+    --sidebar-bg: linear-gradient(180deg, #16205a 0%, #1d2d74 46%, #1e40af 100%);
+    --sidebar-text: #ffffff;
+    --sidebar-muted: rgba(255,255,255,0.74);
+    --sidebar-soft: rgba(255,255,255,0.12);
+    --sidebar-soft-hover: rgba(255,255,255,0.20);
+    --sidebar-border: rgba(255,255,255,0.16);
+    --sidebar-result-bg: #ffffff;
+    --sidebar-result-text: #0f172a;
+    --sidebar-result-muted: #475569;
+    --sidebar-result-hover: #e0f2fe;
+    --sidebar-result-label-bg: #dbeafe;
+    --sidebar-result-label-text: #172554;
+
+    --on-brand-text: #ffffff;
+    --on-brand-muted: rgba(255,255,255,0.82);
+}
+
+html[data-theme="dark"] {
+    --app-input-bg: #0b1a2a;
+    --app-input-text: #f8fafc;
+    --app-input-border: #4b6f92;
+    --app-navbar-bg: #0b1a2a;
+    --app-badge-soft-bg: rgba(96, 165, 250, 0.18);
+    --app-badge-soft-text: #bfdbfe;
+
+    --primary-glow: rgba(96, 165, 250, 0.18);
+    --success-glow: rgba(74, 222, 128, 0.16);
+    --warning-glow: rgba(251, 191, 36, 0.18);
+    --danger-glow: rgba(248, 113, 113, 0.18);
+    --info-glow: rgba(56, 189, 248, 0.18);
+    --secondary-glow: rgba(167, 139, 250, 0.18);
+
+    --sidebar-bg: linear-gradient(180deg, #07111d 0%, #0c1d32 48%, #12345a 100%);
+    --sidebar-text: #f8fafc;
+    --sidebar-muted: rgba(248,250,252,0.74);
+    --sidebar-soft: rgba(255,255,255,0.10);
+    --sidebar-soft-hover: rgba(96,165,250,0.22);
+    --sidebar-border: rgba(148,163,184,0.22);
+    --sidebar-result-bg: #102033;
+    --sidebar-result-text: #f8fafc;
+    --sidebar-result-muted: #cbd5e1;
+    --sidebar-result-hover: #234666;
+    --sidebar-result-label-bg: #1d3b5a;
+    --sidebar-result-label-text: #f8fafc;
+}
+
+/* لا تعامل السايدبار ككرت عادي أبداً */
+.sidebar {
+    background: var(--sidebar-bg) !important;
+    background-color: transparent !important;
+    color: var(--sidebar-text) !important;
+    border-color: transparent !important;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.24) !important;
+}
+.sidebar *,
+.sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6,
+.sidebar .fw-semibold,
+.sidebar .sidebar-user-name,
+.sidebar .sidebar-header h5,
+.sidebar .datetime-card .time-display {
+    color: var(--sidebar-text) !important;
+}
+.sidebar small,
+.sidebar .sidebar-user-username,
+.sidebar .sidebar-header small,
+.sidebar .sidebar-countdown .countdown-meta,
+.sidebar .datetime-card .date-display,
+.sidebar .datetime-card .day-display {
+    color: var(--sidebar-muted) !important;
+}
+.sidebar-user-info,
+.sidebar-header,
+.sidebar-datetime,
+.sidebar-divider {
+    border-color: var(--sidebar-border) !important;
+}
+.sidebar-divider { background: var(--sidebar-border) !important; }
+.sidebar-user-card,
+.sidebar-header .logo-icon,
+.sidebar-countdown,
+.datetime-card,
+.sidebar-search .input-group {
+    background: var(--sidebar-soft) !important;
+    border: 1px solid var(--sidebar-border) !important;
+}
+.sidebar-nav .nav-link {
+    color: var(--sidebar-muted) !important;
+    background: transparent !important;
+    border-right-color: transparent !important;
+}
+.sidebar-nav .nav-link i { color: var(--sidebar-muted) !important; }
+.sidebar-nav .nav-link:hover,
+.sidebar-nav .nav-link.active {
+    color: var(--sidebar-text) !important;
+    background: var(--sidebar-soft-hover) !important;
+    border-right-color: #fbbf24 !important;
+}
+.sidebar-nav .nav-link:hover i,
+.sidebar-nav .nav-link.active i { color: #ffffff !important; }
+.sidebar-logout-btn {
+    background: rgba(239,68,68,0.18) !important;
+    color: #fecaca !important;
+    border: 1px solid rgba(248,113,113,0.34) !important;
+}
+.sidebar-logout-btn:hover {
+    background: rgba(239,68,68,0.30) !important;
+    color: #fff !important;
+}
+
+/* البحث السريع داخل السايدبار: واضح بالصباحي والليلي */
+.sidebar-search { position: relative !important; }
+.sidebar-search input,
+.sidebar-search .form-control {
+    background: transparent !important;
+    color: var(--sidebar-text) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+.sidebar-search input::placeholder { color: var(--sidebar-muted) !important; opacity: 1 !important; }
+.sidebar-search .input-group-text {
+    background: transparent !important;
+    color: var(--sidebar-muted) !important;
+    border: 0 !important;
+}
+.sidebar-search-results {
+    background: var(--sidebar-result-bg) !important;
+    color: var(--sidebar-result-text) !important;
+    border: 1px solid var(--app-border-strong) !important;
+    box-shadow: 0 16px 40px rgba(15,23,42,0.24) !important;
+}
+.sidebar-search-results .search-result-label {
+    background: var(--sidebar-result-label-bg) !important;
+    color: var(--sidebar-result-label-text) !important;
+    border-bottom: 1px solid var(--app-border) !important;
+}
+.sidebar-search-results .search-result-item {
+    color: var(--sidebar-result-text) !important;
+    background: var(--sidebar-result-bg) !important;
+    border-bottom-color: var(--app-border) !important;
+}
+.sidebar-search-results .search-result-item:hover {
+    background: var(--sidebar-result-hover) !important;
+    color: var(--sidebar-result-text) !important;
+}
+.sidebar-search-results .search-result-item small,
+.sidebar-search-results .search-result-item .text-muted,
+.sidebar-search-results .text-muted {
+    color: var(--sidebar-result-muted) !important;
+}
+.sidebar-search-results .fw-semibold { color: var(--sidebar-result-text) !important; }
+
+/* بانر الرئيسية: النص أبيض دائماً لأنه على خلفية متدرجة */
+.dash-welcome,
+.hero-section,
+.stats-header,
+.bg-gradient-primary,
+.primary-gradient {
+    background: linear-gradient(135deg, #172554 0%, #1d4ed8 48%, #0f766e 100%) !important;
+    color: var(--on-brand-text) !important;
+    border: 0 !important;
+}
+html[data-theme="dark"] .dash-welcome,
+html[data-theme="dark"] .hero-section,
+html[data-theme="dark"] .stats-header,
+html[data-theme="dark"] .bg-gradient-primary,
+html[data-theme="dark"] .primary-gradient {
+    background: linear-gradient(135deg, #07111d 0%, #12345a 48%, #0f4f55 100%) !important;
+}
+.dash-welcome *,
+.dash-welcome h1, .dash-welcome h2, .dash-welcome h3, .dash-welcome h4,
+.dash-welcome h5, .dash-welcome h6,
+.dash-welcome p,
+.hero-section *,
+.stats-header *,
+.bg-gradient-primary *,
+.primary-gradient * {
+    color: var(--on-brand-text) !important;
+}
+.dash-welcome p,
+.dash-welcome small,
+.hero-section p,
+.stats-header small {
+    color: var(--on-brand-muted) !important;
+}
+.dash-welcome .welcome-icon {
+    background: rgba(255,255,255,0.16) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.22) !important;
+}
+
+/* الكروت المتدرجة لا تخضع لقاعدة .card العامة */
+.bg-gradient-blue,
+.card.bg-gradient-blue,
+.stat-card.bg-gradient-blue {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+}
+.bg-gradient-emerald,
+.card.bg-gradient-emerald,
+.stat-card.bg-gradient-emerald {
+    background: linear-gradient(135deg, #047857 0%, #0f766e 100%) !important;
+    color: #ffffff !important;
+}
+.bg-gradient-purple,
+.card.bg-gradient-purple,
+.stat-card.bg-gradient-purple {
+    background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+}
+.bg-gradient-orange,
+.card.bg-gradient-orange,
+.stat-card.bg-gradient-orange {
+    background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+}
+.bg-gradient-blue *, .bg-gradient-emerald *, .bg-gradient-purple *, .bg-gradient-orange *,
+.stat-card *, .stat-card h1, .stat-card h2, .stat-card h3, .stat-card h4,
+.stat-card h5, .stat-card h6, .stat-card .stat-value, .stat-card .stat-label, .stat-card .stat-detail,
+.card.text-white *, .text-white * {
+    color: #ffffff !important;
+}
+.stat-card .stat-icon,
+.bg-gradient-blue .stat-icon,
+.bg-gradient-emerald .stat-icon,
+.bg-gradient-purple .stat-icon,
+.bg-gradient-orange .stat-icon {
+    background: rgba(255,255,255,0.18) !important;
+    color: #ffffff !important;
+}
+
+/* الوصول السريع: سطح واضح، أيقونات واضحة، لا ألوان باهتة */
+.dash-quick,
+.dash-recent,
+.dash-net-card,
+.content-card,
+.table-container,
+.filter-section,
+.search-bar-container,
+.form-section {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border: 1px solid var(--app-border) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+.dash-quick-title,
+.dash-recent-header h6,
+.dash-net-label,
+.dash-net-value,
+.dash-net-card .lbl,
+.dash-net-card .val {
+    color: var(--app-text) !important;
+}
+.dash-quick-title i { color: var(--brand-warning) !important; }
+.dash-quick-item {
+    background: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border: 1px solid var(--app-border) !important;
+}
+.dash-quick-item:hover {
+    background: var(--app-surface-hover) !important;
+    border-color: var(--brand-primary) !important;
+    color: var(--app-text) !important;
+}
+.dash-quick-item .qi-label { color: var(--app-text) !important; }
+.dash-quick-item .qi-icon,
+.dash-net-icon {
+    background: var(--app-badge-soft-bg) !important;
+    color: var(--app-badge-soft-text) !important;
+    border: 1px solid var(--app-border) !important;
+}
+
+/* حقول البحث العامة والفلاتر */
+.search-bar-container,
+.search-box,
+.filter-section { border-radius: 16px !important; }
+.search-bar-inner,
+.search-input-wrapper,
+.input-group {
+    background: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+.search-bar-input,
+.search-input,
+.form-control,
+.form-select,
+textarea,
+select,
+input:not([type="checkbox"]):not([type="radio"]) {
+    background: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+    border-color: var(--app-input-border) !important;
+}
+.search-bar-icon,
+.input-group-text i,
+.form-control + .input-group-text,
+.input-group-text {
+    color: var(--app-muted) !important;
+}
+.search-bar-input::placeholder,
+.search-input::placeholder,
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1 !important;
+}
+
+/* جداول: ثبات واضح بالوضعين */
+.table,
+.table-responsive,
+table {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+.table thead,
+table thead,
+.table thead th,
+table thead th,
+thead[style*="gradient"] {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent)) !important;
+    color: #ffffff !important;
+}
+.table thead *, table thead * { color: #ffffff !important; }
+.table tbody td,
+.table tbody th,
+table tbody td,
+table tbody th {
+    background-color: transparent !important;
+    color: var(--app-text) !important;
+}
+.table tbody tr,
+table tbody tr { background-color: var(--app-table-row-bg) !important; }
+.table tbody tr:nth-child(even),
+table tbody tr:nth-child(even) { background-color: var(--app-table-row-alt) !important; }
+.table tbody tr:hover,
+table tbody tr:hover { background-color: var(--app-table-row-hover) !important; }
+.table a:not(.btn),
+table a:not(.btn) { color: var(--brand-primary) !important; }
+html[data-theme="dark"] .table a:not(.btn),
+html[data-theme="dark"] table a:not(.btn) { color: #93c5fd !important; }
+
+/* Bootstrap النصوص الملونة تبقى مقروءة */
+.text-primary { color: var(--brand-primary) !important; }
+.text-success { color: var(--brand-success) !important; }
+.text-warning { color: var(--brand-warning) !important; }
+.text-danger { color: var(--brand-danger) !important; }
+.text-info { color: var(--brand-info) !important; }
+.text-dark { color: var(--app-text) !important; }
+.text-muted { color: var(--app-muted) !important; }
+
+/* Alerts/light cards: لا تبقى بيضاء في الدارك ولا باهتة في النهاري */
+.alert-light,
+.bg-light {
+    background: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+.bg-white {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-light,
+html[data-theme="dark"] .alert-light {
+    background: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+}
+
+/* مودالات الهيدرات المتدرجة */
+.modal-header.text-white,
+.modal-header[style*="gradient"],
+.card-header.bg-gradient-blue,
+.card-header.bg-gradient-emerald,
+.card-header.bg-gradient-purple,
+.card-header.bg-gradient-orange {
+    color: #ffffff !important;
+}
+.modal-header.text-white *,
+.modal-header[style*="gradient"] *,
+.card-header.bg-gradient-blue *,
+.card-header.bg-gradient-emerald *,
+.card-header.bg-gradient-purple *,
+.card-header.bg-gradient-orange * {
+    color: #ffffff !important;
+}
+.btn-close-white { filter: invert(1) grayscale(100%) brightness(200%) !important; }
+
+/* إصلاح inline styles الشائعة بدون كسر الطباعة */
+html[data-theme="dark"] [style*="background:#f8fafc"],
+html[data-theme="dark"] [style*="background: #f8fafc"],
+html[data-theme="dark"] [style*="background:#fffbeb"],
+html[data-theme="dark"] [style*="background: #fffbeb"],
+html[data-theme="dark"] [style*="background:#fff8ed"],
+html[data-theme="dark"] [style*="background: #fff8ed"],
+html[data-theme="dark"] [style*="background:#f3f4f6"],
+html[data-theme="dark"] [style*="background: #f3f4f6"],
+html[data-theme="dark"] [style*="background:#eef2ff"],
+html[data-theme="dark"] [style*="background: #eef2ff"],
+html[data-theme="dark"] [style*="background:#f0f9ff"],
+html[data-theme="dark"] [style*="background: #f0f9ff"],
+html[data-theme="dark"] [style*="background:#f0fdf4"],
+html[data-theme="dark"] [style*="background: #f0fdf4"] {
+    background: var(--app-surface-2) !important;
+    background-color: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+}
+
+/* فوتر ثابت ومقروء */
+.main-footer,
+footer.main-footer {
+    background: linear-gradient(90deg, #172554, #1d4ed8) !important;
+    color: #ffffff !important;
+}
+.main-footer * { color: #ffffff !important; }
+
+/* لا تطبق الحماية البصرية على صفحات التقارير الورقية والطباعة */
+@media print {
+    .sidebar, .top-bar, .main-footer { display: none !important; }
+    body, .card, .table, table { background: #ffffff !important; color: #000000 !important; }
+}
+.theme-guard-dark-surface {
+    background: var(--app-surface-2) !important;
+    background-color: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+.theme-guard-on-brand,
+.theme-guard-on-brand * {
+    color: #ffffff !important;
+}
+
+/* Top bar واضح وغير تابع لألوان Bootstrap القديمة */
+.top-bar {
+    background: var(--app-navbar-bg) !important;
+    color: var(--app-text) !important;
+    border-bottom: 1px solid var(--app-border) !important;
+    box-shadow: var(--shadow-xs) !important;
+}
+.top-bar .page-title,
+.top-bar .page-title *,
+.hamburger-btn,
+.hamburger-btn i {
+    color: var(--app-text) !important;
+}
+.hamburger-btn:hover {
+    background: var(--app-surface-hover) !important;
+}
+.theme-toggle-btn {
+    background: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border-strong) !important;
+}
+.theme-toggle-btn:hover {
+    background: var(--app-surface-hover) !important;
+    color: var(--app-text) !important;
+}
+
+/* استثناء نتائج البحث من أي كلاس on-brand يضاف ديناميكياً */
+.sidebar .sidebar-search-results,
+.sidebar .sidebar-search-results * {
+    color: var(--sidebar-result-text) !important;
+}
+.sidebar .sidebar-search-results small,
+.sidebar .sidebar-search-results .text-muted {
+    color: var(--sidebar-result-muted) !important;
+}
+.sidebar .sidebar-search-results .search-result-label,
+.sidebar .sidebar-search-results .search-result-label * {
+    color: var(--sidebar-result-label-text) !important;
+}
+
+/* =====================================================================
+   FINAL FIX 2026-05-15: withdrawals page table must obey theme tokens.
+   السبب: جدول /withdrawals يستخدم Bootstrap .table variables + page CSS loaded
+   after the old brand file. هذه القواعد لا تعتمد على اللون الافتراضي نهائياً.
+===================================================================== */
+#tableView,
+#tableView .withdraw-card,
+#tableView .withdraw-card .card-body,
+#tableView .table-responsive {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+#tableView .withdraw-card {
+    border: 1px solid var(--app-border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    overflow: hidden !important;
+}
+
+#tableView .withdraw-card > .card-header.bg-gradient-emerald,
+#tableView .withdraw-card > .card-header.bg-gradient-emerald *,
+#addWithdrawalModal .modal-header.bg-gradient-emerald,
+#addWithdrawalModal .modal-header.bg-gradient-emerald *,
+#editWithdrawalModal .modal-header.bg-gradient-emerald,
+#editWithdrawalModal .modal-header.bg-gradient-emerald * {
+    color: #ffffff !important;
+}
+
+#withdrawalsTable {
+    --bs-table-bg: var(--app-table-row-bg) !important;
+    --bs-table-color: var(--app-text) !important;
+    --bs-table-border-color: var(--app-table-border) !important;
+    --bs-table-striped-bg: var(--app-table-row-alt) !important;
+    --bs-table-striped-color: var(--app-text) !important;
+    --bs-table-hover-bg: var(--app-table-row-hover) !important;
+    --bs-table-hover-color: var(--app-text) !important;
+    --bs-table-active-bg: var(--app-surface-2) !important;
+    --bs-table-active-color: var(--app-text) !important;
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+#withdrawalsTable > :not(caption) > * > * {
+    background-color: var(--bs-table-bg) !important;
+    color: var(--bs-table-color) !important;
+    border-color: var(--app-table-border) !important;
+    box-shadow: none !important;
+}
+
+#withdrawalsTable thead,
+#withdrawalsTable thead.table-gradient-emerald,
+#withdrawalsTable thead.table-gradient-emerald tr,
+#withdrawalsTable thead.table-gradient-emerald th,
+#withdrawalsTable thead th {
+    --bs-table-bg: transparent !important;
+    background: linear-gradient(135deg, #047857 0%, #0f766e 100%) !important;
+    background-color: #047857 !important;
+    color: #ffffff !important;
+    border-color: rgba(255,255,255,0.24) !important;
+}
+
+#withdrawalsTable thead *,
+#withdrawalsTable .table-gradient-emerald * {
+    color: #ffffff !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row {
+    --bs-table-bg: var(--app-table-row-bg) !important;
+    background: var(--app-table-row-bg) !important;
+    color: var(--app-text) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row:nth-child(even) {
+    --bs-table-bg: var(--app-table-row-alt) !important;
+    background: var(--app-table-row-alt) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row:hover {
+    --bs-table-bg: var(--app-table-row-hover) !important;
+    background: var(--app-table-row-hover) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row > td,
+#withdrawalsTable tbody tr.withdrawal-row > th {
+    background-color: var(--bs-table-bg) !important;
+    color: var(--app-text) !important;
+}
+
+#withdrawalsTable tbody tr.withdrawal-row a:not(.action-btn):not(.btn) {
+    color: var(--brand-primary) !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable tbody tr.withdrawal-row a:not(.action-btn):not(.btn) {
+    color: #93c5fd !important;
+}
+
+#withdrawalsTable .text-muted,
+#withdrawalsTable td.text-muted,
+#withdrawalsTable .small.text-muted {
+    color: var(--app-muted) !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable .text-muted,
+html[data-theme="dark"] #withdrawalsTable td.text-muted,
+html[data-theme="dark"] #withdrawalsTable .small.text-muted {
+    color: #cbd5e1 !important;
+}
+
+#withdrawalsTable .badge.bg-light,
+#withdrawalsTable .badge.text-dark {
+    background: var(--brand-accent-soft) !important;
+    color: var(--brand-accent-hover) !important;
+    border: 1px solid rgba(15,118,110,0.24) !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable .badge.bg-light,
+html[data-theme="dark"] #withdrawalsTable .badge.text-dark {
+    background: rgba(45,212,191,0.16) !important;
+    color: #99f6e4 !important;
+    border-color: rgba(45,212,191,0.34) !important;
+}
+
+#withdrawalsTable tfoot,
+#withdrawalsTable tfoot.table-active,
+#withdrawalsTable tfoot.table-active tr,
+#withdrawalsTable tfoot.table-active td {
+    --bs-table-bg: var(--app-surface-2) !important;
+    --bs-table-color: var(--app-text) !important;
+    background: var(--app-surface-2) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-table-border) !important;
+}
+
+html[data-theme="dark"] #withdrawalsTable tfoot,
+html[data-theme="dark"] #withdrawalsTable tfoot.table-active,
+html[data-theme="dark"] #withdrawalsTable tfoot.table-active tr,
+html[data-theme="dark"] #withdrawalsTable tfoot.table-active td {
+    background: #18304a !important;
+    color: #f8fafc !important;
+}
+
+#withdrawalsTable .action-btn,
+#withdrawalCards .action-btn {
+    color: #ffffff !important;
+}
+
+#withdrawalCards .list-card,
+#withdrawalCards .card-body,
+#withdrawalCards .info-item {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+#withdrawalCards .list-card .text-dark,
+#withdrawalCards .list-card h6,
+#withdrawalCards .list-card h6 a,
+#withdrawalCards .list-card .info-value {
+    color: var(--app-text) !important;
+}
+
+#withdrawalCards .list-card .header-sub,
+#withdrawalCards .list-card .info-label {
+    color: var(--app-muted) !important;
+}
+
+#withdrawalCards .list-card .info-value.text-warning,
+#withdrawalsTable .text-warning {
+    color: var(--brand-warning) !important;
+}
+
+/* ================================================================
+   FIX 2026-05-19: Dashboard quick access container + dark table headers
+   1) Make Quick Access frame match the other dashboard container frames.
+   2) Force table header text to white in dark mode, including nested labels/icons.
+================================================================ */
+.dash-quick {
+    border-radius: var(--radius-xl) !important;
+    padding: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+    overflow: hidden !important;
+    background: var(--app-surface) !important;
+    border: 1.5px solid var(--app-border) !important;
+    box-shadow: var(--shadow-sm) !important;
+    color: var(--app-text) !important;
+}
+
+.dash-quick-title {
+    margin-bottom: 1rem !important;
+    color: var(--app-text) !important;
+}
+
+.dash-quick-grid {
+    width: 100% !important;
+}
+
+html[data-theme="dark"] .dash-quick {
+    background: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+}
+
+html[data-theme="dark"] .table thead,
+html[data-theme="dark"] table thead,
+html[data-theme="dark"] .table thead tr,
+html[data-theme="dark"] table thead tr,
+html[data-theme="dark"] .table thead th,
+html[data-theme="dark"] table thead th,
+html[data-theme="dark"] .dash-recent-table thead th,
+html[data-theme="dark"] thead[style*="gradient"],
+html[data-theme="dark"] thead[style*="background"] {
+    color: #ffffff !important;
+}
+
+html[data-theme="dark"] .table thead *,
+html[data-theme="dark"] table thead *,
+html[data-theme="dark"] .dash-recent-table thead * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}

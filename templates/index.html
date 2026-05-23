@@ -217,7 +217,7 @@
 .dash-quick-item {
     background: var(--app-surface);
     border: 1.5px solid var(--app-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     padding: 1rem 0.5rem;
     text-align: center;
     text-decoration: none;
@@ -240,7 +240,7 @@
 .dash-quick-item .qi-icon {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -255,6 +255,140 @@
     font-weight: 600;
     color: var(--app-text-secondary);
     line-height: 1.3;
+}
+
+
+
+/* Setup Flow Panel */
+.setup-flow-panel {
+    background: var(--app-surface);
+    border: 1.5px solid var(--app-border);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--app-text);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    position: relative;
+}
+.setup-flow-panel::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: linear-gradient(180deg, var(--primary), var(--success), var(--warning));
+}
+.setup-flow-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+}
+.setup-flow-icon {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-glow);
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+.setup-flow-header h5 {
+    font-size: 0.98rem;
+    font-weight: 800;
+    margin-bottom: 0.15rem;
+    color: var(--app-text);
+}
+.setup-flow-header p {
+    font-size: 0.78rem;
+    color: var(--app-muted);
+    margin-bottom: 0;
+}
+.setup-flow-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+.setup-step {
+    position: relative;
+    background: var(--app-surface-hover);
+    border: 1px solid var(--app-border);
+    border-radius: 16px;
+    padding: 0.9rem 0.75rem;
+    text-decoration: none;
+    color: var(--app-text);
+    transition: var(--transition);
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+.setup-step:hover {
+    transform: translateY(-2px);
+    border-color: var(--app-primary);
+    box-shadow: var(--shadow-md);
+    color: var(--app-text);
+    text-decoration: none;
+}
+.setup-step.is-active {
+    border-color: var(--warning);
+    background: var(--warning-glow);
+}
+.setup-step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    background: var(--app-primary);
+    color: white;
+    font-size: 0.85rem;
+}
+.setup-step-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--app-text);
+}
+.setup-step-desc {
+    font-size: 0.72rem;
+    color: var(--app-muted);
+    line-height: 1.55;
+    flex: 1;
+}
+.setup-step-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--success);
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-top: auto;
+}
+.setup-step.is-active .setup-step-status {
+    color: var(--warning-dark);
+}
+.setup-flow-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-top: 0.9rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 14px;
+    background: var(--app-badge-soft-bg);
+    color: var(--app-muted);
+    font-size: 0.74rem;
+    line-height: 1.6;
+}
+.setup-flow-note i {
+    color: var(--info-dark);
+    margin-top: 0.2rem;
 }
 
 /* Recent Payments Section */
@@ -447,6 +581,12 @@
         flex: 1;
         min-width: 0;
     }
+    .setup-flow-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .setup-step {
+        min-height: 140px;
+    }
 }
 
 @media (max-width: 767px) {
@@ -492,6 +632,20 @@
         width: 46px;
         height: 46px;
         font-size: 1.25rem;
+    }
+    .setup-flow-panel {
+        padding: 1rem;
+    }
+    .setup-flow-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+    .setup-step {
+        min-height: auto;
+        padding: 0.85rem;
+    }
+    .setup-flow-header {
+        align-items: flex-start;
     }
 }
 
@@ -669,6 +823,92 @@
 
 
 
+
+    <!-- ===== تسلسل الإضافة الصحيح ===== -->
+    <div class="setup-flow-panel dash-animate dash-delay-5">
+        <div class="setup-flow-header">
+            <div class="setup-flow-icon">
+                <i class="fas fa-route"></i>
+            </div>
+            <div style="min-width:0;">
+                <h5>تسلسل الإضافة الصحيح</h5>
+                <p>اتبع الخطوات بالترتيب حتى تظهر الخيارات بشكل صحيح داخل النماذج والتقارير.</p>
+            </div>
+        </div>
+
+        <div class="setup-flow-grid">
+            <a href="/subjects" class="setup-step {% if not stats.total_subjects %}is-active{% endif %}">
+                <span class="setup-step-number">1</span>
+                <span class="setup-step-title"><i class="fas fa-book-open me-1"></i>المواد الدراسية</span>
+                <span class="setup-step-desc">أضف المواد أولاً لأنها تظهر لاحقاً عند إنشاء حساب المدرس.</span>
+                <span class="setup-step-status">
+                    {% if stats.total_subjects and stats.total_subjects > 0 %}
+                    <i class="fas fa-check-circle"></i>{{ stats.total_subjects }} مادة مسجلة
+                    {% else %}
+                    <i class="fas fa-arrow-circle-left"></i>ابدأ من هنا
+                    {% endif %}
+                </span>
+            </a>
+
+            <a href="/teachers/add" class="setup-step {% if stats.total_subjects and stats.total_subjects > 0 and not stats.total_teachers %}is-active{% endif %}">
+                <span class="setup-step-number">2</span>
+                <span class="setup-step-title"><i class="fas fa-chalkboard-teacher me-1"></i>المدرسين</span>
+                <span class="setup-step-desc">أضف المدرس واختر مادته ونوع التدريس وقيمة الأقساط ونسبة المعهد.</span>
+                <span class="setup-step-status">
+                    {% if stats.total_teachers and stats.total_teachers > 0 %}
+                    <i class="fas fa-check-circle"></i>{{ stats.total_teachers }} مدرس مسجل
+                    {% else %}
+                    <i class="fas fa-clock"></i>بعد المواد
+                    {% endif %}
+                </span>
+            </a>
+
+            <a href="/students/add" class="setup-step {% if stats.total_teachers and stats.total_teachers > 0 and not stats.total_students %}is-active{% endif %}">
+                <span class="setup-step-number">3</span>
+                <span class="setup-step-title"><i class="fas fa-user-plus me-1"></i>الطلاب</span>
+                <span class="setup-step-desc">سجل بيانات الطالب بعد تجهيز المدرسين حتى يتم ربطه مباشرة بالمدرس المناسب.</span>
+                <span class="setup-step-status">
+                    {% if stats.total_students and stats.total_students > 0 %}
+                    <i class="fas fa-check-circle"></i>{{ stats.total_students }} طالب مسجل
+                    {% else %}
+                    <i class="fas fa-clock"></i>بعد المدرسين
+                    {% endif %}
+                </span>
+            </a>
+
+            <a href="/students" class="setup-step {% if stats.total_students and stats.total_students > 0 and stats.unlinked_students and stats.unlinked_students > 0 %}is-active{% endif %}">
+                <span class="setup-step-number">4</span>
+                <span class="setup-step-title"><i class="fas fa-link me-1"></i>ربط الطالب</span>
+                <span class="setup-step-desc">تأكد من ربط كل طالب بمدرس ومادة وتحديد حالة الدراسة قبل تسجيل أي قسط.</span>
+                <span class="setup-step-status">
+                    {% if stats.unlinked_students and stats.unlinked_students > 0 %}
+                    <i class="fas fa-unlink"></i>{{ stats.unlinked_students }} طالب غير مربوط
+                    {% else %}
+                    <i class="fas fa-check-circle"></i>الربط جاهز
+                    {% endif %}
+                </span>
+            </a>
+
+            <a href="/payments" class="setup-step {% if stats.total_students and stats.total_students > 0 and not stats.total_installments %}is-active{% endif %}">
+                <span class="setup-step-number">5</span>
+                <span class="setup-step-title"><i class="fas fa-money-check-alt me-1"></i>الأقساط</span>
+                <span class="setup-step-desc">بعد اكتمال المواد والمدرسين والطلاب، ابدأ بتسجيل الأقساط والمدفوعات.</span>
+                <span class="setup-step-status">
+                    {% if stats.total_installments and stats.total_installments > 0 %}
+                    <i class="fas fa-check-circle"></i>{{ stats.total_installments }} عملية دفع
+                    {% else %}
+                    <i class="fas fa-clock"></i>الخطوة الأخيرة
+                    {% endif %}
+                </span>
+            </a>
+        </div>
+
+        <div class="setup-flow-note">
+            <i class="fas fa-lightbulb"></i>
+            <span>ملاحظة: إضافة المدرس قبل المادة قد تمنع ظهور المادة في القائمة، وتسجيل القسط قبل الربط قد يجعل التقارير والمحاسبة غير دقيقة.</span>
+        </div>
+    </div>
+
     <!-- ===== وصول سريع ===== -->
     <div class="dash-quick dash-animate dash-delay-5">
         <div class="dash-quick-title">
@@ -676,11 +916,11 @@
             وصول سريع
         </div>
         <div class="dash-quick-grid">
-            <a href="/students/add" class="dash-quick-item">
-                <div class="qi-icon" style="background: var(--primary-glow); color: var(--primary);">
-                    <i class="fas fa-user-plus"></i>
+            <a href="/subjects" class="dash-quick-item">
+                <div class="qi-icon" style="background: var(--app-badge-soft-bg); color: var(--secondary);">
+                    <i class="fas fa-book-open"></i>
                 </div>
-                <span class="qi-label">إضافة طالب</span>
+                <span class="qi-label">إضافة مادة</span>
             </a>
             <a href="/teachers/add" class="dash-quick-item">
                 <div class="qi-icon" style="background: var(--success-glow); color: var(--success);">
@@ -688,11 +928,11 @@
                 </div>
                 <span class="qi-label">إضافة مدرس</span>
             </a>
-            <a href="/students" class="dash-quick-item">
-                <div class="qi-icon" style="background: rgba(99,102,241,0.08); color: var(--primary);">
-                    <i class="fas fa-users"></i>
+            <a href="/students/add" class="dash-quick-item">
+                <div class="qi-icon" style="background: var(--primary-glow); color: var(--primary);">
+                    <i class="fas fa-user-plus"></i>
                 </div>
-                <span class="qi-label">الطلاب</span>
+                <span class="qi-label">إضافة طالب</span>
             </a>
             <a href="/payments" class="dash-quick-item">
                 <div class="qi-icon" style="background: var(--warning-glow); color: var(--warning-dark);">
@@ -701,13 +941,13 @@
                 <span class="qi-label">الأقساط</span>
             </a>
             <a href="/accounting" class="dash-quick-item">
-                <div class="qi-icon" style="background: rgba(6,182,212,0.08); color: var(--info-dark);">
+                <div class="qi-icon" style="background: var(--info-glow); color: var(--info-dark);">
                     <i class="fas fa-calculator"></i>
                 </div>
                 <span class="qi-label">المحاسبة</span>
             </a>
             <a href="/stats" class="dash-quick-item">
-                <div class="qi-icon" style="background: rgba(139,92,246,0.08); color: var(--secondary);">
+                <div class="qi-icon" style="background: var(--app-badge-soft-bg); color: var(--secondary);">
                     <i class="fas fa-chart-pie"></i>
                 </div>
                 <span class="qi-label">الإحصائيات</span>
@@ -717,7 +957,7 @@
 
     <!-- ===== تنبيهات مالية ===== -->
     <div id="financialWarningsContainer" class="d-none" style="margin-bottom: 1.5rem;">
-        <div class="card border-0 shadow-sm" style="border-left: 4px solid #ef4444 !important; border-radius: var(--radius-xl);">
+        <div class="card border-0 shadow-sm" style="border-left: 4px solid var(--brand-danger) !important; border-radius: var(--radius-xl);">
             <div class="card-header bg-white border-bottom d-flex align-items-center gap-2" style="border-radius: var(--radius-xl) var(--radius-xl) 0 0;">
                 <i class="fas fa-exclamation-triangle text-danger"></i>
                 <h6 class="mb-0 fw-bold text-danger">تنبيهات مالية</h6>

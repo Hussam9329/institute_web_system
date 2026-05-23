@@ -22,10 +22,18 @@
     </div>
 
     <!-- ===== فلاتر سجل العمليات ===== -->
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body py-3">
-            <form method="get" action="/logs" id="logsFilterForm">
-                <div class="row g-2 align-items-end">
+    <div class="filter-frame-panel accent-purple logs-filter-panel mb-3">
+        <div class="filter-frame-head">
+            <div class="filter-frame-title">
+                <span class="filter-frame-icon"><i class="fas fa-filter"></i></span>
+                <span>فلاتر سجل العمليات</span>
+                {% if username or action or entity or date_from or date_to %}
+                <span class="badge filter-frame-badge">فعّال</span>
+                {% endif %}
+            </div>
+        </div>
+        <form method="get" action="/logs" id="logsFilterForm" class="filter-frame-body">
+            <div class="row g-2 align-items-end filter-frame-row">
                     <!-- المستخدم -->
                     <div class="col-12 col-md-3 col-lg-2">
                         <label class="form-label small fw-semibold text-muted mb-1">
@@ -117,9 +125,8 @@
                             </a>
                         </div>
                     </div>
-                </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <!-- ===== جدول العمليات ===== -->

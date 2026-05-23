@@ -500,10 +500,10 @@ function openQRScanner() {
                         <h6 class="modal-title"><i class="fas fa-camera me-2"></i>مسح الباركود</h6>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeQRScanner()"></button>
                     </div>
-                    <div class="modal-body text-center p-3" style="background:#1a1a2e;">
+                    <div class="modal-body text-center p-3" style="background:var(--app-surface, #1a1a2e);">
                         <div id="qrVideoContainer" style="position:relative; width:100%; max-width:280px; margin:0 auto; border-radius:16px; overflow:hidden; background:#000; aspect-ratio:1/1;">
                             <video id="qrVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:block;"></video>
-                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:65%; height:65%; border:3px solid rgba(99,102,241,0.9); border-radius:16px; pointer-events:none; box-shadow:0 0 20px rgba(99,102,241,0.3);"></div>
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:65%; height:65%; border:3px solid var(--brand-primary, rgba(99,102,241,0.9)); border-radius:16px; pointer-events:none; box-shadow:0 0 20px var(--brand-primary, rgba(99,102,241,0.3));"></div>
                             <div style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.7); font-size:0.7rem; white-space:nowrap;">
                                 <i class="fas fa-crosshairs me-1"></i>وجّه الكاميرا نحو الباركود
                             </div>

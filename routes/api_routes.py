@@ -1955,6 +1955,12 @@ async def api_delete_room(request: Request, room_id: int):
 
 # ===== عمليات الجدول الأسبوعي =====
 
+def normalize_event_type(event_type):
+    """توحيد نوع الحدث: إزالة المسافات والقيم الفارغة"""
+    event_type = str(event_type or '').strip()
+    return 'امتحان' if event_type == 'امتحان' else 'محاضرة'
+
+
 @router.get("/weekly-schedule")
 async def api_get_weekly_schedule(room_id: int = None):
     """الحصول على الجدول الأسبوعي كاملاً أو لقاعة محددة"""
@@ -2003,7 +2009,30 @@ async def api_get_weekly_schedule(room_id: int = None):
             '''
             results = db.execute_query(query)
         
-        return {"success": True, "data": [dict(r) for r in results] if results else []}
+        data = []
+        for r in results or []:
+            row = dict(r)
+            row['event_type'] = normalize_event_type(row.get('event_type'))
+            data.append(row)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+
+
+@router.post("/weekly-schedule/normalize-db")
+async def api_normalize_weekly_schedule_db(request: Request):
+    """تنظيف بيانات event_type في قاعدة البيانات - يُستدعى مرة واحدة"""
+    check_permission(request, 'edit_subjects')
+    db = Database()
+    try:
+        db.execute_query('''
+            UPDATE weekly_schedule
+            SET event_type = CASE
+                WHEN TRIM(COALESCE(event_type, '')) = 'امتحان' THEN 'امتحان'
+                ELSE 'محاضرة'
+            END
+        ''')
+        return {"success": True, "message": "تم تنظيف بيانات نوع الحدث في قاعدة البيانات"}
     except Exception as e:
         return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
@@ -2020,7 +2049,8 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         day_of_week = data.get('day_of_week', '').strip()
         start_time = data.get('start_time', '').strip()
         end_time = data.get('end_time', '').strip()
-        event_type = data.get('event_type', 'محاضرة').strip()
+        raw_event_type = data.get('event_type', 'محاضرة')
+        event_type = str(raw_event_type or '').strip()
         notes = data.get('notes', '')
         duration = data.get('duration', None)
         
@@ -2060,7 +2090,10 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
 
         # التحقق من نوع الحدث
         if event_type not in ('محاضرة', 'امتحان'):
-            event_type = 'محاضرة'
+            return {
+                "success": False,
+                "message": "نوع الحدث غير صالح. يجب أن يكون محاضرة أو امتحان"
+            }
         
         # فحص تعارض القاعة: لا يمكن إضافة حدثين في نفس القاعة بنفس اليوم والوقت المتداخل
         room_conflict = db.execute_query('''
@@ -2125,7 +2158,8 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         day_of_week = data.get('day_of_week', '').strip()
         start_time = data.get('start_time', '').strip()
         end_time = data.get('end_time', '').strip()
-        event_type = data.get('event_type', 'محاضرة').strip()
+        raw_event_type = data.get('event_type', 'محاضرة')
+        event_type = str(raw_event_type or '').strip()
         notes = data.get('notes', '')
         duration = data.get('duration', None)
         
@@ -2161,7 +2195,10 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
 
         # التحقق من نوع الحدث
         if event_type not in ('محاضرة', 'امتحان'):
-            event_type = 'محاضرة'
+            return {
+                "success": False,
+                "message": "نوع الحدث غير صالح. يجب أن يكون محاضرة أو امتحان"
+            }
         
         # فحص تعارض القاعة (باستثناء المحاضرة الحالية)
         room_conflict = db.execute_query('''
@@ -2215,7 +2252,7 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
 
 @router.delete("/weekly-schedule/{lecture_id}")
 async def api_delete_weekly_lecture(request: Request, lecture_id: int):
-    """حذف محاضرة من الجدول الأسبوعي"""
+    """حذف حدث من الجدول الأسبوعي (محاضرة أو امتحان)"""
     check_permission(request, 'delete_subjects')
     try:
         guard = deletion_guard.can_delete_weekly_schedule(lecture_id)
@@ -2223,8 +2260,23 @@ async def api_delete_weekly_lecture(request: Request, lecture_id: int):
             return guard.to_dict()
         
         db = Database()
+        # جلب بيانات الحدث قبل الحذف لمعرفة نوعه
+        event_row = db.execute_query(
+            "SELECT event_type FROM weekly_schedule WHERE id = %s",
+            (lecture_id,)
+        )
+        
+        if not event_row:
+            return {"success": False, "message": "الحدث غير موجود"}
+        
+        event_type = normalize_event_type(event_row[0].get('event_type'))
+        event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
+        
         db.execute_query("DELETE FROM weekly_schedule WHERE id = %s", (lecture_id,))
-        return {"success": True, "message": "تم حذف المحاضرة"}
+        return {
+            "success": True,
+            "message": f"تم حذف {event_label} بنجاح"
+        }
     except Exception as e:
         return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
 
@@ -2781,3 +2833,71 @@ async def api_get_current_user(request: Request):
         return {"success": False, "data": None}
     except Exception:
         return {"success": False, "data": None}
+
+
+# ===== إدارة الحسابات التجريبية =====
+
+@router.get("/trial-accounts")
+async def api_list_trial_accounts(request: Request):
+    """عرض كل الحسابات التجريبية - المدير العام فقط"""
+    check_permission(request, 'manage_users')
+    from trial_mode import get_all_trial_accounts
+    accounts = get_all_trial_accounts()
+    return {"success": True, "data": accounts}
+
+
+class CreateTrialAccount(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=4, max_length=100)
+    full_name: str = Field(..., min_length=3, max_length=100)
+
+
+@router.post("/trial-accounts")
+async def api_create_trial_account(request: Request, data: CreateTrialAccount):
+    """إنشاء حساب تجريبي جديد - المدير العام فقط"""
+    check_permission(request, 'manage_users')
+    
+    # التحقق من أن اسم المستخدم لا يحتوي على أحرف خاصة
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', data.username):
+        return {"success": False, "message": "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام وشرطة سفلية فقط"}
+    
+    db = Database()
+    conn = None
+    cursor = None
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        from trial_mode import ensure_trial_environment
+        result = ensure_trial_environment(
+            cursor,
+            username=data.username,
+            password=data.password,
+            full_name=data.full_name
+        )
+        conn.commit()
+        
+        if isinstance(result, dict):
+            return result
+        return {"success": True, "message": "تم إنشاء الحساب التجريبي بنجاح"}
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return {"success": False, "message": f"خطأ في إنشاء الحساب التجريبي: {str(e)}"}
+    finally:
+        try:
+            if cursor:
+                cursor.close()
+        except Exception:
+            pass
+        if conn:
+            db.return_connection(conn)
+
+
+@router.delete("/trial-accounts/{username}")
+async def api_delete_trial_account(request: Request, username: str):
+    """حذف حساب تجريبي - المدير العام فقط"""
+    check_permission(request, 'manage_users')
+    from trial_mode import delete_trial_account
+    result = delete_trial_account(username)
+    return result

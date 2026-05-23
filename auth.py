@@ -12,6 +12,11 @@ from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from database import Database
 from config import SECRET_KEY
+from trial_mode import (
+    is_trial_username, drop_trial_tables, set_current_user_context,
+    reset_current_user_context, get_current_trial_username,
+    get_trial_table_map,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +94,71 @@ def get_session_user_id(token: str) -> int | None:
         return None
 
 
+# ===== فحص انتهاء الحساب التجريبي =====
+
+def _expire_trial_account_now(db: Database, username: str):
+    """حذف بيانات النسخة التجريبية وتعطيل الحساب عند انتهاء مدته."""
+    conn = None
+    cursor = None
+    try:
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        drop_trial_tables(cursor, username)
+        cursor.execute('''
+            UPDATE trial_accounts
+            SET is_expired = 1,
+                expired_at = COALESCE(expired_at, NOW())
+            WHERE username = %s
+        ''', (username,))
+        cursor.execute("UPDATE users SET is_active = 0 WHERE username = %s", (username,))
+        conn.commit()
+    except Exception:
+        try:
+            if conn:
+                conn.rollback()
+        except Exception:
+            pass
+    finally:
+        try:
+            if cursor:
+                cursor.close()
+        except Exception:
+            pass
+        if conn:
+            db.return_connection(conn)
+
+
+def _is_trial_account_expired(db: Database, username: str) -> bool:
+    """يرجع True إذا انتهت مدة الحساب التجريبي."""
+    try:
+        row = db.execute_query('''
+            SELECT (expires_at <= NOW() OR is_expired = 1) AS expired
+            FROM trial_accounts
+            WHERE username = %s
+        ''', (username,))
+        if not row:
+            return False
+        return bool(row[0].get('expired'))
+    except Exception:
+        return False
+
+
+def get_trial_account_info(username: str) -> dict | None:
+    """معلومات مختصرة عن الحساب التجريبي لعرضها في الواجهة."""
+    try:
+        db = Database()
+        row = db.execute_query('''
+            SELECT username, started_at, expires_at,
+                   GREATEST(0, EXTRACT(EPOCH FROM (expires_at - NOW())))::INTEGER AS seconds_remaining,
+                   (expires_at <= NOW() OR is_expired = 1) AS expired
+            FROM trial_accounts
+            WHERE username = %s
+        ''', (username,))
+        return dict(row[0]) if row else None
+    except Exception:
+        return None
+
+
 # ===== الحصول على المستخدم الحالي =====
 
 def get_current_user(request: Request) -> dict | None:
@@ -103,14 +173,24 @@ def get_current_user(request: Request) -> dict | None:
         db = Database()
         user = db.execute_query('''
             SELECT u.id, u.username, u.full_name, u.role_id, u.is_active, u.password_hash,
-                   r.name as role_name
+                   r.name as role_name,
+                   (ta.username IS NOT NULL) AS is_trial,
+                   (ta.expires_at <= NOW() OR ta.is_expired = 1) AS trial_expired
             FROM users u
             JOIN roles r ON u.role_id = r.id
+            LEFT JOIN trial_accounts ta ON ta.username = u.username
             WHERE u.id = %s
         ''', (user_id,))
         if not user or user[0]['is_active'] != 1:
             return None
-        return dict(user[0])
+
+        user_data = dict(user[0])
+        # فحص انتهاء الحساب التجريبي لأي مستخدم موجود في جدول trial_accounts
+        if user_data.get('is_trial') and user_data.get('trial_expired'):
+            _expire_trial_account_now(db, user_data['username'])
+            return None
+
+        return user_data
     except Exception:
         return None
 
@@ -197,26 +277,37 @@ async def auth_middleware(request: Request, call_next):
             )
         return RedirectResponse(url="/login", status_code=303)
 
-    request.state.user = user
-    request.state.user_permissions = get_user_permissions(user["id"])
-
-    # مدير العام يملك كل الصلاحيات
-    if user.get('role_name') == 'مدير عام':
-        request.state.user_permissions = ['all']
-
-    # ===== استخراج توقيت العميل من HTTP Header =====
-    # يُستخدم في سجل العمليات (logs) بدلاً من توقيت السيرفر
+    trial_context_token = set_current_user_context(user)
     try:
-        header_ts = request.headers.get('x-client-timestamp', '')
-        if header_ts:
-            request.state.client_timestamp = header_ts
-        else:
-            request.state.client_timestamp = None
-    except Exception:
-        request.state.client_timestamp = None
+        request.state.user = user
+        request.state.user_permissions = get_user_permissions(user["id"])
 
-    response = await call_next(request)
-    return response
+        # مدير العام يملك كل الصلاحيات
+        if user.get('role_name') == 'مدير عام':
+            request.state.user_permissions = ['all']
+
+        # معلومات الحساب التجريبي لأي مستخدم موجود في جدول trial_accounts
+        username = user.get('username', '')
+        if user.get('is_trial'):
+            request.state.trial_account = get_trial_account_info(username)
+        else:
+            request.state.trial_account = None
+
+        # ===== استخراج توقيت العميل من HTTP Header =====
+        # يُستخدم في سجل العمليات (logs) بدلاً من توقيت السيرفر
+        try:
+            header_ts = request.headers.get('x-client-timestamp', '')
+            if header_ts:
+                request.state.client_timestamp = header_ts
+            else:
+                request.state.client_timestamp = None
+        except Exception:
+            request.state.client_timestamp = None
+
+        response = await call_next(request)
+        return response
+    finally:
+        reset_current_user_context(trial_context_token)
 
 
 # ===== تسجيل الدخول =====
@@ -231,9 +322,12 @@ def login_user(username: str, password: str) -> dict | None:
         db = Database()
         user = db.execute_query('''
             SELECT u.id, u.username, u.full_name, u.role_id, u.is_active, u.password_hash,
-                   r.name as role_name
+                   r.name as role_name,
+                   (ta.username IS NOT NULL) AS is_trial,
+                   (ta.expires_at <= NOW() OR ta.is_expired = 1) AS trial_expired
             FROM users u
             JOIN roles r ON u.role_id = r.id
+            LEFT JOIN trial_accounts ta ON ta.username = u.username
             WHERE u.username = %s
         ''', (username,))
 
@@ -249,6 +343,11 @@ def login_user(username: str, password: str) -> dict | None:
 
         if not verify_password(password, user_data['password_hash']):
             logger.warning(f"محاولة تسجيل دخول فاشلة - كلمة مرور خاطئة: {username}")
+            return None
+
+        if user_data.get('is_trial') and user_data.get('trial_expired'):
+            _expire_trial_account_now(db, user_data['username'])
+            logger.warning(f"محاولة تسجيل دخول لحساب تجريبي منتهي: {username}")
             return None
 
         # ترحيل كلمة المرور من SHA-256 إلى bcrypt

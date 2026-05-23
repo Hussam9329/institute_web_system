@@ -82,11 +82,21 @@
     </div>
     {% endif %}
 
-    <!-- ===== فلتر المواد + بحث ===== -->
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body py-2 py-md-3">
-            <form method="GET" action="/teachers" class="row g-2 g-md-3 align-items-center">
-                <div class="col-12 col-md-5 col-lg-6">
+    <!-- ===== بحث وتصفية المدرسين ===== -->
+    <div class="filter-frame-panel accent-emerald teachers-filter-panel mb-3">
+        <div class="filter-frame-head">
+            <div class="filter-frame-title">
+                <span class="filter-frame-icon"><i class="fas fa-filter"></i></span>
+                <span>بحث وتصفية المدرسين</span>
+                {% if selected_subject or request.args.get('search') %}
+                <span class="badge filter-frame-badge">فعّال</span>
+                {% endif %}
+            </div>
+        </div>
+        <form method="GET" action="/teachers" class="filter-frame-body">
+            <div class="filter-grid teachers-filter-grid">
+                <div class="filter-control filter-search-control">
+                    <label class="filter-label" for="teacherLiveSearch"><i class="fas fa-search me-1"></i>البحث</label>
                     <div class="search-bar-container">
                         <div class="search-bar-inner">
                             <i class="fas fa-search search-bar-icon"></i>
@@ -95,6 +105,9 @@
                                    value="{{ request.args.get('search', '') }}">
                             <button type="button" class="search-bar-btn-qr" title="مسح بالباركود" onclick="openTeacherBarcodeSearch()">
                                 <i class="fas fa-camera"></i>
+                            </button>
+                            <button type="submit" class="search-bar-btn-search" title="بحث">
+                                <i class="fas fa-arrow-left"></i>
                             </button>
                         </div>
                     </div>
@@ -107,7 +120,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-lg-3">
+                <div class="filter-control filter-subject-control">
+                    <label class="filter-label"><i class="fas fa-book-open me-1"></i>المادة</label>
                     <select name="subject" class="form-select form-select-sm" onchange="this.form.submit()" data-searchable="true" data-search-placeholder="ابحث عن مادة...">
                         <option value="">كل المواد</option>
                         {% for subject in subjects %}
@@ -115,13 +129,16 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-6 col-md-3 col-lg-3">
-                    <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-success btn-sm">
                         <i class="fas fa-search me-1"></i>بحث
                     </button>
+                    <a href="/teachers" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
+                        <i class="fas fa-times me-1"></i>مسح
+                    </a>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     {% if teachers %}
@@ -266,12 +283,6 @@
                             </div>
                         </div>
 
-                        <!-- نسبة المعهد -->
-                        <div class="list-card-badges mt-2">
-                            <span class="badge bg-light text-dark"><i class="fas fa-percent me-1"></i>{{ UI_LABELS.institute_rate }}: {{ teacher.institute_rate_display }}</span>
-                            <span class="badge bg-light text-dark"><i class="fas fa-users me-1"></i>{{ teacher.students_count or 0 }}</span>
-                        </div>
-
                         <div class="list-card-divider"></div>
 
                         <!-- أزرار الإجراءات -->
@@ -402,21 +413,21 @@ function openTeacherBarcodeSearch() {
         modal.innerHTML = `
             <div class="modal-dialog modal-dialog-centered modal-sm">
                 <div class="modal-content border-0 shadow-lg" style="border-radius:20px; overflow:hidden;">
-                    <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff;">
+                    <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,var(--primary-dark,var(--brand-primary,#4f46e5)),var(--brand-primary,#6366f1)); color:#fff;">
                         <h6 class="modal-title"><i class="fas fa-camera me-2"></i>مسح الباركود</h6>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeTeacherQrScanner()"></button>
                     </div>
-                    <div class="modal-body text-center p-3" style="background:#1a1a2e;">
+                    <div class="modal-body text-center p-3" style="background:var(--app-surface, #1a1a2e);">
                         <div id="teacherQrVideoContainer" style="position:relative; width:100%; max-width:280px; margin:0 auto; border-radius:16px; overflow:hidden; background:#000; aspect-ratio:1/1;">
                             <video id="teacherQrVideo" autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:block;"></video>
-                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:65%; height:65%; border:3px solid rgba(99,102,241,0.9); border-radius:16px; pointer-events:none; box-shadow:0 0 20px rgba(99,102,241,0.3);"></div>
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:65%; height:65%; border:3px solid var(--brand-primary, rgba(99,102,241,0.9)); border-radius:16px; pointer-events:none; box-shadow:0 0 20px var(--brand-primary, rgba(99,102,241,0.3));"></div>
                             <div style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.7); font-size:0.7rem; white-space:nowrap;">
                                 <i class="fas fa-crosshairs me-1"></i>وجّه الكاميرا نحو الباركود
                             </div>
                         </div>
                         <div id="teacherQrCameraError" class="d-none mt-3">
                             <div style="background:rgba(255,255,255,0.05); border-radius:12px; padding:20px;">
-                                <i class="fas fa-camera fa-2x d-block mb-2" style="color:#6366f1;"></i>
+                                <i class="fas fa-camera fa-2x d-block mb-2" style="color:var(--brand-primary, #6366f1);"></i>
                                 <p style="color:rgba(255,255,255,0.6); margin:0; font-size:0.85rem;">لا يمكن الوصول إلى الكاميرا</p>
                                 <small style="color:rgba(255,255,255,0.4);">تأكد من منح إذن الكاميرا للمتصفح</small>
                             </div>

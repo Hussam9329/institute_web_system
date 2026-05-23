@@ -5,6 +5,7 @@
 
 import logging
 from database import Database
+from trial_mode import is_trial_username
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +263,9 @@ class DeletionGuardService:
                 )
 
             user_role = user.get('role_name', '')
-            if user_role != 'مدير عام':
+            username = user.get('username', '')
+            # الحسابات التجريبية ومدير العام يمكنهم حذف الأقساط
+            if user_role != 'مدير عام' and not is_trial_username(username):
                 return DeletionGuardResult(
                     allowed=False,
                     message="لا يمكن حذف القسط! فقط مدير النظام (مدير عام) يمكنه حذف الأقساط المدفوعة",

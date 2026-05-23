@@ -1,0 +1,535 @@
+/* ================================================================
+   responsive-foundation.css
+   الطبقة الأخيرة لاستقرار الواجهة على كل الشاشات.
+   الهدف: منع الكسر الأفقي، تخفيف زحمة الجداول، وحماية الجدول الأسبوعي
+   بدون الدخول في سباق ألوان جديد.
+================================================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    width: 100%;
+    min-width: 320px;
+    overflow-x: hidden;
+}
+
+img, svg, video, canvas, iframe {
+    max-width: 100%;
+}
+
+button, input, select, textarea {
+    max-width: 100%;
+}
+
+/* Layout shell */
+.main-content-area {
+    width: auto !important;
+    max-width: 100% !important;
+    padding-inline: clamp(10px, 2vw, 20px) !important;
+}
+
+@media (min-width: 992px) {
+    .main-content-area {
+        margin-right: 250px !important;
+        padding-inline: clamp(14px, 1.4vw, 24px) !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .main-content-area,
+    .main-footer {
+        margin-right: 0 !important;
+    }
+    .top-bar {
+        right: 0 !important;
+        left: 0 !important;
+    }
+    .sidebar {
+        width: min(86vw, 290px) !important;
+        right: calc(-1 * min(86vw, 290px) - 12px) !important;
+    }
+    .sidebar.open {
+        right: 0 !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .top-bar {
+        height: 52px !important;
+        padding-inline: 10px !important;
+    }
+    .top-bar .page-title {
+        max-width: calc(100vw - 126px);
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 13px !important;
+    }
+    .main-content-area {
+        margin-top: 52px !important;
+        padding: 10px !important;
+    }
+}
+
+/* Cards and grids must not force horizontal overflow */
+.card,
+.content-card,
+.summary-card,
+.stat-card,
+.list-card,
+.dash-stat-card,
+.dash-net-card,
+.dash-quick-card,
+.withdraw-card,
+.pay-card,
+.teacher-card,
+.student-card {
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+.row > [class*="col"],
+.d-flex > *,
+.grid > *,
+[class*="grid"] > * {
+    min-width: 0;
+}
+
+/* Forms */
+.form-control,
+.form-select,
+.input-group,
+.searchable-select,
+.searchable-select-display,
+.searchable-select-dropdown {
+    max-width: 100% !important;
+}
+
+@media (max-width: 575.98px) {
+    .btn,
+    .action-btn,
+    .ws-btn {
+        min-height: 38px;
+    }
+    .input-group {
+        flex-wrap: nowrap;
+    }
+    .modal-dialog {
+        margin: 0.5rem !important;
+    }
+    .modal-content {
+        border-radius: 16px !important;
+    }
+    .modal-body {
+        max-height: calc(100dvh - 150px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+}
+
+/* Universal table safety. The JS guard wraps naked tables, this styles the wrappers. */
+.table-responsive,
+.ai-responsive-table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable both-edges;
+    border-radius: 14px;
+}
+
+.ai-responsive-table-wrap > table,
+.table-responsive > table {
+    margin-bottom: 0;
+}
+
+.table {
+    vertical-align: middle;
+}
+
+@media (max-width: 767.98px) {
+    .table:not(.ws-grid) {
+        min-width: 680px;
+        font-size: 0.82rem;
+    }
+    .table th,
+    .table td {
+        white-space: nowrap;
+        padding: 0.55rem 0.6rem !important;
+    }
+    .table td .btn,
+    .table td .action-btn {
+        padding: 0.35rem 0.5rem !important;
+    }
+}
+
+/* Sidebar search and navigation remain stable across sizes */
+.sidebar-search-results {
+    max-width: calc(100% - 30px) !important;
+}
+.sidebar-nav .nav-link,
+.sidebar-search-results .search-result-item {
+    min-width: 0;
+}
+.sidebar-nav .nav-link span,
+.sidebar-search-results .search-result-item,
+.sidebar-user-name,
+.sidebar-user-username {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== Weekly schedule hard responsive rebuild ===== */
+.ws-header,
+.ws-controls,
+.ws-stats,
+.ws-pagination,
+.ws-rooms-add,
+.ws-room-row,
+.ws-lv,
+.ws-room-section-header {
+    min-width: 0;
+}
+
+.ws-header {
+    align-items: stretch !important;
+}
+
+.ws-header-title {
+    min-width: 0;
+    flex: 1 1 280px;
+}
+
+.ws-header-title h4,
+.ws-header-title small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ws-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.ws-controls {
+    position: relative;
+    align-items: stretch !important;
+}
+
+.ws-room-pills {
+    flex: 1 1 100%;
+    min-height: 38px;
+    padding-bottom: 4px !important;
+    scroll-snap-type: x proximity;
+}
+
+.ws-room-pill {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+}
+
+.ws-type-pills,
+.ws-view-toggle {
+    flex: 0 0 auto;
+}
+
+.ws-filter-select {
+    min-width: 145px;
+    flex: 1 1 145px;
+}
+
+.ws-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ws-stat-card {
+    min-width: 0 !important;
+}
+
+.ws-grid-wrap,
+.ws-room-section,
+#gridWrap,
+#gridContent {
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+.ws-grid-scroll {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable both-edges;
+}
+
+.ws-grid {
+    table-layout: fixed;
+    min-width: 920px !important;
+}
+
+.ws-grid th,
+.ws-grid td {
+    word-break: normal;
+}
+
+.ws-grid td {
+    height: auto !important;
+    min-height: 58px;
+}
+
+.ws-time-col,
+.ws-time-cell {
+    position: sticky !important;
+    right: 0;
+    z-index: 2;
+    box-shadow: -1px 0 0 var(--app-table-border);
+}
+
+.ws-grid thead .ws-time-col {
+    z-index: 4;
+}
+
+.ws-ev,
+.ws-lv,
+.ws-room-row {
+    overflow: hidden;
+}
+
+.ws-ev .ws-ev-subj,
+.ws-ev .ws-ev-info,
+.ws-lv .ws-lv-subj,
+.ws-room-row .rr-name,
+.ws-room-row .rr-cap {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ws-ev .ws-ev-info {
+    white-space: nowrap;
+}
+
+.ws-add-actions {
+    min-height: 38px;
+}
+
+@media (max-width: 991.98px) {
+    .ws-controls {
+        gap: 8px !important;
+    }
+    .ws-ctrl-divider {
+        display: none !important;
+    }
+    .ws-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .ws-header {
+        flex-direction: column;
+        gap: 10px !important;
+    }
+    .ws-actions {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+        gap: 8px !important;
+    }
+    .ws-actions .ws-btn:first-child {
+        grid-column: 1 / -1;
+    }
+    .ws-btn {
+        justify-content: center;
+        width: 100%;
+        padding-inline: 10px !important;
+    }
+    .ws-controls {
+        border-radius: 12px !important;
+        padding: 10px !important;
+    }
+    .ws-type-pills,
+    .ws-view-toggle {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+    .ws-type-pill,
+    .ws-view-btn {
+        flex: 1 1 0;
+        text-align: center;
+    }
+    .ws-filter-select {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+    .ws-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px !important;
+    }
+    .ws-stat-card {
+        padding: 10px !important;
+    }
+    .ws-grid {
+        min-width: 840px !important;
+        font-size: 11px;
+    }
+    .ws-grid th,
+    .ws-grid td {
+        padding: 6px 4px !important;
+    }
+    .ws-room-section-header {
+        align-items: flex-start !important;
+    }
+    .ws-room-section-title .room-meta {
+        flex-direction: column;
+        gap: 2px !important;
+    }
+    .ws-lv {
+        align-items: flex-start !important;
+    }
+    .ws-lv .ws-lv-meta {
+        gap: 4px 8px !important;
+    }
+    .ws-lv .ws-lv-acts {
+        opacity: 1 !important;
+    }
+    .ws-pagination {
+        justify-content: center;
+        gap: 6px !important;
+    }
+    .ws-page-info {
+        width: 100%;
+        text-align: center;
+    }
+    .ws-rooms-add {
+        display: grid !important;
+        grid-template-columns: 1fr 95px;
+    }
+    .ws-rooms-add .ws-btn {
+        grid-column: 1 / -1;
+    }
+    .ws-room-row {
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    .ws-room-row .rr-info {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .ws-room-row .rr-acts {
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .ws-stats {
+        grid-template-columns: 1fr;
+    }
+    .ws-actions {
+        grid-template-columns: 1fr;
+    }
+    .ws-actions .ws-btn:first-child {
+        grid-column: auto;
+    }
+    .ws-header-title .ws-icon {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+    }
+}
+
+/* Dark/light consistency for weekly controls that had hard-coded colors */
+.ws-controls,
+.ws-room-section,
+.ws-grid-wrap,
+.ws-list-group,
+.ws-rooms-panel,
+.ws-stat-card {
+    background: var(--app-surface) !important;
+    color: var(--app-text) !important;
+    border-color: var(--app-border) !important;
+}
+
+.ws-header-title h4,
+.ws-room-section-title h5,
+.ws-stat-num,
+.ws-list-group-hd .grp-title,
+.ws-lv .ws-lv-subj,
+.ws-rooms-panel h6,
+.ws-room-row .rr-name,
+.ws-fld-label {
+    color: var(--app-text) !important;
+}
+
+.ws-header-title small,
+.ws-stat-label,
+.ws-room-section-title .room-meta,
+.ws-lv .ws-lv-meta,
+.ws-room-row .rr-cap,
+.ws-empty {
+    color: var(--app-muted) !important;
+}
+
+.ws-type-pills,
+.ws-view-toggle,
+.ws-time-mode-toggle {
+    background: var(--app-surface-2) !important;
+}
+
+.ws-type-pill.active-all,
+.ws-view-btn.active {
+    background: var(--app-surface) !important;
+    color: var(--brand-primary) !important;
+    border: 1px solid var(--app-border) !important;
+}
+
+.ws-btn-outline,
+.ws-page-btn,
+.ws-room-pill,
+.ws-room-row .rr-acts button,
+.ws-lv .ws-lv-acts button {
+    background: var(--app-surface) !important;
+    color: var(--brand-primary) !important;
+    border-color: var(--app-border) !important;
+}
+
+.ws-room-pill.active,
+.ws-page-btn.active,
+.ws-btn-primary,
+.ws-btn-success {
+    color: #fff !important;
+}
+
+/* Respect reduced-motion users and improve perceived speed on small devices */
+@media (prefers-reduced-motion: reduce), (max-width: 575.98px) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.08s !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .ai-flex-safe {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    .ai-flex-safe > * {
+        min-width: 0;
+    }
+}

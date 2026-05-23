@@ -1312,5 +1312,62 @@
 
     <script src="/static/js/report_tables.js"></script>
     {% block extra_script %}{% endblock %}
+
+    <!-- تصحيح التوقيت: استبدال وقت السيرفر بوقت العميل المحلي -->
+    <script>
+    (function() {
+        /**
+         * استبدال توقيت السيرفر بتوقيت العميل المحلي في عناصر التقرير.
+         * السيرفر على Vercel يعمل بتوقيت UTC، لكن المستخدم يحتاج توقيته المحلي.
+         */
+        function formatLocalDateTime() {
+            var now = new Date();
+            var day = String(now.getDate()).padStart(2, '0');
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var year = now.getFullYear();
+            var h = now.getHours();
+            var ampm = h < 12 ? 'ص' : 'م';
+            h = h % 12;
+            h = h ? h : 12;
+            var min = String(now.getMinutes()).padStart(2, '0');
+            return day + '/' + month + '/' + year + ' - ' + h + ':' + min + ' ' + ampm;
+        }
+        function formatLocalDate() {
+            var now = new Date();
+            var day = String(now.getDate()).padStart(2, '0');
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var year = now.getFullYear();
+            return day + '/' + month + '/' + year;
+        }
+        function formatLocalTime() {
+            var now = new Date();
+            var h = now.getHours();
+            var ampm = h < 12 ? 'ص' : 'م';
+            h = h % 12;
+            h = h ? h : 12;
+            var min = String(now.getMinutes()).padStart(2, '0');
+            return h + ':' + min + ' ' + ampm;
+        }
+
+        // استبدال نص التاريخ في عناصر report-date
+        document.querySelectorAll('.report-date').forEach(function(el) {
+            var text = el.textContent || '';
+            if (text.indexOf('تاريخ التقرير') !== -1) {
+                el.textContent = 'تاريخ التقرير: ' + formatLocalDateTime();
+            }
+        });
+
+        // استبدال نص التاريخ والوقت المنفصل (في الوصلات وتقارير السحب)
+        document.querySelectorAll('[data-report-datetime]').forEach(function(el) {
+            el.textContent = formatLocalDateTime();
+        });
+        document.querySelectorAll('[data-report-date]').forEach(function(el) {
+            el.textContent = formatLocalDate();
+        });
+        document.querySelectorAll('[data-report-time]').forEach(function(el) {
+            el.textContent = formatLocalTime();
+        });
+    })();
+    </script>
 </body>
 </html>

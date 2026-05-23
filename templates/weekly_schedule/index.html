@@ -440,6 +440,65 @@
     }
 }
 
+/* Add actions: two separate lecture/exam buttons */
+.ws-add-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    min-height: 42px;
+}
+
+.ws-add-actions .ws-add-btn {
+    position: static;
+    opacity: 1;
+    width: 28px;
+    height: 28px;
+    min-height: unset;
+    border-style: solid;
+    border-width: 1px;
+    transform: none;
+    font-size: 11px;
+}
+
+.ws-add-lecture {
+    background: #eef2ff;
+    color: #4338ca;
+    border-color: #c7d2fe;
+}
+
+.ws-add-lecture:hover {
+    background: #4f46e5;
+    color: #ffffff;
+    border-color: #4f46e5;
+}
+
+.ws-add-exam {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
+.ws-add-exam:hover {
+    background: #ea580c;
+    color: #ffffff;
+    border-color: #ea580c;
+}
+
+html[data-theme="dark"] .ws-add-lecture {
+    background: rgba(79, 70, 229, 0.18);
+    color: #c7d2fe;
+    border-color: rgba(199, 210, 254, 0.25);
+}
+
+html[data-theme="dark"] .ws-add-exam {
+    background: rgba(234, 88, 12, 0.18);
+    color: #fed7aa;
+    border-color: rgba(254, 215, 170, 0.25);
+}
+
 /* ===== PAGINATION ===== */
 .ws-pagination {
     display: flex;
@@ -711,25 +770,6 @@
 .ws-fld-label {
     font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 3px;
 }
-/* Event type toggle in modal */
-.ws-evtype-toggle {
-    display: flex; gap: 6px;
-}
-.ws-evtype-btn {
-    flex: 1; padding: 8px; border-radius: 8px; border: 2px solid #e5e7eb;
-    background: white; cursor: pointer; font-size: 13px; font-weight: 700;
-    text-align: center; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.ws-evtype-btn.active-lec {
-    background: #3b82f6; color: white; border-color: #3b82f6;
-}
-.ws-evtype-btn.active-exm {
-    background: #f97316; color: white; border-color: #f97316;
-}
-.ws-evtype-btn:hover:not(.active-lec):not(.active-exm) {
-    border-color: #a5b4fc;
-}
 /* Readonly inputs in modal */
 .ws-modal input[readonly] {
     background-color: #f8fafc;
@@ -963,8 +1003,11 @@ html[data-theme="dark"] .ws-ctrl-divider {
         <button class="ws-btn ws-btn-outline" onclick="toggleRoomsPanel()" title="إدارة القاعات">
             <i class="fas fa-door-open"></i> القاعات
         </button>
-        <button class="ws-btn ws-btn-primary" onclick="openAddEventModal()" title="إضافة حدث">
-            <i class="fas fa-plus"></i> حدث جديد
+        <button class="ws-btn ws-btn-primary" onclick="openAddLectureModal()" title="إضافة محاضرة">
+            <i class="fas fa-chalkboard-teacher"></i> إضافة محاضرة
+        </button>
+        <button class="ws-btn ws-btn-primary" style="background:linear-gradient(135deg,#ea580c,#f97316);" onclick="openAddExamModal()" title="إضافة امتحان">
+            <i class="fas fa-file-alt"></i> إضافة امتحان
         </button>
     </div>
 </div>
@@ -978,8 +1021,8 @@ html[data-theme="dark"] .ws-ctrl-divider {
         </button>
     </div>
     <div class="ws-rooms-add">
-        <input type="text" id="newRoomName" placeholder="اسم القاعة">
-        <input type="number" id="newRoomCapacity" placeholder="السعة" min="0" style="max-width:100px;">
+        <input type="text" id="newRoomName" name="newRoomName" placeholder="اسم القاعة">
+        <input type="number" id="newRoomCapacity" name="newRoomCapacity" placeholder="السعة" min="0" style="max-width:100px;">
         <button class="ws-btn ws-btn-primary" onclick="addRoom()" style="padding:7px 14px;">
             <i class="fas fa-plus"></i> إضافة
         </button>
@@ -1018,18 +1061,18 @@ html[data-theme="dark"] .ws-ctrl-divider {
     </div>
 
     <!-- Sort & Filters -->
-    <select class="ws-filter-select" id="sortSelect" onchange="setSortBy(this.value)" title="ترتيب حسب">
+    <select class="ws-filter-select" id="sortSelect" name="sortSelect" onchange="setSortBy(this.value)" title="ترتيب حسب">
         <option value="time">حسب الوقت</option>
         <option value="teacher">حسب الاستاد</option>
         <option value="day">حسب اليوم</option>
         <option value="room">حسب القاعة</option>
     </select>
 
-    <select class="ws-filter-select" id="teacherFilter" onchange="setTeacherFilter(parseInt(this.value))" title="المدرس" data-searchable="true" data-search-placeholder="ابحث عن مدرس...">
+    <select class="ws-filter-select" id="teacherFilter" name="teacherFilter" onchange="setTeacherFilter(parseInt(this.value))" title="المدرس" data-searchable="true" data-search-placeholder="ابحث عن مدرس...">
         <option value="0">كل المدرسين</option>
     </select>
 
-    <select class="ws-filter-select" id="dayFilter" onchange="setDayFilter(this.value)" title="اليوم">
+    <select class="ws-filter-select" id="dayFilter" name="dayFilter" onchange="setDayFilter(this.value)" title="اليوم">
         <option value="all">كل الأيام</option>
     </select>
 </div>
@@ -1055,45 +1098,32 @@ html[data-theme="dark"] .ws-ctrl-divider {
         <div class="modal-content border-0">
             <div class="modal-header">
                 <h5 class="modal-title" id="eventModalTitle">
-                    <i class="fas fa-calendar-plus me-2"></i>إضافة حدث
+                    <i class="fas fa-chalkboard-teacher me-2"></i>إضافة محاضرة
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editEventId" value="">
+                <input type="hidden" id="editEventId" name="editEventId" value="">
                 <div class="row g-3">
-                    <!-- Event Type -->
-                    <div class="col-12">
-                        <label class="ws-fld-label">نوع الحدث</label>
-                        <div class="ws-evtype-toggle">
-                            <button type="button" class="ws-evtype-btn active-lec" id="btnTypeLecture"
-                                onclick="setEventType('محاضرة')">
-                                <i class="fas fa-chalkboard-teacher"></i> محاضرة
-                            </button>
-                            <button type="button" class="ws-evtype-btn" id="btnTypeExam"
-                                onclick="setEventType('امتحان')">
-                                <i class="fas fa-file-alt"></i> امتحان
-                            </button>
-                        </div>
-                        <input type="hidden" id="lecEventType" value="محاضرة">
+                    <!-- Event Type (hidden - determined by button used) -->
+                    <input type="hidden" id="lecEventType" name="lecEventType" value="محاضرة">
+                    <div class="col-12 col-md-6">
+                        <label class="ws-fld-label" for="lecRoom">القاعة</label>
+                        <select id="lecRoom" name="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
                     </div>
                     <div class="col-12 col-md-6">
-                        <label class="ws-fld-label">القاعة</label>
-                        <select id="lecRoom" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن قاعة..."></select>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <label class="ws-fld-label">المدرس</label>
-                        <select id="lecTeacher" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن مدرس..."></select>
+                        <label class="ws-fld-label" for="lecTeacher">المدرس</label>
+                        <select id="lecTeacher" name="lecTeacher" class="form-select form-select-sm" required data-searchable="true" data-search-placeholder="ابحث عن مدرس..."></select>
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">المادة <small class="text-muted">(تلقائي من الاستاد)</small></label>
-                        <input type="text" id="lecSubject" class="form-control form-control-sm" readonly
+                        <label class="ws-fld-label" for="lecSubject">المادة <small class="text-muted">(تلقائي من الاستاد)</small></label>
+                        <input type="text" id="lecSubject" name="lecSubject" class="form-control form-control-sm" readonly
                             style="cursor:not-allowed;"
                             placeholder="اختر الاستاد أولاً">
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">اليوم</label>
-                        <select id="lecDay" class="form-select form-select-sm">
+                        <label class="ws-fld-label" for="lecDay">اليوم</label>
+                        <select id="lecDay" name="lecDay" class="form-select form-select-sm">
                             <option value="الإثنين">الإثنين</option>
                             <option value="الثلاثاء">الثلاثاء</option>
                             <option value="الأربعاء">الأربعاء</option>
@@ -1104,15 +1134,15 @@ html[data-theme="dark"] .ws-ctrl-divider {
                         </select>
                     </div>
                     <div class="col-12 col-md-6">
-                        <label class="ws-fld-label">من الساعة</label>
-                        <input type="time" id="lecStartTime" class="form-control form-control-sm" required
+                        <label class="ws-fld-label" for="lecStartTime">من الساعة</label>
+                        <input type="time" id="lecStartTime" name="lecStartTime" class="form-control form-control-sm" required
                             min="07:00" max="21:00" step="1800"
                             onchange="onStartTimeChange()">
                     </div>
                     <div class="col-12 col-md-6">
                         <!-- وضع تحديد الوقت: يدوي أو اختيار المدة -->
                         <div class="d-flex align-items-center justify-content-between mb-1">
-                            <label class="ws-fld-label mb-0">إلى الساعة</label>
+                            <label class="ws-fld-label mb-0" for="lecDuration">إلى الساعة</label>
                             <div class="ws-time-mode-toggle">
                                 <button type="button" class="ws-time-mode-btn active" id="btnModeSelect" onclick="setTimeMode('select')" title="اختيار المدة">
                                     <i class="fas fa-list"></i>
@@ -1123,16 +1153,16 @@ html[data-theme="dark"] .ws-ctrl-divider {
                             </div>
                         </div>
                         <!-- اختيار المدة -->
-                        <select id="lecDuration" class="form-select form-select-sm" data-searchable="false" onchange="onDurationChange()">
+                        <select id="lecDuration" name="lecDuration" class="form-select form-select-sm" data-searchable="false" onchange="onDurationChange()">
                         </select>
                         <!-- تحديد يدوي -->
-                        <input type="time" id="lecEndTime" class="form-control form-control-sm" required
+                        <input type="time" id="lecEndTime" name="lecEndTime" class="form-control form-control-sm" required
                             min="07:00" max="21:30" step="1800"
                             onchange="checkConflictPreview()" style="display:none;">
                     </div>
                     <div class="col-12">
-                        <label class="ws-fld-label">ملاحظات</label>
-                        <input type="text" id="lecNotes" class="form-control form-control-sm"
+                        <label class="ws-fld-label" for="lecNotes">ملاحظات</label>
+                        <input type="text" id="lecNotes" name="lecNotes" class="form-control form-control-sm"
                             placeholder="ملاحظات اختيارية">
                     </div>
                 </div>
@@ -1164,14 +1194,14 @@ html[data-theme="dark"] .ws-ctrl-divider {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="editRoomId" value="">
+                <input type="hidden" id="editRoomId" name="editRoomId" value="">
                 <div class="mb-3">
-                    <label class="ws-fld-label">اسم القاعة</label>
-                    <input type="text" id="editRoomName" class="form-control form-control-sm">
+                    <label class="ws-fld-label" for="editRoomName">اسم القاعة</label>
+                    <input type="text" id="editRoomName" name="editRoomName" class="form-control form-control-sm">
                 </div>
                 <div class="mb-2">
-                    <label class="ws-fld-label">السعة</label>
-                    <input type="number" id="editRoomCapacity" class="form-control form-control-sm" min="0">
+                    <label class="ws-fld-label" for="editRoomCapacity">السعة</label>
+                    <input type="number" id="editRoomCapacity" name="editRoomCapacity" class="form-control form-control-sm" min="0">
                 </div>
             </div>
             <div class="modal-footer">
@@ -1194,12 +1224,18 @@ let allSchedule = {{ schedule | tojson }};
 let currentRoomFilter = 'all';
 let currentEventType = 'محاضرة';
 
+// ===== NORMALIZE EVENT TYPE =====
+function normalizeEventType(type) {
+    type = String(type || '').trim();
+    return type === 'امتحان' ? 'امتحان' : 'محاضرة';
+}
+
 // ===== FILTER STATE =====
 let currentSortBy = 'time';
 let currentEventTypeFilter = 'all';
 let currentTeacherFilter = 0;
 let currentDayFilter = 'all';
-let currentViewMode = 'grid';
+let currentViewMode = (window.matchMedia && window.matchMedia('(max-width: 767.98px)').matches) ? 'list' : 'grid';
 
 // ===== PAGINATION STATE =====
 let currentRoomPage = 1;
@@ -1252,6 +1288,7 @@ const EXAM_DURATIONS = [
 document.addEventListener('DOMContentLoaded', function() {
     renderRoomPills();
     renderFilterDropdowns();
+    setViewActive(currentViewMode);
     renderStats();
     renderCurrentView();
     renderRoomsList();
@@ -1298,7 +1335,8 @@ function resetTypePills() {
 }
 
 // ===== VIEW TOGGLE =====
-function setView(mode) {
+function setView(mode, automatic) {
+    if (!automatic) window.__weeklyManualViewChoice = true;
     currentViewMode = mode;
     setViewActive(mode);
     if (mode === 'grid') {
@@ -1359,8 +1397,8 @@ function setDayFilter(day) {
 // ===== STATS BAR =====
 function renderStats() {
     const events = getFilteredEvents();
-    const lecCount = events.filter(e => e.event_type === 'محاضرة').length;
-    const exmCount = events.filter(e => e.event_type === 'امتحان').length;
+    const lecCount = events.filter(e => normalizeEventType(e.event_type) === 'محاضرة').length;
+    const exmCount = events.filter(e => normalizeEventType(e.event_type) === 'امتحان').length;
     const roomCount = currentRoomFilter === 'all' ? allRooms.length : 1;
     const teacherIds = new Set(events.map(e => e.teacher_id));
     const teacherCount = teacherIds.size;
@@ -1392,7 +1430,7 @@ function getFilteredEvents() {
         events = events.filter(ev => ev.room_id === currentRoomFilter);
     }
     if (currentEventTypeFilter !== 'all') {
-        events = events.filter(ev => ev.event_type === currentEventTypeFilter);
+        events = events.filter(ev => normalizeEventType(ev.event_type) === currentEventTypeFilter);
     }
     if (currentTeacherFilter > 0) {
         events = events.filter(ev => ev.teacher_id === currentTeacherFilter);
@@ -1505,8 +1543,8 @@ function getSlotBlockInfo(roomId, day, time) {
     if (blockingEvents.length === 0) return null;
 
     // Check if there's an event of the same type as the current filter
-    const sameTypeEvents = blockingEvents.filter(ev => ev.event_type === currentEventTypeFilter);
-    const otherTypeEvents = blockingEvents.filter(ev => ev.event_type !== currentEventTypeFilter);
+    const sameTypeEvents = blockingEvents.filter(ev => normalizeEventType(ev.event_type) === currentEventTypeFilter);
+    const otherTypeEvents = blockingEvents.filter(ev => normalizeEventType(ev.event_type) !== currentEventTypeFilter);
 
     if (currentEventTypeFilter === 'all') {
         // All types visible — just show as occupied
@@ -1520,7 +1558,7 @@ function getSlotBlockInfo(roomId, day, time) {
 
     if (otherTypeEvents.length > 0) {
         // Only other-type events block this slot
-        const otherType = otherTypeEvents[0].event_type;
+        const otherType = normalizeEventType(otherTypeEvents[0].event_type);
         const isExam = otherType === 'امتحان';
         return {
             blocked: true,
@@ -1547,7 +1585,7 @@ function getEventsAtForRoom(roomId, day, time) {
         const roomMatch = ev.room_id === roomId;
         const dayMatch = ev.day_of_week === day;
         const isStart = normalizeTimeValue(ev.start_time) === normalizeTimeValue(time);
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const typeMatch = currentEventTypeFilter === 'all' || normalizeEventType(ev.event_type) === currentEventTypeFilter;
         const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
         const dayMatchFilter = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
         return roomMatch && dayMatch && isStart && typeMatch && teacherMatch && dayMatchFilter;
@@ -1560,7 +1598,7 @@ function getEventsAt(day, time) {
         const roomMatch = currentRoomFilter === 'all' || ev.room_id === currentRoomFilter;
         const dayMatch = ev.day_of_week === day;
         const isStart = normalizeTimeValue(ev.start_time) === normalizeTimeValue(time);
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const typeMatch = currentEventTypeFilter === 'all' || normalizeEventType(ev.event_type) === currentEventTypeFilter;
         return roomMatch && dayMatch && isStart && typeMatch;
     });
 }
@@ -1576,7 +1614,7 @@ function buildRoomGridTable(room) {
     html += '<div class="room-meta">';
     html += '<span><i class="fas fa-users"></i> السعة: ' + (room.capacity || '-') + '</span>';
     const roomEvents = allSchedule.filter(ev => {
-        const typeMatch = currentEventTypeFilter === 'all' || ev.event_type === currentEventTypeFilter;
+        const typeMatch = currentEventTypeFilter === 'all' || normalizeEventType(ev.event_type) === currentEventTypeFilter;
         const teacherMatch = currentTeacherFilter === 0 || ev.teacher_id === currentTeacherFilter;
         const dayMatch = currentDayFilter === 'all' || ev.day_of_week === currentDayFilter;
         return ev.room_id === room.id && typeMatch && teacherMatch && dayMatch;
@@ -1599,7 +1637,7 @@ function buildRoomGridTable(room) {
             if (events.length > 0) {
                 html += '<td>';
                 events.forEach(ev => {
-                    const isExam = (ev.event_type === 'امتحان');
+                    const isExam = (normalizeEventType(ev.event_type) === 'امتحان');
                     const cls = isExam ? 'ws-exm' : 'ws-lec';
                     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
 
@@ -1628,7 +1666,16 @@ function buildRoomGridTable(room) {
                         html += '<td class="ws-blocked"></td>';
                     }
                 } else {
-                    html += '<td><button class="ws-add-btn" onclick="openAddEventModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة"><i class="fas fa-plus"></i></button></td>';
+                    html += '<td>';
+                    html += '<div class="ws-add-actions">';
+                    html += '<button class="ws-add-btn ws-add-lecture" onclick="openAddLectureModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة محاضرة">';
+                    html += '<i class="fas fa-chalkboard-teacher"></i>';
+                    html += '</button>';
+                    html += '<button class="ws-add-btn ws-add-exam" onclick="openAddExamModal(\'' + day + '\', \'' + time + '\', ' + room.id + ')" title="إضافة امتحان">';
+                    html += '<i class="fas fa-file-alt"></i>';
+                    html += '</button>';
+                    html += '</div>';
+                    html += '</td>';
                 }
             }
         });
@@ -1868,7 +1915,7 @@ function toggleListGroup(header) {
 }
 
 function renderListEventCard(ev) {
-    const isExam = (ev.event_type === 'امتحان');
+    const isExam = (normalizeEventType(ev.event_type) === 'امتحان');
     const cls = isExam ? 'ws-lv-exm' : 'ws-lv-lec';
     const typeLabel = isExam ? 'امتحان' : 'محاضرة';
     const room = allRooms.find(r => r.id === ev.room_id);
@@ -2070,17 +2117,26 @@ function onStartTimeChange() {
 }
 
 function setEventType(type) {
+    type = normalizeEventType(type);
     currentEventType = type;
-    document.getElementById('lecEventType').value = type;
+
+    const eventTypeInput = document.getElementById('lecEventType');
+    if (eventTypeInput) {
+        eventTypeInput.value = type;
+    }
+
     const btnL = document.getElementById('btnTypeLecture');
     const btnE = document.getElementById('btnTypeExam');
-    if (type === 'محاضرة') {
-        btnL.className = 'ws-evtype-btn active-lec';
-        btnE.className = 'ws-evtype-btn';
-    } else {
-        btnE.className = 'ws-evtype-btn active-exm';
-        btnL.className = 'ws-evtype-btn';
+    if (btnL && btnE) {
+        if (type === 'محاضرة') {
+            btnL.className = 'ws-evtype-btn active-lec';
+            btnE.className = 'ws-evtype-btn';
+        } else {
+            btnE.className = 'ws-evtype-btn active-exm';
+            btnL.className = 'ws-evtype-btn';
+        }
     }
+
     populateDurationSelect();
     // تحديث وقت الانتهاء حسب المدة المختارة
     if (currentTimeMode === 'select') {
@@ -2136,7 +2192,7 @@ async function checkConflictPreview() {
 
     if (conflicts.length > 0) {
         const c = conflicts[0];
-        const cType = c.event_type === 'امتحان' ? 'امتحان' : 'محاضرة';
+        const cType = normalizeEventType(c.event_type) === 'امتحان' ? 'امتحان' : 'محاضرة';
         const selectedTeacherId = parseInt(document.getElementById('lecTeacher').value);
         const conflictReason = c.room_id === roomId
             ? 'تعارض في القاعة'
@@ -2223,7 +2279,7 @@ function populateModalSelects() {
     }
 }
 
-function openAddEventModal(day, time, roomId) {
+function openAddEventModal(day, time, roomId, eventType) {
     if (allRooms.length === 0) {
         showAlert('أضف قاعة أولاً قبل إنشاء الجدول', 'warning');
         toggleRoomsPanel();
@@ -2237,7 +2293,11 @@ function openAddEventModal(day, time, roomId) {
 
     try {
         document.getElementById('editEventId').value = '';
-        document.getElementById('eventModalTitle').innerHTML = '<i class="fas fa-calendar-plus me-2"></i>إضافة حدث جديد';
+        const modalType = normalizeEventType(eventType || currentEventType);
+        document.getElementById('eventModalTitle').innerHTML =
+            modalType === 'امتحان'
+                ? '<i class="fas fa-file-alt me-2"></i>إضافة امتحان'
+                : '<i class="fas fa-chalkboard-teacher me-2"></i>إضافة محاضرة';
         document.getElementById('lecTeacher').value = '';
         document.getElementById('lecSubject').value = '';
         document.getElementById('lecDay').value = day || 'الإثنين';
@@ -2249,7 +2309,9 @@ function openAddEventModal(day, time, roomId) {
 
         // وضع اختيار المدة افتراضياً
         setTimeMode('select');
-        setEventType('محاضرة');
+        // تحديد نوع الحدث من الزر فقط (لا يعتمد على الفلتر)
+        const defaultEventType = normalizeEventType(eventType || currentEventType);
+        setEventType(defaultEventType);
         populateModalSelects();
 
         // تعيين القاعة
@@ -2275,6 +2337,14 @@ function openAddEventModal(day, time, roomId) {
     }
 }
 
+function openAddLectureModal(day, time, roomId) {
+    openAddEventModal(day, time, roomId, 'محاضرة');
+}
+
+function openAddExamModal(day, time, roomId) {
+    openAddEventModal(day, time, roomId, 'امتحان');
+}
+
 function editEvent(eventId) {
     const ev = allSchedule.find(e => e.id === eventId);
     if (!ev) return;
@@ -2293,7 +2363,7 @@ function editEvent(eventId) {
         document.getElementById('lecError').style.display = 'none';
         document.getElementById('lecConflictWarning').style.display = 'none';
 
-        const evType = ev.event_type || 'محاضرة';
+        const evType = normalizeEventType(ev.event_type);
         setEventType(evType);
 
         document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
@@ -2313,9 +2383,10 @@ function editEvent(eventId) {
         }
 
         // تحديث عنوان المودال مع الأيقونة
-        const titleIcon = evType === 'امتحان' ? 'fa-file-alt' : 'fa-chalkboard-teacher';
-        const titleText = evType === 'امتحان' ? 'تعديل الامتحان' : 'تعديل المحاضرة';
-        document.getElementById('eventModalTitle').innerHTML = '<i class="fas ' + titleIcon + ' me-2"></i>' + titleText;
+        document.getElementById('eventModalTitle').innerHTML =
+            evType === 'امتحان'
+                ? '<i class="fas fa-file-alt me-2"></i>تعديل امتحان'
+                : '<i class="fas fa-chalkboard-teacher me-2"></i>تعديل محاضرة';
 
         // مزامنة واجهات SearchableSelect بعد تعيين القيم
         refreshSearchableSelect('lecRoom');
@@ -2340,7 +2411,7 @@ async function saveEvent() {
         day_of_week: document.getElementById('lecDay').value,
         start_time: document.getElementById('lecStartTime').value,
         end_time: document.getElementById('lecEndTime').value,
-        event_type: document.getElementById('lecEventType').value,
+        event_type: normalizeEventType(document.getElementById('lecEventType').value),
         notes: document.getElementById('lecNotes').value.trim()
     };
     const errorEl = document.getElementById('lecError');
@@ -2380,6 +2451,15 @@ async function saveEvent() {
         return;
     }
 
+    // التحقق من صحة نوع الحدث
+    if (!['محاضرة', 'امتحان'].includes(data.event_type)) {
+        errorEl.textContent = 'يرجى تحديد نوع الحدث بشكل صحيح: محاضرة أو امتحان';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
+    }
+
     try {
         let res;
         if (editId) {
@@ -2398,6 +2478,8 @@ async function saveEvent() {
         if (res.success) {
             const modalEl = document.getElementById('eventModal');
             const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            // إزالة التركيز قبل إغلاق المودال لمنع تحذير aria-hidden
+            document.activeElement.blur();
             modal.hide();
             await refreshData();
             showAlert(res.message || 'تم الحفظ بنجاح', 'success');
@@ -2415,8 +2497,8 @@ async function saveEvent() {
 }
 
 async function deleteEvent(eventId) {
-    const ev = allSchedule.find(e => e.id === eventId);
-    const evLabel = ev && ev.event_type === 'امتحان' ? 'الامتحان' : 'المحاضرة';
+    const ev = allSchedule.find(e => Number(e.id) === Number(eventId));
+    const evLabel = ev && normalizeEventType(ev.event_type) === 'امتحان' ? 'الامتحان' : 'المحاضرة';
     const details = ev
         ? '\n\n' + ev.subject + '\n' + ev.teacher_name + '\n' + ev.day_of_week + ' من ' + normalizeTimeValue(ev.start_time) + ' إلى ' + normalizeTimeValue(ev.end_time)
         : '';
@@ -2426,7 +2508,7 @@ async function deleteEvent(eventId) {
         const res = await apiRequest('/api/weekly-schedule/' + eventId, {method: 'DELETE'});
         if (res.success) {
             await refreshData();
-            showAlert('تم حذف ' + evLabel, 'success');
+            showAlert(res.message || ('تم حذف ' + evLabel), 'success');
         } else { showAlert(res.message || 'خطأ في الحذف'); }
     } catch(e) { showAlert('خطأ في الاتصال'); }
 }

@@ -75,29 +75,36 @@
     </div>
 
     <!-- ===== فلتر التاريخ ===== -->
-    <div class="card border-0 shadow-sm mb-3">
-        <div class="card-body py-2">
-            <form method="GET" action="/withdrawals" class="row g-2 align-items-end">
-                <div class="col-12 col-sm-4 col-md-3">
-                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
+    <div class="filter-frame-panel accent-emerald withdrawals-filter-panel mb-3">
+        <div class="filter-frame-head">
+            <div class="filter-frame-title">
+                <span class="filter-frame-icon"><i class="fas fa-filter"></i></span>
+                <span>فلتر تاريخ السحوبات</span>
+                {% if date_from or date_to %}
+                <span class="badge filter-frame-badge">فعّال</span>
+                {% endif %}
+            </div>
+        </div>
+        <form method="GET" action="/withdrawals" class="filter-frame-body">
+            <div class="filter-grid compact-date-filter-grid">
+                <div class="filter-control">
+                    <label class="filter-label" for="w_filter_date_from"><i class="fas fa-calendar-alt me-1"></i>من تاريخ</label>
                     <input type="date" class="form-control form-control-sm" name="date_from" id="w_filter_date_from" value="{{ date_from }}">
                 </div>
-                <div class="col-12 col-sm-4 col-md-3">
-                    <label class="form-label small fw-bold mb-1"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
+                <div class="filter-control">
+                    <label class="filter-label" for="w_filter_date_to"><i class="fas fa-calendar-check me-1"></i>إلى تاريخ</label>
                     <input type="date" class="form-control form-control-sm" name="date_to" id="w_filter_date_to" value="{{ date_to }}">
                 </div>
-                <div class="col-12 col-sm-4 col-md-3">
-                    <div class="d-flex gap-1">
-                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
-                            <i class="fas fa-filter me-1"></i>تصفية
-                        </button>
-                        <a href="/withdrawals" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
-                            <i class="fas fa-times"></i>
-                        </a>
-                    </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-filter me-1"></i>تصفية
+                    </button>
+                    <a href="/withdrawals" class="btn btn-outline-secondary btn-sm" title="إعادة تعيين">
+                        <i class="fas fa-times me-1"></i>مسح
+                    </a>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <!-- ===== جدول السحوبات ===== -->

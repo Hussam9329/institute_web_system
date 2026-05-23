@@ -144,7 +144,8 @@
     <!-- Theme CSS -->
     <link rel="stylesheet" href="/static/css/theme.css?v=20260514-crossblock">
     <link rel="stylesheet" href="/static/css/dark-fix.css?v=20260514-crossblock">
-    
+    <!-- brand-identity is intentionally reloaded after page-specific CSS below. -->
+
     <!-- Preload critical JS -->
     <link rel="preload" href="/static/js/utils.js" as="script">
     <link rel="preload" href="/static/js/app.js" as="script">
@@ -258,6 +259,72 @@
         color: #fbbf24;
         font-weight: 600;
         margin-top: 1px;
+    }
+    /* ===== عداد النسخة التجريبية ===== */
+    .trial-countdown-badge {
+        margin-top: 6px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        font-size: 10.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        direction: rtl;
+        animation: trialPulse 3s ease-in-out infinite;
+    }
+    .trial-countdown-badge i {
+        font-size: 10px;
+        animation: trialHourglass 3s ease-in-out infinite;
+    }
+    .trial-countdown-badge .trial-digit {
+        display: inline-block;
+        min-width: 16px;
+        text-align: center;
+        background: rgba(245, 158, 11, 0.18);
+        border-radius: 3px;
+        padding: 1px 3px;
+        font-variant-numeric: tabular-nums;
+    }
+    .trial-countdown-badge .trial-label {
+        font-weight: 400;
+        opacity: 0.8;
+        font-size: 9.5px;
+    }
+    .trial-countdown-badge.trial-urgent {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        animation: trialUrgentPulse 1.5s ease-in-out infinite;
+    }
+    .trial-countdown-badge.trial-urgent .trial-digit {
+        background: rgba(239, 68, 68, 0.18);
+    }
+    @keyframes trialPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.85; }
+    }
+    @keyframes trialUrgentPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.9; transform: scale(1.02); }
+    }
+    @keyframes trialHourglass {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(15deg); }
+        75% { transform: rotate(-15deg); }
+    }
+    html[data-theme="dark"] .trial-countdown-badge {
+        background: rgba(251, 191, 36, 0.12);
+    }
+    html[data-theme="dark"] .trial-countdown-badge .trial-digit {
+        background: rgba(251, 191, 36, 0.15);
+    }
+    html[data-theme="dark"] .trial-countdown-badge.trial-urgent {
+        background: rgba(248, 113, 113, 0.12);
+    }
+    html[data-theme="dark"] .trial-countdown-badge.trial-urgent .trial-digit {
+        background: rgba(248, 113, 113, 0.15);
     }
     .sidebar-logout-btn {
         display: flex;
@@ -625,6 +692,10 @@
     </style>
     
     {% block extra_css %}{% endblock %}
+
+    <!-- Final color authority: must be after Bootstrap, base inline styles, and page CSS. -->
+    <link rel="stylesheet" href="/static/css/brand-identity.css?v=20260519-quick-table-fix">
+    <link rel="stylesheet" href="/static/css/responsive-foundation.css?v=20260515-responsive-final">
 </head>
 <body>
 
@@ -640,11 +711,17 @@
     <!-- معلومات المستخدم -->
     <div class="sidebar-user-info">
         <div class="sidebar-user-card">
-            <div class="sidebar-user-avatar" id="sidebarUserAvatar">م</div>
+            <div class="sidebar-user-avatar" id="sidebarUserAvatar">{{ (request.state.user.get('full_name', '') or request.state.user.get('username', 'م'))[0] if request.state.user else 'م' }}</div>
             <div class="sidebar-user-details">
-                <div class="sidebar-user-name" id="sidebarUserName">موظف</div>
-                <div class="sidebar-user-username" id="sidebarUserUsername">admin</div>
-                <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;"></div>
+                <div class="sidebar-user-name" id="sidebarUserName">{{ request.state.user.get('full_name', '') or request.state.user.get('username', 'موظف') if request.state.user else 'موظف' }}</div>
+                <div class="sidebar-user-username" id="sidebarUserUsername">@{{ request.state.user.get('username', '') if request.state.user else '' }}</div>
+                <div class="sidebar-user-role" id="sidebarUserRole" style="display:none;">{{ request.state.user.get('role_name', '') if request.state.user else '' }}</div>
+                {% if request.state.trial_account %}
+                <div id="trialCountdown" class="trial-countdown-badge" data-seconds="{{ request.state.trial_account.get('seconds_remaining', 0) or 0 }}" style="display:none;">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span id="trialCountdownText"></span>
+                </div>
+                {% endif %}
             </div>
         </div>
         <a href="/logout" class="sidebar-logout-btn">
@@ -659,7 +736,8 @@
             <i class="fas fa-graduation-cap"></i>
         </div>
         <h5>نظام إدارة المعهد</h5>
-        <!-- عد تنازلي للاشتراك -->
+        {% if not request.state.trial_account %}
+        <!-- عد تنازلي للاشتراك - يظهر فقط للحسابات غير التجريبية -->
         <div class="sidebar-countdown" id="subscriptionCountdown">
             <div class="countdown-label">
                 <i class="fas fa-clock"></i>
@@ -687,6 +765,36 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <!-- عد تنازلي للنسخة التجريبية -->
+        <div class="sidebar-countdown" id="trialCountdownBox" data-seconds="{{ request.state.trial_account.get('seconds_remaining', 0) or 0 }}" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+            <div class="countdown-label" style="color: #f59e0b;">
+                <i class="fas fa-hourglass-half"></i>
+                المدة المتبقية من التجربة
+            </div>
+            <div class="countdown-boxes" id="trialCountdownBoxes">
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-days" style="color: #f59e0b;">---</div>
+                    <div class="cd-label">يوم</div>
+                </div>
+                <span class="countdown-separator" style="color: rgba(245, 158, 11, 0.5);">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-hours" style="color: #f59e0b;">--</div>
+                    <div class="cd-label">ساعة</div>
+                </div>
+                <span class="countdown-separator" style="color: rgba(245, 158, 11, 0.5);">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-minutes" style="color: #f59e0b;">--</div>
+                    <div class="cd-label">دقيقة</div>
+                </div>
+                <span class="countdown-separator" style="color: rgba(245, 158, 11, 0.5);">:</span>
+                <div class="countdown-unit">
+                    <div class="cd-value" id="tcd-seconds" style="color: #f59e0b;">--</div>
+                    <div class="cd-label">ثانية</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Navigation -->
@@ -872,9 +980,13 @@
     setInterval(updateSidebarDateTime, 1000);
     </script>
 
-    <!-- عد تنازلي للاشتراك -->
+    <!-- عد تنازلي للاشتراك - يعمل فقط إذا كان العنصر موجوداً (حسابات غير تجريبية) -->
     <script>
     (function() {
+        // لا نشغّل العداد للحسابات التجريبية (العنصر غير موجود أصلاً)
+        const countdownEl = document.getElementById('subscriptionCountdown');
+        if (!countdownEl) return;
+
         // تاريخ انتهاء الاشتراك - يُعدّل حسب الحاجة
         // ضع تاريخ الانتهاء هنا بصيغة YYYY-MM-DD
         const SUBSCRIPTION_END = new Date('2026-08-08T23:59:59');
@@ -999,40 +1111,12 @@
     }
     </script>
     
-    <!-- تحميل بيانات المستخدم الحالي في الشريط الجانبي -->
+    <!-- إظهار دور المستخدم إذا تم تعيينه من الخادم -->
     <script>
-    (async function() {
-        try {
-            const result = await apiRequest('/api/current-user');
-            if (result && result.success && result.data) {
-                const user = result.data;
-                const nameEl = document.getElementById('sidebarUserName');
-                const usernameEl = document.getElementById('sidebarUserUsername');
-                const avatarEl = document.getElementById('sidebarUserAvatar');
-                const roleEl = document.getElementById('sidebarUserRole');
-
-                if (nameEl && user.full_name) {
-                    nameEl.textContent = user.full_name;
-                } else if (nameEl && user.username) {
-                    nameEl.textContent = user.username;
-                }
-
-                if (usernameEl && user.username) {
-                    usernameEl.textContent = '@' + user.username;
-                }
-
-                if (avatarEl) {
-                    const displayName = user.full_name || user.username || 'م';
-                    avatarEl.textContent = displayName.charAt(0);
-                }
-
-                if (roleEl && user.role_name) {
-                    roleEl.textContent = user.role_name;
-                    roleEl.style.display = 'block';
-                }
-            }
-        } catch (e) {
-            // المستخدم غير مسجل الدخول أو خطأ في الشبكة
+    (function() {
+        const roleEl = document.getElementById('sidebarUserRole');
+        if (roleEl && roleEl.textContent.trim()) {
+            roleEl.style.display = 'block';
         }
     })();
     </script>
@@ -1052,6 +1136,69 @@
         hidden.value = getClientDateTime();
         form.appendChild(hidden);
     });
+    </script>
+
+
+    <script src="/static/js/theme-guard.js?v=20260515-responsive-final" defer></script>
+    <script src="/static/js/responsive-guard.js?v=20260515-responsive-final" defer></script>
+
+    <!-- عد تنازلي للنسخة التجريبية -->
+    <script>
+    (function() {
+        const box = document.getElementById('trialCountdownBox');
+        if (!box) return;
+        let remaining = parseInt(box.dataset.seconds) || 0;
+
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+        function updateTrialCountdown() {
+            const daysEl = document.getElementById('tcd-days');
+            const hoursEl = document.getElementById('tcd-hours');
+            const minutesEl = document.getElementById('tcd-minutes');
+            const secondsEl = document.getElementById('tcd-seconds');
+            const labelEl = box.querySelector('.countdown-label');
+
+            if (remaining <= 0) {
+                if (daysEl) daysEl.textContent = '0';
+                if (hoursEl) hoursEl.textContent = '0';
+                if (minutesEl) minutesEl.textContent = '0';
+                if (secondsEl) secondsEl.textContent = '0';
+                if (labelEl) {
+                    labelEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> انتهت مدة التجربة';
+                    labelEl.style.color = '#ef4444';
+                }
+                box.style.background = 'rgba(239, 68, 68, 0.1)';
+                box.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                document.querySelectorAll('#trialCountdownBoxes .cd-value').forEach(function(v){ v.style.color = '#ef4444'; });
+                document.querySelectorAll('#trialCountdownBoxes .countdown-separator').forEach(function(v){ v.style.color = 'rgba(239, 68, 68, 0.5)'; });
+                return;
+            }
+
+            const d = Math.floor(remaining / 86400);
+            const h = Math.floor((remaining % 86400) / 3600);
+            const m = Math.floor((remaining % 3600) / 60);
+            const s = remaining % 60;
+
+            if (daysEl) daysEl.textContent = d;
+            if (hoursEl) hoursEl.textContent = pad(h);
+            if (minutesEl) minutesEl.textContent = pad(m);
+            if (secondsEl) secondsEl.textContent = pad(s);
+
+            if (remaining < 86400) {
+                box.style.background = 'rgba(239, 68, 68, 0.1)';
+                box.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                if (labelEl) labelEl.style.color = '#ef4444';
+                document.querySelectorAll('#trialCountdownBoxes .cd-value').forEach(function(v){ v.style.color = '#ef4444'; });
+                document.querySelectorAll('#trialCountdownBoxes .countdown-separator').forEach(function(v){ v.style.color = 'rgba(239, 68, 68, 0.5)'; });
+            }
+        }
+
+        updateTrialCountdown();
+        setInterval(function() {
+            remaining = Math.max(0, remaining - 1);
+            updateTrialCountdown();
+        }, 1000);
+    })();
     </script>
 
     {% block extra_js %}{% endblock %}

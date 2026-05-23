@@ -5,33 +5,33 @@
 {% block content %}
 <style>
 .permissions-page {
-    --perm-primary: #6366f1;
-    --perm-success: #10b981;
-    --perm-warning: #f59e0b;
-    --perm-danger: #ef4444;
-    --perm-muted: #64748b;
-    --perm-border: #e5e7eb;
-    --perm-bg: #f8fafc;
+    --perm-primary: var(--brand-primary);
+    --perm-success: var(--brand-success);
+    --perm-warning: var(--brand-warning);
+    --perm-danger: var(--brand-danger);
+    --perm-muted: var(--app-muted);
+    --perm-border: var(--app-border);
+    --perm-bg: var(--app-surface-2);
 }
 
 .permissions-page .page-title {
-    color: var(--perm-primary);
+    color: var(--brand-primary);
     font-weight: 800;
 }
 
 .permissions-page .permission-help-box {
-    border: 1px solid var(--perm-border);
-    background: #ffffff;
+    border: 1px solid var(--app-border);
+    background: var(--app-surface);
     border-radius: 14px;
     padding: 14px 16px;
     font-size: 0.85rem;
-    color: #475569;
+    color: var(--app-muted);
 }
 
 .permissions-page .permission-warning-box {
-    border: 1px solid #fde68a;
-    background: #fffbeb;
-    color: #92400e;
+    border: 1px solid var(--brand-warning-soft);
+    background: var(--brand-warning-soft);
+    color: var(--brand-warning);
     border-radius: 14px;
     padding: 14px 16px;
     font-size: 0.85rem;
@@ -53,8 +53,8 @@
 }
 
 .permissions-page .role-card {
-    background: #fff;
-    border: 1px solid var(--perm-border);
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
     border-radius: 18px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
     overflow: hidden;
@@ -68,8 +68,8 @@
 
 .permissions-page .role-card-header {
     padding: 16px;
-    border-bottom: 1px solid var(--perm-border);
-    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    border-bottom: 1px solid var(--app-border);
+    background: linear-gradient(135deg, var(--app-surface-2), var(--brand-primary-soft));
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -77,7 +77,7 @@
 }
 
 .permissions-page .role-card-header.is-default {
-    background: linear-gradient(135deg, #fff7ed, #fffbeb);
+    background: linear-gradient(135deg, var(--brand-warning-soft), var(--brand-warning-soft));
 }
 
 .permissions-page .role-title-group {
@@ -91,7 +91,7 @@
     width: 42px;
     height: 42px;
     border-radius: 14px;
-    background: var(--perm-primary);
+    background: var(--brand-primary);
     color: #fff;
     display: flex;
     align-items: center;
@@ -100,17 +100,17 @@
 }
 
 .permissions-page .role-icon.is-default {
-    background: var(--perm-warning);
+    background: var(--brand-warning);
 }
 
 .permissions-page .role-name {
     font-weight: 800;
     margin: 0;
-    color: #0f172a;
+    color: var(--app-text);
 }
 
 .permissions-page .role-description {
-    color: var(--perm-muted);
+    color: var(--app-muted);
     font-size: 0.82rem;
     line-height: 1.7;
     min-height: 38px;
@@ -136,8 +136,8 @@
     padding: 6px 10px;
     font-size: 0.75rem;
     font-weight: 700;
-    background: #f1f5f9;
-    color: #334155;
+    background: var(--app-surface-2);
+    color: var(--app-text);
 }
 
 .permissions-page .role-progress-label {
@@ -145,13 +145,13 @@
     align-items: center;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: var(--perm-muted);
+    color: var(--app-muted);
     margin-bottom: 6px;
 }
 
 .permissions-page .role-progress {
     height: 8px;
-    background: #eef2ff;
+    background: var(--brand-primary-soft);
     border-radius: 999px;
     overflow: hidden;
 }
@@ -159,14 +159,14 @@
 .permissions-page .role-progress-bar {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-info));
 }
 
 .permissions-page .role-admin-note {
     margin-top: 12px;
     border-radius: 12px;
-    background: #fef2f2;
-    color: #991b1b;
+    background: var(--brand-danger-soft);
+    color: var(--brand-danger);
     padding: 10px 12px;
     font-size: 0.78rem;
     line-height: 1.7;
@@ -181,29 +181,29 @@
 }
 
 .permissions-page .level-view {
-    background: #eff6ff;
-    color: #1e40af;
+    background: var(--brand-primary-soft);
+    color: var(--brand-primary);
 }
 
 .permissions-page .level-preview {
-    background: #f0fdf4;
-    color: #166534;
+    background: var(--brand-success-soft);
+    color: var(--brand-success);
 }
 
 .permissions-page .level-edit {
-    background: #fffbeb;
-    color: #92400e;
+    background: var(--brand-warning-soft);
+    color: var(--brand-warning);
 }
 
 .permissions-page .level-admin {
-    background: #fef2f2;
-    color: #991b1b;
+    background: var(--brand-danger-soft);
+    color: var(--brand-danger);
 }
 
 .permissions-page .permissions-modal-warning {
-    border: 1px solid #fecaca;
-    background: #fef2f2;
-    color: #991b1b;
+    border: 1px solid var(--brand-danger-soft);
+    background: var(--brand-danger-soft);
+    color: var(--brand-danger);
     border-radius: 14px;
     padding: 12px 14px;
     font-size: 0.84rem;
@@ -211,17 +211,17 @@
 }
 
 .permissions-page .permissions-category-card {
-    border: 1px solid var(--perm-border);
+    border: 1px solid var(--app-border);
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 12px;
-    background: #fff;
+    background: var(--app-surface);
 }
 
 .permissions-page .permissions-category-header {
-    background: #f8fafc;
+    background: var(--app-surface-2);
     padding: 12px 14px;
-    border-bottom: 1px solid var(--perm-border);
+    border-bottom: 1px solid var(--app-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -229,7 +229,7 @@
 
 .permissions-page .permission-item {
     padding: 12px 14px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--app-surface-2);
 }
 
 .permissions-page .permission-item:last-child {
@@ -237,11 +237,17 @@
 }
 
 .permissions-page .permission-item:hover {
-    background: #f8fafc;
+    background: var(--app-surface-2);
 }
 
 .user-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
 .tab-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; }
+
+.trial-status-card { border: 1px solid var(--app-border); border-radius: 16px; background: var(--app-surface); box-shadow: 0 8px 24px rgba(15,23,42,0.06); }
+.trial-metric { border-radius: 12px; background: var(--app-surface-2); padding: 10px 12px; font-size: 0.78rem; }
+.trial-metric strong { display:block; font-size: 1rem; color: var(--app-text); }
+.trial-table-note { font-size: 0.76rem; color: var(--app-muted); line-height: 1.7; }
+
 
 @media (max-width: 768px) {
     .permissions-page .roles-grid {
@@ -285,10 +291,10 @@
     <!-- ===== بطاقات ملخص سريع ===== -->
     <div class="row g-2 mb-3">
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #6366f1 !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-primary) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-primary),var(--brand-info));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-users text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -300,10 +306,10 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #10b981 !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-success) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-success),var(--brand-success));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-user-tag text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -315,10 +321,10 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #f59e0b !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-warning) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-warning),var(--brand-warning));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-key text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -330,10 +336,10 @@
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm" style="border-right: 3px solid #ef4444 !important;">
+            <div class="card border-0 shadow-sm" style="border-right: 3px solid var(--brand-danger) !important;">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;">
+                        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand-danger),var(--brand-danger));display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-shield-alt text-white" style="font-size:0.75rem;"></i>
                         </div>
                         <div>
@@ -367,6 +373,13 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link d-flex align-items-center gap-2" id="trials-tab" data-bs-toggle="tab" data-bs-target="#trialsPanel" type="button" role="tab">
+                <i class="fas fa-vial"></i>
+                <span>النسخ التجريبية</span>
+                <span class="tab-badge bg-warning text-dark">{{ trial_accounts|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link d-flex align-items-center gap-2" id="matrix-tab" data-bs-toggle="tab" data-bs-target="#matrixPanel" type="button" role="tab">
                 <i class="fas fa-th"></i>
                 <span>مصفوفة الصلاحيات</span>
@@ -392,7 +405,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle">
-                            <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                            <thead style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); color: white;">
                                 <tr>
                                     <th class="text-center" style="width:50px">#</th>
                                     <th>المستخدم</th>
@@ -410,7 +423,7 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             {% set initials = user.full_name[:1] %}
-                                            <div class="user-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                                            <div class="user-avatar" style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-info));">
                                                 {{ initials }}
                                             </div>
                                             <div>
@@ -419,11 +432,14 @@
                                                 {% if user.username == 'admin' %}
                                                 <span class="badge bg-warning text-dark ms-1" style="font-size:0.55rem;">افتراضي</span>
                                                 {% endif %}
+                                                {% if user.is_trial %}
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle ms-1" style="font-size:0.55rem;">تجريبي</span>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-size:0.75rem;">
+                                        <span class="badge rounded-pill" style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-info));color:white;font-size:0.75rem;">
                                             {{ user.role_name }}
                                         </span>
                                     </td>
@@ -451,7 +467,16 @@
                                         </span>
                                         {% endif %}
                                     </td>
-                                    <td><small class="text-muted">{{ user.created_at }}</small></td>
+                                    <td>
+                                        <small class="text-muted d-block">{{ user.created_at }}</small>
+                                        {% if user.is_trial %}
+                                            {% if user.trial_expired %}
+                                            <small class="text-danger"><i class="fas fa-clock me-1"></i>منتهية</small>
+                                            {% else %}
+                                            <small class="text-info"><i class="fas fa-hourglass-half me-1"></i>{{ (user.trial_seconds_remaining // 86400) if user.trial_seconds_remaining else 0 }} يوم متبقٍ</small>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
                                     <td class="text-center">
                                         <div class="action-btn-group">
                                             <button class="action-btn action-btn-warning" onclick="openEditUserModal({{ user.id }}, '{{ user.full_name }}', {{ user.role_id }}, {{ user.is_active }})" title="تعديل">
@@ -603,6 +628,100 @@
             </div>
         </div>
 
+        <!-- ===== تبويب النسخ التجريبية ===== -->
+        <div class="tab-pane fade" id="trialsPanel" role="tabpanel">
+            <div class="row g-3 mb-3">
+                <div class="col-lg-8">
+                    <div class="trial-status-card p-3 h-100">
+                        <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1"><i class="fas fa-vial text-warning me-1"></i>إدارة النسخ التجريبية المعزولة</h6>
+                                <div class="trial-table-note">
+                                    أي حساب يتم إنشاؤه هنا يحصل على دور <strong>نسخة تجريبية</strong>، وتُنشأ له جداول بيانات منفصلة مؤقتة. عند انتهاء المدة يتم تعطيله وحذف بياناته التجريبية.
+                                </div>
+                            </div>
+                            <button class="btn btn-warning btn-sm" onclick="openAddTrialModal()">
+                                <i class="fas fa-plus me-1"></i> إنشاء نسخة تجريبية
+                            </button>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6 col-md-3"><div class="trial-metric"><span class="text-muted">الإجمالي</span><strong>{{ trial_accounts|length }}</strong></div></div>
+                            <div class="col-6 col-md-3"><div class="trial-metric"><span class="text-muted">النشطة</span><strong>{{ trial_accounts|selectattr('expired', 'equalto', false)|list|length }}</strong></div></div>
+                            <div class="col-6 col-md-3"><div class="trial-metric"><span class="text-muted">المنتهية</span><strong>{{ trial_accounts|selectattr('expired')|list|length }}</strong></div></div>
+                            <div class="col-6 col-md-3"><div class="trial-metric"><span class="text-muted">الحد الافتراضي</span><strong>5 أيام</strong></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="permission-warning-box h-100">
+                        <div class="fw-bold mb-1"><i class="fas fa-shield-alt me-1"></i>ماذا يتم عزله؟</div>
+                        الطلاب، المدرسون، المواد، الأقساط، السحوبات، الربط بين الطالب والمدرس، الغرف، والجدول الأسبوعي. أما المستخدمون والأدوار وسجل النظام فتبقى إدارية مشتركة.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead style="background: linear-gradient(135deg, var(--brand-warning), var(--brand-warning)); color: #111827;">
+                                <tr>
+                                    <th>#</th>
+                                    <th>الحساب</th>
+                                    <th>البداية</th>
+                                    <th>الانتهاء</th>
+                                    <th>المتبقي</th>
+                                    <th class="text-center">الحالة</th>
+                                    <th class="text-center" style="width:120px;">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for account in trial_accounts %}
+                                <tr>
+                                    <td class="fw-bold text-muted">{{ loop.index }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ account.full_name or account.username }}</div>
+                                        <small class="text-muted">@{{ account.username }}</small>
+                                    </td>
+                                    <td><small class="text-muted">{{ account.started_at }}</small></td>
+                                    <td><small class="text-muted">{{ account.expires_at }}</small></td>
+                                    <td>
+                                        {% if account.expired %}
+                                        <span class="text-danger small"><i class="fas fa-clock me-1"></i>انتهت</span>
+                                        {% else %}
+                                        <span class="text-success small"><i class="fas fa-hourglass-half me-1"></i>{{ (account.seconds_remaining // 86400) if account.seconds_remaining else 0 }} يوم</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if account.expired or account.is_expired == 1 or account.is_active == 0 %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">معطلة / منتهية</span>
+                                        {% else %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">نشطة</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="action-btn action-btn-danger" onclick="deleteTrialAccount('{{ account.username }}')" title="حذف النسخة التجريبية وبياناتها">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not trial_accounts %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <i class="fas fa-vial fa-2x text-muted d-block mb-2"></i>
+                                        <p class="text-muted mb-0">لا توجد حسابات تجريبية حالياً</p>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== تبويب مصفوفة الصلاحيات ===== -->
         <div class="tab-pane fade" id="matrixPanel" role="tabpanel">
             <div class="permission-warning-box mb-3">
@@ -613,7 +732,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0 align-middle" style="font-size:0.78rem;">
-                            <thead style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+                            <thead style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); color: white;">
                                 <tr>
                                     <th style="min-width:180px;">الصلاحية</th>
                                     {% for role in roles %}
@@ -623,8 +742,8 @@
                             </thead>
                             <tbody>
                                 {% for category, perms in permissions_by_category.items() %}
-                                <tr style="background:#f8fafc;">
-                                    <td colspan="{{ roles|length + 1 }}" class="fw-bold py-2 px-3" style="font-size:0.82rem;color:#6366f1;">
+                                <tr style="background:var(--app-surface-2);">
+                                    <td colspan="{{ roles|length + 1 }}" class="fw-bold py-2 px-3" style="font-size:0.82rem;color:var(--brand-primary);">
                                         {% if category == 'لوحة التحكم' %}<i class="fas fa-home me-1"></i>
                                         {% elif category == 'الطلاب' %}<i class="fas fa-user-graduate me-1"></i>
                                         {% elif category == 'المدرسين' %}<i class="fas fa-chalkboard-teacher me-1"></i>
@@ -682,11 +801,52 @@
 </div>
 </div>
 
+<!-- ===== Modal إنشاء نسخة تجريبية ===== -->
+<div class="modal fade" id="addTrialModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-dark border-0" style="background: linear-gradient(135deg, var(--brand-warning), var(--brand-warning)); overflow:hidden;">
+                <h5 class="modal-title"><i class="fas fa-vial me-2"></i>إنشاء حساب تجريبي معزول</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addTrialForm">
+                <div class="modal-body p-3 p-md-4">
+                    <div class="alert alert-warning border-0 small">
+                        سيتم إنشاء مستخدم بدور <strong>نسخة تجريبية</strong> مع جداول منفصلة، ولن تؤثر بياناته على بيانات النظام الأصلية.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-at me-1 text-warning"></i>اسم المستخدم</label>
+                        <input type="text" class="form-control" id="trial_username" required minlength="3" maxlength="50" pattern="[A-Za-z0-9_]+" placeholder="مثال: demo_client">
+                        <small class="text-muted">أحرف إنجليزية وأرقام وشرطة سفلية فقط</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-user me-1 text-warning"></i>الاسم الظاهر</label>
+                        <input type="text" class="form-control" id="trial_fullname" required minlength="2" maxlength="100" placeholder="مثال: نسخة تجريبية - العميل">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-lock me-1 text-warning"></i>كلمة المرور</label>
+                        <input type="password" class="form-control" id="trial_password" required minlength="4" maxlength="100" placeholder="كلمة المرور">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-calendar-day me-1 text-warning"></i>مدة التجربة بالأيام</label>
+                        <input type="number" class="form-control" id="trial_days" value="5" min="1" max="30" required>
+                        <small class="text-muted">الحد المقترح 5 أيام، ويمكن تحديد مدة من 1 إلى 30 يومًا.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-save me-1"></i>إنشاء النسخة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- ===== Modal إضافة مستخدم ===== -->
 <div class="modal fade" id="addUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); overflow:hidden;">
                 <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>إضافة مستخدم جديد</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -727,7 +887,7 @@
 <div class="modal fade" id="editUserModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #f59e0b, #d97706); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-warning), var(--brand-warning)); overflow:hidden;">
                 <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>تعديل المستخدم</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -764,7 +924,7 @@
 <div class="modal fade" id="addRoleModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #10b981, #059669); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-success), var(--brand-success)); overflow:hidden;">
                 <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>إضافة دور جديد</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -796,7 +956,7 @@
 <div class="modal fade" id="permissionsModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, var(--brand-primary), var(--brand-info)); overflow:hidden;">
                 <h5 class="modal-title">
                     <i class="fas fa-key me-2"></i>
                     إدارة صلاحيات الدور:
@@ -893,6 +1053,40 @@
 
 <script>
 const rolePermissionsMap = {{ role_permissions_map | tojson }};
+
+// ===== النسخ التجريبية =====
+function openAddTrialModal() {
+    document.getElementById('addTrialForm').reset();
+    document.getElementById('trial_days').value = 5;
+    new bootstrap.Modal(document.getElementById('addTrialModal')).show();
+}
+
+const addTrialForm = document.getElementById('addTrialForm');
+if (addTrialForm) {
+    addTrialForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const data = {
+            username: document.getElementById('trial_username').value.trim(),
+            full_name: document.getElementById('trial_fullname').value.trim(),
+            password: document.getElementById('trial_password').value,
+            days: parseInt(document.getElementById('trial_days').value || '5')
+        };
+        try {
+            const result = await apiRequest('/permissions/api/trial-accounts', { method: 'POST', body: JSON.stringify(data) });
+            if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+            else { showAlert(result.message, 'error'); }
+        } catch (error) { showAlert(error.message || 'خطأ في الاتصال', 'error'); }
+    });
+}
+
+async function deleteTrialAccount(username) {
+    if (!confirm(`سيتم حذف الحساب التجريبي "${username}" وجميع بياناته المعزولة. هل تريد المتابعة؟`)) return;
+    try {
+        const result = await apiRequest(`/permissions/api/trial-accounts/${encodeURIComponent(username)}`, { method: 'DELETE' });
+        if (result.success) { showAlert(result.message, 'success'); location.reload(); }
+        else { showAlert(result.message, 'error'); }
+    } catch (error) { showAlert(error.message || 'خطأ في الاتصال', 'error'); }
+}
 
 // ===== المستخدمون =====
 function openAddUserModal() {

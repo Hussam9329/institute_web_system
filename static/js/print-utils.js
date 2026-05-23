@@ -762,7 +762,7 @@ const PrintUtils = {
     printAccounting() {
         const visibleCards = [];
         const allCards = document.querySelectorAll('.accounting-card');
-        let totalReceived = 0, totalDeduction = 0, totalTeacherDue = 0, totalWithdrawn = 0, totalRemaining = 0, totalStudents = 0, count = 0;
+        let totalReceived = 0, totalDeduction = 0, totalTeacherDue = 0, totalShareFull = 0, totalWithdrawn = 0, totalRemaining = 0, totalStudents = 0, count = 0;
 
         allCards.forEach(card => {
             if (card.style.display === 'none') return;
@@ -770,12 +770,14 @@ const PrintUtils = {
             const received = parseInt(card.dataset.received) || 0;
             const deduction = parseInt(card.dataset.deduction) || 0;
             const teacherDue = parseInt(card.dataset.teacherDue) || 0;
+            const shareFull = parseInt(card.dataset.teacherShareFull) || 0;
             const withdrawn = parseInt(card.dataset.withdrawn) || 0;
             const remaining = parseInt(card.dataset.remaining) || 0;
             const students = parseInt(card.dataset.students) || 0;
             totalReceived += received;
             totalDeduction += deduction;
             totalTeacherDue += teacherDue;
+            totalShareFull += shareFull;
             totalWithdrawn += withdrawn;
             totalRemaining += remaining;
             totalStudents += students;
@@ -786,6 +788,7 @@ const PrintUtils = {
                 received: received,
                 deduction: deduction,
                 teacherDue: teacherDue,
+                shareFull: shareFull,
                 withdrawn: withdrawn,
                 remaining: remaining,
                 students: students
@@ -805,6 +808,7 @@ const PrintUtils = {
             formatCurrency(c.received),
             `<span style="color:var(--danger);font-weight:600">${formatCurrency(c.deduction)}</span>`,
             `<span style="color:var(--info);font-weight:600">${formatCurrency(c.teacherDue)}</span>`,
+            `<span style="color:#6366f1;font-weight:600">${formatCurrency(c.shareFull)}</span>`,
             `<span style="color:var(--warning);font-weight:600">${formatCurrency(c.withdrawn)}</span>`,
             c.remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(c.remaining)}</span>` : '<span style="color:var(--muted)">0</span>'
         ]);
@@ -813,6 +817,7 @@ const PrintUtils = {
             '', 'الإجمالي', '', totalStudents, formatCurrency(totalReceived),
             `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
             `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
+            `<span style="color:#6366f1;font-weight:700">${formatCurrency(totalShareFull)}</span>`,
             `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
             totalRemaining > 0 ? formatCurrency(totalRemaining) : '0'
         ]);
@@ -836,6 +841,7 @@ const PrintUtils = {
                 { value: formatCurrency(totalReceived), label: 'إجمالي المدفوع', cls: 'kpi-accent' },
                 { value: formatCurrency(totalDeduction), label: 'إجمالي خصم المعهد', cls: 'kpi-danger' },
                 { value: formatCurrency(totalTeacherDue), label: 'إجمالي مستحق المدرسين', cls: 'kpi-info' },
+                { value: formatCurrency(totalShareFull), label: 'إجمالي حصة المدرسين بعد الدفع الكامل', cls: 'kpi-purple' },
                 { value: formatCurrency(totalWithdrawn), label: 'إجمالي المسحوب', cls: 'kpi-warning' },
                 { value: formatCurrency(totalRemaining), label: 'إجمالي المتبقي', cls: 'kpi-purple' }
             ],
@@ -844,9 +850,9 @@ const PrintUtils = {
                 title: 'ملخص محاسبة المدرسين - التفاصيل الشاملة',
                 icon: 'calculator',
                 content: this.buildTableHTML(
-                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي'],
+                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'خصم المعهد', 'مستحق المدرس', 'حصة بعد الدفع الكامل', 'المسحوب', 'المتبقي'],
                     rows,
-                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
+                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
                 )
             }]
         });
@@ -861,7 +867,13 @@ const PrintUtils = {
         const allData = [];
         statsRows.forEach(row => {
             const cells = row.querySelectorAll('td');
-            if (cells.length >= 2) {
+            // Table now has 3 cols: sd-icon-cell, sd-label-cell, sd-value-cell
+            if (cells.length >= 3) {
+                allData.push({
+                    label: cells[1].textContent.trim(),
+                    value: cells[2].textContent.trim()
+                });
+            } else if (cells.length >= 2) {
                 allData.push({
                     label: cells[0].textContent.trim(),
                     value: cells[1].textContent.trim()
@@ -906,7 +918,6 @@ const PrintUtils = {
         const printCheckboxes = document.querySelectorAll('.print-select-cb');
         let selectedData = allData;
         let selectedFinRows = finRows;
-        let includeNet = true;
         let includeKPIs = true;
         let includeDetail = true;
         let includeFinancial = true;
@@ -917,7 +928,6 @@ const PrintUtils = {
             includeKPIs = document.getElementById('print_cb_kpis')?.checked !== false;
             includeDetail = document.getElementById('print_cb_detail')?.checked !== false;
             includeFinancial = document.getElementById('print_cb_financial')?.checked !== false;
-            includeNet = document.getElementById('print_cb_net')?.checked !== false;
             includeDeductions = document.getElementById('print_cb_deductions')?.checked !== false;
             includeTeacherDue = document.getElementById('print_cb_teacher_due')?.checked !== false;
 
@@ -962,18 +972,18 @@ const PrintUtils = {
             });
         }
 
-        // خصم المعهد والاستقطاعات
+        // خصم المعهد (إيرادات المعهد)
         if (includeDeductions) {
             // استخراج بيانات الخصم من جدول التفاصيل أو من البطاقات المالية
             const deductionData = allData.find(d => d.label.includes('خصم المعهد') || d.label.includes('استقطاع'));
             const totalDeduction = deductionData ? deductionData.value : '';
             if (totalDeduction) {
                 sections.push({
-                    title: 'خصم المعهد (الاستقطاعات)',
+                    title: 'إيرادات المعهد (الاستقطاعات)',
                     icon: 'building',
-                    content: `<div style="text-align:center;padding:20px;background:#fef2f2;border-radius:14px;border:2px solid rgba(239,68,68,0.25);">
-                        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي خصم المعهد (الاستقطاعات)</div>
-                        <div style="font-size:28px;font-weight:900;color:var(--danger);">${totalDeduction}</div>
+                    content: `<div style="text-align:center;padding:20px;background:#ecfdf5;border-radius:14px;border:2px solid rgba(16,185,129,0.25);">
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي إيرادات المعهد (الاستقطاعات)</div>
+                        <div style="font-size:28px;font-weight:900;color:var(--success);">${totalDeduction}</div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">نسبة المعهد المستقطعة من المدفوعات</div>
                     </div>`
                 });
@@ -995,17 +1005,6 @@ const PrintUtils = {
                     </div>`
                 });
             }
-        }
-
-        if (includeNet && netValue) {
-            sections.push({
-                title: netLabel || 'صافي الإيرادات',
-                icon: 'chart-line',
-                content: `<div style="text-align:center;padding:20px;background:${netValue.includes('-') ? '#fef2f2' : '#ecfdf5'};border-radius:14px;border:2px solid ${netValue.includes('-') ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'};">
-                    <div style="font-size:28px;font-weight:900;color:${netValue.includes('-') ? 'var(--danger)' : 'var(--success)'};">${netValue}</div>
-                    <div style="font-size:13px;color:var(--muted);margin-top:4px;">${netSub}</div>
-                </div>`
-            });
         }
 
         // Add comprehensive financial summary KPIs if deductions are included
