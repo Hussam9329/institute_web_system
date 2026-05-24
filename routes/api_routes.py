@@ -28,6 +28,20 @@ def _invalidate_dashboard_cache():
     cache_service.invalidate_pattern('dashboard_')
 
 
+def _is_trial_api_user(request: Request) -> bool:
+    """يرجع True إذا كان الطلب من حساب تجريبي."""
+    user = getattr(request.state, 'user', None) or {}
+    return bool(user.get('is_trial') or getattr(request.state, 'trial_account', None))
+
+
+def _trial_admin_api_denied() -> dict:
+    """منع الحساب التجريبي من إدارة حسابات أو صلاحيات فعلية عبر API العام."""
+    return {
+        "success": False,
+        "message": "الحساب التجريبي لا يسمح له بتنفيذ عمليات إدارة فعلية للحسابات أو الصلاحيات."
+    }
+
+
 # ===== نماذج API =====
 
 class LinkStudentTeacher(BaseModel):
@@ -2840,6 +2854,8 @@ async def api_get_current_user(request: Request):
 @router.get("/trial-accounts")
 async def api_list_trial_accounts(request: Request):
     """عرض كل الحسابات التجريبية - المدير العام فقط"""
+    if _is_trial_api_user(request):
+        return _trial_admin_api_denied()
     check_permission(request, 'manage_users')
     from trial_mode import get_all_trial_accounts
     accounts = get_all_trial_accounts()
@@ -2855,6 +2871,8 @@ class CreateTrialAccount(BaseModel):
 @router.post("/trial-accounts")
 async def api_create_trial_account(request: Request, data: CreateTrialAccount):
     """إنشاء حساب تجريبي جديد - المدير العام فقط"""
+    if _is_trial_api_user(request):
+        return _trial_admin_api_denied()
     check_permission(request, 'manage_users')
     
     # التحقق من أن اسم المستخدم لا يحتوي على أحرف خاصة
@@ -2897,6 +2915,8 @@ async def api_create_trial_account(request: Request, data: CreateTrialAccount):
 @router.delete("/trial-accounts/{username}")
 async def api_delete_trial_account(request: Request, username: str):
     """حذف حساب تجريبي - المدير العام فقط"""
+    if _is_trial_api_user(request):
+        return _trial_admin_api_denied()
     check_permission(request, 'manage_users')
     from trial_mode import delete_trial_account
     result = delete_trial_account(username)

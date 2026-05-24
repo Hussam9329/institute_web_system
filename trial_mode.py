@@ -108,6 +108,8 @@ TRIAL_PERMISSION_CODES = [
     "view_teacher_reports",
     # الإحصائيات
     "view_stats",
+    # الصلاحيات: يسمح فقط بفتح صفحة شرح نصية، وليس إدارة فعلية
+    "view_permissions",
     # ملاحظة: لا تُمنح صلاحيات الإدارة المشتركة للحساب التجريبي
     # مثل إدارة المستخدمين/الأدوار/سجل العمليات/النسخ الاحتياطي
     # لأنها تعمل على جداول النظام الأصلية وليست جداول التجربة المعزولة.
@@ -573,7 +575,7 @@ def ensure_trial_environment(cursor, username: str = None, password: str = None,
         INSERT INTO roles (name, description, is_default, created_at)
         VALUES (%s, %s, 0, TO_CHAR(NOW(), 'YYYY-MM-DD HH24:MI'))
         ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description
-    ''', (TRIAL_ROLE_NAME, "حساب تجريبي بصلاحيات كاملة ومعزول لمدة 5 أيام"))
+    ''', (TRIAL_ROLE_NAME, "حساب تجريبي بصلاحيات تشغيل معزولة وشرح نصي للصلاحيات لمدة 5 أيام"))
 
     if TRIAL_PERMISSION_CODES:
         placeholders = ",".join(["%s"] * len(TRIAL_PERMISSION_CODES))

@@ -18,11 +18,51 @@ router = APIRouter(prefix="/permissions")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 
+TRIAL_PERMISSIONS_PREVIEW_ITEMS = [
+    "إنشاء مستخدمين جدد للنظام وتحديد أدوارهم.",
+    "تعديل بيانات المستخدمين أو تغيير كلمة المرور أو تعطيل وتفعيل الحسابات.",
+    "حذف المستخدمين غير الأساسيين عند الحاجة.",
+    "إنشاء أدوار مخصصة مثل محاسب، مدخل بيانات، مشاهد، أو أي دور آخر.",
+    "ربط كل دور بالصلاحيات المناسبة له حسب طبيعة عمل الموظف.",
+    "مراجعة مصفوفة الصلاحيات لمعرفة ما المسموح لكل دور.",
+    "إنشاء وإدارة الحسابات التجريبية المعزولة للعملاء أو الموظفين."
+]
+
+TRIAL_PERMISSIONS_BLOCKED_ITEMS = [
+    "لا يتم عرض أسماء المستخدمين الحقيقيين أو أدوارهم داخل الحساب التجريبي.",
+    "لا يمكن إنشاء أو تعديل أو حذف مستخدمين من الحساب التجريبي.",
+    "لا يمكن إنشاء أو تعديل أو حذف أدوار من الحساب التجريبي.",
+    "لا يمكن تغيير صلاحيات أي دور أو الوصول إلى مصفوفة الصلاحيات الفعلية.",
+    "لا يمكن إنشاء أو حذف حسابات تجريبية من داخل حساب تجريبي آخر."
+]
+
+
+def _is_trial_permissions_user(request: Request) -> bool:
+    """يرجع True إذا كان المستخدم الحالي حساباً تجريبياً."""
+    user = getattr(request.state, 'user', None) or {}
+    return bool(user.get('is_trial') or getattr(request.state, 'trial_account', None))
+
+
+def _trial_permissions_api_denied() -> dict:
+    """رسالة موحدة عند محاولة الحساب التجريبي تنفيذ إدارة فعلية للصلاحيات."""
+    return {
+        "success": False,
+        "message": "الحساب التجريبي يعرض شرح تبويبة الصلاحيات فقط، ولا يسمح له بتنفيذ إدارة فعلية للمستخدمين أو الأدوار أو الصلاحيات."
+    }
+
+
 # ===== صفحة الصلاحيات الرئيسية =====
 
 @router.get("/", response_class=HTMLResponse)
 async def permissions_page(request: Request):
     """صفحة إدارة الصلاحيات"""
+    if _is_trial_permissions_user(request):
+        return templates.TemplateResponse("permissions/trial_readonly.html", {
+            "request": request,
+            "preview_items": TRIAL_PERMISSIONS_PREVIEW_ITEMS,
+            "blocked_items": TRIAL_PERMISSIONS_BLOCKED_ITEMS,
+        })
+
     check_permission(request, 'view_permissions')
     db = Database()
     
@@ -96,6 +136,8 @@ async def permissions_page(request: Request):
 @router.post("/api/roles")
 async def create_role(request: Request, role: RoleCreate):
     """إنشاء دور جديد"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_roles')
     db = Database()
     now = get_current_datetime(get_client_timestamp(request))[:16]  # YYYY-MM-DD HH:MM
@@ -117,6 +159,8 @@ async def create_role(request: Request, role: RoleCreate):
 @router.put("/api/roles/{role_id}")
 async def update_role(request: Request, role_id: int, role: RoleUpdate):
     """تحديث بيانات دور"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_roles')
     db = Database()
     try:
@@ -147,6 +191,8 @@ async def update_role(request: Request, role_id: int, role: RoleUpdate):
 @router.delete("/api/roles/{role_id}")
 async def delete_role(request: Request, role_id: int):
     """حذف دور"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_roles')
     db = Database()
     try:
@@ -169,6 +215,8 @@ async def delete_role(request: Request, role_id: int):
 @router.put("/api/roles/{role_id}/permissions")
 async def update_role_permissions(request: Request, role_id: int, data: RolePermissionsUpdate):
     """تحديث صلاحيات دور"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_roles')
     db = Database()
     conn = db.get_connection()
@@ -249,6 +297,8 @@ async def update_role_permissions(request: Request, role_id: int, data: RolePerm
 @router.post("/api/users")
 async def create_user(request: Request, user: UserCreate):
     """إنشاء مستخدم جديد"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     db = Database()
     now = get_current_datetime(get_client_timestamp(request))[:16]  # YYYY-MM-DD HH:MM
@@ -317,6 +367,8 @@ async def create_user(request: Request, user: UserCreate):
 @router.put("/api/users/{user_id}")
 async def update_user(request: Request, user_id: int, user: UserUpdate):
     """تحديث بيانات مستخدم"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     db = Database()
     try:
@@ -389,6 +441,8 @@ async def update_user(request: Request, user_id: int, user: UserUpdate):
 @router.delete("/api/users/{user_id}")
 async def delete_user(request: Request, user_id: int):
     """حذف مستخدم"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     db = Database()
     try:
@@ -415,6 +469,8 @@ async def delete_user(request: Request, user_id: int):
 @router.post("/api/users/{user_id}/toggle-active")
 async def toggle_user_active(request: Request, user_id: int):
     """تبديل حالة تفعيل المستخدم"""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     db = Database()
     try:
@@ -443,6 +499,8 @@ class TrialAccountCreate(BaseModel):
 @router.get("/api/trial-accounts")
 async def list_trial_accounts(request: Request):
     """عرض الحسابات التجريبية من داخل صفحة الصلاحيات."""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     from trial_mode import get_all_trial_accounts
     return {"success": True, "data": get_all_trial_accounts()}
@@ -451,6 +509,8 @@ async def list_trial_accounts(request: Request):
 @router.post("/api/trial-accounts")
 async def create_trial_account(request: Request, data: TrialAccountCreate):
     """إنشاء حساب تجريبي معزول من داخل صفحة الصلاحيات."""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
 
     import re
@@ -497,6 +557,8 @@ async def create_trial_account(request: Request, data: TrialAccountCreate):
 @router.delete("/api/trial-accounts/{username}")
 async def remove_trial_account(request: Request, username: str):
     """حذف حساب تجريبي مع بياناته المعزولة."""
+    if _is_trial_permissions_user(request):
+        return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     from trial_mode import delete_trial_account
     return delete_trial_account(username)

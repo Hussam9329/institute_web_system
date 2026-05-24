@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}شرح تبويبة الصلاحيات - النسخة التجريبية{% endblock %}
+{% block page_title %}شرح تبويبة الصلاحيات{% endblock %}
+
+{% block content %}
+<style>
+.trial-permissions-preview {
+    --preview-border: var(--app-border);
+    --preview-surface: var(--app-surface);
+    --preview-muted: var(--app-muted);
+}
+.trial-permissions-preview .hero-card {
+    border: 1px solid var(--preview-border);
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--brand-warning-soft), var(--app-surface));
+    box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+.trial-permissions-preview .hero-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: var(--brand-warning);
+    color: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+.trial-permissions-preview .info-card {
+    border: 1px solid var(--preview-border);
+    border-radius: 18px;
+    background: var(--preview-surface);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    height: 100%;
+}
+.trial-permissions-preview .feature-item,
+.trial-permissions-preview .blocked-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--app-surface-2);
+    line-height: 1.75;
+    font-size: 0.92rem;
+}
+.trial-permissions-preview .feature-item:last-child,
+.trial-permissions-preview .blocked-item:last-child {
+    border-bottom: 0;
+}
+.trial-permissions-preview .feature-item i {
+    color: var(--brand-success);
+    margin-top: 5px;
+}
+.trial-permissions-preview .blocked-item i {
+    color: var(--brand-danger);
+    margin-top: 5px;
+}
+.trial-permissions-preview .readonly-badge {
+    border-radius: 999px;
+    padding: 7px 12px;
+    background: var(--brand-warning-soft);
+    color: var(--brand-warning);
+    font-weight: 800;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.trial-permissions-preview .note-box {
+    border: 1px dashed var(--brand-warning);
+    background: var(--brand-warning-soft);
+    color: var(--app-text);
+    border-radius: 16px;
+    padding: 14px 16px;
+    line-height: 1.8;
+    font-size: 0.9rem;
+}
+</style>
+
+<div class="trial-permissions-preview page-transition">
+    <div class="container-fluid">
+        <div class="hero-card p-3 p-md-4 mb-4">
+            <div class="d-flex align-items-start gap-3 flex-wrap flex-md-nowrap">
+                <div class="hero-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="readonly-badge mb-2">
+                        <i class="fas fa-lock"></i>
+                        عرض نصي فقط للحساب التجريبي
+                    </div>
+                    <h4 class="fw-bold mb-2" style="color: var(--app-text);">
+                        تبويبة الصلاحيات في النسخة التجريبية
+                    </h4>
+                    <p class="mb-0 text-muted" style="line-height: 1.9;">
+                        هذه الصفحة مخصصة لشرح ما يمكن إدارته من تبويبة الصلاحيات في النسخة الكاملة،
+                        بدون إظهار المستخدمين الحقيقيين أو الأدوار الفعلية وبدون أي أزرار إنشاء أو تعديل أو حذف.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-7">
+                <div class="info-card p-3 p-md-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-circle-info text-success me-2"></i>
+                        ماذا يمكن عمله هنا في النسخة الكاملة؟
+                    </h5>
+                    <div>
+                        {% for item in preview_items %}
+                        <div class="feature-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ item }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="info-card p-3 p-md-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-ban text-danger me-2"></i>
+                        ما الذي تم منعه في الحساب التجريبي؟
+                    </h5>
+                    <div>
+                        {% for item in blocked_items %}
+                        <div class="blocked-item">
+                            <i class="fas fa-lock"></i>
+                            <span>{{ item }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note-box">
+            <div class="fw-bold mb-1">
+                <i class="fas fa-triangle-exclamation me-1"></i>
+                ملاحظة أمان
+            </div>
+            الحساب التجريبي يستطيع تجربة أقسام النظام على بياناته المعزولة فقط، أما إدارة المستخدمين والأدوار والصلاحيات
+            فهي متاحة للمدير أو الحسابات المصرح لها في النسخة الفعلية فقط.
+        </div>
+    </div>
+</div>
+{% endblock %}

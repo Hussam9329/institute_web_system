@@ -20,6 +20,13 @@ from trial_mode import (
 
 logger = logging.getLogger(__name__)
 
+TRIAL_FORBIDDEN_REAL_PERMISSION_CODES = {
+    'manage_users',
+    'manage_roles',
+    'system_settings',
+    'view_logs',
+}
+
 SESSION_COOKIE = "institute_session"
 SESSION_EXPIRY = 86400 * 7  # 7 أيام
 
@@ -237,6 +244,10 @@ def check_permission(request: Request, permission_code: str):
     user = getattr(request.state, 'user', None)
     if not user:
         raise HTTPException(status_code=401, detail="يجب تسجيل الدخول")
+
+    # الحساب التجريبي لا يسمح له بصلاحيات الإدارة الفعلية حتى لو أُضيفت له بالخطأ.
+    if user.get('is_trial') and permission_code in TRIAL_FORBIDDEN_REAL_PERMISSION_CODES:
+        raise HTTPException(status_code=403, detail="هذه الصلاحية غير متاحة للحساب التجريبي")
 
     # مدير العام يملك كل الصلاحيات
     if user.get('role_name') == 'مدير عام':
