@@ -63,6 +63,10 @@ SP_XL = 20
 
 
 # ===== نظام الألوان الحديث =====
+class PdfNotFound(Exception):
+    """السجل المطلوب للتقرير غير موجود (يُعرض كـ 404 وليس خطأ خادم)"""
+
+
 class ThemeColors:
     PRIMARY = colors.HexColor('#1e3a5f')
     PRIMARY_LIGHT = colors.HexColor('#2d5a8e')
@@ -566,7 +570,7 @@ class PDFService:
     def generate_student_report(self, student_id: int, client_ts: str = None) -> str:
         student_result = self.db.execute_query("SELECT * FROM students WHERE id = %s", (student_id,))
         if not student_result:
-            raise Exception("الطالب غير موجود")
+            raise PdfNotFound("الطالب غير موجود")
         student = dict(student_result[0])
 
         filename = f"student_report_{student_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -708,7 +712,7 @@ class PDFService:
     def generate_teacher_report(self, teacher_id: int, client_ts: str = None) -> str:
         teacher_result = self.db.execute_query("SELECT * FROM teachers WHERE id = %s", (teacher_id,))
         if not teacher_result:
-            raise Exception("المدرس غير موجود")
+            raise PdfNotFound("المدرس غير موجود")
         teacher = dict(teacher_result[0])
 
         balance_info = finance_service.calculate_teacher_balance(teacher_id)
@@ -815,7 +819,7 @@ class PDFService:
         '''
         installment_result = self.db.execute_query(installment_query, (installment_id,))
         if not installment_result:
-            raise Exception("القسط غير موجود")
+            raise PdfNotFound("القسط غير موجود")
         installment = dict(installment_result[0])
 
         # استخدام finance_service لحساب القسط مع تطبيق الخصم
@@ -1055,7 +1059,7 @@ class PDFService:
             "SELECT * FROM teachers WHERE subject = %s ORDER BY name", (subject_name,)
         )
         if not teachers:
-            raise Exception("لا يوجد مدرسين لهذه المادة")
+            raise PdfNotFound("لا يوجد مدرسين لهذه المادة")
 
         os.makedirs(REPORTS_DIR, exist_ok=True)
         filename = f"subject_{subject_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -1115,7 +1119,7 @@ class PDFService:
     def generate_all_subjects_report(self, client_ts: str = None) -> str:
         subjects = self.db.execute_query("SELECT name FROM subjects ORDER BY name")
         if not subjects:
-            raise Exception("لا توجد مواد")
+            raise PdfNotFound("لا توجد مواد")
 
         os.makedirs(REPORTS_DIR, exist_ok=True)
         filename = f"all_subjects_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"

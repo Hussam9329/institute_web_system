@@ -7,3 +7,6 @@ institute.db
 *.db-journal
 *.db-wal
 *.db-shm
+
+# تقارير PDF المولّدة محلياً (تحتوي بيانات طلاب)
+reports/

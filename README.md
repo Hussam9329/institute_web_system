@@ -91,3 +91,15 @@ institute_web_system/
     ├── receipts/
     ├── student_pdfs/
     └── teacher_pdfs/
+
+---
+
+## 🔐 متغيرات البيئة المطلوبة (Vercel → Settings → Environment Variables)
+
+| المتغير | الغرض |
+| --- | --- |
+| `DATABASE_URL` | رابط قاعدة PostgreSQL (Neon) |
+| `SECRET_KEY` | قيمة عشوائية طويلة (32 حرفاً أو أكثر) لتوقيع جلسات الدخول. **التطبيق لا يعمل على Vercel بدونها** |
+| `ADMIN_INITIAL_PASSWORD` | كلمة مرور مستخدم `admin` عند إنشائه أول مرة، وتستبدل كلمة المرور الافتراضية القديمة تلقائياً إن كانت ما تزال مستخدمة |
+
+لا تضع أي قيمة سرية داخل المستودع.

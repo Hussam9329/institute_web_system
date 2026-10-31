@@ -3,7 +3,16 @@
 # ============================================
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+# توقيت بغداد ثابت UTC+3 (لا يوجد توقيت صيفي في العراق).
+# خوادم Vercel تعمل بتوقيت UTC، لذا لا يُستخدم datetime.now() مباشرة.
+BAGHDAD_TZ = timezone(timedelta(hours=3), name="Asia/Baghdad")
+
+
+def now_baghdad() -> datetime:
+    """الوقت الحالي بتوقيت بغداد (بدون معلومات المنطقة لتوافق التخزين النصي الحالي)"""
+    return datetime.now(BAGHDAD_TZ).replace(tzinfo=None)
 
 # ===== إعدادات التطبيق =====
 APP_TITLE = "نظام إدارة المعهد المتكامل"
@@ -19,14 +28,24 @@ DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 # قاعدة بيانات سحابية PostgreSQL
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
+# في Vercel، فقط /tmp قابل للكتابة
+IS_VERCEL = os.environ.get("VERCEL") == "1"
+
 # ===== مفتاح التشفير للجلسات =====
-SECRET_KEY = os.environ.get("SECRET_KEY", "institute-system-change-in-production-2024")
+# المفتاح الافتراضي منشور في المستودع العام، فلا يُقبل في بيئة الإنتاج:
+# أي شخص يعرفه يستطيع تزوير جلسة دخول.
+_PUBLISHED_DEV_SECRET_KEY = "institute-system-change-in-production-2024"
+SECRET_KEY = os.environ.get("SECRET_KEY", "").strip()
+if not SECRET_KEY or SECRET_KEY == _PUBLISHED_DEV_SECRET_KEY:
+    if IS_VERCEL:
+        raise RuntimeError(
+            "SECRET_KEY غير مضبوط في متغيرات بيئة Vercel. "
+            "أضف قيمة عشوائية طويلة (32 حرفاً أو أكثر) ثم أعد النشر."
+        )
+    SECRET_KEY = _PUBLISHED_DEV_SECRET_KEY  # للتشغيل المحلي فقط
 
 # ===== مسارات الملفات =====
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# في Vercel، فقط /tmp قابل للكتابة
-IS_VERCEL = os.environ.get("VERCEL") == "1"
 TMP_DIR = "/tmp" if IS_VERCEL else BASE_DIR
 
 REPORTS_DIR = os.path.join(TMP_DIR, "reports")
@@ -114,7 +133,7 @@ def format_report_datetime(client_ts: str = None) -> str:
     تنسيق التاريخ والوقت الحالي للتقارير بشكل عربي
     Output: "15/01/2025 - 03:30 م"
     """
-    now = _parse_client_ts(client_ts) or datetime.now()
+    now = _parse_client_ts(client_ts) or now_baghdad()
     ampm = "ص" if now.hour < 12 else "م"
     hours = now.hour % 12
     hours = hours if hours else 12
@@ -122,12 +141,12 @@ def format_report_datetime(client_ts: str = None) -> str:
 
 def format_report_date(client_ts: str = None) -> str:
     """تنسيق التاريخ فقط للتقارير: DD/MM/YYYY"""
-    now = _parse_client_ts(client_ts) or datetime.now()
+    now = _parse_client_ts(client_ts) or now_baghdad()
     return now.strftime("%d/%m/%Y")
 
 def format_report_time(client_ts: str = None) -> str:
     """تنسيق الوقت فقط للتقارير: 12 ساعة مع ص/م"""
-    now = _parse_client_ts(client_ts) or datetime.now()
+    now = _parse_client_ts(client_ts) or now_baghdad()
     ampm = "ص" if now.hour < 12 else "م"
     hours = now.hour % 12
     hours = hours if hours else 12
@@ -183,7 +202,7 @@ def get_current_date(client_ts: str = None) -> str:
         parsed = _parse_client_ts(client_ts)
         if parsed:
             return parsed.strftime("%Y-%m-%d")
-    return datetime.now().strftime("%Y-%m-%d")
+    return now_baghdad().strftime("%Y-%m-%d")
 
 # ===== الحصول على الوقت الحالي =====
 def get_current_datetime(client_ts: str = None) -> str:
@@ -192,10 +211,21 @@ def get_current_datetime(client_ts: str = None) -> str:
         parsed = _parse_client_ts(client_ts)
         if parsed:
             return parsed.strftime("%Y-%m-%d %H:%M:%S")
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return now_baghdad().strftime("%Y-%m-%d %H:%M:%S")
+
+
+# ===== التحقق من صيغة التاريخ =====
+def is_valid_iso_date(value) -> bool:
+    """تاريخ صالح بصيغة YYYY-MM-DD تماماً (التواريخ تُقارن كنصوص في الاستعلامات)"""
+    if not isinstance(value, str) or len(value) != 10:
+        return False
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%Y-%m-%d") == value
+    except ValueError:
+        return False
 
 # ===== توليد باركود فريد =====
 def generate_barcode(student_id: int) -> str:
     """توليد رمز باركود فريد للطالب"""
-    year = datetime.now().year
+    year = now_baghdad().year
     return f"STU-{year}-{str(student_id).zfill(6)}"

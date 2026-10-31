@@ -8,6 +8,8 @@ import os
 import time
 import logging
 import threading
+import contextvars
+from contextlib import contextmanager
 from trial_mode import rewrite_query_for_trial, enforce_trial_constraints, ensure_trial_environment
 import psycopg2
 import psycopg2.extras
@@ -31,6 +33,11 @@ _pool = None
 _pool_lock = threading.Lock()
 _db_initialized = False
 _db_init_lock = threading.Lock()
+
+# ===== المعاملة الحالية (Unit of Work) =====
+# عند فتح transaction() تمر كل استدعاءات execute_query في نفس الطلب على اتصال واحد
+# ولا تُثبَّت إلا مرة واحدة في النهاية، فتصبح العمليات المتعددة الخطوات ذرّية.
+_current_tx_conn = contextvars.ContextVar("_current_tx_conn", default=None)
 
 
 def _is_retryable_error(error) -> bool:
@@ -183,12 +190,26 @@ class Database:
             conn.close()
         except:
             pass
-    
+
+    def _execute_in_transaction(self, conn, query: str, params) -> list:
+        """تنفيذ استعلام داخل المعاملة المفتوحة دون تثبيت ودون إعادة محاولة"""
+        query = rewrite_query_for_trial(query)
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+            enforce_trial_constraints(cursor, query, params)
+            cursor.execute(query, params)
+            if cursor.description is not None:
+                return [dict(row) for row in cursor.fetchall()]
+            return []
+
     def execute_query(self, query: str, params=None) -> list:
         """تنفيذ استعلام مع إعادة المحاولة التلقائية للأخطاء العابرة"""
         if params is None:
             params = ()
-        
+
+        tx_conn = _current_tx_conn.get()
+        if tx_conn is not None:
+            return self._execute_in_transaction(tx_conn, query, params)
+
         last_error = None
         
         for attempt in range(MAX_RETRIES):
@@ -224,17 +245,13 @@ class Database:
                 if _is_retryable_error(e) and attempt < MAX_RETRIES - 1:
                     delay = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
                     logger.warning(f"خطأ قابل لإعادة المحاولة في الاستعلام (المحاولة {attempt + 1}/{MAX_RETRIES}): {e}")
-                    time.sleep(delay)
-                    # إعادة تعيين الاتصال
+                    # التراجع فقط - إرجاع الاتصال للتجمع يتم مرة واحدة في finally
                     if conn:
                         try:
                             conn.rollback()
                         except:
                             pass
-                        try:
-                            self._return_connection(conn)
-                        except:
-                            pass
+                    time.sleep(delay)
                     continue
                 else:
                     # خطأ غير قابل لإعادة المحاولة أو تجاوز عدد المحاولات
@@ -263,6 +280,95 @@ class Database:
     def return_connection(self, conn):
         """إرجاع الاتصال إلى التجمع"""
         self._return_connection(conn)
+
+
+@contextmanager
+def transaction():
+    """
+    معاملة واحدة لعدة استعلامات: كل execute_query داخل الكتلة يستخدم نفس الاتصال،
+    ويتم التثبيت مرة واحدة عند الخروج الطبيعي، أو التراجع الكامل عند أي استثناء.
+    المعاملات المتداخلة تنضم للمعاملة الخارجية.
+    """
+    if _current_tx_conn.get() is not None:
+        yield
+        return
+
+    db = Database()
+    conn = db.get_connection()
+    with conn.cursor() as cursor:
+        cursor.execute(f"SET LOCAL statement_timeout = {STATEMENT_TIMEOUT}")
+    token = _current_tx_conn.set(conn)
+    try:
+        yield
+        conn.commit()
+    except BaseException:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        _current_tx_conn.reset(token)
+        db.return_connection(conn)
+
+
+def in_transaction() -> bool:
+    """هل يوجد transaction() مفتوح في الطلب الحالي"""
+    return _current_tx_conn.get() is not None
+
+
+def lock_for_update(namespace: int, key: int):
+    """
+    قفل حصري حتى نهاية المعاملة الحالية (pg_advisory_xact_lock) لمنع سباق الفحص-ثم-الإدراج،
+    مثل تسجيل سحبين أو قسطين بنفس اللحظة. يجب استدعاؤه داخل transaction().
+    """
+    if _current_tx_conn.get() is None:
+        raise RuntimeError("lock_for_update يجب أن يُستدعى داخل transaction()")
+    Database().execute_query("SELECT pg_advisory_xact_lock(%s, %s)", (int(namespace), int(key)))
+
+
+# مجالات الأقفال
+LOCK_TEACHER_WITHDRAWALS = 1
+LOCK_STUDENT_PAYMENTS = 2
+
+
+# كلمة المرور الافتراضية القديمة كانت مكتوبة في الكود المنشور علناً،
+# لذا تُستبدل تلقائياً بكلمة ADMIN_INITIAL_PASSWORD متى توفرت.
+_PUBLISHED_DEFAULT_ADMIN_PASSWORD = "1993"
+
+
+def _ensure_admin_user(cursor):
+    """
+    إنشاء مستخدم admin مرة واحدة فقط بكلمة مرور من متغير البيئة ADMIN_INITIAL_PASSWORD.
+    لا تُفرض كلمة المرور على مستخدم موجود، إلا إذا كانت ما تزال كلمة المرور القديمة المنشورة.
+    """
+    from auth import hash_password, verify_password
+
+    initial_password = os.environ.get("ADMIN_INITIAL_PASSWORD", "").strip()
+
+    cursor.execute("SELECT id, password_hash FROM users WHERE username = 'admin'")
+    row = cursor.fetchone()
+
+    if row is None:
+        if not initial_password:
+            logger.error("لم يُنشأ مستخدم admin: متغير البيئة ADMIN_INITIAL_PASSWORD غير مضبوط")
+            return
+        from datetime import datetime as _dt
+        cursor.execute('''
+            INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
+            SELECT 'admin', 'المدير العام', %s, r.id, 1, %s
+            FROM roles r WHERE r.name = 'مدير عام'
+            ON CONFLICT (username) DO NOTHING
+        ''', (hash_password(initial_password), _dt.now().strftime('%Y-%m-%d %H:%M')))
+        return
+
+    if initial_password and verify_password(_PUBLISHED_DEFAULT_ADMIN_PASSWORD, row[1]):
+        cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s",
+                       (hash_password(initial_password), row[0]))
+        logger.warning("تم استبدال كلمة مرور admin الافتراضية المنشورة بقيمة ADMIN_INITIAL_PASSWORD")
+    elif verify_password(_PUBLISHED_DEFAULT_ADMIN_PASSWORD, row[1]):
+        logger.error("تحذير أمني: مستخدم admin ما زال يستخدم كلمة المرور الافتراضية المنشورة. "
+                     "اضبط ADMIN_INITIAL_PASSWORD أو غيّر كلمة المرور من صفحة الصلاحيات")
 
 
 def init_db():
@@ -738,39 +844,13 @@ def init_db():
                 except Exception:
                     conn.rollback()
 
-                # ===== ضمان وجود مستخدم admin دائماً (خارج الكتلة الشرطية) =====
-                from datetime import datetime as _dt
-                _now = _dt.now().strftime('%Y-%m-%d %H:%M')
+                # ===== ضمان وجود مستخدم admin (دون فرض كلمة مرور ثابتة) =====
                 try:
-                    import bcrypt as _bcrypt
-                    _admin_pass = _bcrypt.hashpw('1993'.encode('utf-8'), _bcrypt.gensalt()).decode('utf-8')
-                except ImportError:
-                    import hashlib as _hashlib
-                    _admin_pass = _hashlib.sha256('1993'.encode()).hexdigest()
-
-                # إنشاء مستخدم admin إذا لم يكن موجوداً
-                try:
-                    cursor.execute('''
-                        INSERT INTO users (username, full_name, password_hash, role_id, is_active, created_at)
-                        SELECT 'admin', 'المدير العام', %s, r.id, 1, %s
-                        FROM roles r WHERE r.name = 'مدير عام'
-                        ON CONFLICT DO NOTHING
-                    ''', (_admin_pass, _now))
+                    _ensure_admin_user(cursor)
                     conn.commit()
-                except Exception:
+                except Exception as admin_error:
                     conn.rollback()
-
-                # تحديث كلمة المرور إجباريًا حتى لو كان المستخدم موجودًا مسبقًا
-                try:
-                    cursor.execute("""
-                        UPDATE users
-                        SET password_hash = %s,
-                            is_active = 1
-                        WHERE username = 'admin'
-                    """, (_admin_pass,))
-                    conn.commit()
-                except Exception:
-                    conn.rollback()
+                    logger.warning(f"تعذر التحقق من مستخدم admin: {admin_error}")
 
                 # ===== منح جميع الصلاحيات للمدير العام (دائماً - ضمان) =====
                 try:

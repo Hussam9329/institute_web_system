@@ -7,11 +7,14 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 import os
 
-from services.pdf_service import pdf_service
+import logging
+
+from services.pdf_service import pdf_service, PdfNotFound
 from auth import check_permission
 from config import get_client_timestamp
 
 router = APIRouter(prefix="/pdf")
+logger = logging.getLogger(__name__)
 
 
 @router.get("/student/{student_id}")
@@ -37,8 +40,11 @@ async def generate_student_pdf(request: Request, student_id: int):
         
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PdfNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        logger.exception("فشل توليد تقرير PDF")
+        raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
 
 
 @router.get("/teacher/{teacher_id}")
@@ -64,8 +70,11 @@ async def generate_teacher_pdf(request: Request, teacher_id: int):
         
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PdfNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        logger.exception("فشل توليد تقرير PDF")
+        raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
 
 
 @router.get("/receipt/{installment_id}")
@@ -91,8 +100,11 @@ async def generate_receipt_pdf(request: Request, installment_id: int):
         
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PdfNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        logger.exception("فشل توليد تقرير PDF")
+        raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
 
 
 @router.get("/subject/{subject_name}")
@@ -108,8 +120,11 @@ async def generate_subject_pdf(request: Request, subject_name: str):
         return FileResponse(path=filepath, filename=filename, media_type='application/pdf')
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PdfNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        logger.exception("فشل توليد تقرير PDF")
+        raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")
 
 @router.get("/subjects/all")
 async def generate_all_subjects_pdf(request: Request):
@@ -124,5 +139,8 @@ async def generate_all_subjects_pdf(request: Request):
         return FileResponse(path=filepath, filename=filename, media_type='application/pdf')
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except PdfNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        logger.exception("فشل توليد تقرير PDF")
+        raise HTTPException(status_code=500, detail="فشل في إنشاء التقرير")

@@ -194,6 +194,20 @@ def get_deduction_for_study_type(teacher: Dict, study_type: str) -> Tuple[str, i
     return ('percentage', 0)
 
 
+def has_configured_institute_deduction(teacher: Dict) -> bool:
+    """
+    هل للمدرس خصم معهد مضبوط (أكبر من صفر) لأي نوع تدريس، أساسي أو مخصص؟
+    نفس القاعدة التي تعرضها قائمة المدرسين: الإعداد العام القديم لا يُستخدم إلا إذا كانت كلها صفراً.
+    """
+    for study_type in get_all_teaching_types(teacher):
+        try:
+            if int(get_deduction_for_study_type(teacher, study_type)[1] or 0) > 0:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
+
+
 def get_all_teaching_types(teacher: Dict) -> list:
     """
     ترجع قائمة بكل أنواع التدريس المتاحة للمدرس (أساسية + مخصصة)

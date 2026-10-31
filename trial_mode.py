@@ -4,9 +4,14 @@
 
 import contextvars
 import hashlib
+import logging
 import re
 from datetime import datetime
 from typing import Any, Optional
+
+from psycopg2 import sql as psycopg_sql
+
+logger = logging.getLogger(__name__)
 
 
 # ===== إعدادات الحسابات التجريبية =====
@@ -205,11 +210,25 @@ def is_trial_username(username: str) -> bool:
     return False
 
 
+_TRIAL_USERNAME_RE = re.compile(r"^[a-zA-Z0-9_]{1,50}$")
+
+
+def _require_safe_trial_username(username: str) -> str:
+    """
+    اسم المستخدم التجريبي يدخل في أسماء الجداول (trial_<username>_...)،
+    لذا يُرفض أي اسم خارج [a-zA-Z0-9_] قبل أن يصل لأي استعلام.
+    """
+    if not isinstance(username, str) or not _TRIAL_USERNAME_RE.match(username):
+        raise ValueError("اسم المستخدم التجريبي غير صالح")
+    return username
+
+
 def get_trial_table_map(username: str) -> dict:
     """ترجع خريطة تحويل الجداول لحساب تجريبي معين."""
     if username == "raihany":
         # توافق مع الجداول الموجودة مسبقاً
         return dict(_RAIHANY_LEGACY_TABLE_MAP)
+    _require_safe_trial_username(username)
     # الحسابات الجديدة تستخدم بادئة اسم المستخدم
     return {table: f"trial_{username}_{table}" for table in BASE_TRIAL_TABLES}
 
@@ -218,6 +237,7 @@ def get_trial_tables_drop_order(username: str) -> list:
     """ترجع قائمة الجداول بترتيب الحذف لحساب تجريبي معين."""
     if username == "raihany":
         return list(_RAIHANY_LEGACY_DROP_ORDER)
+    _require_safe_trial_username(username)
     return [f"trial_{username}_{table}" for table in BASE_DROP_ORDER]
 
 
@@ -529,7 +549,9 @@ def create_trial_tables(cursor, username: str):
 def drop_trial_tables(cursor, username: str):
     """حذف جداول النسخة التجريبية وبياناتها عند انتهاء مدة التجربة."""
     for table_name in get_trial_tables_drop_order(username):
-        cursor.execute(f"DROP TABLE IF EXISTS {table_name} CASCADE")
+        cursor.execute(
+            psycopg_sql.SQL("DROP TABLE IF EXISTS {} CASCADE").format(psycopg_sql.Identifier(table_name))
+        )
 
 
 def ensure_trial_environment(cursor, username: str = None, password: str = None, full_name: str = None, days: int = None):
@@ -596,7 +618,11 @@ def ensure_trial_environment(cursor, username: str = None, password: str = None,
     ''', (username,))
     account = cursor.fetchone()
 
-    cursor.execute("SELECT id, password_hash FROM users WHERE username = %s", (username,))
+    cursor.execute('''
+        SELECT u.id, u.password_hash, r.name AS role_name
+        FROM users u LEFT JOIN roles r ON r.id = u.role_id
+        WHERE u.username = %s
+    ''', (username,))
     existing_user = cursor.fetchone()
 
     def _row_get(row, key, idx=None):
@@ -628,6 +654,9 @@ def ensure_trial_environment(cursor, username: str = None, password: str = None,
 
     # أول تشغيل/أول إنشاء: إنشاء الحساب وبدء عداد الأيام.
     if not account:
+        # لا يُحوَّل مستخدم حقيقي موجود (مثل admin أو موظف) إلى حساب تجريبي أبداً
+        if existing_user and _row_get(existing_user, "role_name", 2) != TRIAL_ROLE_NAME:
+            return {"success": False, "message": "اسم المستخدم مستخدم لحساب حقيقي في النظام - اختر اسماً آخر"}
         _upsert_trial_user(active=1)
         cursor.execute('''
             INSERT INTO trial_accounts (username, started_at, expires_at, is_expired)
@@ -693,8 +722,8 @@ def delete_trial_account(username: str) -> dict:
     username = str(username or "").strip()
     if not username:
         return {"success": False, "message": "اسم المستخدم مطلوب"}
-    if username == "admin":
-        return {"success": False, "message": "لا يمكن حذف المستخدم الافتراضي"}
+    if username != "raihany" and not _TRIAL_USERNAME_RE.match(username):
+        return {"success": False, "message": "اسم المستخدم التجريبي غير صالح"}
 
     db = Database()
     conn = None
@@ -702,16 +731,22 @@ def delete_trial_account(username: str) -> dict:
     try:
         conn = db.get_connection()
         cursor = conn.cursor()
+        # الحذف مسموح للحسابات المسجلة كتجريبية فقط، وليس لأي مستخدم حقيقي
+        cursor.execute("SELECT 1 FROM trial_accounts WHERE username = %s", (username,))
+        if cursor.fetchone() is None:
+            conn.rollback()
+            return {"success": False, "message": "هذا الحساب ليس حساباً تجريبياً"}
         drop_trial_tables(cursor, username)
         cursor.execute("DELETE FROM trial_accounts WHERE username = %s", (username,))
         cursor.execute("DELETE FROM users WHERE username = %s", (username,))
         conn.commit()
         _runtime_trial_usernames.discard(username)
         return {"success": True, "message": "تم حذف الحساب التجريبي وبياناته المعزولة"}
-    except Exception as e:
+    except Exception:
+        logger.exception("تعذر حذف الحساب التجريبي %s", username)
         if conn:
             conn.rollback()
-        return {"success": False, "message": f"تعذر حذف الحساب التجريبي: {str(e)}"}
+        return {"success": False, "message": "تعذر حذف الحساب التجريبي - حاول مرة أخرى"}
     finally:
         try:
             if cursor:

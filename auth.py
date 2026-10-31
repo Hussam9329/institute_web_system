@@ -236,6 +236,23 @@ def user_has_permission(user: dict, permission_code: str) -> bool:
 
 # ===== فحص الصلاحيات =====
 
+SUPERUSER_ROLE_NAME = 'مدير عام'
+
+
+def is_superuser(user: dict | None) -> bool:
+    """المدير العام يملك كل الصلاحيات (والحساب التجريبي لا يكون مديراً عاماً فعلياً)"""
+    return bool(user) and user.get('role_name') == SUPERUSER_ROLE_NAME and not user.get('is_trial')
+
+
+def has_permission(request: Request, permission_code: str) -> bool:
+    """نفس منطق check_permission لكن يُرجع True/False بدل رفع استثناء"""
+    try:
+        check_permission(request, permission_code)
+        return True
+    except HTTPException:
+        return False
+
+
 def check_permission(request: Request, permission_code: str):
     """
     فحص صلاحية المستخدم

@@ -17,11 +17,11 @@ from services.teaching_types import (
     get_all_teaching_types, validate_custom_type_data,
     build_custom_type_settings_from_form
 )
-from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS, get_client_timestamp
+from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS, get_client_timestamp, is_valid_iso_date
 from services.audit_service import log_action
 from urllib.parse import quote
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
-from auth import check_permission
+from auth import check_permission, has_permission
 
 logger = logging.getLogger(__name__)
 
@@ -141,10 +141,30 @@ def validate_discount_inputs(form_data, teacher_ids, teacher_name_map=None, teac
     return True, ""
 
 
+# الصفحات البديلة بالترتيب لمن لا يملك صلاحية لوحة التحكم
+_LANDING_FALLBACKS = [
+    ('view_students_list', '/students'),
+    ('view_payments_list', '/payments'),
+    ('view_teachers_list', '/teachers'),
+    ('view_accounting', '/accounting'),
+    ('view_withdrawals_list', '/withdrawals'),
+    ('view_subjects', '/subjects'),
+    ('view_stats', '/stats'),
+]
+
+
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """الصفحة الرئيسية - Dashboard مع التخزين المؤقت ومعالجة الأخطاء"""
-    
+
+    # لوحة التحكم تعرض مجاميع مالية: لمن يملك صلاحيتها فقط،
+    # والباقي يُحوَّل لأول صفحة مسموحة له بدل خطأ بعد تسجيل الدخول
+    if not has_permission(request, 'view_dashboard'):
+        for permission_code, url in _LANDING_FALLBACKS:
+            if has_permission(request, permission_code):
+                return RedirectResponse(url=url, status_code=303)
+        check_permission(request, 'view_dashboard')
+
     # محاولة الحصول على الإحصائيات من التخزين المؤقت
     stats = cache_service.get('dashboard_stats')
     if stats is None:
@@ -1315,139 +1335,10 @@ async def teachers_list(request: Request, subject: str = "", search: str = ""):
                 for t in teachers:
                     t['schedule_count'] = 0
 
-            # البيانات المالية - استعلامات مجمعة
-            try:
-                # إجمالي المدفوعات لكل مدرس
-                received_map = {}
-                if teacher_ids:
-                    placeholders = ','.join(['%s'] * len(teacher_ids))
-                    recv_results = db.execute_query(
-                        f"SELECT teacher_id, COALESCE(SUM(amount), 0) as total FROM installments WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
-                        tuple(teacher_ids)
-                    )
-                    if recv_results:
-                        received_map = {r['teacher_id']: r['total'] for r in recv_results}
-
-                # إجمالي السحوبات لكل مدرس
-                withdrawn_map = {}
-                if teacher_ids:
-                    placeholders = ','.join(['%s'] * len(teacher_ids))
-                    with_results = db.execute_query(
-                        f"SELECT teacher_id, COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals WHERE teacher_id IN ({placeholders}) GROUP BY teacher_id",
-                        tuple(teacher_ids)
-                    )
-                    if with_results:
-                        withdrawn_map = {r['teacher_id']: r['total'] for r in with_results}
-
-                # عدد الطلاب الدافعين لكل مدرس
-                paying_map = {}
-                if teacher_ids:
-                    placeholders = ','.join(['%s'] * len(teacher_ids))
-                    paying_results = db.execute_query(
-                        f"SELECT teacher_id, COUNT(DISTINCT student_id) as cnt FROM installments WHERE teacher_id IN ({placeholders}) AND amount > 0 GROUP BY teacher_id",
-                        tuple(teacher_ids)
-                    )
-                    if paying_results:
-                        paying_map = {r['teacher_id']: r['cnt'] for r in paying_results}
-
-                # حساب خصم المعهد لكل المدرسين دفعة واحدة
-                deduction_map = finance_service.calculate_institute_deduction_batch(teacher_ids)
-                
-                # حساب المطلوب الكلي لكل المدرسين دفعة واحدة
-                total_fees_map = finance_service.get_teachers_total_fees_batch(teacher_ids)
-                
-                # حساب مستحق المدرس المتوقع دفعة واحدة
-                # المعادلة: (عدد الحضوريين × قسط الحضوري) + (عدد الالكترونيين × قسط الالكتروني) + (عدد المدمجين × قسط المدمج) - خصم المعهد
-                expected_due_map = finance_service.calculate_expected_teacher_due_batch(teacher_ids)
-                
-                for t in teachers:
-                    total_received = received_map.get(t['id'], 0)
-                    withdrawn_total = withdrawn_map.get(t['id'], 0)
-                    institute_deduction = deduction_map.get(t['id'], 0)
-                    
-                    # مستحق المدرس = إجمالي الأقساط المتوقعة - خصم المعهد المتوقع
-                    expected_info = expected_due_map.get(t['id'], {})
-                    teacher_due = expected_info.get('teacher_due', 0)
-                    expected_deduction = expected_info.get('expected_deduction', 0)
-                    total_fees = expected_info.get('total_fees', 0)
-                    
-                    remaining_balance = max(0, teacher_due - withdrawn_total)
-                    
-                    t['total_received'] = total_received
-                    t['institute_deduction'] = institute_deduction
-                    t['expected_deduction'] = expected_deduction
-                    t['teacher_due'] = teacher_due
-                    t['withdrawn_total'] = withdrawn_total
-                    t['remaining_balance'] = remaining_balance
-                    t['total_remaining'] = remaining_balance
-                    t['total_fees'] = total_fees
-                    t['in_person_count'] = expected_info.get('in_person_count', 0)
-                    t['electronic_count'] = expected_info.get('electronic_count', 0)
-                    t['blended_count'] = expected_info.get('blended_count', 0)
-                    
-                    # حساب عرض نسبة المعهد
-                    t['institute_rate_display'] = _build_institute_rate_display(t)
-                    # حساب عرض قسط الأستاذ
-                    t['fee_display'] = _build_teacher_fee_display(t)
-            except Exception as e:
-                import traceback
-                logging.error(f"❌ خطأ في حساب البيانات المالية للمدرسين: {e}")
-                logging.error(traceback.format_exc())
-                # محاولة حساب فردي لكل مدرس باستخدام المعادلة المتوقعة بدلاً من تعيين 0
-                for t in teachers:
-                    try:
-                        tid = t['id']
-                        # استخدام الحساب المتوقع (المعادلة: عدد الطلاب × الأقساط - خصم المعهد)
-                        expected_info = finance_service._calculate_expected_teacher_due_single(tid)
-                        
-                        # إجمالي المدفوعات والسحوبات
-                        recv_result = db.execute_query(
-                            "SELECT COALESCE(SUM(amount), 0) as total FROM installments WHERE teacher_id = %s",
-                            (tid,)
-                        )
-                        total_received = recv_result[0]['total'] if recv_result else 0
-                        
-                        with_result = db.execute_query(
-                            "SELECT COALESCE(SUM(amount), 0) as total FROM teacher_withdrawals WHERE teacher_id = %s",
-                            (tid,)
-                        )
-                        withdrawn_total = with_result[0]['total'] if with_result else 0
-                        
-                        ded_result = db.execute_query(
-                            "SELECT COALESCE(SUM(amount), 0) as total FROM installments i "
-                            "LEFT JOIN student_teacher st ON st.student_id = i.student_id AND st.teacher_id = i.teacher_id "
-                            "WHERE i.teacher_id = %s",
-                            (tid,)
-                        )
-                        
-                        t['total_received'] = total_received or 0
-                        t['teacher_due'] = expected_info.get('teacher_due', 0)
-                        t['total_fees'] = expected_info.get('total_fees', 0)
-                        t['expected_deduction'] = expected_info.get('expected_deduction', 0)
-                        t['institute_deduction'] = expected_info.get('expected_deduction', 0)
-                        t['withdrawn_total'] = withdrawn_total or 0
-                        t['remaining_balance'] = max(0, expected_info.get('teacher_due', 0) - (withdrawn_total or 0))
-                        t['total_remaining'] = t['remaining_balance']
-                        t['in_person_count'] = expected_info.get('in_person_count', 0)
-                        t['electronic_count'] = expected_info.get('electronic_count', 0)
-                        t['blended_count'] = expected_info.get('blended_count', 0)
-                        t['institute_rate_display'] = _build_institute_rate_display(t)
-                        t['fee_display'] = _build_teacher_fee_display(t)
-                    except Exception as inner_e:
-                        logging.error(f"❌ خطأ في حساب المدرس {t.get('id')}: {inner_e}")
-                        t['total_received'] = 0
-                        t['total_remaining'] = 0
-                        t['institute_deduction'] = 0
-                        t['expected_deduction'] = 0
-                        t['teacher_due'] = 0
-                        t['withdrawn_total'] = 0
-                        t['remaining_balance'] = 0
-                        t['total_fees'] = 0
-                        t['in_person_count'] = 0
-                        t['electronic_count'] = 0
-                        t['blended_count'] = 0
-                        t['institute_rate_display'] = ''
-                        t['fee_display'] = ''
+            # القائمة تعرض قسط الأستاذ ونسبة المعهد فقط (الأرقام المالية في صفحة المحاسبة)
+            for t in teachers:
+                t['institute_rate_display'] = _build_institute_rate_display(t)
+                t['fee_display'] = _build_teacher_fee_display(t)
     except Exception as e:
         logging.error(f"خطأ في جلب قائمة المدرسين: {e}")
         teachers = []
@@ -1938,16 +1829,19 @@ async def teacher_detail(request: Request, teacher_id: int):
     # تحليل الأنواع المخصصة
     teacher_custom_type_settings = parse_custom_type_settings(teacher.get('custom_type_settings'))
 
-    counts_query = '''
-        SELECT
-            COUNT(*) as total,
-            SUM(CASE WHEN study_type = 'حضوري' THEN 1 ELSE 0 END) as in_person,
-            SUM(CASE WHEN study_type = 'الكتروني' THEN 1 ELSE 0 END) as electronic,
-            SUM(CASE WHEN study_type = 'مدمج' THEN 1 ELSE 0 END) as blended
-        FROM student_teacher WHERE teacher_id = %s
-    '''
-    counts_result = db.execute_query(counts_query, (teacher_id,))
-    study_counts = dict(counts_result[0]) if counts_result else {'total': 0, 'in_person': 0, 'electronic': 0, 'blended': 0}
+    # عدد الطلاب لكل نوع دراسة، بما فيها الأنواع المخصصة (الدورات الصيفية) - تُقرأ في القالب بالاسم
+    counts_rows = db.execute_query(
+        "SELECT study_type, COUNT(*) AS cnt FROM student_teacher WHERE teacher_id = %s GROUP BY study_type",
+        (teacher_id,)
+    )
+    by_type = {row['study_type']: row['cnt'] for row in counts_rows}
+    study_counts = {
+        **by_type,
+        'total': sum(by_type.values()),
+        'in_person': by_type.get('حضوري', 0),
+        'electronic': by_type.get('الكتروني', 0),
+        'blended': by_type.get('مدمج', 0),
+    }
 
     return templates.TemplateResponse("teachers/detail.html", {
         "request": request,
@@ -2070,20 +1964,13 @@ async def withdrawals_page(request: Request, date_from: str = "", date_to: str =
     check_permission(request, 'view_withdrawals_list')
     db = Database()
 
-    try:
-        all_withdrawals = finance_service.get_all_withdrawals(limit=200)
-        # فلترة بالتاريخ إذا تم تحديده
-        if date_from:
-            all_withdrawals = [w for w in all_withdrawals if w.get('withdrawal_date', '') >= date_from]
-        if date_to:
-            all_withdrawals = [w for w in all_withdrawals if w.get('withdrawal_date', '') <= date_to]
-        teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
-    except Exception as e:
-        all_withdrawals = []
-        teachers = []
-        print(f"Error loading withdrawals page: {e}")
+    # الفلترة داخل الاستعلام (سابقاً: آخر 200 سحب فقط ثم فلترة، فيضيع ما قبلها ويخطأ الإجمالي)
+    all_withdrawals = finance_service.get_all_withdrawals(
+        date_from=date_from if is_valid_iso_date(date_from) else None,
+        date_to=date_to if is_valid_iso_date(date_to) else None,
+    )
+    teachers = db.execute_query("SELECT id, name, subject FROM teachers ORDER BY name")
 
-    # حساب الإجمالي
     total_withdrawn = sum(w.get('amount', 0) for w in all_withdrawals)
 
     return templates.TemplateResponse("withdrawals/index.html", {
@@ -2125,58 +2012,49 @@ async def payments_page(request: Request, search: str = "", date_from: str = "",
     check_permission(request, 'view_payments_list')
     db = Database()
 
-    try:
-        conditions = []
-        params = []
+    conditions = []
+    params = []
 
-        if search:
-            conditions.append("(s.name LIKE %s OR t.name LIKE %s OR t.subject LIKE %s)")
-            params.extend([f'%{search}%', f'%{search}%', f'%{search}%'])
+    if search:
+        conditions.append("(s.name LIKE %s OR t.name LIKE %s OR t.subject LIKE %s)")
+        params.extend([f'%{search}%', f'%{search}%', f'%{search}%'])
 
-        if date_from:
-            conditions.append("i.payment_date >= %s")
-            params.append(date_from)
+    if is_valid_iso_date(date_from):
+        conditions.append("i.payment_date >= %s")
+        params.append(date_from)
 
-        if date_to:
-            conditions.append("i.payment_date <= %s")
-            params.append(date_to)
+    if is_valid_iso_date(date_to):
+        conditions.append("i.payment_date <= %s")
+        params.append(date_to)
 
-        where_clause = ''
-        if conditions:
-            where_clause = 'WHERE ' + ' AND '.join(conditions)
+    where_clause = ''
+    if conditions:
+        where_clause = 'WHERE ' + ' AND '.join(conditions)
 
-        query = f'''
-            SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
-            FROM installments i
-            JOIN students s ON i.student_id = s.id
-            JOIN teachers t ON i.teacher_id = t.id
-            {where_clause}
-            ORDER BY i.id DESC
-        '''
-        installments = db.execute_query(query, tuple(params))
-    except:
-        installments = []
+    installments = db.execute_query(f'''
+        SELECT i.*, s.name as student_name, s.barcode, t.name as teacher_name, t.subject
+        FROM installments i
+        JOIN students s ON i.student_id = s.id
+        JOIN teachers t ON i.teacher_id = t.id
+        {where_clause}
+        ORDER BY i.id DESC
+    ''', tuple(params))
 
-    # حساب المتبقي لكل قسط (المتبقي = قسط المدرس - مجموع المدفوعات)
+    # المتبقي لكل زوج (طالب، مدرس) باستعلام واحد بدل استعلام لكل قسط
+    balances = finance_service.calculate_pair_balances_batch(
+        (inst['student_id'], inst['teacher_id']) for inst in installments
+    )
     for inst in installments:
-        balance = finance_service.calculate_student_teacher_balance(inst['student_id'], inst['teacher_id'])
+        balance = balances[(inst['student_id'], inst['teacher_id'])]
         inst['remaining'] = balance['remaining_balance']
         inst['total_fee'] = balance['total_fee']
 
-    teachers = db.execute_query("SELECT id, name, subject, total_fee FROM teachers ORDER BY name")
-    students = db.execute_query("SELECT id, name, barcode FROM students ORDER BY name")
-
-    try:
-        total_result = db.execute_query("SELECT COALESCE(SUM(amount), 0) as total FROM installments")
-        total_amount = total_result[0]['total'] if total_result else 0
-    except:
-        total_amount = 0
+    # الإجمالي لنفس الأقساط المعروضة (بنفس البحث والتاريخ)
+    total_amount = sum(inst['amount'] for inst in installments)
 
     return templates.TemplateResponse("payments/index.html", {
         "request": request,
         "installments": installments,
-        "teachers": teachers,
-        "students": students,
         "search": search,
         "date_from": date_from,
         "date_to": date_to,

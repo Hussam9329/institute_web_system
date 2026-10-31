@@ -5,17 +5,76 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from database import Database
+from database import Database, transaction
 from models import RoleCreate, RoleUpdate, UserCreate, UserUpdate, RolePermissionsUpdate
 from config import BASE_DIR, format_date, get_client_timestamp, get_current_datetime
-from auth import hash_password, check_permission
+from auth import hash_password, check_permission, is_superuser, SUPERUSER_ROLE_NAME
 from services.audit_service import log_action
 from datetime import datetime as dt
 from pydantic import BaseModel, Field
+import logging
 import os
 
 router = APIRouter(prefix="/permissions")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+logger = logging.getLogger(__name__)
+
+GENERIC_ERROR_MESSAGE = "تعذر تنفيذ العملية - حاول مرة أخرى"
+
+
+def _actor(request: Request) -> dict:
+    return getattr(request.state, 'user', None) or {}
+
+
+def _role_name(db: Database, role_id) -> str | None:
+    if role_id is None:
+        return None
+    row = db.execute_query('SELECT name FROM roles WHERE id = %s', (role_id,))
+    return row[0]['name'] if row else None
+
+
+def _user_management_denial(request: Request, db: Database, target: dict | None, new_role_id=None,
+                            changes_active: bool = False) -> str | None:
+    """
+    قواعد حماية إدارة المستخدمين. ترجع رسالة الرفض أو None إذا كان التعديل مسموحاً.
+    target: صف المستخدم المستهدف (username, role_name) أو None عند الإنشاء.
+    """
+    actor = _actor(request)
+    actor_is_super = is_superuser(actor)
+    new_role_name = _role_name(db, new_role_id)
+
+    if new_role_id is not None and new_role_name is None:
+        return "الدور المحدد غير موجود"
+
+    if new_role_name == SUPERUSER_ROLE_NAME and not actor_is_super:
+        return "منح دور المدير العام مسموح للمدير العام فقط"
+
+    if target:
+        if target.get('role_name') == SUPERUSER_ROLE_NAME and not actor_is_super:
+            return "تعديل حساب مدير عام مسموح للمدير العام فقط"
+        if target.get('username') == 'admin':
+            if new_role_id is not None and new_role_name != SUPERUSER_ROLE_NAME:
+                return "لا يمكن تغيير دور المستخدم الافتراضي (admin)"
+            if changes_active:
+                return "لا يمكن تعطيل المستخدم الافتراضي (admin)"
+        if target.get('id') == actor.get('id'):
+            if new_role_id is not None and new_role_name != target.get('role_name'):
+                return "لا يمكنك تغيير دورك بنفسك"
+            if changes_active:
+                return "لا يمكنك تعطيل حسابك بنفسك"
+    return None
+
+
+def _role_management_denial(request: Request, role_row: dict | None, renaming: bool = False) -> str | None:
+    """دور المدير العام هو أساس الصلاحيات الكاملة: لا يُعاد تسميته، ولا يعدّله إلا المدير العام."""
+    if not role_row:
+        return None
+    if role_row.get('name') == SUPERUSER_ROLE_NAME:
+        if renaming:
+            return "لا يمكن إعادة تسمية دور المدير العام"
+        if not is_superuser(_actor(request)):
+            return "تعديل دور المدير العام مسموح للمدير العام فقط"
+    return None
 
 
 TRIAL_PERMISSIONS_PREVIEW_ITEMS = [
@@ -148,12 +207,14 @@ async def create_role(request: Request, role: RoleCreate):
             RETURNING id, name, description
         ''', (role.name, role.description or '', now))
         if result:
+            log_action(request, "create", "role", result[0]['id'], f"إنشاء دور: {role.name}")
             return {"success": True, "data": dict(result[0]), "message": "تم إنشاء الدور بنجاح"}
         return {"success": False, "message": "فشل إنشاء الدور"}
     except Exception as e:
         if 'unique' in str(e).lower() or 'duplicate' in str(e).lower():
             return {"success": False, "message": "اسم الدور موجود مسبقاً"}
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        logger.exception("فشل إنشاء دور")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/api/roles/{role_id}")
@@ -164,6 +225,14 @@ async def update_role(request: Request, role_id: int, role: RoleUpdate):
     check_permission(request, 'manage_roles')
     db = Database()
     try:
+        existing = db.execute_query('SELECT id, name FROM roles WHERE id = %s', (role_id,))
+        if not existing:
+            return {"success": False, "message": "الدور غير موجود"}
+        denial = _role_management_denial(
+            request, existing[0], renaming=role.name is not None and role.name != existing[0]['name'])
+        if denial:
+            return {"success": False, "message": denial}
+
         updates = []
         params = []
         if role.name is not None:
@@ -180,12 +249,14 @@ async def update_role(request: Request, role_id: int, role: RoleUpdate):
         db.execute_query(f'''
             UPDATE roles SET {', '.join(updates)} WHERE id = %s
         ''', tuple(params))
-        
+        log_action(request, "update", "role", role_id, f"تعديل الدور: {existing[0]['name']}")
+
         return {"success": True, "message": "تم تحديث الدور بنجاح"}
     except Exception as e:
         if 'unique' in str(e).lower() or 'duplicate' in str(e).lower():
             return {"success": False, "message": "اسم الدور موجود مسبقاً"}
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        logger.exception("فشل تحديث دور")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.delete("/api/roles/{role_id}")
@@ -203,13 +274,17 @@ async def delete_role(request: Request, role_id: int):
         
         # التحقق من عدم كونه دوراً افتراضياً
         role = db.execute_query('SELECT is_default, name FROM roles WHERE id = %s', (role_id,))
-        if role and role[0]['is_default'] == 1:
+        if not role:
+            return {"success": False, "message": "الدور غير موجود"}
+        if role[0]['is_default'] == 1 or role[0]['name'] == SUPERUSER_ROLE_NAME:
             return {"success": False, "message": "لا يمكن حذف الأدوار الافتراضية"}
-        
+
         db.execute_query('DELETE FROM roles WHERE id = %s', (role_id,))
+        log_action(request, "delete", "role", role_id, f"حذف الدور: {role[0]['name']}")
         return {"success": True, "message": "تم حذف الدور بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+    except Exception:
+        logger.exception("فشل حذف دور")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/api/roles/{role_id}/permissions")
@@ -219,8 +294,6 @@ async def update_role_permissions(request: Request, role_id: int, data: RolePerm
         return _trial_permissions_api_denied()
     check_permission(request, 'manage_roles')
     db = Database()
-    conn = db.get_connection()
-    cursor = conn.cursor()
 
     try:
         role = db.execute_query(
@@ -233,6 +306,10 @@ async def update_role_permissions(request: Request, role_id: int, data: RolePerm
                 "success": False,
                 "message": "الدور غير موجود"
             }
+
+        denial = _role_management_denial(request, role[0])
+        if denial:
+            return {"success": False, "message": denial}
 
         if role[0]["is_default"] == 1 and len(data.permission_ids) == 0:
             return {
@@ -258,38 +335,35 @@ async def update_role_permissions(request: Request, role_id: int, data: RolePerm
                 "message": "توجد صلاحيات غير صحيحة. يرجى تحديث الصفحة والمحاولة مرة أخرى."
             }
 
-        cursor.execute(
-            'DELETE FROM role_permissions WHERE role_id = %s',
-            (role_id,)
-        )
+        # غير المدير العام لا يمنح صلاحية لا يملكها (يمنع رفع الصلاحيات الذاتي)
+        if not is_superuser(_actor(request)):
+            actor_codes = set(getattr(request.state, 'user_permissions', []) or [])
+            current_ids = {r['permission_id'] for r in db.execute_query(
+                'SELECT permission_id FROM role_permissions WHERE role_id = %s', (role_id,))}
+            added_ids = set(data.permission_ids) - current_ids
+            if added_ids:
+                added = db.execute_query('SELECT code FROM permissions WHERE id = ANY(%s)', (list(added_ids),))
+                if any(p['code'] not in actor_codes for p in added):
+                    return {"success": False, "message": "لا يمكنك منح صلاحيات لا تملكها أنت"}
 
-        for permission_id in data.permission_ids:
-            cursor.execute(
-                'INSERT INTO role_permissions (role_id, permission_id) VALUES (%s, %s)',
-                (role_id, permission_id)
-            )
-
-        conn.commit()
+        with transaction():
+            db.execute_query('DELETE FROM role_permissions WHERE role_id = %s', (role_id,))
+            for permission_id in data.permission_ids:
+                db.execute_query(
+                    'INSERT INTO role_permissions (role_id, permission_id) VALUES (%s, %s)',
+                    (role_id, permission_id)
+                )
+            log_action(request, "update", "role_permissions", role_id,
+                       f"تعديل صلاحيات الدور: {role[0]['name']} ({len(data.permission_ids)} صلاحية)")
 
         return {
             "success": True,
             "message": "تم تحديث صلاحيات الدور بنجاح. تم تطبيق التغييرات على المستخدمين المرتبطين بهذا الدور."
         }
 
-    except Exception as e:
-        conn.rollback()
-        return {
-            "success": False,
-            "message": f"تعذر تحديث الصلاحيات: {str(e)}"
-        }
-
-    finally:
-        try:
-            cursor.close()
-        except Exception:
-            pass
-        if conn:
-            db.return_connection(conn)
+    except Exception:
+        logger.exception("فشل تحديث صلاحيات الدور")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== API المستخدمين =====
@@ -303,6 +377,10 @@ async def create_user(request: Request, user: UserCreate):
     db = Database()
     now = get_current_datetime(get_client_timestamp(request))[:16]  # YYYY-MM-DD HH:MM
     try:
+        denial = _user_management_denial(request, db, None, new_role_id=user.role_id)
+        if denial:
+            return {"success": False, "message": denial}
+
         # إذا اختار المدير دور "نسخة تجريبية" فلا يكفي إنشاء مستخدم عادي؛
         # يجب تسجيله داخل trial_accounts وإنشاء جداوله المعزولة.
         from trial_mode import TRIAL_ROLE_NAME, ensure_trial_environment
@@ -356,12 +434,14 @@ async def create_user(request: Request, user: UserCreate):
             RETURNING id, username, full_name, role_id, is_active, created_at
         ''', (user.username, user.full_name, password_hash, user.role_id, now))
         if result:
+            log_action(request, "create", "user", result[0]['id'], f"إنشاء مستخدم: {user.username}")
             return {"success": True, "data": dict(result[0]), "message": "تم إنشاء المستخدم بنجاح"}
         return {"success": False, "message": "فشل إنشاء المستخدم"}
     except Exception as e:
         if 'unique' in str(e).lower() or 'duplicate' in str(e).lower():
             return {"success": False, "message": "اسم المستخدم موجود مسبقاً"}
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+        logger.exception("فشل إنشاء مستخدم")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/api/users/{user_id}")
@@ -372,9 +452,19 @@ async def update_user(request: Request, user_id: int, user: UserUpdate):
     check_permission(request, 'manage_users')
     db = Database()
     try:
-        current_user = db.execute_query('SELECT username, full_name FROM users WHERE id = %s', (user_id,))
+        current_user = db.execute_query('''
+            SELECT u.id, u.username, u.full_name, u.is_active, r.name AS role_name
+            FROM users u LEFT JOIN roles r ON r.id = u.role_id
+            WHERE u.id = %s
+        ''', (user_id,))
         if not current_user:
             return {"success": False, "message": "المستخدم غير موجود"}
+
+        denial = _user_management_denial(
+            request, db, current_user[0], new_role_id=user.role_id,
+            changes_active=user.is_active is not None and user.is_active != current_user[0]['is_active'])
+        if denial:
+            return {"success": False, "message": denial}
 
         updates = []
         params = []
@@ -432,10 +522,15 @@ async def update_user(request: Request, user_id: int, user: UserUpdate):
                         pass
                     if conn:
                         db.return_connection(conn)
-        
+
+        changed = [label for label, value in (("الاسم", user.full_name), ("كلمة المرور", user.password),
+                                              ("الدور", user.role_id), ("الحالة", user.is_active)) if value is not None]
+        log_action(request, "update", "user", user_id,
+                   f"تعديل المستخدم {current_user[0]['username']}: {'، '.join(changed)}")
         return {"success": True, "message": "تم تحديث المستخدم بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+    except Exception:
+        logger.exception("فشل تحديث مستخدم")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.delete("/api/users/{user_id}")
@@ -448,22 +543,35 @@ async def delete_user(request: Request, user_id: int):
     try:
         # لا يمكن حذف المستخدم الافتراضي (admin)
         user = db.execute_query('''
-            SELECT u.username, (ta.username IS NOT NULL) AS is_trial
+            SELECT u.id, u.username, r.name AS role_name, (ta.username IS NOT NULL) AS is_trial
             FROM users u
+            LEFT JOIN roles r ON r.id = u.role_id
             LEFT JOIN trial_accounts ta ON ta.username = u.username
             WHERE u.id = %s
         ''', (user_id,))
-        if user and user[0]['username'] == 'admin':
+        if not user:
+            return {"success": False, "message": "المستخدم غير موجود"}
+        if user[0]['username'] == 'admin':
             return {"success": False, "message": "لا يمكن حذف المستخدم الافتراضي (admin)"}
+        if user[0]['id'] == _actor(request).get('id'):
+            return {"success": False, "message": "لا يمكنك حذف حسابك بنفسك"}
+        denial = _user_management_denial(request, db, user[0])
+        if denial:
+            return {"success": False, "message": denial}
 
-        if user and user[0].get('is_trial'):
+        if user[0].get('is_trial'):
             from trial_mode import delete_trial_account
-            return delete_trial_account(user[0]['username'])
-        
+            result = delete_trial_account(user[0]['username'])
+            if result.get('success'):
+                log_action(request, "delete", "user", user_id, f"حذف الحساب التجريبي: {user[0]['username']}")
+            return result
+
         db.execute_query('DELETE FROM users WHERE id = %s', (user_id,))
+        log_action(request, "delete", "user", user_id, f"حذف المستخدم: {user[0]['username']}")
         return {"success": True, "message": "تم حذف المستخدم بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+    except Exception:
+        logger.exception("فشل حذف مستخدم")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.post("/api/users/{user_id}/toggle-active")
@@ -474,18 +582,25 @@ async def toggle_user_active(request: Request, user_id: int):
     check_permission(request, 'manage_users')
     db = Database()
     try:
-        user = db.execute_query('SELECT username, is_active FROM users WHERE id = %s', (user_id,))
+        user = db.execute_query('''
+            SELECT u.id, u.username, u.is_active, r.name AS role_name
+            FROM users u LEFT JOIN roles r ON r.id = u.role_id
+            WHERE u.id = %s
+        ''', (user_id,))
         if not user:
             return {"success": False, "message": "المستخدم غير موجود"}
-        if user[0]['username'] == 'admin':
-            return {"success": False, "message": "لا يمكن تعطيل المستخدم الافتراضي"}
-        
+        denial = _user_management_denial(request, db, user[0], changes_active=True)
+        if denial:
+            return {"success": False, "message": denial}
+
         new_status = 0 if user[0]['is_active'] == 1 else 1
         db.execute_query('UPDATE users SET is_active = %s WHERE id = %s', (new_status, user_id))
         status_text = "تفعيل" if new_status == 1 else "تعطيل"
+        log_action(request, "update", "user", user_id, f"{status_text} المستخدم: {user[0]['username']}")
         return {"success": True, "message": f"تم {status_text} المستخدم بنجاح", "data": {"is_active": new_status}}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ: {str(e)}"}
+    except Exception:
+        logger.exception("فشل تغيير حالة مستخدم")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 # ===== API إدارة الحسابات التجريبية من صفحة الصلاحيات =====
 
@@ -539,11 +654,13 @@ async def create_trial_account(request: Request, data: TrialAccountCreate):
         conn.commit()
         if isinstance(result, dict) and not result.get('success', True):
             return result
+        log_action(request, "create", "user", username, f"إنشاء حساب تجريبي: {username} ({data.days} أيام)")
         return {"success": True, "message": f"تم إنشاء الحساب التجريبي المعزول لمدة {data.days} يوم/أيام"}
-    except Exception as e:
+    except Exception:
+        logger.exception("فشل إنشاء حساب تجريبي")
         if conn:
             conn.rollback()
-        return {"success": False, "message": f"تعذر إنشاء الحساب التجريبي: {str(e)}"}
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
     finally:
         try:
             if cursor:
@@ -561,5 +678,8 @@ async def remove_trial_account(request: Request, username: str):
         return _trial_permissions_api_denied()
     check_permission(request, 'manage_users')
     from trial_mode import delete_trial_account
-    return delete_trial_account(username)
+    result = delete_trial_account(username)
+    if result.get('success'):
+        log_action(request, "delete", "user", username, f"حذف الحساب التجريبي: {username}")
+    return result
 

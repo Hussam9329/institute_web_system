@@ -3,19 +3,25 @@
 # نقاط نهاية API للعمليات AJAX
 # ============================================
 
+import logging
 from fastapi import APIRouter, HTTPException, Body, Request
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from database import Database
+from database import (
+    Database, transaction, lock_for_update, LOCK_TEACHER_WITHDRAWALS, LOCK_STUDENT_PAYMENTS,
+)
 from services.finance_service import finance_service, sync_student_status
 from services.cache_service import cache_service
-from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings
-from config import get_current_date, format_currency, get_client_timestamp
-from auth import check_permission
+from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings, get_all_teaching_types
+from config import get_current_date, format_currency, get_client_timestamp, is_valid_iso_date
+from auth import check_permission, has_permission
 from services.audit_service import log_action
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
 
 router = APIRouter(prefix="/api")
+logger = logging.getLogger(__name__)
+
+GENERIC_ERROR_MESSAGE = "تعذر تنفيذ العملية بسبب خطأ في الخادم - حاول مرة أخرى"
 
 
 def time_to_minutes(value: str) -> int:
@@ -26,20 +32,6 @@ def time_to_minutes(value: str) -> int:
 def _invalidate_dashboard_cache():
     """إلغاء التخزين المؤقت للوحة التحكم عند تغيير البيانات"""
     cache_service.invalidate_pattern('dashboard_')
-
-
-def _is_trial_api_user(request: Request) -> bool:
-    """يرجع True إذا كان الطلب من حساب تجريبي."""
-    user = getattr(request.state, 'user', None) or {}
-    return bool(user.get('is_trial') or getattr(request.state, 'trial_account', None))
-
-
-def _trial_admin_api_denied() -> dict:
-    """منع الحساب التجريبي من إدارة حسابات أو صلاحيات فعلية عبر API العام."""
-    return {
-        "success": False,
-        "message": "الحساب التجريبي لا يسمح له بتنفيذ عمليات إدارة فعلية للحسابات أو الصلاحيات."
-    }
 
 
 # ===== نماذج API =====
@@ -80,8 +72,9 @@ class SubjectUpdate(BaseModel):
 # ===== عمليات المواد الدراسية =====
 
 @router.get("/subjects")
-async def api_get_subjects():
+async def api_get_subjects(request: Request):
     """الحصول على قائمة جميع المواد الدراسية"""
+    check_permission(request, 'view_subjects')
     db = Database()
     query = "SELECT * FROM subjects ORDER BY name"
     results = db.execute_query(query)
@@ -113,8 +106,9 @@ async def api_add_subject(request: Request, subject: SubjectCreate):
         )
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم إضافة المادة بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/subjects/{subject_id}")
@@ -123,19 +117,27 @@ async def api_update_subject(request: Request, subject_id: int, subject: Subject
     check_permission(request, 'edit_subjects')
     db = Database()
     try:
-        existing = db.execute_query("SELECT id FROM subjects WHERE id = %s", (subject_id,))
+        existing = db.execute_query("SELECT id, name FROM subjects WHERE id = %s", (subject_id,))
         if not existing:
             return {"success": False, "message": "المادة غير موجودة"}
-        
-        dup = db.execute_query("SELECT id FROM subjects WHERE name = %s AND id != %s", (subject.name, subject_id))
+        old_name = existing[0]['name']
+        new_name = subject.name.strip()
+
+        dup = db.execute_query("SELECT id FROM subjects WHERE name = %s AND id != %s", (new_name, subject_id))
         if dup:
             return {"success": False, "message": "اسم المادة موجود مسبقاً"}
-        
-        db.execute_query("UPDATE subjects SET name = %s WHERE id = %s", (subject.name, subject_id))
+
+        # المدرسون والجدول الأسبوعي يرتبطون بالمادة عن طريق اسمها، فيُحدَّث الاسم في كل مكان معاً
+        with transaction():
+            db.execute_query("UPDATE subjects SET name = %s WHERE id = %s", (new_name, subject_id))
+            db.execute_query("UPDATE teachers SET subject = %s WHERE subject = %s", (new_name, old_name))
+            db.execute_query("UPDATE weekly_schedule SET subject = %s WHERE subject = %s", (new_name, old_name))
+            log_action(request, "update", "subject", subject_id, f"تعديل اسم المادة: {old_name} ← {new_name}")
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم تحديث المادة بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("فشل تعديل مادة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.delete("/subjects/{subject_id}")
@@ -160,8 +162,9 @@ async def api_delete_subject(request: Request, subject_id: int):
         )
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف المادة"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== عمليات الطلاب =====
@@ -315,8 +318,9 @@ async def api_link_student_teacher(request: Request, link: LinkStudentTeacher):
         
     except HTTPException:
         raise
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.post("/link-student-teachers")
@@ -329,49 +333,69 @@ async def api_link_student_teachers(request: Request, data: dict):
     
     if not student_id or not teacher_ids:
         return {"success": False, "message": "بيانات ناقصة"}
-    
     try:
-        linked = 0
-        for teacher_id in teacher_ids:
-            tid = int(teacher_id)
-            existing = db.execute_query(
-                "SELECT * FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-                (student_id, tid)
-            )
-            if existing:
-                continue
-            
-            # Check if student is already linked to another teacher with the same subject
-            teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (tid,))
-            if teacher_check:
-                teacher_subject = teacher_check[0]['subject']
-                same_subject_links = db.execute_query('''
-                    SELECT st.teacher_id, st.status, t.name as teacher_name
-                    FROM student_teacher st
-                    JOIN teachers t ON st.teacher_id = t.id
-                    WHERE st.student_id = %s AND t.subject = %s
-                ''', (student_id, teacher_subject))
-                
-                if same_subject_links:
-                    for link_row in same_subject_links:
-                        if link_row['teacher_id'] != tid:
-                            link_status = link_row.get('status', 'مستمر')
-                            if link_status != 'منسحب':
-                                return {"success": False, "message": f"الطالب مسجل بالمادة ({teacher_subject}) عند المدرس ({link_row['teacher_name']}) ولا يمكن ربطه بأكثر من مدرس لنفس المادة"}
-            
-            st_study_type = data.get("study_type", "حضوري")
-            st_status = data.get("status", "مستمر")
-            db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
-                (student_id, tid, st_study_type, st_status)
-            )
-            linked += 1
-        
-        sync_student_status(int(student_id))
-        _invalidate_dashboard_cache()
-        return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+        student_id = int(student_id)
+        teacher_ids = [int(t) for t in teacher_ids]
+    except (TypeError, ValueError):
+        return {"success": False, "message": "بيانات غير صالحة"}
+    if not db.execute_query("SELECT 1 FROM students WHERE id = %s", (student_id,)):
+        return {"success": False, "message": "الطالب غير موجود"}
+    st_status = data.get("status", "مستمر")
+    if st_status not in ('مستمر', 'منسحب'):
+        return {"success": False, "message": "حالة الربط غير صالحة"}
+
+    try:
+        # كل الروابط أو لا شيء: رفض مدرس واحد لا يترك روابط جزئية
+        with transaction():
+            linked = _link_teachers_in_transaction(db, student_id, teacher_ids, data.get("study_type", "حضوري"), st_status)
+            if isinstance(linked, dict):
+                raise _RollbackWith(linked)
+    except _RollbackWith as rejected:
+        return rejected.response
+    except Exception:
+        logger.exception("فشل ربط طالب بعدة مدرسين")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
+
+    sync_student_status(student_id)
+    _invalidate_dashboard_cache()
+    return {"success": True, "message": f"تم ربط الطالب بـ {linked} مدرس"}
+
+
+def _link_teachers_in_transaction(db: Database, student_id: int, teacher_ids: list, st_study_type: str, st_status: str):
+    """ينشئ الروابط داخل transaction() - يرجع عدد الروابط الجديدة، أو dict رفض"""
+    linked = 0
+    for tid in teacher_ids:
+        if db.execute_query(
+            "SELECT 1 FROM student_teacher WHERE student_id = %s AND teacher_id = %s", (student_id, tid)
+        ):
+            continue
+
+        teacher_check = db.execute_query(
+            "SELECT name, subject, teaching_types, custom_type_settings FROM teachers WHERE id = %s", (tid,))
+        if not teacher_check:
+            return {"success": False, "message": f"المدرس رقم {tid} غير موجود"}
+        teacher_row = dict(teacher_check[0])
+        if st_study_type not in get_all_teaching_types(teacher_row):
+            return {"success": False, "message": f"نوع الدراسة ({st_study_type}) غير متاح عند المدرس ({teacher_row['name']})"}
+
+        # الطالب لا يُربط بمدرسين اثنين لنفس المادة
+        teacher_subject = teacher_row['subject']
+        same_subject_links = db.execute_query('''
+            SELECT st.teacher_id, st.status, t.name as teacher_name
+            FROM student_teacher st
+            JOIN teachers t ON st.teacher_id = t.id
+            WHERE st.student_id = %s AND t.subject = %s
+        ''', (student_id, teacher_subject))
+        for link_row in same_subject_links:
+            if link_row['teacher_id'] != tid and link_row.get('status', 'مستمر') != 'منسحب':
+                return {"success": False, "message": f"الطالب مسجل بالمادة ({teacher_subject}) عند المدرس ({link_row['teacher_name']}) ولا يمكن ربطه بأكثر من مدرس لنفس المادة"}
+
+        db.execute_query(
+            "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, %s)",
+            (student_id, tid, st_study_type, st_status)
+        )
+        linked += 1
+    return linked
 
 
 @router.put("/update-student-discount/{student_id}/{teacher_id}")
@@ -382,9 +406,12 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
     
     try:
         discount_type = data.get('discount_type', 'none')
-        discount_value = int(data.get('discount_value', 0))
-        institute_waiver = int(data.get('institute_waiver', 0))
-        
+        try:
+            discount_value = int(data.get('discount_value', 0) or 0)
+            institute_waiver = int(data.get('institute_waiver', 0) or 0)
+        except (TypeError, ValueError):
+            return {"success": False, "message": "قيمة الخصم غير صالحة"}
+
         # التحقق من صحة القيم
         if discount_type not in ('none', 'percentage', 'fixed', 'custom', 'free'):
             return {"success": False, "message": "نوع الخصم غير صالح"}
@@ -402,13 +429,12 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
                 (teacher_id,)
             )
             if teacher_row:
-                from services.teaching_types import get_fee_for_study_type
                 link_row = db.execute_query(
                     "SELECT study_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
                     (student_id, teacher_id)
                 )
-                study_type = link_row[0]['study_type'] if link_row else 'حضوري'
-                teacher_fee = get_fee_for_study_type(dict(teacher_row[0]), study_type)
+                study_type = (link_row[0]['study_type'] if link_row else None) or 'حضوري'
+                teacher_fee = finance_service._get_fee_for_study_type(dict(teacher_row[0]), study_type)
                 if teacher_fee > 0 and discount_value > teacher_fee:
                     return {"success": False, "message": f"مبلغ الخصم الثابت ({format_currency(discount_value)}) يتجاوز القسط الكلي ({format_currency(teacher_fee)}). الحد الأقصى المسموح: {format_currency(teacher_fee)}."}
         
@@ -417,7 +443,7 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         
         # التحقق من وجود الربط
         link = db.execute_query(
-            "SELECT status, discount_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+            "SELECT status, discount_type, discount_value, institute_waiver FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
             (student_id, teacher_id)
         )
         
@@ -435,13 +461,11 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
             if discount_type != current_discount_type:
                 value_changed = True
             else:
-                new_discount_value = int(data.get('discount_value', 0))
                 old_discount_value = link[0].get('discount_value', 0) or 0
-                if new_discount_value != old_discount_value:
+                if discount_value != old_discount_value:
                     value_changed = True
-                new_waiver = int(data.get('institute_waiver', 0))
                 old_waiver = link[0].get('institute_waiver', 0) or 0
-                if new_waiver != old_waiver:
+                if institute_waiver != old_waiver:
                     value_changed = True
 
             if value_changed:
@@ -478,30 +502,50 @@ async def api_update_student_discount(request: Request, student_id: int, teacher
         
         # إذا كان الطالب "مجاني" - لا يمكن تسجيل أقساط مستقبلاً
         # لكن الأقساط السابقة تبقى محفوظة
-        
-        db.execute_query(
-            """UPDATE student_teacher 
-               SET discount_type = %s, discount_value = %s, institute_waiver = %s 
-               WHERE student_id = %s AND teacher_id = %s""",
-            (discount_type, discount_value, institute_waiver, student_id, teacher_id)
-        )
-        
+
+        # تغيير الخصم يعيد حساب حصة المعهد من دفعات سابقة، فقد يجعل سحوبات المدرس
+        # أكبر من مستحقه. يُطبَّق التغيير ويُفحص داخل معاملة ويُلغى إن زاد التجاوز.
+        with transaction():
+            lock_for_update(LOCK_TEACHER_WITHDRAWALS, teacher_id)
+            over_before = finance_service.get_teacher_over_withdrawal(teacher_id)
+            db.execute_query(
+                """UPDATE student_teacher
+                   SET discount_type = %s, discount_value = %s, institute_waiver = %s
+                   WHERE student_id = %s AND teacher_id = %s""",
+                (discount_type, discount_value, institute_waiver, student_id, teacher_id)
+            )
+            over_after = finance_service.get_teacher_over_withdrawal(teacher_id)
+            if over_after > over_before:
+                raise _RollbackWith({
+                    "success": False,
+                    "message": (f"لا يمكن تطبيق هذا الخصم: سيزيد حصة المعهد من دفعات سابقة فتصبح سحوبات المدرس "
+                                f"أكبر من مستحقه بمبلغ {format_currency(over_after - over_before)}.")
+                })
+            log_action(request, "update", "student_discount", f"{student_id}-{teacher_id}",
+                       f"تعديل خصم الطالب {student_id} عند المدرس {teacher_id}: "
+                       f"{link[0].get('discount_type') or 'none'} ← {discount_type} ({discount_value})")
+
         # حساب الرصيد الجديد
         new_balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
         _invalidate_dashboard_cache()
         return {
-            "success": True, 
+            "success": True,
             "message": "تم تحديث الخصم بنجاح",
             "new_balance": new_balance
         }
-        
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+
+    except _RollbackWith as rejected:
+        return rejected.response
+    except Exception:
+        logger.exception("فشل تعديل خصم طالب")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.get("/student-discount/{student_id}/{teacher_id}")
-async def api_get_student_discount(student_id: int, teacher_id: int):
-    """الحصول على معلومات خصم الطالب عند مدرس"""
+async def api_get_student_discount(request: Request, student_id: int, teacher_id: int):
+    """الحصول على معلومات خصم الطالب عند مدرس (يستخدمها نموذج تسجيل القسط)"""
+    if not (has_permission(request, 'add_payments') or has_permission(request, 'preview_students')):
+        raise HTTPException(status_code=403, detail="ليس لديك صلاحية")
     discount_info = finance_service._get_discount_info(student_id, teacher_id)
     # إضافة معلومات الرصيد لفحص اكتمال الأقساط
     balance = finance_service.calculate_student_teacher_balance(student_id, teacher_id)
@@ -520,7 +564,17 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
     try:
         new_study_type = data.get("study_type", "حضوري")
         status = data.get("status", "مستمر")
-        
+
+        if status not in ('مستمر', 'منسحب'):
+            return {"success": False, "message": "حالة الربط غير صالحة"}
+        link_row = db.execute_query(
+            "SELECT 1 FROM student_teacher WHERE student_id = %s AND teacher_id = %s", (student_id, teacher_id))
+        if not link_row:
+            return {"success": False, "message": "الربط غير موجود"}
+        teacher_row = db.execute_query("SELECT teaching_types, custom_type_settings FROM teachers WHERE id = %s", (teacher_id,))
+        if not teacher_row or new_study_type not in get_all_teaching_types(dict(teacher_row[0])):
+            return {"success": False, "message": "نوع الدراسة غير متاح لهذا المدرس"}
+
         # فحص وجود أقساط مدفوعة - يُمنع تغيير نوع الدراسة أو التحويل لمنسحب نهائياً
         payment_check = db.execute_query(
             "SELECT COUNT(*) as cnt FROM installments WHERE student_id = %s AND teacher_id = %s",
@@ -533,17 +587,13 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
             if status == 'منسحب':
                 return {"success": False, "message": f"لا يمكن تغيير الحالة إلى منسحب! يوجد {payment_check[0]['cnt']} قسط مسجل بين الطالب وهذا المدرس. يجب حذف جميع الأقساط أولاً."}
             
-            # جلب نوع الدراسة الحالي والحفاظ عليه
-            current_link = db.execute_query(
-                "SELECT study_type FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-                (student_id, teacher_id)
-            )
-            current_study_type = current_link[0]['study_type'] if current_link else 'حضوري'
             # تحديث الحالة فقط مع الحفاظ على نوع الدراسة
             db.execute_query(
                 "UPDATE student_teacher SET status = %s WHERE student_id = %s AND teacher_id = %s",
                 (status, student_id, teacher_id)
             )
+            sync_student_status(student_id)
+            _invalidate_dashboard_cache()
             return {"success": True, "message": "تم تحديث الحالة فقط. لا يمكن تغيير نوع الدراسة لوجود أقساط مسجلة."}
         else:
             # لا يمكن التحويل إلى منسحب عبر هذه الواجهة - يجب استخدام إلغاء الربط
@@ -559,8 +609,9 @@ async def api_update_student_teacher_link(request: Request, student_id: int, tea
         sync_student_status(student_id)
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم التحديث بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("فشل تحديث ربط طالب")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.delete("/unlink-student-teacher/{student_id}/{teacher_id}")
@@ -616,253 +667,286 @@ async def api_unlink_student_teacher(request: Request, student_id: int, teacher_
         )
 
         return {"success": True, "message": "تم إلغاء الربط بنجاح", "preserved_installments": 0}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== عمليات الأقساط =====
+
+VALID_INSTALLMENT_TYPES = ('القسط الأول', 'القسط الثاني', 'دفع كامل', 'دفعات')
+VALID_FOR_INSTALLMENT = ('', 'القسط الأول', 'القسط الثاني')
+
+
+class _RollbackWith(Exception):
+    """يلغي المعاملة الحالية ويُرجع رد الرفض للمستخدم كما هو"""
+    def __init__(self, response: dict):
+        super().__init__(response.get("message", ""))
+        self.response = response
+
 
 @router.post("/installments")
 async def api_add_installment(request: Request, installment: AddInstallment):
     """إضافة قسط جديد"""
     check_permission(request, 'add_payments')
     db = Database()
-    
-    try:
-        link_check = db.execute_query(
-            "SELECT * FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-            (installment.student_id, installment.teacher_id)
-        )
-        
-        if link_check:
-            # لا نسمح بتغيير نوع الدراسة عند وجود ربط - نحافظ على النوع المحدد مسبقاً
-            # نوع الدراسة يُحدد عند الربط فقط ولا يمكن تغييره بعد ذلك
-            pass
-        else:
-            # التحقق من أن الطالب ليس مربوطاً بمدرس آخر لنفس المادة
-            teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (installment.teacher_id,))
-            if teacher_check:
-                teacher_subject = teacher_check[0]['subject']
-                same_subject_links = db.execute_query('''
-                    SELECT st.teacher_id, st.status, t.name as teacher_name
-                    FROM student_teacher st
-                    JOIN teachers t ON st.teacher_id = t.id
-                    WHERE st.student_id = %s AND t.subject = %s
-                ''', (installment.student_id, teacher_subject))
-                
-                if same_subject_links:
-                    for link_row in same_subject_links:
-                        if link_row['teacher_id'] != installment.teacher_id:
-                            link_status = link_row.get('status', 'مستمر')
-                            if link_status != 'منسحب':
-                                return {
-                                    "success": False,
-                                    "message": f"لا يمكن تسجيل قسط لهذا المدرس! الطالب مسجل بالمادة ({teacher_subject}) عند المدرس ({link_row['teacher_name']})"
-                                }
-            
-            # تحديد نوع الدراسة: من الطلب أو النوع الأول المتاح للمدرس
-            auto_study_type = installment.study_type or 'حضوري'
-            teacher_info = db.execute_query("SELECT teaching_types FROM teachers WHERE id = %s", (installment.teacher_id,))
-            if teacher_info:
-                tt_list = [t.strip() for t in (teacher_info[0].get('teaching_types') or 'حضوري').split(',') if t.strip()]
-                if auto_study_type not in tt_list:
-                    auto_study_type = tt_list[0] if tt_list else 'حضوري'
-            
-            db.execute_query(
-                "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, 'مستمر')",
-                (installment.student_id, installment.teacher_id, auto_study_type)
-            )
-        
-        # التحقق: هل الطالب مجاني؟
-        discount_info = finance_service._get_discount_info(installment.student_id, installment.teacher_id)
-        if discount_info.get('discount_type') == 'free':
-            return {
-                "success": False,
-                "message": "الطالب مجاني - لا يمكن تسجيل أقساط له"
-            }
 
-        # ===== التحقق من نوع القسط والتعارض مع الأقساط الموجودة =====
-        existing_types_query = db.execute_query(
-            "SELECT DISTINCT installment_type FROM installments WHERE student_id = %s AND teacher_id = %s",
-            (installment.student_id, installment.teacher_id)
+    if installment.installment_type not in VALID_INSTALLMENT_TYPES:
+        return {"success": False, "message": "نوع القسط غير صالح"}
+    if (installment.for_installment or '') not in VALID_FOR_INSTALLMENT:
+        return {"success": False, "message": "قيمة 'للقسط' غير صالحة. يجب أن تكون 'القسط الأول' أو 'القسط الثاني'"}
+    if not is_valid_iso_date(installment.payment_date):
+        return {"success": False, "message": "تاريخ الدفع غير صالح - الصيغة المطلوبة YYYY-MM-DD"}
+    if not db.execute_query("SELECT 1 FROM students WHERE id = %s", (installment.student_id,)):
+        return {"success": False, "message": "الطالب غير موجود"}
+    if not db.execute_query("SELECT 1 FROM teachers WHERE id = %s", (installment.teacher_id,)):
+        return {"success": False, "message": "المدرس غير موجود"}
+
+    try:
+        # كل الفحوصات وإنشاء الربط والإدراج في معاملة واحدة مع قفل على الطالب:
+        # الدفعة المرفوضة لا تترك ربطاً جديداً، ودفعتان متزامنتان لا تتجاوزان المتبقي.
+        with transaction():
+            lock_for_update(LOCK_STUDENT_PAYMENTS, installment.student_id)
+            result = _add_installment_in_transaction(request, db, installment)
+            if not result.get("success"):
+                raise _RollbackWith(result)
+    except _RollbackWith as rejected:
+        return rejected.response
+    except Exception:
+        logger.exception("فشل تسجيل قسط")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
+
+    sync_student_status(installment.student_id)
+    _invalidate_dashboard_cache()
+    return result
+
+
+def _add_installment_in_transaction(request: Request, db: Database, installment: AddInstallment) -> dict:
+    """منطق تسجيل القسط - يُستدعى داخل transaction() فقط"""
+    link_check = db.execute_query(
+        "SELECT * FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
+        (installment.student_id, installment.teacher_id)
+    )
+
+    if link_check:
+        # لا نسمح بتغيير نوع الدراسة عند وجود ربط - نحافظ على النوع المحدد مسبقاً
+        # نوع الدراسة يُحدد عند الربط فقط ولا يمكن تغييره بعد ذلك
+        pass
+    else:
+        # التحقق من أن الطالب ليس مربوطاً بمدرس آخر لنفس المادة
+        teacher_check = db.execute_query("SELECT subject FROM teachers WHERE id = %s", (installment.teacher_id,))
+        if teacher_check:
+            teacher_subject = teacher_check[0]['subject']
+            same_subject_links = db.execute_query('''
+                SELECT st.teacher_id, st.status, t.name as teacher_name
+                FROM student_teacher st
+                JOIN teachers t ON st.teacher_id = t.id
+                WHERE st.student_id = %s AND t.subject = %s
+            ''', (installment.student_id, teacher_subject))
+
+            if same_subject_links:
+                for link_row in same_subject_links:
+                    if link_row['teacher_id'] != installment.teacher_id:
+                        link_status = link_row.get('status', 'مستمر')
+                        if link_status != 'منسحب':
+                            return {
+                                "success": False,
+                                "message": f"لا يمكن تسجيل قسط لهذا المدرس! الطالب مسجل بالمادة ({teacher_subject}) عند المدرس ({link_row['teacher_name']})"
+                            }
+
+        # تحديد نوع الدراسة: من الطلب أو النوع الأول المتاح للمدرس
+        auto_study_type = installment.study_type or 'حضوري'
+        teacher_info = db.execute_query("SELECT teaching_types FROM teachers WHERE id = %s", (installment.teacher_id,))
+        if teacher_info:
+            tt_list = [t.strip() for t in (teacher_info[0].get('teaching_types') or 'حضوري').split(',') if t.strip()]
+            if auto_study_type not in tt_list:
+                auto_study_type = tt_list[0] if tt_list else 'حضوري'
+
+        db.execute_query(
+            "INSERT INTO student_teacher (student_id, teacher_id, study_type, status) VALUES (%s, %s, %s, 'مستمر')",
+            (installment.student_id, installment.teacher_id, auto_study_type)
         )
-        existing_types = set()
-        if existing_types_query:
-            for row in existing_types_query:
-                itype = row.get('installment_type', '')
-                if itype:
-                    existing_types.add(itype)
-        
-        has_existing_first = 'القسط الأول' in existing_types
-        has_existing_second = 'القسط الثاني' in existing_types
-        has_existing_full = 'دفع كامل' in existing_types
-        has_existing_splits = 'دفعات' in existing_types
-        has_any_existing = len(existing_types - {'دفعات'}) > 0  # الدفعات لا تمنع إضافة أقساط جديدة
-        
-        new_type = installment.installment_type
-        
-        # القواعد:
-        # 1. "دفع كامل" → مسموح إذا لم توجد أي أقساط سابقة، أو إذا وُجد القسط الأول فقط، أو إذا كان المبلغ يغطي كامل المتبقي
+
+    # التحقق: هل الطالب مجاني؟
+    discount_info = finance_service._get_discount_info(installment.student_id, installment.teacher_id)
+    if discount_info.get('discount_type') == 'free':
+        return {
+            "success": False,
+            "message": "الطالب مجاني - لا يمكن تسجيل أقساط له"
+        }
+
+    # ===== التحقق من نوع القسط والتعارض مع الأقساط الموجودة =====
+    existing_types_query = db.execute_query(
+        "SELECT DISTINCT installment_type FROM installments WHERE student_id = %s AND teacher_id = %s",
+        (installment.student_id, installment.teacher_id)
+    )
+    existing_types = set()
+    if existing_types_query:
+        for row in existing_types_query:
+            itype = row.get('installment_type', '')
+            if itype:
+                existing_types.add(itype)
+
+    has_existing_first = 'القسط الأول' in existing_types
+    has_existing_second = 'القسط الثاني' in existing_types
+    has_existing_full = 'دفع كامل' in existing_types
+    has_existing_splits = 'دفعات' in existing_types
+
+    new_type = installment.installment_type
+
+    # القواعد:
+    # 1. "دفع كامل" → المبلغ يجب أن يساوي كامل المتبقي تماماً.
+    #    (دفع كامل بمبلغ ناقص كان يحتسب حصة المعهد كاملة ويمنع تسجيل باقي المبلغ)
+    if new_type == 'دفع كامل':
         current_balance_preview = finance_service.calculate_student_teacher_balance(
             installment.student_id, installment.teacher_id
         )
         remaining_preview = current_balance_preview['total_fee'] - current_balance_preview['paid_total']
-        will_close_balance = remaining_preview > 0 and installment.amount >= remaining_preview
+        if remaining_preview > 0 and installment.amount != remaining_preview:
+            return {
+                "success": False,
+                "message": (f"مبلغ الدفع الكامل يجب أن يساوي المتبقي بالضبط ({format_currency(remaining_preview)}). "
+                            f"لتسجيل جزء من المبلغ استخدم 'القسط الأول' أو 'دفعات'.")
+            }
 
-        if new_type == 'دفع كامل' and has_any_existing and not will_close_balance:
-            # السماح بتحويل القسط الأول إلى دفع كامل (الطالب دفع القسط الأول ويريد تحويله لدفع كامل)
-            if has_existing_first and not has_existing_second and not has_existing_full:
-                pass  # مسموح - تحويل من دفعات إلى دفع كامل
+    # 2. "القسط الثاني" → مسموح فقط إذا وُجد "القسط الأول" أو دفعات للقسط الأول ولم يُسجل "القسط الثاني" سابقاً
+    if new_type == 'القسط الثاني':
+        if not has_existing_first and not has_existing_splits:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل القسط الثاني! يجب تسجيل القسط الأول أولاً"
+            }
+        if has_existing_second:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل القسط الثاني مرتين! القسط الثاني مسجل مسبقاً"
+            }
+        if has_existing_full:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل القسط الثاني! يوجد دفع كامل مسجل مسبقاً"
+            }
+
+    # 3. "القسط الأول" → مسموح فقط إذا لم يُسجل مسبقاً ولم يُسجل "دفع كامل" أو "القسط الثاني"
+    if new_type == 'القسط الأول':
+        if has_existing_first:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل القسط الأول مرتين! القسط الأول مسجل مسبقاً. يمكنك استخدام 'دفعات' لتسجيل دفعات إضافية للقسط الأول"
+            }
+        if has_existing_full:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل القسط الأول! يوجد دفع كامل مسجل مسبقاً"
+            }
+        if has_existing_second:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل القسط الأول! يوجد قسط ثاني مسجل مسبقاً"
+            }
+
+    # 4. "دفعات" → مسموح دائماً إذا لم يُسجل "دفع كامل"
+    if new_type == 'دفعات':
+        if has_existing_full:
+            return {
+                "success": False,
+                "message": "لا يمكن تسجيل دفعات! يوجد دفع كامل مسجل مسبقاً"
+            }
+        # التحقق من أن for_installment محدد وقيمته صحيحة
+        for_inst = installment.for_installment or ''
+        if for_inst and for_inst not in ('القسط الأول', 'القسط الثاني'):
+            return {
+                "success": False,
+                "message": "قيمة for_installment غير صحيحة. يجب أن تكون 'القسط الأول' أو 'القسط الثاني'"
+            }
+        # إذا لم يتم تحديد for_installment، حدده تلقائياً
+        if not for_inst:
+            if has_existing_second:
+                # إذا وُجد القسط الثاني، الدفعات تنتمي له
+                installment.for_installment = 'القسط الثاني'
             else:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل دفع كامل! يوجد أقساط مسجلة مسبقاً لهذا الطالب عند هذا المدرس"
-                }
-        
-        # 2. "القسط الثاني" → مسموح فقط إذا وُجد "القسط الأول" أو دفعات للقسط الأول ولم يُسجل "القسط الثاني" سابقاً
-        if new_type == 'القسط الثاني':
-            if not has_existing_first and not has_existing_splits:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل القسط الثاني! يجب تسجيل القسط الأول أولاً"
-                }
-            if has_existing_second:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل القسط الثاني مرتين! القسط الثاني مسجل مسبقاً"
-                }
-            if has_existing_full:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل القسط الثاني! يوجد دفع كامل مسجل مسبقاً"
-                }
-        
-        # 3. "القسط الأول" → مسموح فقط إذا لم يُسجل مسبقاً ولم يُسجل "دفع كامل" أو "القسط الثاني"
-        if new_type == 'القسط الأول':
-            if has_existing_first:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل القسط الأول مرتين! القسط الأول مسجل مسبقاً. يمكنك استخدام 'دفعات' لتسجيل دفعات إضافية للقسط الأول"
-                }
-            if has_existing_full:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل القسط الأول! يوجد دفع كامل مسجل مسبقاً"
-                }
-            if has_existing_second:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل القسط الأول! يوجد قسط ثاني مسجل مسبقاً"
-                }
-        
-        # 4. "دفعات" → مسموح دائماً إذا لم يُسجل "دفع كامل"
-        if new_type == 'دفعات':
-            if has_existing_full:
-                return {
-                    "success": False,
-                    "message": "لا يمكن تسجيل دفعات! يوجد دفع كامل مسجل مسبقاً"
-                }
-            # التحقق من أن for_installment محدد وقيمته صحيحة
-            for_inst = installment.for_installment or ''
-            if for_inst and for_inst not in ('القسط الأول', 'القسط الثاني'):
-                return {
-                    "success": False,
-                    "message": "قيمة for_installment غير صحيحة. يجب أن تكون 'القسط الأول' أو 'القسط الثاني'"
-                }
-            # إذا لم يتم تحديد for_installment، حدده تلقائياً
-            if not for_inst:
-                if has_existing_second:
-                    # إذا وُجد القسط الثاني، الدفعات تنتمي له
-                    installment.for_installment = 'القسط الثاني'
-                else:
-                    # افتراضي: الدفعات تنتمي للقسط الأول
-                    installment.for_installment = 'القسط الأول'
+                # افتراضي: الدفعات تنتمي للقسط الأول
+                installment.for_installment = 'القسط الأول'
 
-        # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
-        current_balance = finance_service.calculate_student_teacher_balance(
-            installment.student_id, installment.teacher_id
-        )
-        total_fee = current_balance['total_fee']
-        already_paid = current_balance['paid_total']
-        new_total = already_paid + installment.amount
-        
-        if total_fee <= 0:
-            return {
-                "success": False,
-                "message": "لا يمكن تسجيل قسط - القسط الكلي صفر (طالب مجاني أو خصم كامل)"
-            }
+    # التحقق: المبلغ المدفوع لا يتجاوز القسط الكلي
+    current_balance = finance_service.calculate_student_teacher_balance(
+        installment.student_id, installment.teacher_id
+    )
+    total_fee = current_balance['total_fee']
+    already_paid = current_balance['paid_total']
+    new_total = already_paid + installment.amount
 
-        if new_total > total_fee:
-            remaining = total_fee - already_paid
-            return {
-                "success": False,
-                "message": f"لا يمكن تسجيل دفعة أكبر من المتبقي. المتبقي الحالي هو {format_currency(remaining)} د.ع. (القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)})"
-            }
-
-        # ===== حساب المتبقي قبل الدفع لتحديد ما إذا كان سيغلق الرصيد =====
-        remaining_before_payment = total_fee - already_paid
-        will_close_balance = remaining_before_payment > 0 and installment.amount >= remaining_before_payment
-
-        # ===== تحويل تلقائي إلى دفع كامل عند تسديد كامل المتبقي =====
-        # الهدف: إذا دفع الطالب كل المتبقي، لا يبقى القسط مسجل كـ قسط أول أو دفعات
-        auto_converted = False
-        if remaining_before_payment > 0 and installment.amount >= remaining_before_payment:
-            installment.installment_type = 'دفع كامل'
-            installment.for_installment = ''
-            auto_converted = True
-
-        from config import get_current_date as _get_current_date
-        
-        _client_ts = get_client_timestamp(request)
-
-        insert_query = '''
-            INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, for_installment, notes, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        '''
-        
-        result = db.execute_query(insert_query, (
-            installment.student_id,
-            installment.teacher_id,
-            installment.amount,
-            installment.payment_date,
-            installment.installment_type,
-            installment.for_installment or '',
-            installment.notes,
-            _get_current_date(_client_ts)
-        ))
-        installment_id = result[0]['id'] if result else None
-        
-        new_balance = finance_service.calculate_student_teacher_balance(
-            installment.student_id, 
-            installment.teacher_id
-        )
-        
-        message = "تم إضافة القسط بنجاح"
-        if auto_converted:
-            message = f"تم تسجيل الدفع كـ 'دفع كامل' لأن المبلغ المدفوع ({format_currency(installment.amount)}) يغطي كامل المتبقي."
-        
-        _invalidate_dashboard_cache()
-
-        log_action(
-            request,
-            action="create",
-            entity="installment",
-            entity_id=installment_id,
-            description=f"إضافة دفعة بمبلغ {installment.amount} للطالب {installment.student_id} عند المدرس {installment.teacher_id}"
-        )
-
+    if total_fee <= 0:
         return {
-            "success": True, 
-            "message": message,
-            "new_balance": new_balance,
-            "installment_id": installment_id,
-            "auto_converted": auto_converted,
-            "amount_warning": None
+            "success": False,
+            "message": "لا يمكن تسجيل قسط - القسط الكلي صفر (طالب مجاني أو خصم كامل)"
         }
-        
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+
+    if new_total > total_fee:
+        remaining = total_fee - already_paid
+        return {
+            "success": False,
+            "message": f"لا يمكن تسجيل دفعة أكبر من المتبقي. المتبقي الحالي هو {format_currency(remaining)}. (القسط الكلي {format_currency(total_fee)}، المدفوع {format_currency(already_paid)})"
+        }
+
+    # ===== حساب المتبقي قبل الدفع لتحديد ما إذا كان سيغلق الرصيد =====
+    remaining_before_payment = total_fee - already_paid
+
+    # ===== تحويل تلقائي إلى دفع كامل عند تسديد كامل المتبقي =====
+    # الهدف: إذا دفع الطالب كل المتبقي، لا يبقى القسط مسجل كـ قسط أول أو دفعات
+    auto_converted = False
+    if remaining_before_payment > 0 and installment.amount >= remaining_before_payment:
+        installment.installment_type = 'دفع كامل'
+        installment.for_installment = ''
+        auto_converted = True
+
+    from config import get_current_date as _get_current_date
+
+    _client_ts = get_client_timestamp(request)
+
+    insert_query = '''
+        INSERT INTO installments (student_id, teacher_id, amount, payment_date, installment_type, for_installment, notes, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+    '''
+
+    result = db.execute_query(insert_query, (
+        installment.student_id,
+        installment.teacher_id,
+        installment.amount,
+        installment.payment_date,
+        installment.installment_type,
+        installment.for_installment or '',
+        installment.notes,
+        _get_current_date(_client_ts)
+    ))
+    installment_id = result[0]['id'] if result else None
+
+    new_balance = finance_service.calculate_student_teacher_balance(
+        installment.student_id, 
+        installment.teacher_id
+    )
+
+    message = "تم إضافة القسط بنجاح"
+    if auto_converted:
+        message = f"تم تسجيل الدفع كـ 'دفع كامل' لأن المبلغ المدفوع ({format_currency(installment.amount)}) يغطي كامل المتبقي."
+
+    log_action(
+        request,
+        action="create",
+        entity="installment",
+        entity_id=installment_id,
+        description=f"إضافة دفعة بمبلغ {installment.amount} للطالب {installment.student_id} عند المدرس {installment.teacher_id}"
+    )
+
+    return {
+        "success": True,
+        "message": message,
+        "new_balance": new_balance,
+        "installment_id": installment_id,
+        "auto_converted": auto_converted,
+        "amount_warning": None
+    }
 
 
 @router.get("/installments/student/{student_id}/teacher/{teacher_id}")
@@ -961,8 +1045,9 @@ async def api_get_allowed_installment_types(request: Request, student_id: int, t
             "existing_types": list(existing_types),
             "split_options": split_options if not has_full else []
         }
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.get("/installments/recent")
@@ -989,24 +1074,37 @@ async def api_delete_installment(request: Request, installment_id: int):
     
     try:
         user = getattr(request.state, 'user', None)
-        guard = deletion_guard.can_delete_installment(installment_id, user)
-        if not guard.allowed:
-            return guard.to_dict()
-        
-        inst_data = guard.details.get('installment', {})
         db = Database()
-        db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))
-        
+        owner = db.execute_query(
+            "SELECT student_id, teacher_id, amount, payment_date, installment_type FROM installments WHERE id = %s",
+            (installment_id,))
+        if not owner:
+            return {"success": False, "message": "القسط غير موجود"}
+
+        # نفس قفل السحوبات: لا يُسجَّل سحب يعتمد على هذا القسط بين الفحص والحذف
+        with transaction():
+            lock_for_update(LOCK_TEACHER_WITHDRAWALS, owner[0]['teacher_id'])
+            guard = deletion_guard.can_delete_installment(installment_id, user)
+            if not guard.allowed:
+                return guard.to_dict()
+
+            inst_data = guard.details.get('installment', {})
+            db.execute_query("DELETE FROM installments WHERE id = %s", (installment_id,))
+            log_action(request, "delete", "installment", installment_id,
+                       f"حذف قسط ({owner[0]['installment_type']}) بمبلغ {owner[0]['amount']} بتاريخ "
+                       f"{owner[0]['payment_date']} للطالب {owner[0]['student_id']} عند المدرس {owner[0]['teacher_id']}")
+
         _invalidate_dashboard_cache()
-        
+
         return {
-            "success": True, 
+            "success": True,
             "message": "تم حذف القسط",
             "deleted_installment": inst_data
         }
-        
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+
+    except Exception:
+        logger.exception("فشل حذف قسط")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== فحص سلامة البيانات =====
@@ -1204,8 +1302,9 @@ async def api_data_integrity_check(request: Request):
             "issues": issues
         }
         
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في فحص البيانات: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في فحص البيانات")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.post("/fix-first-installment-to-full")
@@ -1273,8 +1372,9 @@ async def api_fix_first_to_full(request: Request):
             "fixed_records": fixed
         }
         
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== عمليات السحوبات =====
@@ -1284,54 +1384,59 @@ async def api_add_withdrawal(request: Request, withdrawal: AddWithdrawal):
     """تسجيل سحب جديد للمدرس"""
     check_permission(request, 'add_withdrawals')
     db = Database()
-    
+
     try:
         amount = withdrawal.amount
 
-        if not withdrawal.withdrawal_date:
-            return {"success": False, "message": "يجب تحديد تاريخ السحب"}
+        if not is_valid_iso_date(withdrawal.withdrawal_date):
+            return {"success": False, "message": "تاريخ السحب غير صالح - الصيغة المطلوبة YYYY-MM-DD"}
 
-        # ===== التحقق: لا يمكن سحب مبلغ أكبر من مستحق المدرس المتاح =====
-        can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
-            withdrawal.teacher_id,
-            amount,
-            withdrawal.withdrawal_date
-        )
-        
-        if not can_withdraw:
-            return {"success": False, "message": f"لا يمكن تسجيل السحب. الرصيد المتاح للمدرس هو {format_currency(balance)} فقط. {message}"}
-        
-        insert_query = '''
-            INSERT INTO teacher_withdrawals (teacher_id, amount, withdrawal_date, notes)
-            VALUES (%s, %s, %s, %s)
-        '''
-        
-        db.execute_query(insert_query, (
-            withdrawal.teacher_id,
-            amount,
-            withdrawal.withdrawal_date,
-            withdrawal.notes
-        ))
-        
+        if not db.execute_query("SELECT 1 FROM teachers WHERE id = %s", (withdrawal.teacher_id,)):
+            return {"success": False, "message": "المدرس غير موجود"}
+
+        # الفحص والإدراج في معاملة واحدة مع قفل على المدرس: يمنع سحبين متزامنين من نفس الرصيد
+        with transaction():
+            lock_for_update(LOCK_TEACHER_WITHDRAWALS, withdrawal.teacher_id)
+
+            can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
+                withdrawal.teacher_id,
+                amount,
+                withdrawal.withdrawal_date
+            )
+            if not can_withdraw:
+                return {"success": False, "message": f"لا يمكن تسجيل السحب. {message}"}
+
+            inserted = db.execute_query('''
+                INSERT INTO teacher_withdrawals (teacher_id, amount, withdrawal_date, notes)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+            ''', (
+                withdrawal.teacher_id,
+                amount,
+                withdrawal.withdrawal_date,
+                withdrawal.notes
+            ))
+
+            log_action(
+                request,
+                action="create",
+                entity="teacher_withdrawal",
+                entity_id=inserted[0]['id'],
+                description=f"إضافة سحب بمبلغ {amount} للمدرس {withdrawal.teacher_id} بتاريخ {withdrawal.withdrawal_date}"
+            )
+
         new_balance = finance_service.calculate_teacher_balance(withdrawal.teacher_id)
         _invalidate_dashboard_cache()
 
-        log_action(
-            request,
-            action="create",
-            entity="teacher_withdrawal",
-            entity_id="",
-            description=f"إضافة سحب بمبلغ {amount} للمدرس {withdrawal.teacher_id}"
-        )
-        
         return {
-            "success": True, 
+            "success": True,
             "message": "تم تسجيل السحب بنجاح",
             "new_balance": new_balance
         }
-        
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+
+    except Exception:
+        logger.exception("فشل تسجيل سحب")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.get("/withdrawals/teacher/{teacher_id}")
@@ -1357,13 +1462,21 @@ async def api_delete_withdrawal(request: Request, withdrawal_id: int):
         guard = deletion_guard.can_delete_withdrawal(withdrawal_id)
         if not guard.allowed:
             return guard.to_dict()
-        
+
         db = Database()
-        db.execute_query("DELETE FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
+        deleted = db.execute_query(
+            "DELETE FROM teacher_withdrawals WHERE id = %s RETURNING teacher_id, amount, withdrawal_date",
+            (withdrawal_id,))
+        if not deleted:
+            return {"success": False, "message": "السحب غير موجود"}
+        log_action(request, "delete", "teacher_withdrawal", withdrawal_id,
+                   f"حذف سحب بمبلغ {deleted[0]['amount']} للمدرس {deleted[0]['teacher_id']} "
+                   f"بتاريخ {deleted[0]['withdrawal_date']}")
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم حذف السحب"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("فشل حذف سحب")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/withdrawals/{withdrawal_id}")
@@ -1373,41 +1486,51 @@ async def api_edit_withdrawal(request: Request, withdrawal_id: int, data: dict =
     db = Database()
     
     try:
-        amount = int(data.get('amount', 0))
+        try:
+            amount = int(data.get('amount', 0))
+        except (TypeError, ValueError):
+            return {"success": False, "message": "المبلغ غير صالح"}
         withdrawal_date = data.get('withdrawal_date', '')
-        notes = data.get('notes', '')
-        
+        notes = data.get('notes', '') or ''
+
         if amount <= 0:
             return {"success": False, "message": "المبلغ يجب أن يكون أكبر من صفر"}
-        
-        old = db.execute_query("SELECT teacher_id, amount FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
+
+        if not is_valid_iso_date(withdrawal_date):
+            return {"success": False, "message": "تاريخ السحب غير صالح - الصيغة المطلوبة YYYY-MM-DD"}
+
+        old = db.execute_query(
+            "SELECT teacher_id, amount, withdrawal_date FROM teacher_withdrawals WHERE id = %s", (withdrawal_id,))
         if not old:
             return {"success": False, "message": "السحب غير موجود"}
-        
+
         teacher_id = old[0]['teacher_id']
 
-        if not withdrawal_date:
-            return {"success": False, "message": "يجب تحديد تاريخ السحب"}
+        with transaction():
+            lock_for_update(LOCK_TEACHER_WITHDRAWALS, teacher_id)
 
-        # ===== التحقق: لا يمكن سحب مبلغ أكبر من مستحق المدرس المتاح =====
-        can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
-            teacher_id,
-            amount,
-            withdrawal_date,
-            exclude_withdrawal_id=withdrawal_id
-        )
+            can_withdraw, message, balance = finance_service.can_teacher_withdraw_on_date(
+                teacher_id,
+                amount,
+                withdrawal_date,
+                exclude_withdrawal_id=withdrawal_id
+            )
+            if not can_withdraw:
+                return {"success": False, "message": f"لا يمكن تعديل السحب. {message}"}
 
-        if not can_withdraw:
-            return {"success": False, "message": f"لا يمكن تعديل السحب. الرصيد المتاح للمدرس هو {format_currency(balance)} فقط. {message}"}
-        
-        db.execute_query(
-            "UPDATE teacher_withdrawals SET amount = %s, withdrawal_date = %s, notes = %s WHERE id = %s",
-            (amount, withdrawal_date, notes, withdrawal_id)
-        )
+            db.execute_query(
+                "UPDATE teacher_withdrawals SET amount = %s, withdrawal_date = %s, notes = %s WHERE id = %s",
+                (amount, withdrawal_date, notes, withdrawal_id)
+            )
+            log_action(request, "update", "teacher_withdrawal", withdrawal_id,
+                       f"تعديل سحب المدرس {teacher_id}: المبلغ {old[0]['amount']} ← {amount}، "
+                       f"التاريخ {old[0]['withdrawal_date']} ← {withdrawal_date}")
+
         _invalidate_dashboard_cache()
         return {"success": True, "message": "تم تعديل السحب بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("فشل تعديل سحب")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== إحصائيات =====
@@ -1641,8 +1764,9 @@ async def api_database_integrity_check(request: Request):
             "issues": issues
         }
         
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في فحص السلامة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في فحص السلامة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== تصدير شامل =====
@@ -1706,8 +1830,9 @@ async def api_export_all(request: Request):
         # الإحصائيات
         export_data['statistics'] = finance_service.get_system_statistics()
         
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في التصدير: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في التصدير")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
     
     return {"success": True, "data": export_data}
 
@@ -1716,49 +1841,57 @@ async def api_export_all(request: Request):
 
 @router.get("/search")
 async def api_global_search(request: Request, q: str = ""):
-    """بحث شامل في النظام"""
-    # البحث متاح لكل مستخدم مسجل الدخول
+    """بحث شامل في النظام - كل قسم يظهر فقط لمن يملك صلاحية عرضه"""
+    can_students = has_permission(request, 'view_students_list')
+    can_teachers = has_permission(request, 'view_teachers_list')
+    can_subjects = has_permission(request, 'view_subjects')
+    if not (can_students or can_teachers or can_subjects):
+        raise HTTPException(status_code=403, detail="ليس لديك صلاحية")
+
     db = Database()
     results = {"students": [], "teachers": [], "subjects": []}
-    
+
     if not q or len(q) < 1:
         return {"success": True, "data": results}
-    
+
+    pattern = f'%{q}%'
     try:
-        # بحث الطلاب - عرض نوع الدراسة الفعلي من جدول student_teacher
-        students = db.execute_query(
-            '''SELECT s.id, s.name, s.barcode, 
-               COALESCE(
-                   STRING_AGG(DISTINCT st.study_type, ' / '),
-                   s.study_type
-               ) as study_type
-               FROM students s
-               LEFT JOIN student_teacher st ON st.student_id = s.id
-               WHERE s.name LIKE %s OR s.barcode LIKE %s
-               GROUP BY s.id, s.name, s.barcode, s.study_type
-               ORDER BY s.name LIMIT 10''',
-            (f'%{q}%', f'%{q}%')
-        )
-        results["students"] = [dict(r) for r in students] if students else []
-        
-        # بحث المدرسين
-        teachers = db.execute_query(
-            '''SELECT id, name, subject, total_fee FROM teachers 
-               WHERE name LIKE %s OR subject LIKE %s ORDER BY name LIMIT 10''',
-            (f'%{q}%', f'%{q}%')
-        )
-        results["teachers"] = [dict(r) for r in teachers] if teachers else []
-        
-        # بحث المواد
-        subjects = db.execute_query(
-            '''SELECT id, name FROM subjects WHERE name LIKE %s ORDER BY name LIMIT 10''',
-            (f'%{q}%',)
-        )
-        results["subjects"] = [dict(r) for r in subjects] if subjects else []
-        
-    except Exception as e:
-        print(f"Search error: {e}")
-    
+        if can_students:
+            # عرض نوع الدراسة الفعلي من جدول student_teacher
+            students = db.execute_query(
+                '''SELECT s.id, s.name, s.barcode,
+                   COALESCE(
+                       STRING_AGG(DISTINCT st.study_type, ' / '),
+                       s.study_type
+                   ) as study_type
+                   FROM students s
+                   LEFT JOIN student_teacher st ON st.student_id = s.id
+                   WHERE s.name LIKE %s OR s.barcode ILIKE %s
+                   GROUP BY s.id, s.name, s.barcode, s.study_type
+                   ORDER BY s.name LIMIT 10''',
+                (pattern, pattern)
+            )
+            results["students"] = [dict(r) for r in students] if students else []
+
+        if can_teachers:
+            teachers = db.execute_query(
+                '''SELECT id, name, subject, total_fee FROM teachers
+                   WHERE name LIKE %s OR subject LIKE %s ORDER BY name LIMIT 10''',
+                (pattern, pattern)
+            )
+            results["teachers"] = [dict(r) for r in teachers] if teachers else []
+
+        if can_subjects:
+            subjects = db.execute_query(
+                '''SELECT id, name FROM subjects WHERE name LIKE %s ORDER BY name LIMIT 10''',
+                (pattern,)
+            )
+            results["subjects"] = [dict(r) for r in subjects] if subjects else []
+
+    except Exception:
+        logger.exception("فشل البحث الشامل")
+        return {"success": False, "message": "تعذر البحث - حاول مرة أخرى", "data": results}
+
     return {"success": True, "data": results}
 
 
@@ -1884,14 +2017,16 @@ async def api_smart_alerts(request: Request):
 # ===== عمليات القاعات =====
 
 @router.get("/rooms")
-async def api_get_rooms():
+async def api_get_rooms(request: Request):
     """الحصول على قائمة جميع القاعات"""
+    check_permission(request, 'view_subjects')
     db = Database()
     try:
         rooms = db.execute_query("SELECT * FROM rooms ORDER BY name")
         return {"success": True, "data": [dict(r) for r in rooms] if rooms else []}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.post("/rooms")
@@ -1917,8 +2052,9 @@ async def api_add_room(request: Request, data: dict = Body(...)):
         )
         new_id = result[0]['id'] if result else None
         return {"success": True, "message": "تم إضافة القاعة بنجاح", "id": new_id}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/rooms/{room_id}")
@@ -1947,8 +2083,9 @@ async def api_update_room(request: Request, room_id: int, data: dict = Body(...)
             (name, capacity, notes, room_id)
         )
         return {"success": True, "message": "تم تحديث القاعة بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.delete("/rooms/{room_id}")
@@ -1963,8 +2100,9 @@ async def api_delete_room(request: Request, room_id: int):
         db = Database()
         db.execute_query("DELETE FROM rooms WHERE id = %s", (room_id,))
         return {"success": True, "message": "تم حذف القاعة"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== عمليات الجدول الأسبوعي =====
@@ -1976,8 +2114,9 @@ def normalize_event_type(event_type):
 
 
 @router.get("/weekly-schedule")
-async def api_get_weekly_schedule(room_id: int = None):
+async def api_get_weekly_schedule(request: Request, room_id: int = None):
     """الحصول على الجدول الأسبوعي كاملاً أو لقاعة محددة"""
+    check_permission(request, 'view_subjects')
     db = Database()
     try:
         if room_id:
@@ -2029,8 +2168,9 @@ async def api_get_weekly_schedule(room_id: int = None):
             row['event_type'] = normalize_event_type(row.get('event_type'))
             data.append(row)
         return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.post("/weekly-schedule/normalize-db")
@@ -2047,8 +2187,9 @@ async def api_normalize_weekly_schedule_db(request: Request):
             END
         ''')
         return {"success": True, "message": "تم تنظيف بيانات نوع الحدث في قاعدة البيانات"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.post("/weekly-schedule")
@@ -2156,8 +2297,9 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         
         event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
         return {"success": True, "message": f"تم إضافة {event_label} بنجاح", "id": new_id}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.put("/weekly-schedule/{lecture_id}")
@@ -2260,8 +2402,9 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         
         event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'
         return {"success": True, "message": f"تم تحديث {event_label} بنجاح"}
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 @router.delete("/weekly-schedule/{lecture_id}")
@@ -2291,14 +2434,15 @@ async def api_delete_weekly_lecture(request: Request, lecture_id: int):
             "success": True,
             "message": f"تم حذف {event_label} بنجاح"
         }
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في المعالجة: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في المعالجة")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== بحث بالباركود / QR =====
 
 @router.get("/lookup")
-async def api_lookup_barcode(request: Request, code: str = ""):
+async def api_lookup_barcode(request: Request, code: str = "", scope: str = ""):
     """
     بحث سريع بالباركود أو الرمز - يبحث في الطلاب والمدرسين
     يُستخدم للماسح الضوئي (QR Scanner) أو إدخال الرمز يدوياً
@@ -2312,33 +2456,31 @@ async def api_lookup_barcode(request: Request, code: str = ""):
     """
     if not code or len(code.strip()) < 1:
         return {"found": False, "type": "none", "message": "لم يتم إدخال رمز"}
-    
+
+    # النتيجة تُستخدم للتحويل التلقائي لصفحة السجل، لذا المطابقة تامة فقط:
+    # البحث الجزئي كان يفتح طالباً عشوائياً لأن كل الباركودات تحتوي أرقاماً متشابهة.
+    can_students = scope in ("", "student") and has_permission(request, 'preview_students')
+    can_teachers = scope in ("", "teacher") and has_permission(request, 'preview_teachers')
+    if not can_students and not can_teachers:
+        raise HTTPException(status_code=403, detail="ليس لديك صلاحية")
+
     code = code.strip()
     db = Database()
-    
+
     try:
-        # 1. بحث في الطلاب بالباركود (مطابقة تامة أو جزئية)
-        student = db.execute_query(
-            "SELECT id, name, barcode FROM students WHERE barcode = %s LIMIT 1",
-            (code,)
-        )
-        if not student:
-            # محاولة بحث جزئي
+        student = None
+        if can_students:
+            # 1. الباركود كاملاً (STU-2026-000012) أو رقم الطالب
             student = db.execute_query(
-                "SELECT id, name, barcode FROM students WHERE barcode LIKE %s LIMIT 1",
-                (f'%{code}%',)
+                "SELECT id, name, barcode FROM students WHERE UPPER(barcode) = UPPER(%s) LIMIT 1",
+                (code,)
             )
-        if not student:
-            # بحث بالرقم التسلسلي (id)
-            try:
-                sid = int(code.replace('STU-', '').split('-')[-1])
+            if not student and code.isdigit():
                 student = db.execute_query(
                     "SELECT id, name, barcode FROM students WHERE id = %s LIMIT 1",
-                    (sid,)
+                    (int(code),)
                 )
-            except (ValueError, IndexError):
-                pass
-        
+
         if student:
             s = student[0]
             return {
@@ -2350,19 +2492,21 @@ async def api_lookup_barcode(request: Request, code: str = ""):
                 "url": f"/students/{s['id']}"
             }
         
-        # 2. بحث في المدرسين بالاسم أو الرقم
-        try:
-            tid = int(code)
-            teacher = db.execute_query(
-                "SELECT id, name, subject FROM teachers WHERE id = %s LIMIT 1",
-                (tid,)
-            )
-        except ValueError:
-            teacher = db.execute_query(
-                "SELECT id, name, subject FROM teachers WHERE name LIKE %s LIMIT 1",
-                (f'%{code}%',)
-            )
-        
+        # 2. المدرس برقمه، أو باسمه إذا طابق مدرساً واحداً فقط
+        teacher = None
+        if can_teachers:
+            if code.isdigit():
+                teacher = db.execute_query(
+                    "SELECT id, name, subject FROM teachers WHERE id = %s LIMIT 1",
+                    (int(code),)
+                )
+            else:
+                matches = db.execute_query(
+                    "SELECT id, name, subject FROM teachers WHERE name LIKE %s LIMIT 2",
+                    (f'%{code}%',)
+                )
+                teacher = matches if len(matches) == 1 else None
+
         if teacher:
             t = teacher[0]
             return {
@@ -2375,370 +2519,10 @@ async def api_lookup_barcode(request: Request, code: str = ""):
             }
         
         return {"found": False, "type": "none", "message": "لم يتم العثور على نتائج"}
-        
-    except Exception as e:
-        return {"found": False, "type": "none", "message": f"خطأ في البحث: {str(e)}"}
 
-
-# ===== عمليات الثيم =====
-
-class ThemeUpdate(BaseModel):
-    """نموذج تحديث ثيم المستخدم"""
-    theme: str = Field(..., pattern="^(light|dark)$", description="الثيم: light أو dark")
-
-
-@router.post("/user/theme")
-async def api_update_user_theme(request: Request, data: ThemeUpdate):
-    """حفظ تفضيل الثيم للمستخدم الحالي"""
-    try:
-        # محاولة الحصول على المستخدم الحالي
-        from auth import get_current_user
-        user = get_current_user(request)
-
-        if user:
-            db = Database()
-            # التحقق من وجود عمود theme في جدول users
-            try:
-                db.execute_query(
-                    "UPDATE users SET theme = %s WHERE id = %s",
-                    (data.theme, user['id'])
-                )
-            except Exception:
-                # إذا لم يكن عمود theme موجوداً بعد، نتجاهل الخطأ
-                # localStorage يكفي كخطة بديلة
-                pass
-
-        return {"success": True, "theme": data.theme}
-
-    except Exception as e:
-        # لا نعرض خطأ للمستخدم - localStorage يكفي
-        return {"success": True, "theme": data.theme}
-
-
-# ===== فحص وتنظيف قاعدة البيانات (مؤقت) =====
-
-@router.post("/admin/inspect-and-clean-db")
-async def api_inspect_and_clean_db(request: Request):
-    """فحص شامل لقاعدة البيانات وتنظيف أي بيانات متضاربة أو عشوائية أو يتيمة"""
-    db = Database()
-    issues = {}
-    cleaned = {}
-    
-    # ===== 1. فحص عدد السجلات =====
-    tables = ['subjects', 'students', 'teachers', 'student_teacher', 'installments', 
-              'teacher_withdrawals', 'weekly_schedule', 'rooms', 'roles', 'permissions', 
-              'role_permissions', 'users']
-    counts = {}
-    for t in tables:
-        try:
-            r = db.execute_query(f"SELECT COUNT(*) as cnt FROM {t}")
-            counts[t] = r[0]['cnt'] if r else 0
-        except Exception as e:
-            counts[t] = str(e)
-    issues['table_counts'] = counts
-    
-    # ===== 2. روابط يتيمة (طالب أو مدرس محذوف) =====
-    try:
-        orphan_links = db.execute_query("""
-            SELECT st.student_id, st.teacher_id 
-            FROM student_teacher st
-            LEFT JOIN students s ON st.student_id = s.id
-            LEFT JOIN teachers t ON st.teacher_id = t.id
-            WHERE s.id IS NULL OR t.id IS NULL
-        """) or []
-        issues['orphan_links'] = len(orphan_links)
-        if orphan_links:
-            for ol in orphan_links:
-                db.execute_query("DELETE FROM student_teacher WHERE student_id = %s AND teacher_id = %s",
-                               (ol['student_id'], ol['teacher_id']))
-            cleaned['orphan_links_deleted'] = len(orphan_links)
-    except Exception as e:
-        issues['orphan_links_error'] = str(e)
-    
-    # ===== 3. أقساط يتيمة (طالب أو مدرس محذوف) =====
-    try:
-        orphan_inst = db.execute_query("""
-            SELECT i.id FROM installments i
-            LEFT JOIN students s ON i.student_id = s.id
-            LEFT JOIN teachers t ON i.teacher_id = t.id
-            WHERE s.id IS NULL OR t.id IS NULL
-        """) or []
-        issues['orphan_installments'] = len(orphan_inst)
-        if orphan_inst:
-            ids = [str(oi['id']) for oi in orphan_inst]
-            db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
-            cleaned['orphan_installments_deleted'] = len(orphan_inst)
-    except Exception as e:
-        issues['orphan_installments_error'] = str(e)
-    
-    # ===== 4. أقساط بدون رابط طالب-مدرس =====
-    try:
-        no_link_inst = db.execute_query("""
-            SELECT i.id FROM installments i
-            LEFT JOIN student_teacher st ON i.student_id = st.student_id AND i.teacher_id = st.teacher_id
-            WHERE st.student_id IS NULL
-        """) or []
-        issues['installments_no_link'] = len(no_link_inst)
-        if no_link_inst:
-            ids = [str(ni['id']) for ni in no_link_inst]
-            db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
-            cleaned['installments_no_link_deleted'] = len(no_link_inst)
-    except Exception as e:
-        issues['installments_no_link_error'] = str(e)
-    
-    # ===== 5. أقساط بمبلغ <= 0 =====
-    try:
-        bad_amount = db.execute_query("SELECT id FROM installments WHERE amount <= 0") or []
-        issues['bad_amount_installments'] = len(bad_amount)
-        if bad_amount:
-            ids = [str(ba['id']) for ba in bad_amount]
-            db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
-            cleaned['bad_amount_installments_deleted'] = len(bad_amount)
-    except Exception as e:
-        issues['bad_amount_installments_error'] = str(e)
-    
-    # ===== 6. أقساط بنوع غير صالح =====
-    try:
-        bad_type = db.execute_query("""
-            SELECT id FROM installments 
-            WHERE installment_type NOT IN ('القسط الأول', 'القسط الثاني', 'دفع كامل', 'دفعات')
-        """) or []
-        issues['bad_type_installments'] = len(bad_type)
-        if bad_type:
-            ids = [str(bt['id']) for bt in bad_type]
-            db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
-            cleaned['bad_type_installments_deleted'] = len(bad_type)
-    except Exception as e:
-        issues['bad_type_installments_error'] = str(e)
-    
-    # ===== 7. دفعات بدون for_installment =====
-    try:
-        bad_splits = db.execute_query("""
-            SELECT id FROM installments 
-            WHERE installment_type = 'دفعات' AND (for_installment IS NULL OR for_installment = '')
-        """) or []
-        issues['splits_no_for'] = len(bad_splits)
-        if bad_splits:
-            ids = [str(bs['id']) for bs in bad_splits]
-            db.execute_query(f"DELETE FROM installments WHERE id IN ({','.join(ids)})")
-            cleaned['splits_no_for_deleted'] = len(bad_splits)
-    except Exception as e:
-        issues['splits_no_for_error'] = str(e)
-    
-    # ===== 8. تكرار أنواع أقساط رئيسية =====
-    try:
-        dup_types = db.execute_query("""
-            SELECT student_id, teacher_id, installment_type, COUNT(*) as cnt
-            FROM installments
-            WHERE installment_type IN ('القسط الأول', 'القسط الثاني', 'دفع كامل')
-            GROUP BY student_id, teacher_id, installment_type
-            HAVING COUNT(*) > 1
-        """) or []
-        issues['dup_installment_types'] = len(dup_types)
-        if dup_types:
-            for dt in dup_types:
-                db.execute_query("""
-                    DELETE FROM installments WHERE id IN (
-                        SELECT id FROM installments 
-                        WHERE student_id = %s AND teacher_id = %s AND installment_type = %s
-                        ORDER BY id DESC OFFSET 1
-                    )
-                """, (dt['student_id'], dt['teacher_id'], dt['installment_type']))
-            cleaned['dup_installment_types_fixed'] = len(dup_types)
-    except Exception as e:
-        issues['dup_installment_types_error'] = str(e)
-    
-    # ===== 9. سحوبات يتيمة =====
-    try:
-        orphan_with = db.execute_query("""
-            SELECT tw.id FROM teacher_withdrawals tw
-            LEFT JOIN teachers t ON tw.teacher_id = t.id
-            WHERE t.id IS NULL
-        """) or []
-        issues['orphan_withdrawals'] = len(orphan_with)
-        if orphan_with:
-            ids = [str(ow['id']) for ow in orphan_with]
-            db.execute_query(f"DELETE FROM teacher_withdrawals WHERE id IN ({','.join(ids)})")
-            cleaned['orphan_withdrawals_deleted'] = len(orphan_with)
-    except Exception as e:
-        issues['orphan_withdrawals_error'] = str(e)
-    
-    # ===== 10. سحوبات بمبلغ <= 0 =====
-    try:
-        bad_with = db.execute_query("SELECT id FROM teacher_withdrawals WHERE amount <= 0") or []
-        issues['bad_withdrawals'] = len(bad_with)
-        if bad_with:
-            ids = [str(bw['id']) for bw in bad_with]
-            db.execute_query(f"DELETE FROM teacher_withdrawals WHERE id IN ({','.join(ids)})")
-            cleaned['bad_withdrawals_deleted'] = len(bad_with)
-    except Exception as e:
-        issues['bad_withdrawals_error'] = str(e)
-    
-    # ===== 11. جداول أسبوعية يتيمة =====
-    try:
-        orphan_sched = db.execute_query("""
-            SELECT ws.id FROM weekly_schedule ws
-            LEFT JOIN teachers t ON ws.teacher_id = t.id
-            LEFT JOIN rooms r ON ws.room_id = r.id
-            WHERE t.id IS NULL OR r.id IS NULL
-        """) or []
-        issues['orphan_schedule'] = len(orphan_sched)
-        if orphan_sched:
-            ids_to_del = [str(sch['id']) for sch in orphan_sched]
-            db.execute_query(f"DELETE FROM weekly_schedule WHERE id IN ({','.join(ids_to_del)})")
-            cleaned['orphan_schedule_deleted'] = len(orphan_sched)
-    except Exception as e:
-        issues['orphan_schedule_error'] = str(e)
-    
-    # ===== 12. أساتذة بمادة غير موجودة في جدول المواد =====
-    try:
-        no_subject = db.execute_query("""
-            SELECT t.id, t.name, t.subject FROM teachers t
-            LEFT JOIN subjects s ON t.subject = s.name
-            WHERE s.name IS NULL
-        """) or []
-        issues['teachers_no_subject'] = len(no_subject)
-        # إضافة المادة تلقائياً إذا لم تكن موجودة
-        if no_subject:
-            for ns in no_subject:
-                try:
-                    db.execute_query("INSERT INTO subjects (name, created_at) VALUES (%s, %s)", 
-                                   (ns['subject'], get_current_date(get_client_timestamp(request))))
-                except Exception:
-                    pass  # قد تكون المادة موجودة فعلاً
-            cleaned['teachers_missing_subjects_added'] = len(no_subject)
-    except Exception as e:
-        issues['teachers_no_subject_error'] = str(e)
-    
-    # ===== 13. مواد بدون أساتذة (يتيمة) =====
-    try:
-        subjects_no_teachers = db.execute_query("""
-            SELECT s.id, s.name FROM subjects s
-            LEFT JOIN teachers t ON s.name = t.subject
-            WHERE t.id IS NULL
-        """) or []
-        issues['subjects_no_teachers'] = len(subjects_no_teachers)
-        # حذف المواد بدون أساتذة (بيانات يتيمة)
-        if subjects_no_teachers:
-            for sn in subjects_no_teachers:
-                db.execute_query("DELETE FROM subjects WHERE id = %s", (sn['id'],))
-            cleaned['orphan_subjects_deleted'] = len(subjects_no_teachers)
-    except Exception as e:
-        issues['subjects_no_teachers_error'] = str(e)
-    
-    # ===== 14. طلاب بدون أي رابط =====
-    try:
-        orphan_students = db.execute_query("""
-            SELECT s.id, s.name FROM students s 
-            LEFT JOIN student_teacher st ON s.id = st.student_id 
-            WHERE st.student_id IS NULL
-        """) or []
-        issues['students_no_links'] = len(orphan_students)
-    except Exception as e:
-        issues['students_no_links_error'] = str(e)
-    
-    # ===== 15. تصحيح حالة الطلاب =====
-    try:
-        status_mismatch = db.execute_query("""
-            SELECT s.id, s.status as declared_status,
-                CASE 
-                    WHEN (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) = 0 THEN 'غير مربوط'
-                    WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) = 
-                         (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) THEN 'منسحب'
-                    WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) > 0 THEN 'مدمج'
-                    ELSE 'مستمر'
-                END as actual_status
-            FROM students s
-            WHERE s.status != CASE 
-                    WHEN (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) = 0 THEN 'غير مربوط'
-                    WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) = 
-                         (SELECT COUNT(*) FROM student_teacher st WHERE st.student_id = s.id) THEN 'منسحب'
-                    WHEN (SELECT SUM(CASE WHEN st.status = 'منسحب' THEN 1 ELSE 0 END) FROM student_teacher st WHERE st.student_id = s.id) > 0 THEN 'مدمج'
-                    ELSE 'مستمر'
-                END
-        """) or []
-        issues['status_mismatch'] = len(status_mismatch)
-        if status_mismatch:
-            for sm in status_mismatch:
-                actual = sm['actual_status']
-                db.execute_query("UPDATE students SET status = %s WHERE id = %s", (actual, sm['id']))
-            cleaned['status_fixed'] = len(status_mismatch)
-    except Exception as e:
-        issues['status_mismatch_error'] = str(e)
-    
-    # ===== 16. روابط بحالة دراسة غير صالحة =====
-    try:
-        bad_link_types = db.execute_query("""
-            SELECT student_id, teacher_id, study_type, status 
-            FROM student_teacher 
-            WHERE study_type NOT IN ('حضوري', 'الكتروني', 'مدمج')
-               OR status NOT IN ('مستمر', 'منسحب')
-        """) or []
-        issues['bad_link_types'] = len(bad_link_types)
-        if bad_link_types:
-            for blt in bad_link_types:
-                fix_study = blt['study_type'] if blt['study_type'] in ('حضوري', 'الكتروني', 'مدمج') else 'حضوري'
-                fix_status = blt['status'] if blt['status'] in ('مستمر', 'منسحب') else 'مستمر'
-                db.execute_query("""
-                    UPDATE student_teacher SET study_type = %s, status = %s 
-                    WHERE student_id = %s AND teacher_id = %s
-                """, (fix_study, fix_status, blt['student_id'], blt['teacher_id']))
-            cleaned['bad_link_types_fixed'] = len(bad_link_types)
-    except Exception as e:
-        issues['bad_link_types_error'] = str(e)
-    
-    # ===== 17. مستخدمون بدون دور =====
-    try:
-        users_no_role = db.execute_query("""
-            SELECT u.id FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id
-            WHERE r.id IS NULL
-        """) or []
-        issues['users_no_role'] = len(users_no_role)
-    except Exception as e:
-        issues['users_no_role_error'] = str(e)
-    
-    # ===== 18. طلاب بدون باركود صحيح =====
-    try:
-        bad_barcode = db.execute_query("""
-            SELECT id, name FROM students 
-            WHERE barcode IS NULL OR barcode = '' OR barcode LIKE 'TEMP-%'
-        """) or []
-        issues['bad_barcode'] = len(bad_barcode)
-        if bad_barcode:
-            for bb in bad_barcode:
-                new_barcode = generate_barcode(bb['id'])
-                db.execute_query("UPDATE students SET barcode = %s WHERE id = %s", (new_barcode, bb['id']))
-            cleaned['bad_barcode_fixed'] = len(bad_barcode)
-    except Exception as e:
-        issues['bad_barcode_error'] = str(e)
-    
-    # ===== 19. إعادة حساب حالة جميع الطلاب =====
-    try:
-        all_students = db.execute_query("SELECT id FROM students") or []
-        synced = 0
-        for s in all_students:
-            try:
-                sync_student_status(s['id'])
-                synced += 1
-            except Exception:
-                pass
-        cleaned['students_status_synced'] = synced
-    except Exception as e:
-        issues['sync_error'] = str(e)
-    
-    # إلغاء التخزين المؤقت
-    try:
-        cache_service.invalidate_pattern('dashboard_')
-        cache_service.invalidate_pattern('finance_')
     except Exception:
-        pass
-    
-    return {
-        "success": True,
-        "issues_found": issues,
-        "cleaning_done": cleaned
-    }
+        logger.exception("فشل البحث بالرمز")
+        return {"found": False, "type": "none", "message": "تعذر البحث - حاول مرة أخرى"}
 
 
 # ===== تنظيف شامل لقاعدة البيانات =====
@@ -2781,27 +2565,16 @@ async def api_reset_database(request: Request, data: dict):
     ]
     
     try:
-        # ===== حذف البيانات =====
-        for table_name, arabic_name in tables_to_clean:
-            try:
-                count_result = db.execute_query(f"SELECT COUNT(*) as cnt FROM {table_name}")
-                count = count_result[0]['cnt'] if count_result else 0
-                if count > 0:
-                    db.execute_query(f"DELETE FROM {table_name}")
-                    results[table_name] = f"تم حذف {count} سجل"
-                else:
-                    results[table_name] = "فارغ بالفعل"
-            except Exception as e:
-                results[table_name] = f"خطأ: {str(e)}"
-        
-        # ===== إعادة تعيين العدادات =====
-        for seq_name in sequences_to_reset:
-            try:
+        # كل الحذف وإعادة العدادات في معاملة واحدة: إما ينجح كله أو لا يتغير شيء
+        with transaction():
+            for table_name, arabic_name in tables_to_clean:
+                count = db.execute_query(f"SELECT COUNT(*) as cnt FROM {table_name}")[0]['cnt']
+                db.execute_query(f"DELETE FROM {table_name}")
+                results[table_name] = f"تم حذف {count} سجل" if count else "فارغ بالفعل"
+            for seq_name in sequences_to_reset:
                 db.execute_query(f"ALTER SEQUENCE {seq_name} RESTART WITH 1")
                 results[f"seq_{seq_name}"] = "تم إعادة التعيين"
-            except Exception as e:
-                results[f"seq_{seq_name}"] = f"تخطي: {str(e)}"
-        
+
         # إلغاء التخزين المؤقت
         try:
             cache_service.invalidate_pattern('dashboard_')
@@ -2822,8 +2595,9 @@ async def api_reset_database(request: Request, data: dict):
             "message": "تم تنظيف قاعدة البيانات بنجاح - جميع البيانات التشغيلية محذوفة",
             "details": results
         }
-    except Exception as e:
-        return {"success": False, "message": f"خطأ في التنظيف: {str(e)}"}
+    except Exception:
+        logger.exception("خطأ في التنظيف")
+        return {"success": False, "message": GENERIC_ERROR_MESSAGE}
 
 
 # ===== بيانات المستخدم الحالي =====
@@ -2847,77 +2621,3 @@ async def api_get_current_user(request: Request):
         return {"success": False, "data": None}
     except Exception:
         return {"success": False, "data": None}
-
-
-# ===== إدارة الحسابات التجريبية =====
-
-@router.get("/trial-accounts")
-async def api_list_trial_accounts(request: Request):
-    """عرض كل الحسابات التجريبية - المدير العام فقط"""
-    if _is_trial_api_user(request):
-        return _trial_admin_api_denied()
-    check_permission(request, 'manage_users')
-    from trial_mode import get_all_trial_accounts
-    accounts = get_all_trial_accounts()
-    return {"success": True, "data": accounts}
-
-
-class CreateTrialAccount(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    password: str = Field(..., min_length=4, max_length=100)
-    full_name: str = Field(..., min_length=3, max_length=100)
-
-
-@router.post("/trial-accounts")
-async def api_create_trial_account(request: Request, data: CreateTrialAccount):
-    """إنشاء حساب تجريبي جديد - المدير العام فقط"""
-    if _is_trial_api_user(request):
-        return _trial_admin_api_denied()
-    check_permission(request, 'manage_users')
-    
-    # التحقق من أن اسم المستخدم لا يحتوي على أحرف خاصة
-    import re
-    if not re.match(r'^[a-zA-Z0-9_]+$', data.username):
-        return {"success": False, "message": "اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام وشرطة سفلية فقط"}
-    
-    db = Database()
-    conn = None
-    cursor = None
-    try:
-        conn = db.get_connection()
-        cursor = conn.cursor()
-        from trial_mode import ensure_trial_environment
-        result = ensure_trial_environment(
-            cursor,
-            username=data.username,
-            password=data.password,
-            full_name=data.full_name
-        )
-        conn.commit()
-        
-        if isinstance(result, dict):
-            return result
-        return {"success": True, "message": "تم إنشاء الحساب التجريبي بنجاح"}
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return {"success": False, "message": f"خطأ في إنشاء الحساب التجريبي: {str(e)}"}
-    finally:
-        try:
-            if cursor:
-                cursor.close()
-        except Exception:
-            pass
-        if conn:
-            db.return_connection(conn)
-
-
-@router.delete("/trial-accounts/{username}")
-async def api_delete_trial_account(request: Request, username: str):
-    """حذف حساب تجريبي - المدير العام فقط"""
-    if _is_trial_api_user(request):
-        return _trial_admin_api_denied()
-    check_permission(request, 'manage_users')
-    from trial_mode import delete_trial_account
-    result = delete_trial_account(username)
-    return result

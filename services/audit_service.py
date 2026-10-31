@@ -2,15 +2,19 @@
 # audit_service.py - خدمة تسجيل العمليات
 # ============================================
 
-from database import Database
-from config import get_current_datetime, get_client_timestamp
+from database import Database, in_transaction
+from config import now_baghdad
 
 
 def log_action(request, action: str, entity: str, entity_id: str = "", description: str = ""):
-    """تسجيل عملية في سجل العمليات - يستخدم توقيت العميل إن وُجد"""
+    """
+    تسجيل عملية في سجل العمليات بتوقيت الخادم (بغداد).
+    لا يُعتمد توقيت المتصفح لأنه قابل للتلاعب ويخلط بين منطقتين زمنيتين.
+    فشل التسجيل لا يُفشل العملية الأصلية.
+    """
+    db = Database()
+    savepoint = in_transaction()
     try:
-        db = Database()
-
         user = getattr(request.state, "user", None) or {}
         user_id = user.get("id")
         username = user.get("username", "")
@@ -23,11 +27,12 @@ def log_action(request, action: str, entity: str, entity_id: str = "", descripti
 
         user_agent = request.headers.get("user-agent", "")[:500] if hasattr(request, 'headers') else ""
 
-        # استخدام توقيت العميل إن وُجد، وإلا توقيت السيرفر
-        client_ts = get_client_timestamp(request)
+        # داخل معاملة مفتوحة: نقطة حفظ حتى لا يُلغي فشل التسجيل المعاملة كلها
+        if savepoint:
+            db.execute_query("SAVEPOINT audit_log")
 
         db.execute_query("""
-            INSERT INTO operation_logs 
+            INSERT INTO operation_logs
             (user_id, username, action, entity, entity_id, description, ip_address, user_agent, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
@@ -39,7 +44,14 @@ def log_action(request, action: str, entity: str, entity_id: str = "", descripti
             description,
             ip_address,
             user_agent,
-            get_current_datetime(client_ts)
+            now_baghdad().strftime("%Y-%m-%d %H:%M:%S")
         ))
+
+        if savepoint:
+            db.execute_query("RELEASE SAVEPOINT audit_log")
     except Exception:
-        pass
+        if savepoint:
+            try:
+                db.execute_query("ROLLBACK TO SAVEPOINT audit_log")
+            except Exception:
+                pass

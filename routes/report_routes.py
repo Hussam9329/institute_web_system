@@ -210,23 +210,21 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
         raise HTTPException(status_code=404, detail="السحب غير موجود")
     withdrawal = dict(withdrawal_result[0])
 
-    # حساب رصيد المدرس الكامل - مع معالجة الأخطاء
-    try:
-        balance_info = finance_service.calculate_teacher_balance(withdrawal['teacher_id'])
-    except Exception:
-        balance_info = {
-            'total_received': 0,
-            'institute_deduction': 0,
-            'paying_students_count': 0,
-            'teacher_due': 0,
-            'withdrawn_total': 0,
-            'remaining_balance': 0,
-            'has_over_withdrawal': False,
-            'over_withdrawal_amount': 0,
-            'can_withdraw': False,
-            'teacher_share_after_full_payment': 0,
-            'total_expected_fees': 0,
-        }
+    # الملخص المالي كما كان لحظة هذا السحب، حتى تعطي إعادة طباعة الإيصال نفس الأرقام دائماً
+    teacher_id = withdrawal['teacher_id']
+    total_withdrawn_before = finance_service.get_teacher_withdrawn_total_before(
+        teacher_id, withdrawal['withdrawal_date'], withdrawal_id
+    )
+    due_info = finance_service.calculate_teacher_due_until(teacher_id, withdrawal['withdrawal_date'])
+    withdrawn_through_this = total_withdrawn_before + withdrawal['amount']
+    remaining_after = due_info['teacher_due'] - withdrawn_through_this
+    balance_info = {
+        **due_info,
+        'withdrawn_total': withdrawn_through_this,
+        'remaining_balance': max(0, remaining_after),
+        'has_over_withdrawal': remaining_after < 0,
+        'over_withdrawal_amount': abs(remaining_after) if remaining_after < 0 else 0,
+    }
 
     # حساب نسبة المعهد للعرض في التقرير
     # نحدد النسبة حسب نوع التدريس الأول للمدرس
@@ -268,21 +266,9 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
     except Exception:
         institute_rate_display = '-'
 
-    # إجمالي المسحوبات قبل هذا السحب (لعرض الرصيد وقت السحب)
-    try:
-        total_withdrawn_before = finance_service.get_teacher_withdrawn_total_until(
-            withdrawal['teacher_id'],
-            withdrawal['withdrawal_date'],
-            exclude_id=withdrawal_id
-        )
-    except Exception:
-        total_withdrawn_before = 0
-
-    # عدد سحوبات المدرس
-    try:
-        all_teacher_withdrawals = finance_service.get_teacher_recent_withdrawals(withdrawal['teacher_id'], limit=100)
-    except Exception:
-        all_teacher_withdrawals = []
+    num_withdrawals = db.execute_query(
+        "SELECT COUNT(*) AS cnt FROM teacher_withdrawals WHERE teacher_id = %s", (teacher_id,)
+    )[0]['cnt']
 
     return templates.TemplateResponse("reports/withdrawal_report.html", {
         "request": request,
@@ -290,7 +276,7 @@ async def withdrawal_report(request: Request, withdrawal_id: int):
         "balance_info": balance_info,
         "institute_rate_display": institute_rate_display,
         "total_withdrawn_before": total_withdrawn_before,
-        "num_withdrawals": len(all_teacher_withdrawals) if all_teacher_withdrawals else 0,
+        "num_withdrawals": num_withdrawals,
         "report_date": format_report_datetime(get_client_timestamp(request)),
         "report_date_only": format_report_date(get_client_timestamp(request)),
         "report_time": format_report_time(get_client_timestamp(request)),

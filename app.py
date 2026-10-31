@@ -73,7 +73,11 @@ app = FastAPI(
     title=APP_TITLE,
     description=APP_DESCRIPTION,
     version=APP_VERSION,
-    lifespan=lifespan
+    lifespan=lifespan,
+    # وثائق الـ API تكشف كل المسارات - تُعطّل في الإنتاج
+    docs_url=None if IS_VERCEL else "/docs",
+    redoc_url=None if IS_VERCEL else "/redoc",
+    openapi_url=None if IS_VERCEL else "/openapi.json",
 )
 
 # ===== تحسين السرعة: ضغط GZip =====
@@ -88,6 +92,9 @@ async def cache_control_middleware(request: Request, call_next):
     """إضافة headers تخزين مؤقت للملفات الثابتة"""
     response = await call_next(request)
     path = request.url.path
+
+    # منع تضمين صفحات النظام داخل إطار في موقع آخر (Clickjacking)
+    response.headers["X-Frame-Options"] = "DENY"
 
     # تخزين مؤقت طويل للملفات الثابتة
     if path.startswith('/static/'):
@@ -148,7 +155,7 @@ async def api_login(
         max_age=86400 * 30 if remember_me else 86400 * 7,
         httponly=True,
         samesite="lax",
-        secure=False
+        secure=IS_VERCEL  # Vercel يعمل عبر HTTPS دائماً
     )
 
     return response
