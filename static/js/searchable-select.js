@@ -731,6 +731,10 @@
 
         // ===== مزامنة من الـ select الأصلي =====
         _syncFromSelect() {
+            // حالة التعطيل قد تتغير بعد الإنشاء (مثلاً تفعيل فلتر بمربع اختيار)
+            if (this.selectEl.disabled !== this.isDisabled) {
+                this.setDisabled(this.selectEl.disabled);
+            }
             this._collectOptions();
             const sel = this.options.find(o => o.value === this.selectEl.value);
             if (sel) {

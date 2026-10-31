@@ -478,7 +478,8 @@ document.addEventListener('click', function(e) {
     const name = btn.dataset.name;
     if (confirm('هل أنت متأكد من حذف الطالب "' + name + '"؟\n\nسيتم حذف جميع بياناته وأقساطه!')) {
         document.getElementById('deleteForm').action = '/students/' + id + '/delete';
-        document.getElementById('deleteForm').submit();
+        // requestSubmit يطلق حدث submit الذي يضيف توقيت الجهاز (client_timestamp)
+        document.getElementById('deleteForm').requestSubmit();
     }
 });
 
@@ -611,21 +612,21 @@ function lookupBarcode(code) {
         if (bsModal) bsModal.hide();
     });
     
-    fetch('/api/lookup?code=' + encodeURIComponent(code))
-        .then(r => r.json())
+    fetch('/api/lookup?code=' + encodeURIComponent(code) + '&scope=student')
+        .then(r => r.ok ? r.json() : { found: false })
         .then(data => {
             spinner.classList.add('d-none');
             if (data.found) {
                 if (data.type === 'student') {
-                    resultText.innerHTML = '<i class="fas fa-user-graduate text-primary me-1"></i> طالب: <strong>' + data.name + '</strong> <span class="text-muted">(' + data.barcode + ')</span>';
+                    resultText.innerHTML = '<i class="fas fa-user-graduate text-primary me-1"></i> طالب: <strong>' + escapeHtml(data.name) + '</strong> <span class="text-muted">(' + escapeHtml(data.barcode) + ')</span>';
                     // التوجيه مباشرة لصفحة الطالب
                     setTimeout(() => { window.location.href = data.url; }, 800);
                 } else if (data.type === 'teacher') {
-                    resultText.innerHTML = '<i class="fas fa-chalkboard-teacher text-success me-1"></i> مدرس: <strong>' + data.name + '</strong>';
+                    resultText.innerHTML = '<i class="fas fa-chalkboard-teacher text-success me-1"></i> مدرس: <strong>' + escapeHtml(data.name) + '</strong>';
                     setTimeout(() => { window.location.href = data.url; }, 800);
                 }
             } else {
-                resultText.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> لم يتم العثور على نتائج لـ: <strong>' + code + '</strong>';
+                resultText.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> لم يتم العثور على نتائج لـ: <strong>' + escapeHtml(code) + '</strong>';
                 // إذا كان الكود يشبه باركود طالب، اعرض اقتراح البحث في القائمة
                 setTimeout(() => { closeBarcodeResult(); }, 3000);
             }

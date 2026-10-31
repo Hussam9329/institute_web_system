@@ -76,7 +76,7 @@ function checkUrlMessages() {
         showAlert('لا يمكن حذف نوع تدريس مرتبط بطلاب! يمكنك فقط إضافة أنواع تدريس جديدة.', 'error');
     } else if (error === 'delete_blocked') {
         const reason = params.get('reason') || 'لا يمكن الحذف لأن هذا السجل مرتبط ببيانات أخرى.';
-        showAlert(decodeURIComponent(reason), 'warning', 7000);
+        showAlert(reason, 'warning', 7000);
     }
 
     // تنظيف URL - فقط إزالة msg و error مع الحفاظ على باقي المعاملات
@@ -94,14 +94,15 @@ function checkUrlMessages() {
 }
 
 /**
- * تهيئة حقول التاريخ بتاريخ اليوم
+ * تهيئة حقول التاريخ: تعبئة تاريخ اليوم فقط للحقول التي تطلب ذلك (data-default-today)
+ * حقول الفلاتر تبقى فارغة حتى لا تتحول الفلترة إلى "اليوم فقط"
  */
 function initDateInputs() {
     const dateInputs = document.querySelectorAll('input[type="date"]');
     const today = getTodayDate();
 
     dateInputs.forEach(input => {
-        if (!input.value) {
+        if (!input.value && input.hasAttribute('data-default-today')) {
             input.value = today;
         }
         

@@ -733,7 +733,42 @@ document.addEventListener('DOMContentLoaded', function() {
     const hasPayments = {{ 'true' if has_payments else 'false' }};
     const hasLinkedStudents = {{ 'true' if has_linked_students else 'false' }};
 
-    document.getElementById('teacherForm').addEventListener('submit', function(e) {
+    const teacherForm = document.getElementById('teacherForm');
+
+    // إعادة النموذج لحالته قبل الإرسال (عند تكرار الإرسال أو الرجوع للصفحة من ذاكرة المتصفح)
+    // حتى لا تتكرر الحقول المخفية ولا يُضرب أي مبلغ بـ 1000 مرتين
+    function restoreTeacherFormState() {
+        teacherForm.querySelectorAll('[data-js-generated]').forEach(el => el.remove());
+        teacherForm.querySelectorAll('[data-js-submit-disabled]').forEach(el => {
+            el.disabled = false;
+            el.removeAttribute('data-js-submit-disabled');
+        });
+        const submitBtn = teacherForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = false;
+        delete teacherForm.dataset.submitting;
+    }
+
+    function appendGeneratedHidden(name, value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        input.setAttribute('data-js-generated', '1');
+        teacherForm.appendChild(input);
+    }
+
+    window.addEventListener('pageshow', function(ev) {
+        if (ev.persisted) restoreTeacherFormState();
+    });
+
+    teacherForm.addEventListener('submit', function(e) {
+        // منع الإرسال المزدوج
+        if (this.dataset.submitting === '1') {
+            e.preventDefault();
+            return;
+        }
+        restoreTeacherFormState();
+
         // تحذير من الأسماء الاختبارية
         const teacherName = document.getElementById('name').value.trim();
         const suspiciousWords = ['خصم', 'test', 'تجربة', 'اختبار', 'demo'];
@@ -773,39 +808,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // ===== تعطيل حقول الأنواع غير المختارة حتى لا تتداخل مع الإرسال =====
-        const allTypes = ['in_person', 'electronic', 'blended'];
-        allTypes.forEach(type => {
-            const checkbox = document.getElementById('type_' + type);
-            if (checkbox && !checkbox.checked) {
-                const fieldsDiv = document.getElementById('type_fields_' + type);
-                if (fieldsDiv) {
-                    fieldsDiv.querySelectorAll('input, select').forEach(el => {
-                        el.setAttribute('disabled', 'disabled');
-                    });
-                }
-            }
-        });
-
-        // إذا كان هناك طلاب مرتبطون - نعيد تفعيل الحقول المعطلة قبل الإرسال
-        // الخلفية ستحافظ على القيم القديمة وتقبل فقط الأنواع الجديدة المضافة
-        if (hasLinkedStudents) {
-            document.querySelectorAll('#teacherForm input[disabled], #teacherForm select[disabled]').forEach(el => {
-                el.removeAttribute('disabled');
-            });
-            document.querySelectorAll('#teacherForm input[readonly]').forEach(el => {
-                el.removeAttribute('readonly');
-            });
-        }
-
-        // إذا كان هناك مدفوعات (بدون طلاب مرتبطين) - نعيد تفعيل الحقول المعطلة
-        if (hasPayments && !hasLinkedStudents) {
-            document.querySelectorAll('#teacherForm input[disabled], #teacherForm select[disabled]').forEach(el => {
-                el.removeAttribute('disabled');
-            });
-            return;
-        }
-
         // التحقق من اختيار نوع تدريس واحد على الأقل
         const types = [];
         if (document.getElementById('type_in_person').checked) types.push('حضوري');
@@ -822,66 +824,69 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // ضرب الأقساط بـ 1000
-        ['fee_in_person', 'fee_electronic', 'fee_blended', 'inst_ded_manual_in_person', 'inst_ded_manual_electronic', 'inst_ded_manual_blended'].forEach(name => {
-            const input = document.querySelector(`input[name="${name}"]`);
-            if (input && input.value) {
-                input.value = parseInt(input.value) * 1000;
+        // ===== تعطيل حقول الأنواع غير المختارة حتى لا تتداخل مع الإرسال =====
+        const allTypes = ['in_person', 'electronic', 'blended'];
+        allTypes.forEach(type => {
+            const checkbox = document.getElementById('type_' + type);
+            if (checkbox && !checkbox.checked) {
+                const fieldsDiv = document.getElementById('type_fields_' + type);
+                if (fieldsDiv) {
+                    fieldsDiv.querySelectorAll('input, select').forEach(el => {
+                        if (!el.disabled) {
+                            el.disabled = true;
+                            el.setAttribute('data-js-submit-disabled', '1');
+                        }
+                    });
+                }
             }
         });
 
+        // إذا كان هناك طلاب مرتبطون أو مدفوعات - نعيد تفعيل الحقول المقفلة قبل الإرسال
+        // الخلفية ستحافظ على القيم القديمة وتقبل فقط الأنواع الجديدة المضافة
+        if (hasLinkedStudents || hasPayments) {
+            document.querySelectorAll('#teacherForm input[disabled]:not([data-js-submit-disabled]), #teacherForm select[disabled]:not([data-js-submit-disabled])').forEach(el => {
+                el.removeAttribute('disabled');
+            });
+        }
+        if (hasLinkedStudents) {
+            document.querySelectorAll('#teacherForm input[readonly]').forEach(el => {
+                el.removeAttribute('readonly');
+            });
+        }
+
         // تعبئة الحقول الرقمية الفارغة بـ 0 لتجنب خطأ التحقق من FastAPI
         document.querySelectorAll('#teacherForm input[type="number"]').forEach(input => {
-            if (!input.value || input.value.trim() === '') {
+            if (!input.disabled && (!input.value || input.value.trim() === '')) {
                 input.value = '0';
             }
         });
 
+        // تحويل الأقساط والمبالغ اليدوية من الألف إلى الدينار في حقول مخفية
+        // (الحقل الظاهر يبقى بالألف، فتكرار الإرسال لا يضرب القيمة مرة ثانية)
+        const fullAmounts = {};
+        ['fee_in_person', 'fee_electronic', 'fee_blended', 'inst_ded_manual_in_person', 'inst_ded_manual_electronic', 'inst_ded_manual_blended'].forEach(name => {
+            const input = document.querySelector(`#teacherForm input[name="${name}"]`);
+            if (!input || input.disabled) return;
+            const fullValue = (parseInt(input.value) || 0) * 1000;
+            fullAmounts[name] = fullValue;
+            input.disabled = true;
+            input.setAttribute('data-js-submit-disabled', '1');
+            appendGeneratedHidden(name, fullValue);
+        });
 
         // إضافة حقل مخفي لأنواع التدريس
-        let typesInput = document.createElement('input');
-        typesInput.type = 'hidden';
-        typesInput.name = 'teaching_types';
-        typesInput.value = types.join(',');
-        this.appendChild(typesInput);
+        appendGeneratedHidden('teaching_types', types.join(','));
 
         // ===== إضافة حقول مخفية للأنواع المخصصة =====
         customTypes.forEach(ct => {
-            const nameInput = document.createElement('input');
-            nameInput.type = 'hidden';
-            nameInput.name = 'custom_type_names[]';
-            nameInput.value = ct.name;
-            this.appendChild(nameInput);
-
-            const feeInput2 = document.createElement('input');
-            feeInput2.type = 'hidden';
-            feeInput2.name = 'custom_type_fees[]';
-            feeInput2.value = ct.fee; // بالألف - لا نضرب بـ 1000 لأن الخلفية تضربها
-            this.appendChild(feeInput2);
-
-            const dedTypeInput = document.createElement('input');
-            dedTypeInput.type = 'hidden';
-            dedTypeInput.name = 'custom_type_ded_types[]';
-            dedTypeInput.value = ct.dedType;
-            this.appendChild(dedTypeInput);
-
-            const dedPctInput = document.createElement('input');
-            dedPctInput.type = 'hidden';
-            dedPctInput.name = 'custom_type_ded_pcts[]';
-            dedPctInput.value = ct.dedPct;
-            this.appendChild(dedPctInput);
-
-            const dedManualInput = document.createElement('input');
-            dedManualInput.type = 'hidden';
-            dedManualInput.name = 'custom_type_ded_manuals[]';
-            dedManualInput.value = ct.dedManual; // بالألف - لا نضرب بـ 1000 لأن الخلفية تضربها
-            this.appendChild(dedManualInput);
+            appendGeneratedHidden('custom_type_names[]', ct.name);
+            appendGeneratedHidden('custom_type_fees[]', ct.fee); // بالألف - لا نضرب بـ 1000 لأن الخلفية تضربها
+            appendGeneratedHidden('custom_type_ded_types[]', ct.dedType);
+            appendGeneratedHidden('custom_type_ded_pcts[]', ct.dedPct);
+            appendGeneratedHidden('custom_type_ded_manuals[]', ct.dedManual); // بالألف - لا نضرب بـ 1000 لأن الخلفية تضربها
         });
 
         // حفظ بيانات الأنواع المخصصة كـ JSON
-        const customDataInput = document.createElement('input');
-        customDataInput.type = 'hidden';
-        customDataInput.name = 'custom_teaching_data';
         const customDataMap = {};
         customTypes.forEach(ct => {
             customDataMap[ct.name] = {
@@ -891,26 +896,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 deduction_manual: ct.dedManual
             };
         });
-        customDataInput.value = JSON.stringify(customDataMap);
-        this.appendChild(customDataInput);
+        appendGeneratedHidden('custom_teaching_data', JSON.stringify(customDataMap));
 
-        // حساب الأجر الكلي كأعلى قسط
+        // حساب الأجر الكلي كأعلى قسط (كل القيم بالدينار)
         const fees = [];
-        if (document.getElementById('type_in_person').checked) {
-            const v = document.querySelector('input[name="fee_in_person"]');
-            if (v && v.value) fees.push(parseInt(v.value));
-        }
-        if (document.getElementById('type_electronic').checked) {
-            const v = document.querySelector('input[name="fee_electronic"]');
-            if (v && v.value) fees.push(parseInt(v.value));
-        }
-        if (document.getElementById('type_blended').checked) {
-            const v = document.querySelector('input[name="fee_blended"]');
-            if (v && v.value) fees.push(parseInt(v.value));
-        }
-        // إضافة أقساط الأنواع المخصصة (بعد الضرب بـ 1000)
+        if (document.getElementById('type_in_person').checked && fullAmounts.fee_in_person > 0) fees.push(fullAmounts.fee_in_person);
+        if (document.getElementById('type_electronic').checked && fullAmounts.fee_electronic > 0) fees.push(fullAmounts.fee_electronic);
+        if (document.getElementById('type_blended').checked && fullAmounts.fee_blended > 0) fees.push(fullAmounts.fee_blended);
+        // أقساط الأنواع المخصصة مدخلة بالألف
         customTypes.forEach(ct => {
-            if (ct.fee > 0) fees.push(ct.fee); // الأقساط المخصصة بالألف (كما هي)
+            if (ct.fee > 0) fees.push(ct.fee * 1000);
         });
 
         const feeInput = document.getElementById('total_fee');
@@ -937,8 +932,8 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const [key, label] of Object.entries(types_map2)) {
             const typeSelect = document.querySelector(`select[name="inst_ded_type_${key}"]`);
             if (typeSelect && typeSelect.value === 'manual') {
-                const v = document.querySelector(`input[name="inst_ded_manual_${key}"]`);
-                if (v && parseInt(v.value) > 0) manualTypes.push(parseInt(v.value));
+                const manualFull = fullAmounts['inst_ded_manual_' + key] || 0;
+                if (manualFull > 0) manualTypes.push(manualFull);
             }
         }
 
@@ -954,6 +949,11 @@ document.addEventListener('DOMContentLoaded', function() {
             dedTypeInput.value = 'percentage';
             dedValueInput.value = 0;
         }
+
+        // تعطيل زر الحفظ حتى لا يُرسل النموذج مرتين
+        this.dataset.submitting = '1';
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
     });
 });
 

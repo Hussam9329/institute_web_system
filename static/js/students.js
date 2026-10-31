@@ -133,7 +133,7 @@ async function viewInstallments(studentId, teacherId) {
         } catch(e) {}
         
         let html = `
-            <h6 class="mb-3">إجمالي المدفوع: <strong class="text-success">${formatCurrency(result.total_paid)}</strong></h6>
+            <h6 class="mb-3">إجمالي المدفوع: <strong class="text-success">${escapeHtml(formatCurrency(result.total_paid))}</strong></h6>
             <div class="table-responsive">
                 <table class="table table-sm table-bordered">
                     <thead class="table-dark">
@@ -154,16 +154,16 @@ async function viewInstallments(studentId, teacherId) {
                 html += `
                     <tr>
                         <td>${index + 1}</td>
-                        <td class="fw-bold">${formatCurrency(inst.amount)}</td>
-                        <td>${formatDate(inst.payment_date)}</td>
-                        <td><span class="badge bg-info">${inst.installment_type}</span></td>
-                        <td>${inst.notes || '-'}</td>
+                        <td class="fw-bold">${escapeHtml(formatCurrency(inst.amount))}</td>
+                        <td>${escapeHtml(formatDate(inst.payment_date))}</td>
+                        <td><span class="badge bg-info">${escapeHtml(inst.installment_type)}</span></td>
+                        <td>${escapeHtml(inst.notes || '-')}</td>
                         <td>
                             <div class="btn-group btn-group-xs">
-                                <a href="/reports/receipt/${inst.id}" target="_blank" class="btn btn-outline-success btn-xs" title="طباعة الوصل">
+                                <a href="/reports/receipt/${encodeURIComponent(inst.id)}" target="_blank" class="btn btn-outline-success btn-xs" title="طباعة الوصل">
                                     <i class="fas fa-print"></i>
                                 </a>
-                                ${isAdmin ? `<button class="btn btn-outline-danger btn-xs" onclick="deleteInstallment(${inst.id})" title="حذف (مدير فقط)">
+                                ${isAdmin ? `<button class="btn btn-outline-danger btn-xs" onclick="deleteInstallment(${Number(inst.id)}, ${Number(studentId)}, ${Number(teacherId)})" title="حذف (مدير فقط)">
                                     <i class="fas fa-trash"></i>
                                 </button>` : ''}
                             </div>
@@ -186,9 +186,9 @@ async function viewInstallments(studentId, teacherId) {
 }
 
 /**
- * حذف قسط
+ * حذف قسط ثم إعادة تحميل قائمة أقساط نفس الطالب والمدرس
  */
-async function deleteInstallment(installmentId) {
+async function deleteInstallment(installmentId, studentId, teacherId) {
     if (!confirmAction('هل أنت متأكد من حذف هذا القسط؟')) return;
 
     try {
@@ -199,8 +199,6 @@ async function deleteInstallment(installmentId) {
         if (result.success) {
             showAlert(result.message, 'success');
             // إعادة تحميل القائمة
-            const studentId = document.getElementById('inst_student_id').value;
-            const teacherId = document.getElementById('inst_teacher_id').value;
             viewInstallments(studentId, teacherId);
         } else {
             showAlert(result.message, 'error');

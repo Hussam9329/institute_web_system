@@ -264,11 +264,11 @@
                     <div class="row g-3">
                         <div class="col-7">
                             <label class="form-label fw-bold">مبلغ السحب (بالألف د.ع):</label>
-                            <input type="number" class="form-control form-control-lg" id="w_amount" min="1" required placeholder="50">
+                            <input type="number" class="form-control form-control-lg" id="w_amount" min="0.001" step="0.001" required placeholder="50">
                         </div>
                         <div class="col-5">
                             <label class="form-label fw-bold">التاريخ:</label>
-                            <input type="date" class="form-control form-control-lg" id="w_date" required>
+                            <input type="date" class="form-control form-control-lg" id="w_date" required data-default-today>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold">ملاحظات:</label>

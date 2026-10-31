@@ -219,8 +219,8 @@ const PrintUtils = {
             kpiHTML = '<div class="kpi-grid">';
             config.kpis.forEach(kpi => {
                 kpiHTML += `<div class="kpi-card ${kpi.cls || 'kpi-accent'}">
-                    <div class="kpi-value">${kpi.value}</div>
-                    <div class="kpi-label">${kpi.label}</div>
+                    <div class="kpi-value">${escapeHtml(kpi.value)}</div>
+                    <div class="kpi-label">${escapeHtml(kpi.label)}</div>
                 </div>`;
             });
             kpiHTML += '</div>';
@@ -231,7 +231,7 @@ const PrintUtils = {
             filtersHTML = '<div class="report-section"><div class="section-title"><i class="fas fa-filter"></i>الفلاتر المطبقة</div>';
             filtersHTML += '<div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 0 8px 0;">';
             config.filters.forEach(f => {
-                filtersHTML += `<span style="background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">${f}</span>`;
+                filtersHTML += `<span style="background:#eef2ff;color:#4f46e5;border:1px solid #c7d2fe;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">${escapeHtml(f)}</span>`;
             });
             filtersHTML += '</div></div>';
         }
@@ -240,7 +240,7 @@ const PrintUtils = {
         if (config.sections) {
             config.sections.forEach(sec => {
                 sectionsHTML += `<div class="report-section" style="${sec.style || ''}">
-                    <div class="section-title"><i class="fas fa-${sec.icon || 'table'}"></i>${sec.title}</div>
+                    <div class="section-title"><i class="fas fa-${sec.icon || 'table'}"></i>${escapeHtml(sec.title)}</div>
                     ${sec.content || ''}
                 </div>`;
             });
@@ -250,7 +250,7 @@ const PrintUtils = {
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>${config.title} - نظام إدارة المعهد</title>
+    <title>${escapeHtml(config.title)} - نظام إدارة المعهد</title>
     ${this.getReportCSS()}
 </head>
 <body>
@@ -272,8 +272,8 @@ const PrintUtils = {
     <div class="report-container">
         <div class="report-card">
             <div class="report-header">
-                <div class="report-title">${config.title}</div>
-                <div class="report-subtitle">${config.subtitle || ''}</div>
+                <div class="report-title">${escapeHtml(config.title)}</div>
+                <div class="report-subtitle">${escapeHtml(config.subtitle || '')}</div>
                 <div class="report-date">تاريخ التقرير: ${dateStr} - ${timeStr}</div>
             </div>
             ${kpiHTML}
@@ -352,6 +352,22 @@ const PrintUtils = {
     },
 
     /**
+     * Mark a table cell as trusted markup.
+     * Any dynamic value inside the markup must already be passed through escapeHtml.
+     */
+    rawHTML(markup) {
+        return { html: markup };
+    },
+
+    /**
+     * Render a table cell: plain values are escaped, rawHTML() cells are inserted as-is
+     */
+    cellHTML(cell) {
+        if (cell && typeof cell === 'object' && typeof cell.html === 'string') return cell.html;
+        return escapeHtml(cell);
+    },
+
+    /**
      * Build a report-table HTML from headers and rows
      */
     buildTableHTML(headers, rows, options = {}) {
@@ -359,7 +375,7 @@ const PrintUtils = {
         html += '<thead><tr>';
         headers.forEach((h, i) => {
             const align = options.aligns && options.aligns[i] ? options.aligns[i] : '';
-            html += `<th${align ? ' class="text-center"' : ''}>${h}</th>`;
+            html += `<th${align ? ' class="text-center"' : ''}>${escapeHtml(h)}</th>`;
         });
         html += '</tr></thead><tbody>';
 
@@ -367,7 +383,7 @@ const PrintUtils = {
             html += `<tr${options.totalRow && idx === rows.length - 1 ? ' class="total-row"' : ''}>`;
             row.forEach((cell, i) => {
                 const align = options.aligns && options.aligns[i] ? ' style="text-align:center"' : '';
-                html += `<td${align}>${cell}</td>`;
+                html += `<td${align}>${this.cellHTML(cell)}</td>`;
             });
             html += '</tr>';
         });
@@ -401,9 +417,9 @@ const PrintUtils = {
             visibleRows.push([
                 count,
                 name,
-                `<span class="badge-${status === 'مستمر' ? 'paid' : status === 'منسحب' ? 'unpaid' : 'withdrawn'}">${status}</span>`,
+                this.rawHTML(`<span class="badge-${status === 'مستمر' ? 'paid' : status === 'منسحب' ? 'unpaid' : 'withdrawn'}">${escapeHtml(status)}</span>`),
                 formatCurrency(paid),
-                remaining > 0 ? `<span style="color:var(--danger);font-weight:700">${formatCurrency(remaining)}</span>` : '<span style="color:var(--success)"><i class="fas fa-check-circle"></i></span>'
+                remaining > 0 ? this.rawHTML(`<span style="color:var(--danger);font-weight:700">${formatCurrency(remaining)}</span>`) : this.rawHTML('<span style="color:var(--success)"><i class="fas fa-check-circle"></i></span>')
             ]);
         });
 
@@ -415,7 +431,7 @@ const PrintUtils = {
         // Add totals row
         visibleRows.push([
             '', 'الإجمالي', '', formatCurrency(totalPaid),
-            totalRemaining > 0 ? `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalRemaining)}</span>` : '<span style="color:var(--success)">0</span>'
+            totalRemaining > 0 ? this.rawHTML(`<span style="color:var(--danger);font-weight:700">${formatCurrency(totalRemaining)}</span>`) : this.rawHTML('<span style="color:var(--success)">0</span>')
         ]);
 
         // Collect active filters
@@ -456,46 +472,33 @@ const PrintUtils = {
     },
 
     /**
-     * Print Teachers List - includes institute rate, institute deduction, teacher due, withdrawn
+     * Print Teachers List - same columns shown on the teachers page
+     * (teacher money totals are shown and printed from the accounting page)
      */
     printTeachers() {
         const visibleRows = [];
         const allRows = document.querySelectorAll('.teacher-row');
-        let totalReceived = 0, totalRemaining = 0, totalDeduction = 0, totalTeacherDue = 0, totalWithdrawn = 0, count = 0;
+        let totalStudents = 0, count = 0;
 
         allRows.forEach(row => {
             if (row.style.display === 'none') return;
             count++;
-            totalReceived += parseInt(row.dataset.received) || 0;
-            totalRemaining += parseInt(row.dataset.remaining) || 0;
-            totalDeduction += parseInt(row.dataset.deduction) || 0;
-            totalTeacherDue += parseInt(row.dataset.teacherDue) || 0;
-            totalWithdrawn += parseInt(row.dataset.withdrawn) || 0;
 
             const cells = row.querySelectorAll('td');
             const name = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : '';
-            const subject = row.dataset.subject || '';
-            const received = parseInt(row.dataset.received) || 0;
-            const rateDisplay = row.dataset.rateDisplay || '';
-            const deduction = parseInt(row.dataset.deduction) || 0;
-            const teacherDue = parseInt(row.dataset.teacherDue) || 0;
-            const withdrawn = parseInt(row.dataset.withdrawn) || 0;
-            const remaining = parseInt(row.dataset.remaining) || 0;
+            const subject = cells[2] ? cells[2].textContent.trim() : (row.dataset.subject || '');
             const students = parseInt(row.dataset.students) || 0;
             const feeDisplay = row.dataset.feeDisplay || '';
+            const rateDisplay = row.dataset.rateDisplay || '';
+            totalStudents += students;
 
             visibleRows.push([
                 count,
                 name,
-                `<span class="badge-continue">${subject}</span>`,
+                this.rawHTML(`<span class="badge-continue">${escapeHtml(subject)}</span>`),
                 students,
-                formatCurrency(received),
                 feeDisplay || '-',
-                rateDisplay || '-',
-                `<span style="color:var(--danger);font-weight:600">${formatCurrency(deduction)}</span>`,
-                `<span style="color:var(--info);font-weight:600">${formatCurrency(teacherDue)}</span>`,
-                `<span style="color:var(--warning);font-weight:600">${formatCurrency(withdrawn)}</span>`,
-                remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(remaining)}</span>` : '<span style="color:var(--muted)">0</span>'
+                rateDisplay || '-'
             ]);
         });
 
@@ -504,13 +507,7 @@ const PrintUtils = {
             return;
         }
 
-        visibleRows.push([
-            '', 'الإجمالي', '', '', formatCurrency(totalReceived), '', '',
-            `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
-            `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
-            `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
-            totalRemaining > 0 ? formatCurrency(totalRemaining) : '0'
-        ]);
+        visibleRows.push(['', 'الإجمالي', '', totalStudents, '', '']);
 
         const filters = [];
         const searchVal = document.getElementById('teacherLiveSearch')?.value;
@@ -521,24 +518,20 @@ const PrintUtils = {
         if (sortText) filters.push('الترتيب: ' + sortText);
 
         this.openReport({
-            title: 'تقرير المدرسين الشامل',
+            title: 'تقرير المدرسين',
             subtitle: `${count} مدرس مسجل`,
             kpis: [
                 { value: count, label: 'إجمالي المدرسين', cls: 'kpi-success' },
-                { value: formatCurrency(totalReceived), label: 'إجمالي المدفوع', cls: 'kpi-accent' },
-                { value: formatCurrency(totalDeduction), label: 'إجمالي خصم المعهد', cls: 'kpi-danger' },
-                { value: formatCurrency(totalTeacherDue), label: 'إجمالي مستحق المدرسين', cls: 'kpi-info' },
-                { value: formatCurrency(totalWithdrawn), label: 'إجمالي المسحوب', cls: 'kpi-warning' },
-                { value: formatCurrency(totalRemaining), label: 'إجمالي متبقي المدرسين', cls: totalRemaining > 0 ? 'kpi-success' : 'kpi-purple' }
+                { value: totalStudents, label: 'إجمالي الطلاب', cls: 'kpi-accent' }
             ],
             filters: filters,
             sections: [{
-                title: 'قائمة المدرسين - التفاصيل المالية الشاملة',
+                title: 'قائمة المدرسين',
                 icon: 'chalkboard-teacher',
                 content: this.buildTableHTML(
-                    ['#', 'المدرس', 'المادة', 'الطلاب', 'المدفوع', 'قسط الأستاذ', 'نسبة المعهد', 'خصم المعهد', 'مستحق المدرس', 'المسحوب', 'المتبقي'],
+                    ['#', 'المدرس', 'المادة', 'الطلاب', 'قسط الأستاذ', 'نسبة المعهد'],
                     visibleRows,
-                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
+                    { aligns: ['', '', 'text-center', 'text-center', 'text-center', 'text-center'], totalRow: true }
                 )
             }]
         });
@@ -603,12 +596,18 @@ const PrintUtils = {
         const allRows = document.querySelectorAll('.payment-row');
         let totalAmount = 0, totalRemaining = 0, count = 0;
         const studentSet = new Set();
+        // كل صف يحمل متبقي الطالب مع المدرس كاملاً، لذا يُجمع المتبقي مرة واحدة لكل زوج (طالب، مدرس)
+        const countedPairs = new Set();
 
         allRows.forEach(row => {
             if (row.style.display === 'none') return;
             count++;
             totalAmount += parseInt(row.dataset.amount) || 0;
-            totalRemaining += parseInt(row.dataset.remaining) || 0;
+            const pairKey = row.dataset.studentId + '-' + row.dataset.teacherId;
+            if (!countedPairs.has(pairKey)) {
+                countedPairs.add(pairKey);
+                totalRemaining += parseInt(row.dataset.remaining) || 0;
+            }
 
             const cells = row.querySelectorAll('td');
             const name = cells[1] ? cells[1].textContent.trim().split('\n')[0].trim() : '';
@@ -619,16 +618,16 @@ const PrintUtils = {
             const type = row.dataset.type || '';
             const date = cells[7] ? cells[7].textContent.trim() : '';
 
-            if (row.dataset.name) studentSet.add(row.dataset.name);
+            if (row.dataset.studentId) studentSet.add(row.dataset.studentId);
 
             visibleRows.push([
                 count,
                 name,
                 teacher,
-                `<span class="badge-continue">${subject}</span>`,
+                this.rawHTML(`<span class="badge-continue">${escapeHtml(subject)}</span>`),
                 formatCurrency(amount),
-                remaining > 0 ? `<span style="color:var(--danger);font-weight:700">${formatCurrency(remaining)}</span>` : '<span style="color:var(--success)"><i class="fas fa-check-circle"></i></span>',
-                `<span class="badge-continue">${type}</span>`,
+                remaining > 0 ? this.rawHTML(`<span style="color:var(--danger);font-weight:700">${formatCurrency(remaining)}</span>`) : this.rawHTML('<span style="color:var(--success)"><i class="fas fa-check-circle"></i></span>'),
+                this.rawHTML(`<span class="badge-continue">${escapeHtml(type)}</span>`),
                 date
             ]);
         });
@@ -712,8 +711,8 @@ const PrintUtils = {
             visibleRows.push([
                 count,
                 name,
-                `<span class="badge-continue">${subject}</span>`,
-                `<span style="color:var(--warning);font-weight:700">${formatCurrency(amount)}</span>`,
+                this.rawHTML(`<span class="badge-continue">${escapeHtml(subject)}</span>`),
+                this.rawHTML(`<span style="color:var(--warning);font-weight:700">${formatCurrency(amount)}</span>`),
                 date,
                 notes
             ]);
@@ -803,22 +802,22 @@ const PrintUtils = {
         const rows = visibleCards.map((c, i) => [
             i + 1,
             c.name,
-            `<span class="badge-continue">${c.subject}</span>`,
+            this.rawHTML(`<span class="badge-continue">${escapeHtml(c.subject)}</span>`),
             c.students,
             formatCurrency(c.received),
-            `<span style="color:var(--danger);font-weight:600">${formatCurrency(c.deduction)}</span>`,
-            `<span style="color:var(--info);font-weight:600">${formatCurrency(c.teacherDue)}</span>`,
-            `<span style="color:#6366f1;font-weight:600">${formatCurrency(c.shareFull)}</span>`,
-            `<span style="color:var(--warning);font-weight:600">${formatCurrency(c.withdrawn)}</span>`,
-            c.remaining > 0 ? `<span style="color:var(--success);font-weight:700">${formatCurrency(c.remaining)}</span>` : '<span style="color:var(--muted)">0</span>'
+            this.rawHTML(`<span style="color:var(--danger);font-weight:600">${formatCurrency(c.deduction)}</span>`),
+            this.rawHTML(`<span style="color:var(--info);font-weight:600">${formatCurrency(c.teacherDue)}</span>`),
+            this.rawHTML(`<span style="color:#6366f1;font-weight:600">${formatCurrency(c.shareFull)}</span>`),
+            this.rawHTML(`<span style="color:var(--warning);font-weight:600">${formatCurrency(c.withdrawn)}</span>`),
+            c.remaining > 0 ? this.rawHTML(`<span style="color:var(--success);font-weight:700">${formatCurrency(c.remaining)}</span>`) : this.rawHTML('<span style="color:var(--muted)">0</span>')
         ]);
 
         rows.push([
             '', 'الإجمالي', '', totalStudents, formatCurrency(totalReceived),
-            `<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`,
-            `<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`,
-            `<span style="color:#6366f1;font-weight:700">${formatCurrency(totalShareFull)}</span>`,
-            `<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`,
+            this.rawHTML(`<span style="color:var(--danger);font-weight:700">${formatCurrency(totalDeduction)}</span>`),
+            this.rawHTML(`<span style="color:var(--info);font-weight:700">${formatCurrency(totalTeacherDue)}</span>`),
+            this.rawHTML(`<span style="color:#6366f1;font-weight:700">${formatCurrency(totalShareFull)}</span>`),
+            this.rawHTML(`<span style="color:var(--warning);font-weight:700">${formatCurrency(totalWithdrawn)}</span>`),
             totalRemaining > 0 ? formatCurrency(totalRemaining) : '0'
         ]);
 
@@ -953,14 +952,14 @@ const PrintUtils = {
                 icon: 'table',
                 content: this.buildTableHTML(
                     ['البند', 'القيمة'],
-                    selectedData.map(d => [d.label, `<span style="font-weight:700">${d.value}</span>`]),
+                    selectedData.map(d => [d.label, this.rawHTML(`<span style="font-weight:700">${escapeHtml(d.value)}</span>`)]),
                     { aligns: ['', 'text-center'] }
                 )
             });
         }
 
         if (includeFinancial && selectedFinRows.length > 0) {
-            const finTableRows = selectedFinRows.map(r => [r[0], `<span style="font-weight:700">${r[1]}</span>`, r[2]]);
+            const finTableRows = selectedFinRows.map(r => [r[0], this.rawHTML(`<span style="font-weight:700">${escapeHtml(r[1])}</span>`), r[2]]);
             sections.push({
                 title: 'الملخص المالي',
                 icon: 'coins',
@@ -983,7 +982,7 @@ const PrintUtils = {
                     icon: 'building',
                     content: `<div style="text-align:center;padding:20px;background:#ecfdf5;border-radius:14px;border:2px solid rgba(16,185,129,0.25);">
                         <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي إيرادات المعهد (الاستقطاعات)</div>
-                        <div style="font-size:28px;font-weight:900;color:var(--success);">${totalDeduction}</div>
+                        <div style="font-size:28px;font-weight:900;color:var(--success);">${escapeHtml(totalDeduction)}</div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">نسبة المعهد المستقطعة من المدفوعات</div>
                     </div>`
                 });
@@ -1000,7 +999,7 @@ const PrintUtils = {
                     icon: 'user-tie',
                     content: `<div style="text-align:center;padding:20px;background:rgba(6,182,212,0.06);border-radius:14px;border:2px solid rgba(6,182,212,0.25);">
                         <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">إجمالي مستحق المدرسين (بعد خصم المعهد)</div>
-                        <div style="font-size:28px;font-weight:900;color:var(--info);">${totalTeacherDue}</div>
+                        <div style="font-size:28px;font-weight:900;color:var(--info);">${escapeHtml(totalTeacherDue)}</div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">المدفوعات - خصم المعهد = مستحق المدرسين</div>
                     </div>`
                 });

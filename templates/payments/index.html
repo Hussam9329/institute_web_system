@@ -219,7 +219,7 @@
                         </thead>
                         <tbody>
                             {% for inst in installments %}
-                            <tr class="payment-row" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-amount="{{ inst.amount or 0 }}" data-remaining="{{ inst.remaining or 0 }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
+                            <tr class="payment-row" data-student-id="{{ inst.student_id }}" data-teacher-id="{{ inst.teacher_id }}" data-name="{{ inst.student_name|lower }}" data-teacher="{{ inst.teacher_name|lower }}" data-subject="{{ inst.subject|lower }}" data-date="{{ inst.payment_date }}" data-type="{{ inst.installment_type }}" data-amount="{{ inst.amount or 0 }}" data-remaining="{{ inst.remaining or 0 }}" data-status="{{ 'complete' if inst.remaining <= 0 else 'incomplete' }}">
                                 <td class="index-col text-muted fw-bold">{{ loop.index }}</td>
                                 <td>
                                     <a href="/students/{{ inst.student_id }}" class="text-decoration-none fw-semibold">

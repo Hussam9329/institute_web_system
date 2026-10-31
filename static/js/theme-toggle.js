@@ -26,7 +26,6 @@
         localStorage.setItem(THEME_KEY, theme);
 
         updateToggleButton(theme);
-        saveThemeToServer(theme);
     }
 
     function updateToggleButton(theme) {
@@ -68,24 +67,6 @@
         var nextTheme = currentTheme === "dark" ? "light" : "dark";
 
         applyTheme(nextTheme);
-    }
-
-    function saveThemeToServer(theme) {
-        // محاولة حفظ الثيم في الخادم (اختياري - يعمل حتى لو فشل)
-        try {
-            fetch("/api/user/theme", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ theme: theme }),
-            }).catch(function () {
-                // لا نعرض خطأ للمستخدم لأن localStorage يكفي كخطة بديلة
-                console.warn("تعذر حفظ الثيم في الخادم");
-            });
-        } catch (e) {
-            // تجاهل الأخطاء
-        }
     }
 
     // تطبيق الثيم مبكرًا بعد تحميل الملف

@@ -80,23 +80,29 @@ function showAlert(message, type = 'info', duration = 4000) {
     };
 
     const alertId = 'alert-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+    duration = Number(duration) || 4000;
 
-    const alertHTML = `
-        <div id="${alertId}" class="custom-alert ${type}" role="alert">
+    // الهيكل ثابت؛ نص الرسالة يُضاف كنص فقط (textContent) لمنع حقن HTML
+    const alertEl = document.createElement('div');
+    alertEl.id = alertId;
+    alertEl.className = 'custom-alert ' + type;
+    alertEl.setAttribute('role', 'alert');
+    alertEl.innerHTML = `
             <div class="d-flex align-items-center gap-3 p-3">
                 <div class="alert-icon-wrap">
                     <i class="fas ${icons[type] || icons.info}"></i>
                 </div>
-                <div class="alert-text">${message}</div>
-                <button type="button" class="alert-close-btn" onclick="dismissAlert('${alertId}')">
+                <div class="alert-text"></div>
+                <button type="button" class="alert-close-btn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="alert-progress" style="animation-duration: ${duration}ms;"></div>
-        </div>
     `;
+    alertEl.querySelector('.alert-text').textContent = (message === null || message === undefined) ? '' : String(message);
+    alertEl.querySelector('.alert-close-btn').addEventListener('click', () => dismissAlert(alertId));
 
-    container.insertAdjacentHTML('beforeend', alertHTML);
+    container.appendChild(alertEl);
 
     // إخفاء تلقائي بعد المدة المحددة
     setTimeout(() => {
@@ -191,19 +197,33 @@ document.addEventListener('click', function(e) {
  */
 async function apiRequest(url, options = {}) {
     try {
+        // دمج الترويسات بعد بقية الخيارات حتى لا تُستبدل ترويسة التوقيت عند تمرير headers
+        const { headers: extraHeaders, ...restOptions } = options;
         const response = await fetch(url, {
+            ...restOptions,
             headers: {
                 'Content-Type': 'application/json',
                 'X-Client-Timestamp': getClientDateTime(),
-                ...options.headers
-            },
-            ...options
+                ...(extraHeaders || {})
+            }
         });
+
+        // انتهاء الجلسة: الخادم يعيد 401 أو يحوّل إلى صفحة تسجيل الدخول (HTML)
+        const redirectedToLogin = response.redirected && new URL(response.url, window.location.origin).pathname === '/login';
+        if (response.status === 401 || redirectedToLogin) {
+            redirectToLoginSoon();
+            throw new Error('انتهت الجلسة، يرجى تسجيل الدخول مجدداً');
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            throw new Error('استجابة غير متوقعة من الخادم (' + response.status + ')، يرجى تحديث الصفحة والمحاولة مجدداً');
+        }
 
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.detail || data.message || 'حدث خطأ');
+            throw new Error(getApiErrorMessage(data));
         }
 
         return data;
@@ -211,6 +231,38 @@ async function apiRequest(url, options = {}) {
         console.error('API Error:', error);
         throw error;
     }
+}
+
+/**
+ * استخراج رسالة خطأ مقروءة من استجابة الخادم
+ * (FastAPI يعيد detail كمصفوفة كائنات في أخطاء التحقق 422)
+ * @param {object} data - جسم الاستجابة
+ * @returns {string}
+ */
+function getApiErrorMessage(data) {
+    if (!data || typeof data !== 'object') return 'حدث خطأ';
+    const detail = data.detail;
+    if (typeof detail === 'string' && detail) return detail;
+    if (typeof data.message === 'string' && data.message) return data.message;
+    if (Array.isArray(detail) && detail.length) {
+        const fields = detail
+            .map(item => (item && Array.isArray(item.loc)) ? item.loc[item.loc.length - 1] : '')
+            .filter(field => field && field !== 'body');
+        const uniqueFields = [...new Set(fields)];
+        return 'البيانات المدخلة غير صالحة' + (uniqueFields.length ? ' (' + uniqueFields.join('، ') + ')' : '') + '، يرجى التحقق منها';
+    }
+    if (detail && typeof detail === 'object' && typeof detail.message === 'string') return detail.message;
+    return 'حدث خطأ';
+}
+
+/**
+ * تحويل المستخدم إلى صفحة تسجيل الدخول بعد مهلة قصيرة تكفي لقراءة رسالة الخطأ
+ */
+let _loginRedirectScheduled = false;
+function redirectToLoginSoon() {
+    if (_loginRedirectScheduled) return;
+    _loginRedirectScheduled = true;
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
 }
 
 /**
@@ -393,14 +445,14 @@ function exportTableToCSV(tableId, filename) {
 
 /**
  * تهريب HTML لمنع هجمات XSS
- * @param {string} str - النص المراد تهريبه
+ * آمن داخل محتوى العناصر وداخل قيم السمات (يهرّب علامات الاقتباس أيضاً)
+ * @param {*} str - النص المراد تهريبه
  * @returns {string} النص المهرب
  */
+const HTML_ESCAPE_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, ch => HTML_ESCAPE_MAP[ch]);
 }
 
 // تصدير الدوال للاستخدام العام

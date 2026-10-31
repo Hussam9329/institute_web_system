@@ -1051,33 +1051,34 @@
             searchTimeout = setTimeout(async () => {
                 try {
                     const result = await apiRequest(`/api/search?q=${encodeURIComponent(query)}`);
+                    const data = (result && result.success !== false && result.data) ? result.data : {};
                     let html = '';
                     
-                    if (result.data.students && result.data.students.length > 0) {
+                    if (data.students && data.students.length > 0) {
                         html += '<div class="search-result-label"><i class="fas fa-user-graduate me-1"></i>الطلاب</div>';
-                        result.data.students.forEach(s => {
-                            html += `<a href="/students/${s.id}" class="search-result-item" onclick="closeSidebar()">
-                                <div class="fw-semibold">${s.name}</div>
-                                <small class="text-muted">${s.barcode} | ${s.study_type}</small>
+                        data.students.forEach(s => {
+                            html += `<a href="/students/${encodeURIComponent(s.id)}" class="search-result-item" onclick="closeSidebar()">
+                                <div class="fw-semibold">${escapeHtml(s.name)}</div>
+                                <small class="text-muted">${escapeHtml(s.barcode)} | ${escapeHtml(s.study_type)}</small>
                             </a>`;
                         });
                     }
                     
-                    if (result.data.teachers && result.data.teachers.length > 0) {
+                    if (data.teachers && data.teachers.length > 0) {
                         html += '<div class="search-result-label"><i class="fas fa-chalkboard-teacher me-1"></i>المدرسين</div>';
-                        result.data.teachers.forEach(t => {
-                            html += `<a href="/teachers/${t.id}" class="search-result-item" onclick="closeSidebar()">
-                                <div class="fw-semibold">${t.name}</div>
-                                <small class="text-muted">${t.subject} | ${formatCurrency(t.total_fee)}</small>
+                        data.teachers.forEach(t => {
+                            html += `<a href="/teachers/${encodeURIComponent(t.id)}" class="search-result-item" onclick="closeSidebar()">
+                                <div class="fw-semibold">${escapeHtml(t.name)}</div>
+                                <small class="text-muted">${escapeHtml(t.subject)} | ${escapeHtml(formatCurrency(t.total_fee))}</small>
                             </a>`;
                         });
                     }
                     
-                    if (result.data.subjects && result.data.subjects.length > 0) {
+                    if (data.subjects && data.subjects.length > 0) {
                         html += '<div class="search-result-label"><i class="fas fa-book-open me-1"></i>المواد</div>';
-                        result.data.subjects.forEach(s => {
+                        data.subjects.forEach(s => {
                             html += `<a href="/subjects" class="search-result-item" onclick="closeSidebar()">
-                                <div class="fw-semibold">${s.name}</div>
+                                <div class="fw-semibold">${escapeHtml(s.name)}</div>
                             </a>`;
                         });
                     }
@@ -1089,7 +1090,9 @@
                     searchResults.innerHTML = html;
                     searchResults.classList.add('show');
                 } catch (error) {
+                    // 403 (لا صلاحية عرض) أو خطأ خادم: لا نتائج بدون تعطيل الصفحة
                     console.error('Search error:', error);
+                    searchResults.classList.remove('show');
                 }
             }, 300);
         });

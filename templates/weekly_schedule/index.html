@@ -2423,12 +2423,16 @@ function editEvent(eventId) {
         const durations = evType === 'امتحان' ? EXAM_DURATIONS : LECTURE_DURATIONS;
         const matchedDuration = durations.find(d => d.value === durationMin);
 
+        // تعيين المدة الفعلية قبل تفعيل وضع القائمة، لأن setTimeMode('select') يعيد حساب وقت الانتهاء من المدة المختارة
         if (matchedDuration) {
-            setTimeMode('select');
             document.getElementById('lecDuration').value = matchedDuration.value;
+            refreshSearchableSelect('lecDuration');
+            setTimeMode('select');
         } else {
+            // مدة غير موجودة في القائمة: الوضع اليدوي يحافظ على وقت الانتهاء المخزن كما هو
             setTimeMode('manual');
         }
+        document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
 
         // تحديث عنوان المودال مع الأيقونة
         document.getElementById('eventModalTitle').innerHTML =
@@ -2576,12 +2580,6 @@ function formatDuration(minutes) {
     if (mins === 0) return hours + ' ساعة';
     if (mins === 30) return hours + ' ساعة ونصف';
     return hours + ' ساعة و ' + mins + ' دقيقة';
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 async function refreshData() {

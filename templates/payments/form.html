@@ -123,7 +123,7 @@
                                         <label class="pay-field-label">
                                             <i class="fas fa-coins"></i>المبلغ (بالألف د.ع)
                                         </label>
-                                        <input type="number" class="form-control pay-field-input" id="pay_amount" min="1" required placeholder="150">
+                                        <input type="number" class="form-control pay-field-input" id="pay_amount" min="0.001" step="0.001" required placeholder="150">
                                         <small id="pay_amount_preview" class="text-muted mt-1 d-none"></small>
                                         <small id="pay_remaining_hint" class="text-danger mt-1 d-none"></small>
                                         <small id="pay_discount_hint" class="text-warning mt-1 d-none" style="display:none;"><i class="fas fa-percent me-1"></i><span id="pay_discount_hint_text"></span></small>
@@ -132,7 +132,7 @@
                                         <label class="pay-field-label">
                                             <i class="fas fa-calendar"></i>التاريخ
                                         </label>
-                                        <input type="date" class="form-control pay-field-input" id="pay_date" required>
+                                        <input type="date" class="form-control pay-field-input" id="pay_date" required data-default-today>
                                     </div>
                                     <div class="col-12 col-md-4">
                                         <label class="pay-field-label">
@@ -412,13 +412,6 @@ html[data-theme="dark"] .t-badge.t-badge-fixed {
 
 {% block extra_js %}
 <script>
-// ===== بيانات الطلاب من السيرفر =====
-var allStudents = [
-    {% for student in students %}
-    { id: {{ student.id }}, name: "{{ student.name }}" }{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
-
 var teachersBalanceData = {};
 var currentTeachersList = []; // قائمة المدرسين المرتبطين بالطالب المختار
 
@@ -458,6 +451,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     forInstContainer.classList.add('d-none');
                 }
             }
+            // الدفع الكامل يجب أن يساوي المتبقي بالضبط (يتحقق منه الخادم أيضاً)
+            if (this.value === 'دفع كامل') {
+                payFillFullRemaining();
+            }
         });
     }
 
@@ -466,10 +463,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (amountInput) {
         amountInput.addEventListener('input', function() {
             var previewEl = document.getElementById('pay_amount_preview');
-            var val = parseInt(this.value);
+            var val = toFullAmount(this.value);
             if (previewEl) {
-                if (val && val > 0) {
-                    previewEl.textContent = '= ' + formatCurrency(val * 1000);
+                if (val > 0) {
+                    previewEl.textContent = '= ' + formatCurrency(val);
                     previewEl.classList.remove('d-none');
                 } else {
                     previewEl.classList.add('d-none');
@@ -661,6 +658,11 @@ function selectTeacher(id, name) {
         document.getElementById('payDiscountSection').style.display = '';
         payResetDiscountForm();
         payLoadCurrentDiscount(studentId, id);
+    }
+
+    // إذا كان نوع القسط "دفع كامل" املأ المبلغ بالمتبقي الدقيق للمدرس الجديد
+    if (document.getElementById('pay_type')?.value === 'دفع كامل') {
+        payFillFullRemaining();
     }
 }
 
@@ -864,7 +866,7 @@ function showRemainingHint(teacherId) {
     }
 
     if (remaining > 0) {
-        var remainingInThousands = Math.ceil(remaining / 1000);
+        var remainingInThousands = remainingToThousands(remaining);
         hintEl.innerHTML = '<i class="fas fa-info-circle me-1"></i>المتبقي: ' + formatCurrency(remaining) + ' (أدخل ' + remainingInThousands + ' بالألف)';
         hintEl.classList.remove('d-none');
         hintEl.className = 'text-danger mt-1';
@@ -882,9 +884,17 @@ function showRemainingHint(teacherId) {
 /**
  * تحميل الخصم الحالي من الخادم وعرضه
  */
+var payDiscountRequestSeq = 0;
 async function payLoadCurrentDiscount(studentId, teacherId) {
+    // تجاهل الاستجابات القديمة عند تبديل المدرس/الطالب بسرعة
+    var requestSeq = ++payDiscountRequestSeq;
     try {
         var result = await apiRequest('/api/student-discount/' + studentId + '/' + teacherId);
+        var currentStudentId = parseInt(document.getElementById('pay_student_select').value);
+        var currentTeacherId = parseInt(document.getElementById('pay_teacher_id').value);
+        if (requestSeq !== payDiscountRequestSeq || currentStudentId !== Number(studentId) || currentTeacherId !== Number(teacherId)) {
+            return;
+        }
         if (result.success && result.data) {
             var data = result.data;
             payCurrentDiscountType = data.discount_type || 'none';
@@ -1036,8 +1046,30 @@ function payResetDiscountForm() {
     if (amountEl) {
         amountEl.disabled = false;
         amountEl.value = '';
-        amountEl.min = 1;
+        amountEl.min = '0.001';
     }
+}
+
+/**
+ * تحويل مبلغ بالدينار إلى قيمة الإدخال بالألف بدون تقريب (112500 → 112.5)
+ */
+function remainingToThousands(amount) {
+    return String(Number(amount) / 1000);
+}
+
+/**
+ * ملء حقل المبلغ بالمتبقي الدقيق للمدرس المختار (عند اختيار "دفع كامل")
+ * لا يمنع المستخدم من التعديل؛ الخادم يتحقق من المبلغ
+ */
+function payFillFullRemaining() {
+    var amountEl = document.getElementById('pay_amount');
+    var teacherId = document.getElementById('pay_teacher_id')?.value;
+    var teacherData = teacherId ? teachersBalanceData[String(teacherId)] : null;
+    if (!amountEl || amountEl.disabled || !teacherData) return;
+    var remaining = Number(teacherData.remaining_balance || 0);
+    if (remaining <= 0) return;
+    amountEl.value = remainingToThousands(remaining);
+    amountEl.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**
@@ -1067,15 +1099,6 @@ function payGoToEditDiscount(event) {
     if (studentId) {
         window.open('/students/' + studentId + '/edit', '_blank');
     }
-}
-
-// ============================================
-// دوال مساعدة
-// ============================================
-function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 /**
