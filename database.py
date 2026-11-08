@@ -732,6 +732,13 @@ def init_db():
                 except Exception:
                     conn.rollback()
 
+                # ===== إضافة عمود المرحلة للجدول الأسبوعي (السبت للسادس فقط) =====
+                try:
+                    cursor.execute("ALTER TABLE weekly_schedule ADD COLUMN IF NOT EXISTS grade TEXT DEFAULT ''")
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
                 # ===== إضافة عمود رقم ولي أمر الطالب لجدول الطلاب =====
                 try:
                     cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_phone TEXT DEFAULT ''")

@@ -1124,13 +1124,18 @@ html[data-theme="dark"] .ws-ctrl-divider {
                     <div class="col-12">
                         <label class="ws-fld-label" for="lecDay">اليوم</label>
                         <select id="lecDay" name="lecDay" class="form-select form-select-sm">
-                            <option value="الإثنين">الإثنين</option>
-                            <option value="الثلاثاء">الثلاثاء</option>
-                            <option value="الأربعاء">الأربعاء</option>
-                            <option value="الخميس">الخميس</option>
-                            <option value="الجمعة">الجمعة</option>
-                            <option value="السبت">السبت</option>
-                            <option value="الأحد">الأحد</option>
+                            {% for day in week_days %}
+                            <option value="{{ day }}">{{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="ws-fld-label" for="lecGrade">المرحلة <small class="text-muted">(السبت للسادس فقط)</small></label>
+                        <select id="lecGrade" name="lecGrade" class="form-select form-select-sm">
+                            <option value="">اختر المرحلة</option>
+                            {% for grade in schedule_grades %}
+                            <option value="{{ grade }}">{{ grade }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-12 col-md-6">
@@ -1256,7 +1261,31 @@ function isRenderedView(mode) {
 let currentRoomPage = 1;
 const ROOMS_PER_PAGE = 4;
 
-const DAYS = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
+// الأسبوع يبدأ من السبت (دوام السادس فقط)، وباقي المراحل من الأحد — القيم من config.py
+const DAYS = {{ week_days | tojson }};
+const SATURDAY_ONLY_GRADE = {{ saturday_only_grade | tojson }};
+
+// رسالة خطأ إن كان اليوم والمرحلة غير مسموحين (نفس قاعدة الخادم)، وإلا ''
+function dayGradeError(day, grade) {
+    if (!grade) return 'يرجى اختيار المرحلة';
+    if (day === 'السبت' && grade !== SATURDAY_ONLY_GRADE) {
+        return 'يوم السبت دوام السادس فقط؛ باقي المراحل يبدأ دوامها من الأحد';
+    }
+    return '';
+}
+
+// عند اختيار السبت والمرحلة فارغة: السادس هو الخيار الوحيد الصحيح
+function onDayOrGradeChange() {
+    const dayEl = document.getElementById('lecDay');
+    const gradeEl = document.getElementById('lecGrade');
+    if (dayEl.value === 'السبت' && !gradeEl.value) {
+        gradeEl.value = SATURDAY_ONLY_GRADE;
+    }
+    const errorEl = document.getElementById('lecError');
+    const msg = gradeEl.value ? dayGradeError(dayEl.value, gradeEl.value) : '';
+    errorEl.textContent = msg;
+    errorEl.style.display = msg ? 'block' : 'none';
+}
 // ===== TIME SLOTS =====
 // الساعات الأساسية تظهر دائماً، أما أنصاف الساعات مثل 07:30 فلا تظهر إلا إذا كانت مستخدمة فعلياً
 const WORK_START_HOUR = 7;
@@ -1690,6 +1719,9 @@ function buildRoomGridTable(room) {
                     html += '<div class="ws-ev-type">' + typeLabel + '</div>';
                     html += '<div class="ws-ev-subj">' + escapeHtml(ev.subject) + '</div>';
                     html += '<div class="ws-ev-info">' + escapeHtml(ev.teacher_name) + '</div>';
+                    if (ev.grade) {
+                        html += '<div class="ws-ev-info"><i class="fas fa-layer-group"></i> ' + escapeHtml(ev.grade) + '</div>';
+                    }
                     html += '<div class="ws-ev-info"><i class="fas fa-clock"></i> ' + normalizeTimeValue(ev.start_time) + ' - ' + normalizeTimeValue(ev.end_time) + '</div>';
                     html += '</div>';
                 });
@@ -1864,7 +1896,7 @@ function goToRoomPage(page) {
 function renderScheduleList() {
     const container = document.getElementById('listContent');
     const events = getFilteredEvents();
-    const dayOrder = {'الإثنين':1,'الثلاثاء':2,'الأربعاء':3,'الخميس':4,'الجمعة':5,'السبت':6,'الأحد':7};
+    const dayOrder = Object.fromEntries(DAYS.map((d, i) => [d, i + 1]));
 
     if (events.length === 0) {
         container.innerHTML = '<div class="ws-empty"><i class="fas fa-calendar-times"></i><p>لا توجد فعاليات</p></div>';
@@ -1976,6 +2008,9 @@ function renderListEventCard(ev) {
     html += '<div class="ws-lv-meta">';
     html += '<span><i class="fas fa-clock"></i> ' + normalizeTimeValue(ev.start_time) + ' - ' + normalizeTimeValue(ev.end_time) + '</span>';
     html += '<span><i class="fas fa-calendar-day"></i> ' + escapeHtml(ev.day_of_week) + '</span>';
+    if (ev.grade) {
+        html += '<span><i class="fas fa-layer-group"></i> ' + escapeHtml(ev.grade) + '</span>';
+    }
     html += '<span><i class="fas fa-user-tie"></i> ' + escapeHtml(ev.teacher_name) + '</span>';
     html += '<span><i class="fas fa-door-open"></i> ' + roomDisplay + '</span>';
     if (ev.notes) {
@@ -2314,6 +2349,9 @@ function populateModalSelects() {
         ['lecRoom', 'lecDay', 'lecStartTime', 'lecEndTime'].forEach(id => {
             document.getElementById(id).addEventListener('change', checkConflictPreview);
         });
+        ['lecDay', 'lecGrade'].forEach(id => {
+            document.getElementById(id).addEventListener('change', onDayOrGradeChange);
+        });
 
         modalSelectsInitialized = true;
     }
@@ -2348,7 +2386,8 @@ function openAddEventModal(day, time, roomId, eventType) {
                 : '<i class="fas fa-chalkboard-teacher me-2"></i>إضافة محاضرة';
         document.getElementById('lecTeacher').value = '';
         document.getElementById('lecSubject').value = '';
-        document.getElementById('lecDay').value = day || 'الإثنين';
+        document.getElementById('lecDay').value = day || 'الأحد';
+        document.getElementById('lecGrade').value = (day === 'السبت') ? SATURDAY_ONLY_GRADE : '';
         document.getElementById('lecStartTime').value = time || '08:00';
         document.getElementById('lecEndTime').value = '';
         document.getElementById('lecNotes').value = '';
@@ -2405,6 +2444,7 @@ function editEvent(eventId) {
         document.getElementById('lecTeacher').value = ev.teacher_id;
         document.getElementById('lecSubject').value = ev.subject;
         document.getElementById('lecDay').value = ev.day_of_week;
+        document.getElementById('lecGrade').value = ev.grade || '';
         document.getElementById('lecStartTime').value = normalizeTimeValue(ev.start_time);
         document.getElementById('lecEndTime').value = normalizeTimeValue(ev.end_time);
         document.getElementById('lecNotes').value = ev.notes || '';
@@ -2464,7 +2504,8 @@ async function saveEvent() {
         start_time: document.getElementById('lecStartTime').value,
         end_time: document.getElementById('lecEndTime').value,
         event_type: normalizeEventType(document.getElementById('lecEventType').value),
-        notes: document.getElementById('lecNotes').value.trim()
+        notes: document.getElementById('lecNotes').value.trim(),
+        grade: document.getElementById('lecGrade').value
     };
     const errorEl = document.getElementById('lecError');
     const saveBtn = document.getElementById('saveEventBtn');
@@ -2472,6 +2513,15 @@ async function saveEvent() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>جاري الحفظ...';
     if (!data.room_id || !data.teacher_id || !data.subject || !data.day_of_week || !data.start_time || !data.end_time) {
         errorEl.textContent = 'يرجى اختيار القاعة والاستاد (المادة تُملأ تلقائياً) واليوم والوقت';
+        errorEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';
+        return;
+    }
+
+    const dayGradeMsg = dayGradeError(data.day_of_week, data.grade);
+    if (dayGradeMsg) {
+        errorEl.textContent = dayGradeMsg;
         errorEl.style.display = 'block';
         saveBtn.disabled = false;
         saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>حفظ';

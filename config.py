@@ -66,6 +66,23 @@ INSTALLMENT_TYPES = [
     "دفع كامل"
 ]
 
+# ===== الجدول الأسبوعي =====
+# الأسبوع يبدأ من السبت (دوام السادس)، وباقي المراحل يبدأ دوامها من الأحد
+WEEK_DAYS = ["السبت", "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"]
+SCHEDULE_GRADES = ["السادس", "باقي المراحل"]
+SATURDAY_ONLY_GRADE = "السادس"
+
+
+def schedule_day_grade_error(day_of_week: str, grade: str) -> str | None:
+    """رسالة الخطأ إن كان اليوم أو المرحلة غير مسموحين في الجدول، وإلا None"""
+    if day_of_week not in WEEK_DAYS:
+        return f"اليوم يجب أن يكون من: {', '.join(WEEK_DAYS)}"
+    if grade not in SCHEDULE_GRADES:
+        return "يرجى اختيار المرحلة: السادس أو باقي المراحل"
+    if day_of_week == "السبت" and grade != SATURDAY_ONLY_GRADE:
+        return "يوم السبت دوام السادس فقط؛ باقي المراحل يبدأ دوامها من الأحد"
+    return None
+
 # ===== تسميات الواجهة الموحّدة =====
 UI_LABELS = {
     "institute_rate": "نسبة المعهد"

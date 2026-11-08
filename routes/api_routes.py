@@ -13,7 +13,7 @@ from database import (
 from services.finance_service import finance_service, sync_student_status
 from services.cache_service import cache_service
 from services.teaching_types import get_fee_for_study_type, get_deduction_for_study_type, parse_custom_type_settings, get_all_teaching_types
-from config import get_current_date, format_currency, get_client_timestamp, is_valid_iso_date
+from config import get_current_date, format_currency, get_client_timestamp, is_valid_iso_date, WEEK_DAYS, schedule_day_grade_error
 from auth import check_permission, has_permission
 from services.audit_service import log_action
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
@@ -2113,6 +2113,14 @@ def normalize_event_type(event_type):
     return 'امتحان' if event_type == 'امتحان' else 'محاضرة'
 
 
+# ترتيب أيام الأسبوع في الاستعلامات (من ثوابت config فقط، لا مدخلات مستخدم)
+WEEK_DAY_ORDER_SQL = (
+    "CASE ws.day_of_week "
+    + " ".join(f"WHEN '{day}' THEN {i}" for i, day in enumerate(WEEK_DAYS, start=1))
+    + " ELSE 99 END"
+)
+
+
 @router.get("/weekly-schedule")
 async def api_get_weekly_schedule(request: Request, room_id: int = None):
     """الحصول على الجدول الأسبوعي كاملاً أو لقاعة محددة"""
@@ -2127,16 +2135,7 @@ async def api_get_weekly_schedule(request: Request, room_id: int = None):
                 JOIN teachers t ON ws.teacher_id = t.id
                 WHERE ws.room_id = %s
                 ORDER BY
-                CASE ws.day_of_week
-                    WHEN 'الإثنين' THEN 1
-                    WHEN 'الثلاثاء' THEN 2
-                    WHEN 'الأربعاء' THEN 3
-                    WHEN 'الخميس' THEN 4
-                    WHEN 'الجمعة' THEN 5
-                    WHEN 'السبت' THEN 6
-                    WHEN 'الأحد' THEN 7
-                    ELSE 99
-                END,
+                ''' + WEEK_DAY_ORDER_SQL + ''',
                 ws.start_time
             '''
             results = db.execute_query(query, (room_id,))
@@ -2148,16 +2147,7 @@ async def api_get_weekly_schedule(request: Request, room_id: int = None):
                 JOIN teachers t ON ws.teacher_id = t.id
                 ORDER BY
                 r.name,
-                CASE ws.day_of_week
-                    WHEN 'الإثنين' THEN 1
-                    WHEN 'الثلاثاء' THEN 2
-                    WHEN 'الأربعاء' THEN 3
-                    WHEN 'الخميس' THEN 4
-                    WHEN 'الجمعة' THEN 5
-                    WHEN 'السبت' THEN 6
-                    WHEN 'الأحد' THEN 7
-                    ELSE 99
-                END,
+                ''' + WEEK_DAY_ORDER_SQL + ''',
                 ws.start_time
             '''
             results = db.execute_query(query)
@@ -2207,15 +2197,16 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
         raw_event_type = data.get('event_type', 'محاضرة')
         event_type = str(raw_event_type or '').strip()
         notes = data.get('notes', '')
+        grade = str(data.get('grade') or '').strip()
         duration = data.get('duration', None)
-        
+
         if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
             return {"success": False, "message": "جميع الحقول مطلوبة: القاعة، المدرس، اليوم، وقت البداية، وقت النهاية"}
-        
-        valid_days = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
-        if day_of_week not in valid_days:
-            return {"success": False, "message": f"اليوم يجب أن يكون من: {', '.join(valid_days)}"}
-        
+
+        day_grade_error = schedule_day_grade_error(day_of_week, grade)
+        if day_grade_error:
+            return {"success": False, "message": day_grade_error}
+
         # حساب وقت النهاية من المدة إذا تم تحديدها
         if duration and not end_time:
             try:
@@ -2289,9 +2280,9 @@ async def api_add_weekly_lecture(request: Request, data: dict = Body(...)):
             subject = teacher_info[0]['subject'] if teacher_info else ''
         
         result = db.execute_query(
-            '''INSERT INTO weekly_schedule (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id''',
-            (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes)
+            '''INSERT INTO weekly_schedule (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes, grade)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id''',
+            (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes, grade)
         )
         new_id = result[0]['id'] if result else None
         
@@ -2317,11 +2308,16 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         raw_event_type = data.get('event_type', 'محاضرة')
         event_type = str(raw_event_type or '').strip()
         notes = data.get('notes', '')
+        grade = str(data.get('grade') or '').strip()
         duration = data.get('duration', None)
-        
+
         if not all([room_id, teacher_id, day_of_week, start_time, end_time]):
             return {"success": False, "message": "جميع الحقول مطلوبة: القاعة، المدرس، اليوم، وقت البداية، وقت النهاية"}
-        
+
+        day_grade_error = schedule_day_grade_error(day_of_week, grade)
+        if day_grade_error:
+            return {"success": False, "message": day_grade_error}
+
         # حساب وقت النهاية من المدة إذا تم تحديدها
         if duration and not end_time:
             try:
@@ -2396,8 +2392,8 @@ async def api_update_weekly_lecture(request: Request, lecture_id: int, data: dic
         
         db.execute_query(
             '''UPDATE weekly_schedule SET room_id=%s, teacher_id=%s, subject=%s, day_of_week=%s, 
-               start_time=%s, end_time=%s, event_type=%s, notes=%s WHERE id=%s''',
-            (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes, lecture_id)
+               start_time=%s, end_time=%s, event_type=%s, notes=%s, grade=%s WHERE id=%s''',
+            (room_id, teacher_id, subject, day_of_week, start_time, end_time, event_type, notes, grade, lecture_id)
         )
         
         event_label = 'الامتحان' if event_type == 'امتحان' else 'المحاضرة'

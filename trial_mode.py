@@ -541,6 +541,9 @@ def create_trial_tables(cursor, username: str):
         )
     ''')
     cursor.execute(f'''
+        ALTER TABLE {t["weekly_schedule"]} ADD COLUMN IF NOT EXISTS grade TEXT DEFAULT ''
+    ''')
+    cursor.execute(f'''
         CREATE UNIQUE INDEX IF NOT EXISTS idx_{idx_pfx}weekly_schedule_no_conflict
         ON {t["weekly_schedule"]} (room_id, day_of_week, start_time, end_time)
     ''')

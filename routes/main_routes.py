@@ -17,7 +17,7 @@ from services.teaching_types import (
     get_all_teaching_types, validate_custom_type_data,
     build_custom_type_settings_from_form
 )
-from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS, get_client_timestamp, is_valid_iso_date
+from config import get_current_date, format_currency, format_date, BASE_DIR, generate_barcode, UI_LABELS, get_client_timestamp, is_valid_iso_date, WEEK_DAYS, SCHEDULE_GRADES, SATURDAY_ONLY_GRADE
 from services.audit_service import log_action
 from urllib.parse import quote
 from services.deletion_guard_service import _deletion_guard_service as deletion_guard
@@ -2153,7 +2153,10 @@ async def weekly_schedule_page(request: Request):
                 "event_type": "امتحان" if str(dict(s).get("event_type") or "").strip() == "امتحان" else "محاضرة"
             }
             for s in schedule
-        ] if schedule else []
+        ] if schedule else [],
+        "week_days": WEEK_DAYS,
+        "schedule_grades": SCHEDULE_GRADES,
+        "saturday_only_grade": SATURDAY_ONLY_GRADE
     })
 
 
