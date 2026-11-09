@@ -742,8 +742,16 @@ def init_db():
                 # ===== إضافة عمود رقم ولي أمر الطالب لجدول الطلاب =====
                 try:
                     cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_phone TEXT DEFAULT ''")
-                    # فهرس فريد جزئي: يمنع تكرار الأرقام غير الفارغة فقط
-                    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_students_parent_phone_not_empty ON students (parent_phone) WHERE parent_phone IS NOT NULL AND parent_phone != ''")
+                    # الإخوة والأخوات يشتركون في رقم ولي الأمر نفسه، فلا يكون الرقم فريداً
+                    cursor.execute("DROP INDEX IF EXISTS idx_students_parent_phone_not_empty")
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+                # ===== رمز رابط ولي الأمر (سري وعشوائي، يُنشأ عند أول طلب للرابط) =====
+                try:
+                    cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS parent_token TEXT")
+                    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_students_parent_token ON students (parent_token) WHERE parent_token IS NOT NULL")
                     conn.commit()
                 except Exception:
                     conn.rollback()

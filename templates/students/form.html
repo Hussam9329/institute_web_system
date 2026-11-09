@@ -77,6 +77,21 @@
                         </div>
                         {% endif %}
 
+                        {% if error == 'duplicate_parent_phone' %}
+                        <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
+                            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
+                            <div>
+                                <strong>تسجيل مكرر!</strong>
+                                {% if error_detail %}
+                                {{ error_detail }}
+                                {% else %}
+                                يوجد طالب بنفس الاسم ونفس رقم ولي الأمر.
+                                {% endif %}
+                                <div class="small mt-1">الإخوة بأسماء مختلفة يمكن تسجيلهم بنفس رقم ولي الأمر.</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         {% if error == 'invalid_parent_phone' %}
                         <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
                             <i class="fas fa-phone-slash fa-lg me-3"></i>
@@ -91,19 +106,6 @@
                         </div>
                         {% endif %}
 
-                        {% if error == 'duplicate_parent_phone' %}
-                        <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
-                            <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
-                            <div>
-                                <strong>الرقم مسجل مسبقاً!</strong>
-                                {% if error_detail %}
-                                {{ error_detail }}
-                                {% else %}
-                                هذا الرقم مسجل لولي أمر طالب آخر.
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endif %}
 
                         {% if error == 'invalid_discount_percentage' %}
                         <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">

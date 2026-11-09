@@ -284,7 +284,8 @@ PUBLIC_PATHS = [
     "/api/login",
     "/static",
     "/favicon.ico",
-    "/health"
+    "/health",
+    "/parent",  # صفحة ولي الأمر: عامة، محمية برمز عشوائي في الرابط
 ]
 
 async def auth_middleware(request: Request, call_next):

@@ -445,6 +445,21 @@ async def student_form(request: Request, error: str = "", detail: str = ""):
     })
 
 
+def _student_with_same_name_and_parent_phone(db, name: str, parent_phone: str, exclude_id: int = None):
+    """طالب مسجل بنفس الاسم ونفس رقم ولي الأمر (تسجيل مكرر)، أو None.
+    الإخوة بأسماء مختلفة مسموح لهم بنفس الرقم."""
+    query = "SELECT id, name FROM students WHERE parent_phone = %s"
+    params = [parent_phone]
+    if exclude_id is not None:
+        query += " AND id != %s"
+        params.append(exclude_id)
+    target = " ".join((name or "").split())
+    for row in db.execute_query(query, tuple(params)) or []:
+        if " ".join((row['name'] or "").split()) == target:
+            return row
+    return None
+
+
 @router.post("/students/add")
 async def student_add(
     request: Request,
@@ -487,13 +502,12 @@ async def student_add(
                 url=f"/students/add?error=invalid_parent_phone&detail={quote('رقم ولي الأمر يجب أن يتكون من 11 رقم ويبدأ بـ 07')}",
                 status_code=303
             )
-        # فحص تكرار الرقم
-        existing_parent_phone = db.execute_query("SELECT id, name FROM students WHERE parent_phone = %s", (parent_phone,))
-        if existing_parent_phone:
-            dup_name = existing_parent_phone[0]['name']
-            dup_id = existing_parent_phone[0]['id']
+        # الإخوة يشتركون في رقم ولي الأمر؛ يُرفض فقط نفس الاسم بنفس الرقم (تسجيل مكرر)
+        same = _student_with_same_name_and_parent_phone(db, name, parent_phone)
+        if same:
+            dup_msg = f"الطالب {same['name']} (#{same['id']}) مسجل مسبقاً بنفس رقم ولي الأمر"
             return RedirectResponse(
-                url=f"/students/add?error=duplicate_parent_phone&detail={quote(f'الرقم مسجل مسبقاً لولي أمر الطالب: {dup_name} (#{dup_id})')}",
+                url=f"/students/add?error=duplicate_parent_phone&detail={quote(dup_msg)}",
                 status_code=303
             )
 
@@ -801,12 +815,10 @@ async def student_update(
         import re
         if not re.match(r'^07\d{9}$', parent_phone):
             return re_render_edit_form("invalid_parent_phone", "رقم ولي الأمر يجب أن يتكون من 11 رقم ويبدأ بـ 07")
-        # فحص تكرار الرقم (استثناء الطالب الحالي)
-        existing_parent_phone = db.execute_query("SELECT id, name FROM students WHERE parent_phone = %s AND id != %s", (parent_phone, student_id))
-        if existing_parent_phone:
-            dup_name = existing_parent_phone[0]['name']
-            dup_id = existing_parent_phone[0]['id']
-            return re_render_edit_form("duplicate_parent_phone", f"الرقم مسجل مسبقاً لولي أمر الطالب: {dup_name} (#{dup_id})")
+        # الإخوة يشتركون في رقم ولي الأمر؛ يُرفض فقط نفس الاسم بنفس الرقم (تسجيل مكرر)
+        same = _student_with_same_name_and_parent_phone(db, name, parent_phone, exclude_id=student_id)
+        if same:
+            return re_render_edit_form("duplicate_parent_phone", f"الطالب {same['name']} (#{same['id']}) مسجل مسبقاً بنفس رقم ولي الأمر")
 
     # ===== التحقق من الخصوم أولاً - قبل أي كتابة في قاعدة البيانات =====
     teacher_name_map = get_teacher_name_map(db, teacher_ids)

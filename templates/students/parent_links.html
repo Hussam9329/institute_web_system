@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}روابط أولياء الأمور - نظام إدارة المعهد{% endblock %}
+
+{% block content %}
+<div class="page-transition">
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <h4 class="fw-bold mb-1">
+                <i class="fas fa-link me-2 text-primary"></i>
+                روابط أولياء الأمور
+            </h4>
+            <p class="text-muted mb-0 small">
+                يُرسل الرابط مرة واحدة فقط، ويعرض لولي الأمر آخر المعلومات في كل مرة يفتحه.
+                الإخوة برقم ولي أمر واحد يصلهم برسالة واحدة.
+            </p>
+        </div>
+        <a href="/students" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-right me-1"></i> الطلاب
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body d-flex align-items-center flex-wrap gap-3">
+            <div class="flex-grow-1" style="min-width:200px;">
+                <input type="search" id="plSearch" class="form-control form-control-sm" placeholder="ابحث باسم الطالب أو رقم ولي الأمر...">
+            </div>
+            <div class="small">
+                تم الإرسال: <strong id="plSentCount">0</strong> / <strong>{{ groups | length }}</strong> ولي أمر
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="plResetSent()">
+                <i class="fas fa-undo me-1"></i> تصفير علامات الإرسال
+            </button>
+        </div>
+    </div>
+
+    {% if groups %}
+    <div class="list-group mb-4" id="plGroups">
+        {% for g in groups %}
+        <div class="list-group-item pl-group d-flex align-items-center justify-content-between flex-wrap gap-2"
+             data-phone="{{ g.phone }}" data-wa="{{ g.wa }}"
+             data-search="{{ g.phone }} {% for s in g.students %}{{ s.name }} {% endfor %}">
+            <div>
+                <div class="fw-semibold">
+                    {% for s in g.students %}
+                    <span class="pl-student" data-name="{{ s.name }}" data-path="{{ s.path }}">{{ s.name }}</span>{% if not loop.last %}<span class="text-muted"> ، </span>{% endif %}
+                    {% endfor %}
+                    {% if g.students | length > 1 %}
+                    <span class="badge bg-info-subtle text-info-emphasis ms-1">{{ g.students | length }} إخوة</span>
+                    {% endif %}
+                </div>
+                <div class="small text-muted" dir="ltr" style="text-align:right;">{{ g.phone }}</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success pl-sent-badge d-none"><i class="fas fa-check me-1"></i>أُرسل</span>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="plCopy(this)" title="نسخ الرسالة">
+                    <i class="fas fa-copy"></i>
+                </button>
+                <button type="button" class="btn btn-success btn-sm" onclick="plSendWhatsApp(this)">
+                    <i class="fab fa-whatsapp me-1"></i> واتساب
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-4">لا يوجد طلاب لديهم رقم ولي أمر</div>
+    {% endif %}
+
+    {% if without_phone %}
+    <h6 class="fw-bold mb-2">
+        <i class="fas fa-phone-slash me-1 text-warning"></i>
+        طلاب بدون رقم ولي أمر ({{ without_phone | length }})
+        <small class="text-muted fw-normal">أضف الرقم من صفحة تعديل الطالب، أو انسخ الرابط وأرسله يدوياً</small>
+    </h6>
+    <div class="list-group mb-4">
+        {% for s in without_phone %}
+        <div class="list-group-item pl-group d-flex align-items-center justify-content-between gap-2" data-search="{{ s.name }}">
+            <span class="pl-student" data-name="{{ s.name }}" data-path="{{ s.path }}">{{ s.name }}</span>
+            <div class="d-flex gap-2">
+                <a href="/students/{{ s.id }}/edit" class="btn btn-outline-primary btn-sm" title="إضافة رقم ولي الأمر"><i class="fas fa-pen"></i></a>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="plCopy(this)" title="نسخ الرسالة"><i class="fas fa-copy"></i></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PL_SENT_KEY = 'parentLinksSent';
+
+function plLoadSent() {
+    try { return JSON.parse(localStorage.getItem(PL_SENT_KEY) || '{}'); } catch (e) { return {}; }
+}
+function plSaveSent(sent) {
+    try { localStorage.setItem(PL_SENT_KEY, JSON.stringify(sent)); } catch (e) { /* التخزين غير متاح */ }
+}
+
+// نص الرسالة لطالب واحد أو لعدة إخوة
+function plMessage(groupEl) {
+    const students = Array.from(groupEl.querySelectorAll('.pl-student')).map(el => ({
+        name: el.dataset.name,
+        url: location.origin + el.dataset.path
+    }));
+    let text = 'السلام عليكم،\n';
+    if (students.length === 1) {
+        text += 'رابط متابعة الطالب/ة ' + students[0].name + ':\n' + students[0].url + '\n';
+    } else {
+        text += 'روابط متابعة أبنائكم:\n';
+        students.forEach(s => { text += '\n' + s.name + ':\n' + s.url + '\n'; });
+    }
+    text += '\nاحفظ الرابط؛ يعرض آخر المعلومات في كل مرة تفتحه.';
+    return text;
+}
+
+function plMarkSent(groupEl) {
+    const phone = groupEl.dataset.phone;
+    if (!phone) return;
+    const sent = plLoadSent();
+    sent[phone] = true;
+    plSaveSent(sent);
+    plRenderSent();
+}
+
+function plRenderSent() {
+    const sent = plLoadSent();
+    let count = 0;
+    document.querySelectorAll('#plGroups .pl-group').forEach(el => {
+        const isSent = !!sent[el.dataset.phone];
+        if (isSent) count++;
+        el.classList.toggle('bg-body-tertiary', isSent);
+        el.querySelector('.pl-sent-badge').classList.toggle('d-none', !isSent);
+    });
+    document.getElementById('plSentCount').textContent = count;
+}
+
+function plSendWhatsApp(btn) {
+    const groupEl = btn.closest('.pl-group');
+    const url = 'https://wa.me/' + groupEl.dataset.wa + '?text=' + encodeURIComponent(plMessage(groupEl));
+    window.open(url, '_blank', 'noopener');
+    plMarkSent(groupEl);
+}
+
+async function plCopy(btn) {
+    const groupEl = btn.closest('.pl-group');
+    try {
+        await navigator.clipboard.writeText(plMessage(groupEl));
+        showAlert('تم نسخ الرسالة', 'success', 2000);
+    } catch (e) {
+        showAlert('تعذر النسخ، انسخ الرابط يدوياً', 'warning');
+    }
+}
+
+function plResetSent() {
+    if (!confirm('تصفير علامات "أُرسل" لكل أولياء الأمور؟')) return;
+    plSaveSent({});
+    plRenderSent();
+}
+
+document.getElementById('plSearch').addEventListener('input', function () {
+    const q = this.value.trim();
+    document.querySelectorAll('.pl-group').forEach(el => {
+        el.classList.toggle('d-none', q !== '' && !el.dataset.search.includes(q));
+    });
+});
+
+plRenderSent();
+</script>
+{% endblock %}

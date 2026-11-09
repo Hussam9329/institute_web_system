@@ -431,7 +431,10 @@ def create_trial_tables(cursor, username: str):
     ''')
     idx_pfx = f"trial_{username}_" if username != "raihany" else "trial_"
     cursor.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS idx_{idx_pfx}students_phone_not_empty ON {t['students']} (phone) WHERE phone IS NOT NULL AND phone != ''")
-    cursor.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS idx_{idx_pfx}students_parent_phone_not_empty ON {t['students']} (parent_phone) WHERE parent_phone IS NOT NULL AND parent_phone != ''")
+    # الإخوة والأخوات يشتركون في رقم ولي الأمر نفسه، فلا يكون الرقم فريداً
+    cursor.execute(f"DROP INDEX IF EXISTS idx_{idx_pfx}students_parent_phone_not_empty")
+    cursor.execute(f"ALTER TABLE {t['students']} ADD COLUMN IF NOT EXISTS parent_token TEXT")
+    cursor.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS idx_{idx_pfx}students_parent_token ON {t['students']} (parent_token) WHERE parent_token IS NOT NULL")
 
     cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS {t["teachers"]} (

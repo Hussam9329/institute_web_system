@@ -187,6 +187,14 @@
                 <a href="/reports/student/{{ student.id }}" class="action-btn action-btn-info" target="_blank" title="طباعة تقرير">
                     <i class="fas fa-print"></i>
                 </a>
+                <button type="button" class="action-btn action-btn-secondary" onclick="copyParentLink({{ student.id }})" title="نسخ رابط ولي الأمر">
+                    <i class="fas fa-link"></i>
+                </button>
+                {% if student.parent_phone %}
+                <button type="button" class="action-btn action-btn-success" onclick="sendParentLinkWhatsApp({{ student.id }}, {{ student.name | tojson | forceescape }})" title="إرسال رابط ولي الأمر بالواتساب">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+                {% endif %}
                 {% if teachers_summary %}
                 <button type="button" class="action-btn action-btn-danger" disabled
                         title="لا يمكن الحذف - يوجد مدرسين مرتبطين">
@@ -795,6 +803,42 @@ function escapeHtmlSimple(text) {
 
 function printAllReceipts(studentId) {
     window.open('/reports/student/' + studentId, '_blank');
+}
+
+// ===== رابط ولي الأمر (يتحدث تلقائياً) =====
+async function fetchParentLink(studentId) {
+    const res = await apiRequest('/api/students/' + studentId + '/parent-link', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    });
+    if (!res.success) throw new Error(res.message || 'تعذر إنشاء الرابط');
+    return { url: location.origin + res.path, whatsapp: res.whatsapp };
+}
+
+async function copyParentLink(studentId) {
+    try {
+        const link = await fetchParentLink(studentId);
+        await navigator.clipboard.writeText(link.url);
+        showAlert('تم نسخ رابط ولي الأمر', 'success', 2000);
+    } catch (e) {
+        showAlert(e.message || 'تعذر نسخ الرابط', 'warning');
+    }
+}
+
+async function sendParentLinkWhatsApp(studentId, studentName) {
+    // نفتح النافذة فوراً حتى لا يمنعها المتصفح، ثم نضع الرابط بعد جلبه
+    const win = window.open('', '_blank');
+    try {
+        const link = await fetchParentLink(studentId);
+        if (!link.whatsapp) throw new Error('رقم ولي الأمر غير صالح');
+        const text = 'السلام عليكم،\nرابط متابعة الطالب/ة ' + studentName + ':\n' + link.url +
+                     '\n\nاحفظ الرابط؛ يعرض آخر المعلومات في كل مرة تفتحه.';
+        win.location.href = 'https://wa.me/' + link.whatsapp + '?text=' + encodeURIComponent(text);
+    } catch (e) {
+        if (win) win.close();
+        showAlert(e.message || 'تعذر إنشاء الرابط', 'warning');
+    }
 }
 </script>
 {% endblock %}
