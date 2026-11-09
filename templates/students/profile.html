@@ -190,6 +190,9 @@
                 <button type="button" class="action-btn action-btn-secondary" onclick="copyParentLink({{ student.id }})" title="نسخ رابط ولي الأمر">
                     <i class="fas fa-link"></i>
                 </button>
+                <button type="button" class="action-btn action-btn-warning" onclick="regenerateParentLink({{ student.id }})" title="إبطال رابط ولي الأمر وإنشاء رابط جديد">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
                 {% if student.parent_phone %}
                 <button type="button" class="action-btn action-btn-success" onclick="sendParentLinkWhatsApp({{ student.id }}, {{ student.name | tojson | forceescape }})" title="إرسال رابط ولي الأمر بالواتساب">
                     <i class="fab fa-whatsapp"></i>
@@ -823,6 +826,22 @@ async function copyParentLink(studentId) {
         showAlert('تم نسخ رابط ولي الأمر', 'success', 2000);
     } catch (e) {
         showAlert(e.message || 'تعذر نسخ الرابط', 'warning');
+    }
+}
+
+async function regenerateParentLink(studentId) {
+    if (!confirm('إنشاء رابط جديد لولي الأمر؟\nالرابط القديم سيتوقف عن العمل، ويجب إرسال الرابط الجديد له.')) return;
+    try {
+        const res = await apiRequest('/api/students/' + studentId + '/parent-link', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ regenerate: true })
+        });
+        if (!res.success) throw new Error(res.message || 'تعذر إنشاء الرابط');
+        await navigator.clipboard.writeText(location.origin + res.path).catch(() => {});
+        showAlert('تم إنشاء رابط جديد ونسخه؛ الرابط القديم لم يعد يعمل', 'success');
+    } catch (e) {
+        showAlert(e.message || 'تعذر إنشاء الرابط', 'warning');
     }
 }
 
